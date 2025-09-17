@@ -34,23 +34,24 @@ class _GamificationNotificationPageState
     return Scaffold(
       backgroundColor: cs.background,
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: cs.background,
+        elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: cs.onBackground),
           onPressed: () => context.pop(),
         ),
         title: Text('Progress & Rewards',
-            style: txt.headlineLarge?.copyWith(fontWeight: FontWeight.w600)),
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w500)),
         actions: [
           IconButton(
             tooltip: 'Settings',
             icon: Icon(Icons.settings, color: cs.onBackground),
             onPressed: _openSettings,
           ),
-          const SizedBox(width: 8),
         ],
+        centerTitle: true,
       ),
+
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),

@@ -47,14 +47,14 @@ class _ProfilePageState extends State<ProfilePage> {
           onPressed: () => context.pop(),
         ),
         title: Text('Hồ sơ & Cài đặt',
-            style: txt.headlineMedium?.copyWith(fontWeight: FontWeight.w600)),
+            style: txt.headlineMedium?.copyWith(fontWeight: FontWeight.w500)),
         actions: [
           IconButton(
             icon: Icon(Icons.edit_outlined, color: cs.onBackground),
             onPressed: _goEditProfile,
           ),
         ],
-        centerTitle: false,
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

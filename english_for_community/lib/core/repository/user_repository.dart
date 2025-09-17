@@ -5,7 +5,7 @@ import '../model/failure.dart';
 abstract class UserRepository{
   Future<Either<Failure,UserEntity>> getProfile();
   Future<Either<Failure,UserEntity>> updateProfile({
-    required String fullName,
+    String? fullName,
     String? bio,
     String? avatarUrl,
     String? goal,

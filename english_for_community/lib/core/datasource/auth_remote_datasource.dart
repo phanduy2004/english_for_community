@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../api/token_storage.dart';
 import '../entity/user_entity.dart';
 
 class AuthRemoteDatasource{
@@ -7,13 +8,16 @@ class AuthRemoteDatasource{
 
   AuthRemoteDatasource({required this.dio});
   Future<UserEntity> login(String email, String password) async {
-    final response = await dio.post(
-      'users/login',
-      data: {
-        'email': email,
-        'password': password,
-      },
-    );
-    return UserEntity.fromJson(response.data);
+    final res = await dio.post('users/login', data: {
+      'email': email,
+      'password': password,
+    });
+    final token = res.data['token'] as String?;
+    if (token != null) await TokenStorage.save(token);
+    return UserEntity.fromJson(res.data['user']);
+  }
+  Future<void> logout() async {
+    await TokenStorage.clear();
+    // Tuỳ ý gọi API /logout nếu muốn
   }
 }

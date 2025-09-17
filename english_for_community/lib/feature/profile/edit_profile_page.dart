@@ -1,11 +1,20 @@
+// lib/feature/profile/edit_profile_page.dart
+// Refactor: remove constructor initialProfile; load from UserBloc (and fetch if missing)
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/entity/user_entity.dart';
 
-/// Tiện cho UI: thêm copyWith cho UserEntity
+import '../../core/entity/user_entity.dart';
+import '../../core/ui/widget/app_card.dart';
+import '../../feature/auth/bloc/user_bloc.dart';
+import '../../feature/auth/bloc/user_event.dart';
+import '../../feature/auth/bloc/user_state.dart';
+
+/// Helper: copyWith for UI editing (non-invasive to domain)
 extension UserEntityCopyWith on UserEntity {
   UserEntity copyWith({
     String? id,
@@ -48,42 +57,57 @@ class EditProfilePage extends StatefulWidget {
   static String routeName = 'EditProfilePage';
   static String routePath = '/profile/edit';
 
-  final UserEntity initialProfile;
-
-  const EditProfilePage({super.key, required this.initialProfile});
+  const EditProfilePage({super.key});
 
   @override
   State<EditProfilePage> createState() => _EditProfilePageState();
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  late UserEntity _profile;
+  UserEntity? _profile; // now sourced from UserBloc
   final _formKey = GlobalKey<FormState>();
   bool _isDirty = false;
-  bool _isSaving = false;
+  bool _firedLoad = false;
 
   @override
-  void initState() {
-    super.initState();
-    _profile = widget.initialProfile;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_firedLoad) return;
+    _firedLoad = true;
+
+    final st = context.read<UserBloc>().state;
+    if (st.userEntity != null) {
+      // seed local editable copy
+      _profile = st.userEntity;
+    } else {
+      // fetch profile once
+      context.read<UserBloc>().add(GetProfileEvent());
+    }
   }
 
+  Map<String, int>? _toReminderMap(TimeOfDay? t) =>
+      t == null ? null : {"hour": t.hour, "minute": t.minute};
+
   Future<void> _saveProfile() async {
+    if (_profile == null) return;
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
-    // TODO: gọi API cập nhật hồ sơ tại đây
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    if (!mounted) return;
-    setState(() => _isSaving = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã lưu thay đổi')),
-    );
-    context.pop(true);
+    context.read<UserBloc>().add(UpdateProfileEvent(
+      fullName: _profile!.fullName,
+      bio: _profile!.bio,
+      avatarUrl: _profile!.avatarUrl,
+      goal: _profile!.goal,
+      cefr: _profile!.cefr,
+      dailyMinutes: _profile!.dailyMinutes,
+      reminder: _toReminderMap(_profile!.reminder),
+      strictCorrection: _profile!.strictCorrection,
+      language: _profile!.language,
+      timezone: _profile!.timezone,
+    ));
   }
 
   Future<void> _pickImage() async {
+    if (_profile == null) return;
     final picker = ImagePicker();
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
@@ -106,20 +130,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
 
-    if (source != null) {
-      final pickedFile = await picker.pickImage(source: source);
-      if (pickedFile != null) {
-        setState(() {
-          _profile = _profile.copyWith(avatarUrl: pickedFile.path);
-          _isDirty = true;
-        });
-      }
+    if (source == null) return;
+
+    final pickedFile = await picker.pickImage(source: source, maxWidth: 2048);
+    if (pickedFile != null && mounted) {
+      setState(() {
+        _profile = _profile!.copyWith(avatarUrl: pickedFile.path);
+        _isDirty = true;
+      });
     }
   }
 
   Future<void> _confirmExit() async {
     if (!_isDirty) {
-      context.pop();
+      if (mounted) context.pop();
       return;
     }
 
@@ -132,7 +156,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Bỏ'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text('Lưu'),
           ),
@@ -144,10 +168,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
 
+    if (!mounted) return;
+
     if (result == true) {
       await _saveProfile();
     } else if (result == false) {
-      if (mounted) context.pop();
+      context.pop();
     }
   }
 
@@ -164,68 +190,109 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final cs = theme.colorScheme;
     final tt = theme.textTheme;
 
-    return WillPopScope(
-      onWillPop: () async {
-        await _confirmExit();
-        return false;
+    return BlocConsumer<UserBloc, UserState>(
+      listenWhen: (prev, curr) => prev.status != curr.status || prev.userEntity != curr.userEntity,
+      listener: (context, state) {
+        // Seed local profile when first loaded
+        if (_profile == null && state.userEntity != null) {
+          setState(() => _profile = state.userEntity);
+        }
+
+        if (state.status == UserStatus.error && state.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.errorMessage!)),
+          );
+        }
+
+        // Only pop after an edit save (avoid popping after GetProfile success)
+        final saved = state.status == UserStatus.successfullyEditedProfile ||
+            (state.status == UserStatus.success && _isDirty);
+        if (saved) {
+          _isDirty = false;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đã lưu thay đổi')),
+          );
+          context.pop(true);
+        }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: _confirmExit,
-          ),
-          title: const Text('Chỉnh sửa hồ sơ'),
-          actions: [
-            if (_isSaving)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            else
-              TextButton(
-                onPressed: _isDirty && _formKey.currentState?.validate() == true
-                    ? _saveProfile
-                    : null,
-                child: const Text('Lưu'),
+      builder: (context, state) {
+        if (_profile == null && state.userEntity != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _profile = state.userEntity);
+          });
+        }
+        final isSaving = state.status == UserStatus.loading;
+
+        return WillPopScope(
+          onWillPop: () async {
+            await _confirmExit();
+            return false;
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              backgroundColor: cs.background,
+              elevation: 0,
+              leading: IconButton(
+                icon: Icon(Icons.arrow_back, color: cs.onBackground),
+                onPressed: _confirmExit,
               ),
-          ],
-        ),
-        body: Form(
-          key: _formKey,
-          onChanged: () => setState(() => _isDirty = true),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            child: Column(
-              children: [
-                _buildAvatarSection(cs),
-                const SizedBox(height: 24),
-                _buildPersonalInfoSection(cs, tt),
-                const SizedBox(height: 16),
-                _buildLearningHabitsSection(cs, tt),
-                const SizedBox(height: 16),
-                _buildLanguageSection(cs, tt),
-                const SizedBox(height: 16),
-                _buildOfflineSection(cs, tt),
-                const SizedBox(height: 16),
-                _buildSecuritySection(cs, tt),
-                const SizedBox(height: 24),
-                _buildDangerZone(cs, tt),
+              title: Text('Chỉnh sửa hồ sơ',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w500)),
+              actions: [
+                if (isSaving)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else
+                  TextButton(
+                    onPressed: _profile != null && _isDirty && (_formKey.currentState?.validate() ?? false)
+                        ? _saveProfile
+                        : null,
+                    child: const Text('Lưu'),
+                  ),
               ],
+              centerTitle: true,
+            ),
+            body: _profile == null
+                ? const Center(child: CircularProgressIndicator())
+                : Form(
+              key: _formKey,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              onChanged: () => setState(() => _isDirty = true),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Column(
+                  children: [
+                    _buildAvatarSection(cs),
+                    const SizedBox(height: 24),
+                    _buildPersonalInfoSection(cs, tt),
+                    const SizedBox(height: 16),
+                    _buildLearningHabitsSection(cs, tt),
+                    const SizedBox(height: 16),
+                    _buildLanguageSection(cs, tt),
+                    const SizedBox(height: 16),
+                    _buildSecuritySection(cs, tt),
+                    const SizedBox(height: 24),
+                    _buildDangerZone(cs, tt),
+                  ],
+                ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
   Widget _buildAvatarSection(ColorScheme cs) {
+    final profile = _profile!;
     ImageProvider? provider;
-    final url = _profile.avatarUrl;
+    final url = profile.avatarUrl;
 
     if (url != null && url.isNotEmpty) {
       if (url.startsWith('http')) {
@@ -257,6 +324,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             icon: const Icon(Icons.camera_alt, size: 20),
             color: cs.onPrimary,
             onPressed: _pickImage,
+            tooltip: 'Đổi ảnh đại diện',
           ),
         ),
       ],
@@ -264,58 +332,75 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildPersonalInfoSection(ColorScheme cs, TextTheme tt) {
-    return Card(
+    final profile = _profile!;
+    // allowed lists
+    const goals = ['Giao tiếp', 'IELTS', 'Du học', 'Công việc'];
+    const cefrs = ['A1','A2','B1','B2','C1','C2'];
+
+    // ✅ sanitize: nếu rỗng/không thuộc items -> để null
+    final String? safeGoal = (profile.goal != null && profile.goal!.isNotEmpty && goals.contains(profile.goal))
+        ? profile.goal
+        : null;
+    final String? safeCefr = (profile.cefr != null && cefrs.contains(profile.cefr))
+        ? profile.cefr
+        : null;
+
+    return AppCard(
+      variant: AppCardVariant.filled,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             TextFormField(
-              initialValue: _profile.fullName,
+              initialValue: profile.fullName,
               decoration: const InputDecoration(labelText: 'Họ và tên'),
-              validator: (value) =>
-              value?.isEmpty ?? true ? 'Vui lòng nhập tên' : null,
-              onChanged: (value) =>
-              _profile = _profile.copyWith(fullName: value),
+              textInputAction: TextInputAction.next,
+              validator: (value) => (value == null || value.trim().isEmpty) ? 'Vui lòng nhập tên' : null,
+              onChanged: (value) => setState(() => _profile = profile.copyWith(fullName: value.trim())),
             ),
             const SizedBox(height: 16),
             TextFormField(
-              initialValue: _profile.email,
+              initialValue: profile.email,
               decoration: const InputDecoration(labelText: 'Email'),
               keyboardType: TextInputType.emailAddress,
               validator: (value) {
-                if (value?.isEmpty ?? true) return 'Vui lòng nhập email';
-                if (!value!.contains('@')) return 'Email không hợp lệ';
+                final v = value?.trim() ?? '';
+                if (v.isEmpty) return 'Vui lòng nhập email';
+                if (!v.contains('@')) return 'Email không hợp lệ';
                 return null;
               },
-              onChanged: (value) => _profile = _profile.copyWith(email: value),
+              onChanged: (value) => setState(() => _profile = profile.copyWith(email: value.trim())),
             ),
             const SizedBox(height: 16),
+
+            // ✅ GOAL
             DropdownButtonFormField<String>(
-              value: _profile.goal,
+              value: safeGoal, // quan trọng
+              hint: const Text('Chọn mục tiêu'),
               items: const [
                 DropdownMenuItem(value: 'Giao tiếp', child: Text('Giao tiếp')),
                 DropdownMenuItem(value: 'IELTS', child: Text('IELTS')),
                 DropdownMenuItem(value: 'Du học', child: Text('Du học')),
                 DropdownMenuItem(value: 'Công việc', child: Text('Công việc')),
               ],
-              onChanged: (value) =>
-              _profile = _profile.copyWith(goal: value ?? _profile.goal),
+              onChanged: (value) => setState(() => _profile = profile.copyWith(goal: value)),
               decoration: const InputDecoration(labelText: 'Mục tiêu học'),
             ),
             const SizedBox(height: 16),
+
+            // ✅ CEFR
             DropdownButtonFormField<String>(
-              value: _profile.cefr,
+              value: safeCefr, // quan trọng
+              hint: const Text('Chọn trình độ'),
               items: const [
                 DropdownMenuItem(value: 'A1', child: Text('A1 - Beginner')),
                 DropdownMenuItem(value: 'A2', child: Text('A2 - Elementary')),
                 DropdownMenuItem(value: 'B1', child: Text('B1 - Intermediate')),
-                DropdownMenuItem(
-                    value: 'B2', child: Text('B2 - Upper Intermediate')),
+                DropdownMenuItem(value: 'B2', child: Text('B2 - Upper Intermediate')),
                 DropdownMenuItem(value: 'C1', child: Text('C1 - Advanced')),
                 DropdownMenuItem(value: 'C2', child: Text('C2 - Mastery')),
               ],
-              onChanged: (value) =>
-              _profile = _profile.copyWith(cefr: value ?? _profile.cefr),
+              onChanged: (value) => setState(() => _profile = profile.copyWith(cefr: value)),
               decoration: const InputDecoration(labelText: 'Trình độ hiện tại'),
             ),
           ],
@@ -324,8 +409,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
+
   Widget _buildLearningHabitsSection(ColorScheme cs, TextTheme tt) {
-    return Card(
+    final profile = _profile!;
+    final allowed = const [15, 30, 45, 60];
+    final selectedMinutes = allowed.contains(profile.dailyMinutes) ? profile.dailyMinutes! : 15;
+
+    return AppCard(
+      variant: AppCardVariant.filled,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -342,10 +433,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ButtonSegment(value: 45, label: Text('45 phút')),
                 ButtonSegment(value: 60, label: Text('60 phút')),
               ],
-              selected: {_profile.dailyMinutes ?? 15},
+              selected: {selectedMinutes}, // ✅ an toàn
               onSelectionChanged: (selection) {
-                setState(() => _profile =
-                    _profile.copyWith(dailyMinutes: selection.first));
+                setState(() => _profile = profile.copyWith(dailyMinutes: selection.first));
               },
             ),
             const SizedBox(height: 16),
@@ -353,16 +443,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
               contentPadding: EdgeInsets.zero,
               title: Text('Giờ nhắc học', style: tt.bodyMedium),
               trailing: Text(
-                _formatTimeOfDay(_profile.reminder),
+                _formatTimeOfDay(profile.reminder),
                 style: tt.bodyMedium?.copyWith(color: cs.primary),
               ),
               onTap: () async {
                 final time = await showTimePicker(
                   context: context,
-                  initialTime: _profile.reminder ?? TimeOfDay.now(),
+                  initialTime: profile.reminder ?? TimeOfDay.now(),
                 );
                 if (time != null) {
-                  setState(() => _profile = _profile.copyWith(reminder: time));
+                  setState(() => _profile = profile.copyWith(reminder: time));
                 }
               },
             ),
@@ -370,9 +460,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('Strict correction mặc định', style: tt.bodyMedium),
-              value: _profile.strictCorrection ?? false,
-              onChanged: (value) => setState(() =>
-              _profile = _profile.copyWith(strictCorrection: value)),
+              value: profile.strictCorrection ?? false,
+              onChanged: (value) => setState(() => _profile = profile.copyWith(strictCorrection: value)),
             ),
           ],
         ),
@@ -381,32 +470,31 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildLanguageSection(ColorScheme cs, TextTheme tt) {
-    return Card(
+    final profile = _profile!;
+    return AppCard(
+      variant: AppCardVariant.filled,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             DropdownButtonFormField<String>(
-              value: _profile.language ?? 'en',
+              value: profile.language ?? 'en',
               items: const [
                 DropdownMenuItem(value: 'vi', child: Text('Tiếng Việt (vi)')),
                 DropdownMenuItem(value: 'en', child: Text('English (en)')),
               ],
-              onChanged: (value) =>
-              _profile = _profile.copyWith(language: value ?? 'en'),
+              onChanged: (value) => _profile = profile.copyWith(language: value ?? 'en'),
               decoration: const InputDecoration(labelText: 'Ngôn ngữ'),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _profile.timezone ?? 'Asia/Ho_Chi_Minh',
+              value: profile.timezone ?? 'Asia/Ho_Chi_Minh',
               items: const [
-                DropdownMenuItem(
-                    value: 'Asia/Ho_Chi_Minh', child: Text('Asia/Ho_Chi_Minh')),
+                DropdownMenuItem(value: 'Asia/Ho_Chi_Minh', child: Text('Asia/Ho_Chi_Minh')),
                 DropdownMenuItem(value: 'UTC', child: Text('UTC')),
                 DropdownMenuItem(value: 'Asia/Tokyo', child: Text('Asia/Tokyo')),
               ],
-              onChanged: (value) =>
-              _profile = _profile.copyWith(timezone: value ?? 'UTC'),
+              onChanged: (value) => _profile = profile.copyWith(timezone: value ?? 'UTC'),
               decoration: const InputDecoration(labelText: 'Múi giờ'),
             ),
           ],
@@ -415,47 +503,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildOfflineSection(ColorScheme cs, TextTheme tt) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Nội dung Offline', style: tt.titleMedium),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.library_books),
-              title: const Text('Bộ từ vựng'),
-              subtitle: const Text('Đã tải 850MB'),
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {},
-              ),
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.headphones),
-              title: const Text('Audio luyện nghe'),
-              subtitle: const Text('Đã tải 1.3GB'),
-              trailing: Switch(
-                value: true,
-                onChanged: (value) {},
-              ),
-            ),
-            TextButton(
-              onPressed: () => context.pushNamed('OfflineManagePage'),
-              child: const Text('Quản lý dung lượng'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildSecuritySection(ColorScheme cs, TextTheme tt) {
-    return Card(
+    return AppCard(
+      variant: AppCardVariant.filled,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -487,15 +537,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildDangerZone(ColorScheme cs, TextTheme tt) {
-    return Card(
-      color: cs.errorContainer,
+    return AppCard(
+      variant: AppCardVariant.filled,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Vùng nguy hiểm',
-                style: tt.titleMedium?.copyWith(color: cs.onErrorContainer)),
+            Text('Vùng nguy hiểm', style: tt.titleMedium?.copyWith(color: cs.onErrorContainer)),
             const SizedBox(height: 16),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
@@ -536,7 +585,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             onPressed: () => Navigator.pop(context, false),
             child: const Text('Hủy'),
           ),
-          TextButton(
+          FilledButton(
             onPressed: () => Navigator.pop(context, controller.text == 'DELETE'),
             child: const Text('Xác nhận'),
           ),
@@ -546,10 +595,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     controller.dispose();
 
-    if (confirmed == true && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Yêu cầu xóa đã được gửi')),
-      );
-    }
+    if (!mounted || confirmed != true) return;
+
+    context.read<UserBloc>().add(DeleteAccountEvent());
   }
 }

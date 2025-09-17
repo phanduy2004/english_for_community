@@ -5,6 +5,9 @@ import 'package:english_for_community/feature/vocabulary_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/ui/widget/app_card.dart';
+import '../../core/ui/widget/app_navigation_bar.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
   static String routeName = 'HomePage';
@@ -21,9 +24,6 @@ class _HomePageState
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
-
     final pages = [
       _HomeTab(),
       ProgressReportPage(),
@@ -33,15 +33,11 @@ class _HomePageState
 
     return Scaffold(
       body: SafeArea(child: pages[_tab]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.style_outlined), selectedIcon: Icon(Icons.style), label: 'Vocabulary'),
-          NavigationDestination(icon: Icon(Icons.fitness_center_outlined), selectedIcon: Icon(Icons.fitness_center), label: 'Practice'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
-        ],
+      bottomNavigationBar: AppNavigationBar.main(
+        currentIndex: _tab,
+        onIndexSelected: (i) => setState(() => _tab = i),
+        // Badge ví dụ:
+        vocabularyBadge: const Text('3'), // hiện “3” trên tab Vocabulary
       ),
     );
   }
@@ -78,7 +74,7 @@ class _HomeTab extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Daily Goal card
-          _Card(
+          AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -195,29 +191,7 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-class _Placeholder extends StatelessWidget {
-  const _Placeholder(this.title);
-  final String title;
-  @override
-  Widget build(BuildContext context) => Center(child: Text(title));
-}
 
-class _Card extends StatelessWidget {
-  const _Card({required this.child});
-  final Widget child;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(blurRadius: 8, color: Color(0x1A000000), offset: Offset(0,2))],
-      ),
-      child: child,
-    );
-  }
-}
 
 class _StatCard extends StatelessWidget {
   const _StatCard({required this.emoji, required this.value, required this.label});
@@ -225,14 +199,16 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    return _Card(
-      child: Column(children: [
-        Text(emoji, style: const TextStyle(fontSize: 24)),
-        const SizedBox(height: 6),
-        Text(value, style: text.headlineSmall),
-        const SizedBox(height: 4),
-        Text(label, style: text.bodySmall!.copyWith(color: Colors.black54)),
-      ]),
+    return AppCard(
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(height: 6),
+          Text(value, style: text.headlineSmall),
+          const SizedBox(height: 4),
+          Text(label, style: text.bodySmall!.copyWith(color: Colors.black54)),
+        ],
+      ),
     );
   }
 }
@@ -256,12 +232,12 @@ class _LessonTile extends StatelessWidget {
         } else if (title == 'Reading Comprehension') {
           context.pushNamed('ReadingPage');
         } else if (title == 'Vocabulary Builder') {
-          context.pushNamed('TvngvSpacedRepetitionPage');
+          context.pushNamed('VocabularyPage');
         } else if (title == 'Speaking Practice') {
           context.pushNamed('SpeakingSkillsPage');
         }
       },
-      child: _Card(
+      child: AppCard(
         child: Row(children: [
           Container(
             width: 50, height: 50,

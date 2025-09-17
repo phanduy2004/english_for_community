@@ -58,6 +58,8 @@ class _LoginPageState extends State<LoginPage>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _animationController.forward();
     });
+    _pass.text = 'Test@1234';
+    _email.text = 'testuser@example.com';
   }
 
   @override

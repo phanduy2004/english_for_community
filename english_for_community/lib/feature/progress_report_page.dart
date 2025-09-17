@@ -53,22 +53,25 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final double progress = (_todayMinutes / _goalMinutes).clamp(0.0, 1.0);
 
     return Scaffold(
+
       backgroundColor: cs.background,
       appBar: AppBar(
-        elevation: 0,
         backgroundColor: cs.background,
+        elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: cs.onBackground),
+          icon: Icon(Icons.arrow_back, color: cs.onBackground),
           onPressed: () => context.pop(),
         ),
-        title: Text('Tiến độ', style: txt.headlineMedium?.copyWith(fontWeight: FontWeight.w700)),
+        title: Text('Progress',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w500)),
         actions: [
           IconButton(
-            tooltip: 'Tải báo cáo',
+            tooltip: 'Download Report',
             icon: Icon(Icons.download_rounded, color: cs.onBackground),
             onPressed: _downloadReport,
           ),
         ],
+        centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(

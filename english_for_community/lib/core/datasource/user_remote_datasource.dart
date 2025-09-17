@@ -13,7 +13,7 @@ class UserRemoteDatasource {
   }
 
   Future<UserEntity> updateProfile({
-    required String fullName,
+    String? fullName,
     String? bio,
     String? avatarUrl,
     String? goal,

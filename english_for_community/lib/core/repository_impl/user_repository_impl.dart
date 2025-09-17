@@ -34,7 +34,7 @@ class UserRepositoryImpl implements UserRepository {
 
   @override
   Future<Either<Failure, UserEntity>> updateProfile({
-    required String fullName,
+    String? fullName,
     String? bio,
     String? avatarUrl,
     String? goal,
