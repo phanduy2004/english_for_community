@@ -11,5 +11,5 @@ const MediaFileSchema = new Schema(
   },
   { timestamps: true }
 );
-
-module.exports = model('MediaFile', MediaFileSchema);
+let MediaFile = model('MediaFile', MediaFileSchema);
+export default MediaFile;

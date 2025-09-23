@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/ui/widget/app_card.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
+import '../listening_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -228,7 +229,7 @@ class _LessonTile extends StatelessWidget {
       onTap: () {
         // Navigate to the corresponding skill page based on title
         if (title == 'Listening Practice') {
-          context.pushNamed('ListeningSkillsPage');
+          context.pushNamed(ListeningListPage.routeName);
         } else if (title == 'Reading Comprehension') {
           context.pushNamed('ReadingPage');
         } else if (title == 'Vocabulary Builder') {

@@ -1,17 +1,19 @@
-const { Schema, model, Types } = require('mongoose');
+// src/models/Lesson.js
 
-const LessonSchema = new Schema(
+import mongoose from "mongoose";
+
+const LessonSchema = new mongoose.Schema(
   {
-    unitId: { type: Types.ObjectId, ref: 'Unit', required: true },
+    unitId: { type: mongoose.Schema.Types.ObjectId, ref: 'Unit', required: true },
     name: { type: String, required: true },
     description: String,
     order: { type: Number, default: 0 },
     type: { type: String, enum: ['vocabulary', 'grammar', 'reading', 'listening', 'speaking', 'writing'] },
-    content: Schema.Types.Mixed,
+    content: mongoose.Schema.Types.Mixed,     // { listeningCode: '...' } cho listening
     imageUrl: String,
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
-
-module.exports = model('Lesson', LessonSchema);
+let Lesson = mongoose.model('Lesson', LessonSchema);
+export default Lesson;

@@ -1,5 +1,6 @@
 import 'package:english_for_community/feature/ai_tutor_page.dart';
 import 'package:english_for_community/feature/gamification_notifications_page.dart';
+import 'package:english_for_community/feature/listening_list_page.dart';
 import 'package:english_for_community/feature/profile/edit_profile_page.dart';
 import 'package:english_for_community/feature/profile_page.dart';
 import 'package:english_for_community/feature/progress_report_page.dart';
@@ -70,6 +71,11 @@ class AppRouter{
       path: '/profile',
       name: 'ProfilePage',
       builder: (context, state) => const ProfilePage(),
+    ),
+    GoRoute(
+      path: ListeningListPage.routePath,
+      name: ListeningListPage.routeName,
+      builder: (context, state) => const ListeningListPage(),
     ),
     GoRoute(
       path: EditProfilePage.routePath,

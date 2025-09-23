@@ -1,8 +1,9 @@
-const { Schema, model, Types } = require('mongoose');
+import mongoose from "mongoose";
 
-const UnitSchema = new Schema(
+
+const UnitSchema = new mongoose.Schema(
   {
-    trackId: { type: Types.ObjectId, ref: 'Track', required: true },
+    trackId: { type: mongoose.Schema.Types.ObjectId, ref: 'Track', required: true },
     name: { type: String, required: true },
     description: String,
     order: { type: Number, default: 0 },
@@ -11,5 +12,5 @@ const UnitSchema = new Schema(
   },
   { timestamps: true }
 );
-
-module.exports = model('Unit', UnitSchema);
+let Unit = mongoose.model('Unit', UnitSchema)
+export default Unit;
