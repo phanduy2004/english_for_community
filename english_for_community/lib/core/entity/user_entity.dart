@@ -1,47 +1,33 @@
 import 'package:equatable/equatable.dart';
-import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/material.dart';
 
-part 'user_entity.g.dart';
-
-/// Converter cho TimeOfDay <-> JSON.
-/// Chấp nhận cả dạng {hour, minute} và fallback chuỗi "HH:mm".
-class TimeOfDayConverter implements JsonConverter<TimeOfDay?, Object?> {
+/// Converter TimeOfDay dùng thủ công
+class TimeOfDayConverter {
   const TimeOfDayConverter();
-
-  @override
   TimeOfDay? fromJson(Object? json) {
     if (json == null) return null;
-
     if (json is Map<String, dynamic>) {
       final h = json['hour'];
       final m = json['minute'];
-      if (h is int && m is int) {
-        return TimeOfDay(hour: h, minute: m);
-      }
+      if (h is int && m is int) return TimeOfDay(hour: h, minute: m);
     } else if (json is String) {
       final parts = json.split(':');
       if (parts.length == 2) {
         final h = int.tryParse(parts[0]);
         final m = int.tryParse(parts[1]);
-        if (h != null && m != null) {
-          return TimeOfDay(hour: h, minute: m);
-        }
+        if (h != null && m != null) return TimeOfDay(hour: h, minute: m);
       }
     }
     return null;
   }
 
-  @override
   Object? toJson(TimeOfDay? time) {
     if (time == null) return null;
     return {'hour': time.hour, 'minute': time.minute};
   }
 }
 
-@JsonSerializable()
 class UserEntity extends Equatable {
-  @JsonKey(name: 'id')
   final String id;
   final String fullName;
   final String email;
@@ -56,7 +42,6 @@ class UserEntity extends Equatable {
   final String? goal;
   final String? cefr; // A1..C2
   final int? dailyMinutes;
-  @TimeOfDayConverter()
   final TimeOfDay? reminder;
   final bool? strictCorrection;
   final String? language; // 'en', 'vi', ...
@@ -80,10 +65,67 @@ class UserEntity extends Equatable {
     this.timezone,
   });
 
-  factory UserEntity.fromJson(Map<String, dynamic> json) =>
-      _$UserEntityFromJson(json);
+  factory UserEntity.fromJson(Map<String, dynamic> json) {
+    final _id = (json['id'] ?? json['_id']) as String?;
+    if (_id == null) {
+      throw ArgumentError('UserEntity.fromJson: missing id/_id');
+    }
+    final _conv = const TimeOfDayConverter();
+    return UserEntity(
+      id: _id,
+      fullName: (json['fullName'] ?? '') as String,
+      email: (json['email'] ?? '') as String,
+      username: (json['username'] ?? '') as String,
+      avatarUrl: json['avatarUrl'] as String?,
+      phone: json['phone'] as String?,
+      dateOfBirth: _parseDate(json['dateOfBirth']),
+      bio: json['bio'] as String?,
+      goal: json['goal'] as String?,
+      cefr: json['cefr'] as String?,
+      dailyMinutes: (json['dailyMinutes'] as num?)?.toInt(),
+      reminder: _conv.fromJson(json['reminder']),
+      strictCorrection: _parseBool(json['strictCorrection']),
+      language: json['language'] as String?,
+      timezone: json['timezone'] as String?,
+    );
+  }
 
-  Map<String, dynamic> toJson() => _$UserEntityToJson(this);
+  Map<String, dynamic> toJson() {
+    final _conv = const TimeOfDayConverter();
+    return {
+      'id': id,
+      'fullName': fullName,
+      'email': email,
+      'username': username,
+      'avatarUrl': avatarUrl,
+      'phone': phone,
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'bio': bio,
+      'goal': goal,
+      'cefr': cefr,
+      'dailyMinutes': dailyMinutes,
+      'reminder': _conv.toJson(reminder),
+      'strictCorrection': strictCorrection,
+      'language': language,
+      'timezone': timezone,
+    };
+  }
+
+  static DateTime? _parseDate(Object? v) {
+    if (v == null) return null;
+    if (v is DateTime) return v;
+    if (v is String) return DateTime.tryParse(v);
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    return null;
+  }
+
+  static bool? _parseBool(Object? v) {
+    if (v == null) return null;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) return v == 'true' || v == '1';
+    return null;
+  }
 
   @override
   List<Object?> get props => [

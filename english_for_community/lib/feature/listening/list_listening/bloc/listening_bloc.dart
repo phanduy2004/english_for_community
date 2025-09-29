@@ -1,0 +1,33 @@
+import 'package:english_for_community/core/repository/listening_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'listening_event.dart';
+import 'listening_state.dart';
+
+class ListeningBloc extends Bloc<ListeningEvent, ListeningState> {
+  final ListeningRepository listeningRepository;
+
+  ListeningBloc({required this.listeningRepository}) : super(ListeningState.initial()){
+    on<GetListeningByIdEvent>(onGetListeningByIdEvent);
+    on<GetListListeningEvent>(onGetListListeningEvent);
+
+  }
+  Future onGetListeningByIdEvent(GetListeningByIdEvent event, Emitter<ListeningState> emit)async{
+    emit(state.copyWith(status: ListeningStatus.loading));
+    var result = await listeningRepository.getListeningById(event.id);
+    result.fold((l){
+      emit(state.copyWith(status: ListeningStatus.error, errorMessage: l.message));
+    }, (r){
+      emit(state.copyWith(status: ListeningStatus.success));
+    });
+  }
+  Future onGetListListeningEvent(GetListListeningEvent event, Emitter<ListeningState> emit)async{
+    emit(state.copyWith(status: ListeningStatus.loading));
+    var result = await listeningRepository.getListListening();
+    result.fold((l){
+      emit(state.copyWith(status: ListeningStatus.error, errorMessage: l.message));
+    }, (r){
+      emit(state.copyWith(status: ListeningStatus.success, listListeningEntity: r));
+    });
+  }
+}

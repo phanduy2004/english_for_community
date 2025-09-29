@@ -13,7 +13,6 @@ const ListeningSchema = new mongoose.Schema(
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'easy' },
     cefr:       { type: String },
     tags:       [{ type: String }],
-
     // tổng số cue (để hiển thị nhanh), transcript gộp (tuỳ chọn)
     totalCues:  { type: Number, default: 0 },
     transcript: { type: String },

@@ -1,13 +1,13 @@
 import 'package:english_for_community/feature/ai_tutor_page.dart';
 import 'package:english_for_community/feature/gamification_notifications_page.dart';
-import 'package:english_for_community/feature/listening_list_page.dart';
+import 'package:english_for_community/feature/listening/list_listening/listening_list_page.dart';
 import 'package:english_for_community/feature/profile/edit_profile_page.dart';
 import 'package:english_for_community/feature/profile_page.dart';
 import 'package:english_for_community/feature/progress_report_page.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../feature/home/home_page.dart';
-import '../../feature/listening_skills_page.dart';
+import '../../feature/listening/listening_skill/listening_skills_page.dart';
 import '../../feature/auth/login_page.dart';
 import '../../feature/onboarding_page.dart';
 import '../../feature/reading_page.dart';

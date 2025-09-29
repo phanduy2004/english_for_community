@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/ui/widget/app_card.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
-import '../listening_list_page.dart';
+import '../listening/list_listening/listening_list_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

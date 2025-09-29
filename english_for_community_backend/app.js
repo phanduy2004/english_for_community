@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/users', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/lessons', lessonRoutes);
-app.use('/api/listenings', listeningRoutes);
+app.use('/api/listening', listeningRoutes);
 app.use('/api/cues', cueRoutes);
 app.use('/api/dictation', dictationRoutes);
 
