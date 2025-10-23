@@ -1,0 +1,12 @@
+# Node modules
+node_modules/
+english_for_community_backend/node_modules/
+
+
+
+
+# Log files
+*.log
+
+# Environment variables
+.env
