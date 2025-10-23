@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 class CueEntity extends Equatable {
   final String id;          // đổi thành '_id' nếu server trả _id
-  final String listeningId; // ref CueSchema.listeningId
+  final String listeningId ; // ref CueSchema.listeningId
   final int idx;            // 0..N-1 (unique trong 1 listening)
   final int startMs;
   final int endMs;
@@ -26,7 +26,7 @@ class CueEntity extends Equatable {
   });
 
   factory CueEntity.fromJson(Map<String, dynamic> json) {
-    final _id = (json['id'] ?? json['_id']) as String?;
+    final _id = (json['_id'] ?? json['id']) as String?;
     if (_id == null) {
       throw ArgumentError('CueEntity.fromJson: missing id/_id');
     }

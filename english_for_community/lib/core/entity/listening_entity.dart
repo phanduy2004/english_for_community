@@ -39,7 +39,7 @@ ListeningDifficulty? _difficultyFromJson(Object? v) {
 
 class ListeningEntity extends Equatable {
   final String id;                     // id/_id
-  final LessonEntity lessonId;         // <-- object (theo đúng tên bạn đã dùng)
+  final LessonEntity lessonId;         // <-- object
   final String? code;
   final String title;
   final String audioUrl;
@@ -51,6 +51,7 @@ class ListeningEntity extends Equatable {
   final String? transcript;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final double userProgress;           // <-- 1. ADD THIS FIELD
 
   const ListeningEntity({
     required this.id,
@@ -66,15 +67,16 @@ class ListeningEntity extends Equatable {
     this.transcript,
     this.createdAt,
     this.updatedAt,
+    this.userProgress = 0.0, // <-- 2. ADD TO CONSTRUCTOR (with default)
   });
 
   factory ListeningEntity.fromJson(Map<String, dynamic> json) {
-    final id = (json['id'] ?? json['_id'])?.toString();
+    final id = (json['_id'] ?? json['id'])?.toString();
     if (id == null) {
-      throw ArgumentError('ListeningEntity.fromJson: missing id/_id');
+      throw ArgumentError('ListeningEntity.fromJson: missing id/_id lozz');
     }
 
-    // Accept "lesson" or "lessonId" as OBJECT. Reject string id to keep contract strict.
+    // ... (lessonId check remains the same) ...
     final rawLesson = json['lesson'] ?? json['lessonId'];
     if (rawLesson is! Map<String, dynamic>) {
       throw ArgumentError(
@@ -99,6 +101,8 @@ class ListeningEntity extends Equatable {
       transcript: json['transcript'] as String?,
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
+      // 3. DESERIALIZE THE NEW FIELD
+      userProgress: (json['userProgress'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
@@ -116,6 +120,7 @@ class ListeningEntity extends Equatable {
     'transcript': transcript,
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
+    'userProgress': userProgress, // <-- 4. ADD TO SERIALIZATION
   };
 
   static DateTime? _parseDate(Object? v) {
@@ -128,6 +133,8 @@ class ListeningEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, lessonId, code, title, audioUrl, playbackPad, difficulty, cefr, tags, totalCues, transcript, createdAt, updatedAt,
+    id, lessonId, code, title, audioUrl, playbackPad, difficulty, cefr,
+    tags, totalCues, transcript, createdAt, updatedAt,
+    userProgress, // <-- 5. ADD TO PROPS
   ];
 }

@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 
 const LessonSchema = new mongoose.Schema(
   {
-    unitId: { type: mongoose.Schema.Types.ObjectId, ref: 'Unit', required: true },
     name: { type: String, required: true },
     description: String,
     order: { type: Number, default: 0 },

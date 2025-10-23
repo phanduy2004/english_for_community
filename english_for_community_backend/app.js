@@ -8,6 +8,8 @@ import cueRoutes from './src/routes/cueRoutes.js';
 import dictationRoutes from './src/routes/dictationRoutes.js';
 import express from 'express';
 
+import './src/models/index.js';
+import writingTopicRoutes from "./src/routes/writingTopicRoutes.js";
 
 const app = express();
 
@@ -21,5 +23,7 @@ app.use('/api/lessons', lessonRoutes);
 app.use('/api/listening', listeningRoutes);
 app.use('/api/cues', cueRoutes);
 app.use('/api/dictation', dictationRoutes);
+app.use('/api/writing', writingTopicRoutes);
+
 
 export default app;

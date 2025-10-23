@@ -29,7 +29,7 @@ android {
         applicationId = "com.example.english_for_community"
 
         // 🔧 Fix lỗi Manifest merger: Firebase Auth yêu cầu >= 23
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
 
         // targetSdk theo Flutter, đảm bảo >= 34
         targetSdk = maxOf(flutter.targetSdkVersion, 34)

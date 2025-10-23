@@ -1,13 +1,15 @@
-import 'package:english_for_community/feature/gamification_notifications_page.dart';
-import 'package:english_for_community/feature/profile_page.dart';
+
+import '../gamification_notifications_page.dart';
+import '../profile_page.dart';
+
 import 'package:english_for_community/feature/progress_report_page.dart';
-import 'package:english_for_community/feature/vocabulary_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/ui/widget/app_card.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
 import '../listening/list_listening/listening_list_page.dart';
+import '../writing/writing_topics_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -46,7 +48,7 @@ class _HomePageState
 
 class _HomeTab extends StatelessWidget {
   _HomeTab();
-  
+
   // Add state variable to track if "View all" is pressed
   final ValueNotifier<bool> _showAllLessons = ValueNotifier<bool>(false);
 
@@ -116,24 +118,29 @@ class _HomeTab extends StatelessWidget {
 
           // Today's Lessons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
-            children: [
-              Text("Today's Lessons", style: text.titleLarge),
-              GestureDetector(
-                onTap: () {
-                  _showAllLessons.value = !_showAllLessons.value;
-                },
-                child: Text(
-                  'View all', 
-                  style: text.bodyMedium!.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text("Today's Lessons", style: text.titleLarge),
+                GestureDetector(
+                  onTap: () {
+                    _showAllLessons.value = !_showAllLessons.value;
+                  },
+                  child: ValueListenableBuilder<bool>( // <-- SỬA ĐỂ CHỮ THAY ĐỔI
+                    valueListenable: _showAllLessons,
+                    builder: (context, showAll, child) {
+                      return Text(
+                        showAll ? 'Show less' : 'View all', // <-- THAY ĐỔI Ở ĐÂY
+                        style: text.bodyMedium!.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
-            ]
+              ]
           ),
           const SizedBox(height: 12),
-          
+
           // Lessons list with ValueListenableBuilder to update when view all is pressed
           ValueListenableBuilder<bool>(
             valueListenable: _showAllLessons,
@@ -154,7 +161,7 @@ class _HomeTab extends StatelessWidget {
                     icon: Icons.quiz, iconBg: Color(0xFFE3F2FD), iconColor: Color(0xFF1976D2),
                     title: 'Vocabulary Builder', subtitle: 'New words • 10 min', pillColor: Color(0xFF1976D2),
                   ),
-                  
+
                   // Show speaking lesson only when "View all" is pressed
                   if (showAll) ...[
                     const SizedBox(height: 8),
@@ -162,6 +169,23 @@ class _HomeTab extends StatelessWidget {
                       icon: Icons.record_voice_over, iconBg: Color(0xFFFCE4EC), iconColor: Color(0xFFD81B60),
                       title: 'Speaking Practice', subtitle: 'Pronunciation • 25 min', pillColor: Color(0xFFD81B60),
                     ),
+
+                    // ======================================
+                    // BẮT ĐẦU PHẦN MỚI THÊM
+                    // ======================================
+                    const SizedBox(height: 8),
+                    const _LessonTile(
+                      icon: Icons.edit_note_rounded, // Icon luyện viết
+                      iconBg: Color(0xFFE0F7FA), // Màu nền (xanh cyan nhạt)
+                      iconColor: Color(0xFF00838F), // Màu icon (xanh cyan đậm)
+                      title: 'Writing Practice', // Tiêu đề
+                      subtitle: 'Select a topic • 15 min', // Mô tả
+                      pillColor: Color(0xFF00838F), // Màu nút play
+                    ),
+                    // ======================================
+                    // KẾT THÚC PHẦN MỚI THÊM
+                    // ======================================
+
                     // Animation for the new item
                     AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
@@ -233,10 +257,16 @@ class _LessonTile extends StatelessWidget {
         } else if (title == 'Reading Comprehension') {
           context.pushNamed('ReadingPage');
         } else if (title == 'Vocabulary Builder') {
+          // Giả sử bạn có route tên 'VocabularyPage'
           context.pushNamed('VocabularyPage');
         } else if (title == 'Speaking Practice') {
           context.pushNamed('SpeakingSkillsPage');
+        } else if (title == 'Writing Practice') {
+          context.pushNamed(WritingTopicsPage.routeName);
         }
+        // ======================================
+        // KẾT THÚC PHẦN MỚI THÊM
+        // ======================================
       },
       child: AppCard(
         child: Row(children: [

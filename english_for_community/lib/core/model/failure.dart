@@ -21,7 +21,12 @@ class ChatFailure extends Failure{
 class ListeningFailure extends Failure{
   ListeningFailure({required super.message});
 }
-
+class CueFailure extends Failure{
+  CueFailure({required super.message});
+}
 class JobTypeFailure extends Failure{
   JobTypeFailure({required super.message});
+}
+class WritingFailure extends Failure{
+  WritingFailure({required super.message});
 }

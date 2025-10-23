@@ -4,8 +4,9 @@ import 'package:english_for_community/feature/listening/list_listening/listening
 import 'package:english_for_community/feature/profile/edit_profile_page.dart';
 import 'package:english_for_community/feature/profile_page.dart';
 import 'package:english_for_community/feature/progress_report_page.dart';
+import 'package:english_for_community/feature/writing/writing_topics_page.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../feature/home/home_page.dart';
 import '../../feature/listening/listening_skill/listening_skills_page.dart';
 import '../../feature/auth/login_page.dart';
@@ -13,13 +14,28 @@ import '../../feature/onboarding_page.dart';
 import '../../feature/reading_page.dart';
 import '../../feature/speaking_skills_page.dart';
 import '../../feature/vocabulary_page.dart';
+import '../../feature/writing/bloc/writing_bloc.dart';
+import '../../feature/writing/bloc/writing_event.dart';
+import '../get_it/get_it.dart';
 
 class AppRouter{
   static var router = GoRouter(initialLocation: '/onboarding',routes: [
     GoRoute(
-      path: '/listening',
+      path: '/listening-skills/:listeningId',
       name: 'ListeningSkillsPage',
-      builder: (context, state) => const ListeningSkillsPage(),
+      builder: (context, state) {
+        final listeningId = state.pathParameters['listeningId'] ?? '';
+        // lấy từ query: /listening-skills/123?audioUrl=<ENCODED>
+        final audioUrl = state.uri.queryParameters['audioUrl'] ?? '';
+        final title = state.uri.queryParameters['title'];
+        final levelText = state.uri.queryParameters['levelText'];
+        return ListeningSkillsPage(
+          listeningId: listeningId,
+          audioUrl: audioUrl,
+          title: title,
+          levelText: levelText,
+        );
+      },
     ),
     GoRoute(
       path: '/reading',
@@ -83,5 +99,17 @@ class AppRouter{
       builder: (context, state){return EditProfilePage();
       },
     ),
+
+    GoRoute(
+      path: '/writing-topics',
+      name: WritingTopicsPage.routeName,
+      builder: (context, state) {
+        return BlocProvider(
+          create: (_) => getIt<WritingBloc>()..add(GetWritingTopicsEvent()),
+          child: const WritingTopicsPage(),
+        );
+      },
+    ),
+
   ]);
 }

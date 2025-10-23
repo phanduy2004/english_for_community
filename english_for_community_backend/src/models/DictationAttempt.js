@@ -25,6 +25,6 @@ const DictationAttemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-DictationAttemptSchema.index({ userId: 1, listeningId: 1, cueIdx: 1 }, { unique: false });
+DictationAttemptSchema.index({ userId: 1, listeningId: 1, cueIdx: 1 }, { unique: true });
 let  DictationAttempt = mongoose.model('DictationAttemptSchema', DictationAttemptSchema)
 export default DictationAttempt;

@@ -3,7 +3,6 @@
 import dotenv from 'dotenv'; dotenv.config();
 import mongoose from 'mongoose';
 
-import Unit from '../models/Unit.js';
 import Lesson from '../models/Lesson.js';
 import Listening from '../models/Listening.js';
 import Cue from '../models/Cue.js';
@@ -51,17 +50,10 @@ async function run() {
   await mongoose.connect(MONGO);
   console.log('Mongo:', MONGO);
 
-  // 1) Unit (upsert)
-  const unit = await Unit.findOneAndUpdate(
-    { name: 'Default Unit' },
-    { $setOnInsert: { name: 'Default Unit', order: 1, isActive: true } },
-    { new: true, upsert: true }
-  );
 
   // 2) Lesson (upsert) — type "listening"
-  await Lesson.deleteMany({ name: 'Dictation – Wake-up Call', unitId: unit._id, type: 'listening' });
+  await Lesson.deleteMany({ name: 'Dictation – Wake-up Call', type: 'listening' });
   const lesson = await Lesson.create({
-    unitId: unit._id,
     name: 'Dictation – Wake-up Call',
     description: 'Nghe từng câu và gõ lại để luyện chính tả.',
     order: 1,
@@ -111,7 +103,6 @@ async function run() {
   );
 
   console.log('✅ Seed done:', {
-    unitId: unit._id.toString(),
     lessonId: lesson._id.toString(),
     listeningId: listening._id.toString(),
     totalCues: cueDocs.length,

@@ -66,7 +66,7 @@ class UserEntity extends Equatable {
   });
 
   factory UserEntity.fromJson(Map<String, dynamic> json) {
-    final _id = (json['id'] ?? json['_id']) as String?;
+    final _id = (json['_id'] ?? json['id']) as String?;
     if (_id == null) {
       throw ArgumentError('UserEntity.fromJson: missing id/_id');
     }

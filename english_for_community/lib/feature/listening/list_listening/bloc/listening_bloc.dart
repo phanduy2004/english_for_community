@@ -12,13 +12,14 @@ class ListeningBloc extends Bloc<ListeningEvent, ListeningState> {
     on<GetListListeningEvent>(onGetListListeningEvent);
 
   }
+
   Future onGetListeningByIdEvent(GetListeningByIdEvent event, Emitter<ListeningState> emit)async{
     emit(state.copyWith(status: ListeningStatus.loading));
     var result = await listeningRepository.getListeningById(event.id);
     result.fold((l){
       emit(state.copyWith(status: ListeningStatus.error, errorMessage: l.message));
     }, (r){
-      emit(state.copyWith(status: ListeningStatus.success));
+      emit(state.copyWith(status: ListeningStatus.success, listeningEntity: r));
     });
   }
   Future onGetListListeningEvent(GetListListeningEvent event, Emitter<ListeningState> emit)async{

@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import 'package:english_for_community/core/entity/unit_entity.dart';
 
 enum LessonType { vocabulary, grammar, reading, listening, speaking, writing }
 
@@ -29,7 +28,6 @@ LessonType? _lessonTypeFromJson(Object? v) {
 
 class LessonEntity extends Equatable {
   final String id;                 // id/_id
-  final UnitEntity unit;           // <-- object
   final String name;
   final String? description;
   final int? order;
@@ -42,7 +40,6 @@ class LessonEntity extends Equatable {
 
   const LessonEntity({
     required this.id,
-    required this.unit,
     required this.name,
     this.description,
     this.order,
@@ -55,23 +52,13 @@ class LessonEntity extends Equatable {
   });
 
   factory LessonEntity.fromJson(Map<String, dynamic> json) {
-    final id = (json['id'] ?? json['_id'])?.toString();
+    final id = (json['_id'] ?? json['id'])?.toString();
     if (id == null) {
       throw ArgumentError('LessonEntity.fromJson: missing id/_id');
     }
 
-    // Accept "unit" or "unitId" as OBJECT. Reject string id to keep contract strict.
-    final rawUnit = json['unit'] ?? json['unitId'];
-    if (rawUnit is! Map<String, dynamic>) {
-      throw ArgumentError(
-          'LessonEntity.fromJson: expected unit/unitId to be an OBJECT, got: ${rawUnit.runtimeType}. '
-              'Please make backend return populated object for unit.'
-      );
-    }
-
     return LessonEntity(
       id: id,
-      unit: UnitEntity.fromJson(rawUnit as Map<String, dynamic>),
       name: (json['name'] ?? '') as String,
       description: json['description'] as String?,
       order: (json['order'] as num?)?.toInt(),
@@ -88,7 +75,6 @@ class LessonEntity extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'unit': unit.toJson(), // gửi cả object (giữ đúng contract)
     'name': name,
     'description': description,
     'order': order,
@@ -110,6 +96,6 @@ class LessonEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, unit, name, description, order, type, content, imageUrl, isActive, createdAt, updatedAt,
+    id, name, description, order, type, content, imageUrl, isActive, createdAt, updatedAt,
   ];
 }

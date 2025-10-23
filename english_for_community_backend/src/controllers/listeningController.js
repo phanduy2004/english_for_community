@@ -1,25 +1,17 @@
 // src/controllers/listening.controller.js
 import mongoose from 'mongoose';
 import Listening from '../models/Listening.js';
+import {Enrollment} from "../models/index.js";
 
 const basePopulate = [
   {
     path: 'lessonId',
-    select: '_id name description order type content imageUrl isActive createdAt updatedAt unitId',
-    populate: {
-      path: 'unitId',
-      select: '_id name description order imageUrl isActive createdAt updatedAt trackId',
-      populate: {
-        path: 'trackId',
-        select: '_id name description level imageUrl order isActive createdAt updatedAt'
-      }
-    }
+    select: '_id name description order type content imageUrl isActive createdAt updatedAt',
   }
 ];
 
 /**
  * GET /api/listenings/:id
- * Lấy 1 listening theo _id (populate lesson/unit/track). Ẩn transcript.
  */
 export const getListeningById = async (req, res) => {
   try {
@@ -49,15 +41,16 @@ export const getListeningById = async (req, res) => {
 export const listListenings = async (req, res) => {
   try {
     const { lessonId, q = '', level = '' } = req.query;
+    const userId = req.user?._id || null; // <-- 2. Lấy userId (nếu đã đăng nhập)
 
     const find = {};
+    // ... (giữ nguyên logic find, keyword, difficulty)
     if (lessonId) {
       if (!mongoose.Types.ObjectId.isValid(String(lessonId))) {
         return res.status(400).json({ message: 'Invalid lessonId' });
       }
       find.lessonId = lessonId;
     }
-
     const keyword = String(q).trim();
     if (keyword) {
       find.$or = [
@@ -65,7 +58,6 @@ export const listListenings = async (req, res) => {
         { code:  { $regex: keyword, $options: 'i' } },
       ];
     }
-
     const levelMap = { beginner: 'easy', intermediate: 'medium', advanced: 'hard' };
     const difficulty = levelMap[String(level).toLowerCase()];
     if (difficulty) find.difficulty = difficulty;
@@ -75,7 +67,38 @@ export const listListenings = async (req, res) => {
     .sort({ createdAt: -1, _id: -1 })
     .lean();
 
-    return res.status(200).json({ items: docs });
+    // 3. Logic lấy và trộn tiến độ (progress)
+    let docsWithProgress = docs;
+
+    if (userId) {
+      // Lấy tất cả enrollment của user này
+      const enrollments = await Enrollment.find(
+        { userId, listeningId: { $in: docs.map(d => d._id) } },
+        { listeningId: 1, progress: 1, _id: 0 } // chỉ lấy các trường cần thiết
+      ).lean();
+
+      // Tạo map để tra cứu nhanh
+      const progressMap = new Map();
+      for (const enr of enrollments) {
+        progressMap.set(enr.listeningId.toString(), enr.progress);
+      }
+
+      // Map 'docs' để thêm trường 'userProgress'
+      docsWithProgress = docs.map(doc => {
+        const progress = progressMap.get(doc._id.toString()) ?? 0.0;
+        return {
+          ...doc,
+          userProgress: progress, // Thêm trường mới
+        };
+      });
+    } else {
+      // Nếu không đăng nhập, gán mặc định progress = 0
+      docsWithProgress = docs.map(doc => ({ ...doc, userProgress: 0.0 }));
+    }
+
+    // 4. Trả về mảng đã được trộn tiến độ
+    return res.status(200).json({ docs: docsWithProgress });
+
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });
   }

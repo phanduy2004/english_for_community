@@ -7,7 +7,7 @@ export const getCues = async (req, res) => {
     if (!listeningId) return res.status(400).json({ message: 'listeningId is required' });
 
     // hide answers
-    const projection = { text: 0, textNorm: 0, __v: 0, createdAt: 0, updatedAt: 0 };
+    const projection = { textNorm: 0, __v: 0, createdAt: 0, updatedAt: 0 };
 
     if (idx !== undefined) {
       const cue = await Cue.findOne({ listeningId, idx: Number(idx) }, projection).lean();

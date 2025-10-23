@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import app from './app.js';
-
 const MONGO_URI = process.env.MONGO_URI ?? process.env.MONGODB_URI;
 if (!MONGO_URI) {
   console.error('❌ Missing MONGO_URI / MONGODB_URI in .env');
