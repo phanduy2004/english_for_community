@@ -15,8 +15,7 @@ export const getWritingTopics = async (req, res) => {
   }
 };
 
-// POST /api/writing-topics/:id/start
-// Body: { userId, generatedPrompt }  // FE PHẢI gửi kèm
+// POST /api/writing/:id/start
 export const startWritingForTopic = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,5 +61,101 @@ export const startWritingForTopic = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+// PATCH /api/writing-submissions/:id/draft
+export const updateDraft = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+    const { userId } = req; // Giả sử 'authenticate' middleware đã gán userId
+
+    const submission = await WritingSubmission.findOneAndUpdate(
+      { _id: id, userId, status: 'draft' },
+      {
+        $set: {
+          content,
+          wordCount: content.trim().split(/\s+/).length,
+        }
+      },
+      { new: true }
+    ).lean();
+
+    if (!submission) {
+      return res.status(404).json({ message: 'Draft not found or already submitted' });
+    }
+
+    return res.status(200).json({ message: 'Draft updated', wordCount: submission.wordCount });
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// POST /api/writing-submissions/:id/submit
+export const submitForReview = async (req, res) => {
+  try {
+    const { id } = req.params;
+    // FE gửi lên feedback đã parse từ Gemini
+    const { content, feedback } = req.body;
+    const { userId } = req;
+
+    if (!feedback || !feedback.overall) {
+      return res.status(400).json({ message: 'Feedback object is required' });
+    }
+
+    const submission = await WritingSubmission.findOneAndUpdate(
+      { _id: id, userId, status: 'draft' },
+      {
+        $set: {
+          content,
+          wordCount: content.trim().split(/\s+/).length,
+          feedback, // Lưu toàn bộ object feedback
+          score: feedback.overall, // Lưu điểm tổng để query nhanh
+          status: 'reviewed',
+          submittedAt: new Date(),
+          reviewedAt: feedback.evaluatedAt || new Date(),
+        }
+      },
+      { new: true }
+    ).lean();
+
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found or already submitted' });
+    }
+
+    // [Optional] Cập nhật stats cho Topic (denormalize)
+    // Chạy bất đồng bộ để không block response
+    updateTopicStats(submission.topicId);
+
+    return res.status(200).json(submission);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// Helper function để cập nhật stats (chạy ngầm)
+const updateTopicStats = async (topicId) => {
+  try {
+    const stats = await WritingSubmission.aggregate([
+      { $match: { topicId, status: 'reviewed', score: { $ne: null } } },
+      {
+        $group: {
+          _id: '$topicId',
+          submissionsCount: { $sum: 1 },
+          avgScore: { $avg: '$score' }
+        }
+      }
+    ]);
+
+    if (stats.length > 0) {
+      await WritingTopic.findByIdAndUpdate(topicId, {
+        $set: {
+          'stats.submissionsCount': stats[0].submissionsCount,
+          'stats.avgScore': stats[0].avgScore,
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to update topic stats:', error);
   }
 };

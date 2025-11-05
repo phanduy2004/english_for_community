@@ -1,4 +1,5 @@
 // feature/writing/bloc/writing_topics_page.dart
+import 'package:english_for_community/feature/writing/writing_task_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_bloc.dart';
@@ -35,9 +36,10 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
   }
 
   void _onCardTap(WritingTopicEntity item) {
-    // TODO: điều hướng sang màn “Start writing” cho topic item.id
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Open "${item.name}"')),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => WritingTaskPage(topic: item),
+      ),
     );
   }
 

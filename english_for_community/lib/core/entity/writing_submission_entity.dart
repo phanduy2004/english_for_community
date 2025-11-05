@@ -36,6 +36,39 @@ class WritingSubmissionEntity extends Equatable {
     this.createdAt,
     this.updatedAt,
   });
+  WritingSubmissionEntity copyWith({
+    String? id,
+    String? userId,
+    String? topicId,
+    GeneratedPrompt? generatedPrompt,
+    String? content,
+    int? wordCount,
+    String? status,
+    DateTime? startedAt,
+    DateTime? submittedAt,
+    FeedbackEntity? feedback,
+    double? score,
+    DateTime? reviewedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return WritingSubmissionEntity(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      topicId: topicId ?? this.topicId,
+      generatedPrompt: generatedPrompt ?? this.generatedPrompt,
+      content: content ?? this.content,
+      wordCount: wordCount ?? this.wordCount,
+      status: status ?? this.status,
+      startedAt: startedAt ?? this.startedAt,
+      submittedAt: submittedAt ?? this.submittedAt,
+      feedback: feedback ?? this.feedback,
+      score: score ?? this.score,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   factory WritingSubmissionEntity.fromJson(Map<String, dynamic> json) {
     final _id = (json['_id'] ?? json['id']) as String?;
@@ -240,6 +273,7 @@ class FeedbackEntity extends Equatable {
     if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
     return null;
   }
+
 
   @override
   List<Object?> get props => [

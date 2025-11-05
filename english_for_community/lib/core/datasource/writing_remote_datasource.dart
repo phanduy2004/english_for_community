@@ -9,7 +9,7 @@ class WritingRemoteDataSource {
 
   /// GET /api/writing-topics
   Future<List<WritingTopicEntity>> getWritingTopics() async {
-    final res = await dio.get('/writing-topics');
+    final res = await dio.get('/writing');
     // res.data expected: List<dynamic>
     final data = res.data as List<dynamic>;
     return data

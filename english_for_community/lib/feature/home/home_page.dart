@@ -67,9 +67,9 @@ class _HomeTab extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Good morning!', style: text.headlineMedium),
+                Text('Good morning!', style: text.headlineMedium?.copyWith(fontWeight: FontWeight.w500),),
                 const SizedBox(height: 4),
-                Text('Ready to continue learning?', style: text.bodyMedium!.copyWith(color: Colors.black54)),
+                Text('Ready to continue learning?', style: text.bodyMedium!.copyWith(color: Colors.black54, fontWeight: FontWeight.w300)),
               ]),
               const CircleAvatar(radius: 25, backgroundImage: AssetImage('assets/avatar.png')),
             ],
@@ -83,9 +83,9 @@ class _HomeTab extends StatelessWidget {
               children: [
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Daily Goal', style: text.titleMedium),
+                    Text('Daily Goal', style: text.titleMedium?.copyWith(fontWeight: FontWeight.w500,)),
                     const SizedBox(height: 4),
-                    Text('3 of 5 lessons completed', style: text.bodySmall!.copyWith(color: Colors.black54)),
+                    Text('3 of 5 lessons completed', style: text.bodySmall!.copyWith(color: Colors.black54,fontWeight: FontWeight.w300,)),
                   ]),
                   const Text('🏆', style: TextStyle(fontSize: 28)),
                 ]),
