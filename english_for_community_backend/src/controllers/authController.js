@@ -1,67 +1,128 @@
-import { generateToken, clearToken } from '../lib/jwt_token.js';
-import  User from '../models/User.js';
-import bcrypt from 'bcrypt';
+import { authService } from '../services/authService.js';
 
+// --- Helper để lấy status code từ lỗi Service ---
+const getStatusCode = (err) => err.statusCode || err.status || 500;
+
+// POST /auth/register
 const register = async (req, res) => {
-    try {
-        const { username, email, password, fullName } = req.body;
-        
-        // Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: 'User already exists' });
-        }
-        
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
-        // Create new user
-        const user = await User.create({
-            username,
-            email,
-            password: hashedPassword,
-            fullName
-        });
-        
-        // Generate token
-        const token = generateToken(user._id, res);
-        
-        res.status(201).json({
-            user
-        });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
+  try {
+    // Service xử lý hash pass, gửi OTP, và lưu user (chưa verified)
+    const newUser = await authService.registerUser(req.body);
+
+    // Trả về email để Client biết mà chuyển sang trang OTP
+    return res.status(201).json({
+      message: 'Registration successful. OTP sent to email.',
+      email: newUser.email
+    });
+  } catch (error) {
+    const status = getStatusCode(error);
+    return res.status(status).json({ message: error.message || 'Server error' });
+  }
 };
 
+// POST /auth/login
 const login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        
-        // Find user
-        const user = await User.findOne({ email });
-        if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-        
-        // Check password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials' });
-        }
-        
-        // Generate token
-        const token = generateToken(user._id, res);
-        
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
+  try {
+    const { email, password } = req.body;
+
+    // Service xử lý check pass, check ban, tạo tokens
+    const result = await authService.loginUser(email, password);
+
+    // Trả về tokens và user object
+    return res.status(200).json(result);
+  } catch (error) {
+    const status = getStatusCode(error);
+    // Trả về status 403 nếu bị ban, kèm theo reason (lấy từ service)
+    return res.status(status).json({
+      message: error.message || 'Server error',
+      reason: error.reason
+    });
+  }
 };
 
-const logout = (req, res) => {
-    clearToken(res);
-    res.status(200).json({ message: 'Logged out successfully' });
+// POST /auth/logout
+const logout = async (req, res) => {
+  try {
+    // req.userId được cung cấp từ middleware 'authenticate'
+    const userId = req.userId;
+    await authService.logoutUser(userId);
+    return res.status(200).json({ message: 'Logout successful' });
+  } catch (error) {
+    return res.status(200).json({ message: 'Logout successful' }); // Trả về 200 an toàn
+  }
 };
-export default { register, login, logout };
+
+// POST /auth/register/resend-otp
+const resendSignupOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    await authService.requestSignupVerification(email);
+    return res.status(200).json({ message: 'OTP has been resent to your email.' });
+  } catch (err) {
+    const status = getStatusCode(err);
+    return res.status(status).json({ message: err.message || 'Server error' });
+  }
+};
+
+// POST /auth/verify-otp
+const verifyOtp = async (req, res) => {
+  try {
+    // Nhận thêm 'purpose' để biết OTP là cho signup hay forgot password
+    const { email, otp, purpose } = req.body;
+    await authService.verifyOtp(email, otp, purpose);
+
+    return res.status(200).json({ message: 'OTP verified successfully.' });
+  } catch (err) {
+    const status = getStatusCode(err);
+    return res.status(status).json({ message: err.message || 'Server error' });
+  }
+};
+
+// POST /auth/forgot-password
+const requestPasswordReset = async (req, res) => {
+  try {
+    await authService.requestPasswordReset(req.body.email);
+    // Luôn trả 200 để tránh user enumeration
+    return res.status(200).json({ message: 'If the email exists, an OTP has been sent' });
+  } catch (err) {
+    const status = getStatusCode(err);
+    return res.status(status).json({ message: err.message || 'Server error' });
+  }
+};
+
+// POST /auth/reset-password
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    await authService.resetPassword(email, otp, newPassword);
+    return res.status(200).json({ message: 'Password has been reset successfully' });
+  } catch (err) {
+    const status = getStatusCode(err);
+    return res.status(status).json({ message: err.message || 'Server error' });
+  }
+};
+const refreshToken = async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    // Gọi service xử lý logic
+    const newAccessToken = await authService.refreshToken(refreshToken);
+
+    return res.status(200).json({ accessToken: newAccessToken });
+  } catch (err) {
+    const status = getStatusCode(err);
+    // 401/403 được service xử lý chi tiết
+    return res.status(status).json({ message: err.message || 'Server error' });
+  }
+};
+
+export const authController = {
+  login,
+  register,
+  logout,
+  resendSignupOtp,
+  verifyOtp,
+  requestPasswordReset,
+  resetPassword,
+  refreshToken
+};

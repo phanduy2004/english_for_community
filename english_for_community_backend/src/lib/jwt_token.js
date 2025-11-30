@@ -1,58 +1,50 @@
-import jsonwebtoken from 'jsonwebtoken'
-import dotenv from 'dotenv'
+import jwt from "jsonwebtoken";
 
-dotenv.config()
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'your-access-secret-key';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
 
+// Tạo Access Token (ngắn hạn, ví dụ: 15 phút)
+export const generateAccessToken = (userId) => {
+  return jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: '15m' });
+};
 
-export const generateToken = (userId, res) => {
-    const token = jsonwebtoken.sign({ userId }, process.env.JWT_SECRET, {
-        expiresIn: '1h'
-    });
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV !== 'development',
-        sameSite: 'strict',
-        maxAge: 3600000 // 1 hour
-    });
-    return token;
-}
+// Tạo Refresh Token (dài hạn, ví dụ: 7 ngày)
+export const generateRefreshToken = (userId) => {
+  return jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: '7d' });
+};
 
-// Verify JWT token
-export const verifyToken = (token) => {
-    try {
-        const decoded = jsonwebtoken.verify(token, process.env.JWT_SECRET);
-        return { valid: true, expired: false, userId: decoded.userId };
-    } catch (error) {
-        return { 
-            valid: false, 
-            expired: error.name === 'TokenExpiredError', 
-            userId: null 
-        };
-    }
-}
+// Xác thực Access Token
+export const verifyAccessToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, ACCESS_SECRET);
+    return { valid: true, expired: false, userId: decoded.userId };
+  } catch (error) {
+    return {
+      valid: false,
+      expired: error.name === 'TokenExpiredError',
+      userId: null,
+    };
+  }
+};
 
-// Extract token from request (checks both cookies and Authorization header)
+// Xác thực Refresh Token
+export const verifyRefreshToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, REFRESH_SECRET);
+    return { valid: true, expired: false, userId: decoded.userId };
+  } catch (error) {
+    return {
+      valid: false,
+      expired: error.name === 'TokenExpiredError',
+      userId: null,
+    };
+  }
+};
+
 export const extractToken = (req) => {
-    // First check for token in cookies
-    if (req.cookies && req.cookies.token) {
-        return req.cookies.token;
-    }
-    
-    // Then check for token in Authorization header
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-        return authHeader.split(' ')[1];
-    }
-    
-    return null;
-}
-
-// Clear token on logout
-export const clearToken = (res) => {
-    res.cookie('token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV !== 'development',
-        sameSite: 'strict',
-        expires: new Date(0)
-    });
-}
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.slice(7); // cắt "Bearer "
+  }
+  return null;
+};

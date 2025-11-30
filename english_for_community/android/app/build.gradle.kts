@@ -1,46 +1,41 @@
 plugins {
     id("com.android.application")
-    // Khuyến nghị dùng id mới cho Kotlin Android
-    id("org.jetbrains.kotlin.android")
-    // Flutter plugin phải đặt sau Android & Kotlin
-    id("dev.flutter.flutter-gradle-plugin")
+    id("org.jetbrains.kotlin.android")      // đúng cho Kotlin DSL
+    id("dev.flutter.flutter-gradle-plugin") // sau Android & Kotlin
 }
 
 android {
+
     namespace = "com.example.english_for_community"
+    compileSdk =36
+    ndkVersion = flutter.ndkVersion
 
-    // Có thể để theo Flutter, nhưng nên đảm bảo >= 34
-    compileSdk = maxOf(flutter.compileSdkVersion, 34)
-
-    // 🔧 Ép dùng NDK đúng như log yêu cầu
-    ndkVersion = "27.0.12077973"
-
-    // AGP 8.x yêu cầu Java 17
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JavaVersion.VERSION_11.toString()
     }
 
     defaultConfig {
         applicationId = "com.example.english_for_community"
-
-        // 🔧 Fix lỗi Manifest merger: Firebase Auth yêu cầu >= 23
-        minSdk = 23
-
-        // targetSdk theo Flutter, đảm bảo >= 34
-        targetSdk = maxOf(flutter.targetSdkVersion, 34)
-
+        ndk {
+            // Cú pháp đúng: Dùng += listOf() để thêm vào danh sách
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
+        // Nếu có plugin đòi minSdk cao (vd. flutter_timezone), đảm bảo >= 26.
+        // Nếu không, có thể giữ nguyên flutter.minSdkVersion.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
     buildTypes {
         release {
-            // Dùng debug keystore cho build nhanh; đổi sang keystore thật khi phát hành
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -48,4 +43,12 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Desugaring (ổn)
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
+    // ❌ KHÔNG cần thêm kotlin-stdlib — plugin Kotlin đã kéo sẵn.
+    // Nếu vẫn muốn chỉ rõ, dùng: implementation(kotlin("stdlib"))  (không cần version)
 }

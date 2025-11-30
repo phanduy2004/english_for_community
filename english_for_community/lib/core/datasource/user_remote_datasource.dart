@@ -1,5 +1,6 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:dio/dio.dart';
-
 import '../entity/user_entity.dart';
 
 class UserRemoteDatasource {
@@ -13,9 +14,12 @@ class UserRemoteDatasource {
   }
 
   Future<UserEntity> updateProfile({
-    required String fullName,
+    String? fullName,
+    String? username,
+    String? phone,
+    DateTime? dateOfBirth,
     String? bio,
-    String? avatarUrl,
+    dynamic avatarFile, // File hoặc XFile
     String? goal,
     String? cefr,
     int? dailyMinutes,
@@ -24,21 +28,45 @@ class UserRemoteDatasource {
     String? language,
     String? timezone,
   }) async {
+
+    // 1. Tạo Map dữ liệu trước
+    final Map<String, dynamic> mapData = {
+      if (fullName != null) 'fullName': fullName,
+      if (username != null) 'username': username,
+      if (phone != null) 'phone': phone,
+      if (dateOfBirth != null) 'dateOfBirth': dateOfBirth.toIso8601String(),
+      if (bio != null) 'bio': bio,
+      if (goal != null) 'goal': goal,
+      if (cefr != null) 'cefr': cefr,
+      if (dailyMinutes != null) 'dailyMinutes': dailyMinutes,
+      if (strictCorrection != null) 'strictCorrection': strictCorrection,
+      if (language != null) 'language': language,
+      if (timezone != null) 'timezone': timezone,
+
+      // 🔥 SỬA LỖI Ở ĐÂY:
+      // Luôn luôn gửi field 'reminder'.
+      // - Nếu có dữ liệu -> Gửi JSON String
+      // - Nếu là null -> Gửi chuỗi "null" để Backend biết mà xóa
+      'reminder': reminder != null ? jsonEncode(reminder) : 'null',
+    };
+
+    // 2. Tạo FormData từ Map
+    final formData = FormData.fromMap(mapData);
+
+    // 3. Xử lý Avatar (Chỉ gửi nếu có file mới)
+    if (avatarFile != null) {
+      formData.files.add(MapEntry(
+        'avatar',
+        await MultipartFile.fromFile(avatarFile.path),
+      ));
+    }
+
+    // 4. Gửi Request PUT
     final response = await dio.put(
       'users/profile',
-      data: {
-        'fullName': fullName,
-        'bio': bio,
-        'avatarUrl': avatarUrl,
-        'goal': goal,
-        'cefr': cefr,
-        'dailyMinutes': dailyMinutes,
-        'reminder': reminder,
-        'strictCorrection': strictCorrection,
-        'language': language,
-        'timezone': timezone,
-      },
+      data: formData,
     );
+
     return UserEntity.fromJson(response.data);
   }
 
