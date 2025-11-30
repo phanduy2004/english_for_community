@@ -1,51 +1,51 @@
 # 📘 English for Community (EFC)
 
-**English for Community** là nền tảng học tiếng Anh toàn diện, kết hợp giữa ứng dụng di động (Mobile App) và hệ thống quản trị nội dung (CMS). Dự án tập trung vào việc cải thiện 4 kỹ năng: Nghe, Nói, Đọc, Viết thông qua các phương pháp tương tác, Gamification và hỗ trợ từ AI.
+**English for Community** là nền tảng học tiếng Anh toàn diện, kết hợp giữa ứng dụng di động (Mobile App) và hệ thống quản trị nội dung (CMS). Dự án tập trung vào việc cải thiện 4 kỹ năng: Nghe, Nói, Đọc, Viết thông qua các phương pháp tương tác và AI.
 
 ![Flutter](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
 ![NodeJS](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)
+
+---
+
+## ⚠️ QUAN TRỌNG: CÀI ĐẶT DỮ LIỆU TRƯỚC KHI CHẠY (READ THIS FIRST)
+
+Do giới hạn kích thước file của GitHub, file cơ sở dữ liệu từ điển (`dictionary.db` ~200MB) đã được nén lại. **Bạn bắt buộc phải giải nén thủ công trước khi chạy ứng dụng.**
+
+1.  Truy cập thư mục: `english_for_community/assets/db/`
+2.  Tìm file nén: **`dictionary.rar`** (hoặc `.zip`).
+3.  Click chuột phải chọn **Extract Here** (Giải nén tại đây).
+4.  Đảm bảo sau khi giải nén, bạn có file tên là: **`dictionary.db`** nằm ngay tại thư mục đó.
+
+> ❌ **Nếu không có file `dictionary.db`, tính năng Từ điển sẽ bị lỗi.**
 
 ---
 
 ## ✨ Tính năng chính
 
 ### 📱 Mobile App (User)
-* **📚 Từ điển Offline:** Tra cứu từ vựng nhanh chóng với dữ liệu cục bộ (SQLite).
-* **🗣️ Luyện Speaking:** Tích hợp AI để chấm điểm phát âm và luyện nói tự do.
-* **🎧 Luyện Listening & Reading:** Kho bài học phong phú được cập nhật liên tục.
-* **✍️ Luyện Writing:** Viết bài luận và nhận phản hồi/sửa lỗi.
-* **🏆 Gamification:** Bảng xếp hạng (Leaderboard), Thống kê học tập, Huy hiệu.
-* **🔔 Thông báo:** Nhắc nhở học tập thời gian thực qua Socket.io và Local Notification.
+* **📚 Từ điển Offline:** Tra cứu nhanh với dữ liệu cục bộ (Cần giải nén file DB như hướng dẫn trên).
+* **🗣️ Luyện Speaking:** Tích hợp AI chấm điểm phát âm.
+* **🎧 Luyện Listening & Reading:** Kho bài học đa dạng.
+* **✍️ Luyện Writing:** Viết bài luận và nhận phản hồi.
+* **🏆 Gamification:** Bảng xếp hạng, Thống kê, Huy hiệu.
+* **🔔 Real-time:** Thông báo nhắc nhở học tập.
 
 ### 💻 Admin Dashboard (Quản trị viên)
-* **Dashboard:** Xem thống kê tổng quan về người dùng và nội dung.
-* **Quản lý User:** Xem danh sách, xử lý vi phạm (Ban/Unban).
-* **CMS (Content Management System):**
-    * Soạn thảo và đăng tải bài học (Listening, Reading, Speaking).
-    * Quản lý báo cáo (Reports) từ người dùng.
+* **Dashboard:** Thống kê người dùng và nội dung.
+* **Quản lý User:** Danh sách user, ban/unban.
+* **CMS:** Soạn thảo bài học, quản lý báo cáo vi phạm.
 
 ---
 
-## 🛠️ Cài đặt và Chạy dự án
+## 🛠️ Hướng dẫn Cài đặt (Installation)
 
-Dự án bao gồm 2 phần chính: **Mobile App (Flutter)** và **Backend (Node.js)**.
-
-### 1. Yêu cầu hệ thống
-* [Flutter SDK](https://flutter.dev/docs/get-started/install) (Mới nhất)
-* [Node.js](https://nodejs.org/) (v16 trở lên)
-* [MongoDB](https://www.mongodb.com/) (Local hoặc Cloud Atlas)
-
-### 2. Thiết lập Backend
+### 1. Backend (Node.js)
 ```bash
 cd english_for_community_backend
 
 # Cài đặt thư viện
 npm install
 
-# Tạo file .env và điền thông tin cấu hình (DB, PORT, MAIL_KEY...)
-# (Liên hệ admin để lấy file mẫu)
-
-# Chạy server
+# Cấu hình biến môi trường (.env) và chạy server
 npm start
