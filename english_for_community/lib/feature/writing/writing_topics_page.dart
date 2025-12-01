@@ -99,8 +99,10 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
             preferredSize: const Size.fromHeight(1),
             child: Container(color: borderCol, height: 1),
           ),
-          leading: const Icon(Icons.menu, color: textMain),
-          title: const Text(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: textMain),
+            onPressed: () => Navigator.of(context).pop(), // Quay lại màn hình trước
+          ),          title: const Text(
             'Writing Skills',
             style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
           ),

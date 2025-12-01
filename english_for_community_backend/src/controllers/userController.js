@@ -1,6 +1,157 @@
 import User from '../models/User.js';
 import UserDailyProgress from "../models/UserDailyProgress.js";
 
+// Helper tính trung bình: Tổng điểm / Số lần (tránh chia cho 0)
+const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
+
+// 🔥 API ADMIN: Lấy chi tiết User + Thống kê học tập
+export const getUserDetailsForAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 1. Lấy thông tin User
+    const user = await User.findById(id).lean();
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const userTimezone = user.timezone || 'Asia/Ho_Chi_Minh';
+    const dailyGoal = user.dailyMinutes || 30;
+
+    // 2. Lấy TOÀN BỘ lịch sử hoạt động từ UserDailyProgress (Sắp xếp cũ -> mới)
+    const records = await UserDailyProgress.find({ userId: id }).sort({ date: 1 }).lean();
+
+    // --- A. TÍNH TOÁN STATS GRID (ALL TIME) ---
+    let totalVocab = 0;
+    let totalSecondsInRange = 0;
+    let totalLessons = 0;
+
+    // Object gom nhóm để tính trung bình điểm số
+    const aggs = {
+      readingAcc: { total: 0, count: 0 },
+      dictationAcc: { total: 0, count: 0 },
+      speakingScore: { total: 0, count: 0 },
+      writingScore: { total: 0, count: 0 },
+    };
+
+    records.forEach(rec => {
+      // Cộng dồn thời gian & từ vựng
+      totalSecondsInRange += (rec.studySeconds || 0);
+      totalVocab += (rec.vocabLearned || 0);
+
+      // Cộng tổng số bài học (Listening + Reading + Speaking + Writing)
+      if (rec.lessonsCompleted) {
+        totalLessons += (rec.lessonsCompleted.listening || 0) +
+          (rec.lessonsCompleted.reading || 0) +
+          (rec.lessonsCompleted.speaking || 0) +
+          (rec.lessonsCompleted.writing || 0);
+      }
+
+      // Cộng dồn điểm số để tính trung bình
+      if (rec.stats) {
+        if (rec.stats.readingAccuracy?.count) {
+          aggs.readingAcc.total += rec.stats.readingAccuracy.total;
+          aggs.readingAcc.count += rec.stats.readingAccuracy.count;
+        }
+        if (rec.stats.dictationAccuracy?.count) {
+          aggs.dictationAcc.total += rec.stats.dictationAccuracy.total;
+          aggs.dictationAcc.count += rec.stats.dictationAccuracy.count;
+        }
+        if (rec.stats.speakingScore?.count) {
+          aggs.speakingScore.total += rec.stats.speakingScore.total;
+          aggs.speakingScore.count += rec.stats.speakingScore.count;
+        }
+        if (rec.stats.writingScore?.count) {
+          aggs.writingScore.total += rec.stats.writingScore.total;
+          aggs.writingScore.count += rec.stats.writingScore.count;
+        }
+      }
+    });
+
+    const statsGrid = {
+      vocabLearned: totalVocab,
+      lessonsCompleted: totalLessons, // 🔥 Đã thay thế vị trí cho WPM
+      avgWritingScore: parseFloat(calcAvg(aggs.writingScore).toFixed(1)),
+      readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100),
+      dictationAccuracy: Math.round(calcAvg(aggs.dictationAcc) * 100),
+      speakingAccuracy: Math.round(calcAvg(aggs.speakingScore) * 100),
+      // ❌ Đã bỏ readingWpm hoàn toàn
+    };
+
+    // --- B. TÍNH TOÁN STUDY TIME ---
+    const now = new Date();
+    const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTimezone });
+
+    // Tìm record hôm nay để tính todayMinutes
+    const todayRecord = records.find(h => h.date === todayStr);
+    const todayMinutes = todayRecord ? Math.round((todayRecord.studySeconds || 0) / 60) : 0;
+
+    const studyTime = {
+      todayMinutes: todayMinutes,
+      goalMinutes: dailyGoal,
+      totalMinutesInRange: Math.round(totalSecondsInRange / 60), // Tổng phút All-Time
+      progressPercent: dailyGoal > 0 ? Math.min(todayMinutes / dailyGoal, 1.0) : 0
+    };
+
+    // --- C. WEEKLY CHART (7 ngày gần nhất) ---
+    const labels = [];
+    const minutes = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dStr = d.toLocaleDateString('en-CA', { timeZone: userTimezone });
+
+      const label = d.toLocaleDateString('en-US', { weekday: 'short', timeZone: userTimezone });
+      labels.push(label);
+
+      const record = records.find(r => r.date === dStr);
+      minutes.push(record ? Math.round((record.studySeconds || 0) / 60) : 0);
+    }
+
+    const weeklyChart = { labels, minutes };
+
+    // --- D. CALLOUT ---
+    const callout = {
+      title: "Tổng quan quá trình",
+      message: `Người dùng đã tham gia học ${records.length} ngày với tổng thời lượng ${(totalSecondsInRange/3600).toFixed(1)} giờ.`
+    };
+
+    // 4. Trả về kết quả
+    const responseData = {
+      ...user,
+      progressSummary: {
+        studyTime,
+        statsGrid,
+        weeklyChart,
+        callout
+      }
+    };
+
+    res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error("Get Admin User Details Error:", error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+export const getPublicProfile = async (req, res) => {
+  try {
+    const { id } = req.params; // Lấy ID từ URL (vd: /users/123/public)
+
+    // Chỉ select các trường an toàn
+    const user = await User.findById(id)
+      .select('fullName username avatarUrl bio dateOfBirth gender totalPoints level currentStreak isOnline lastActivityDate')
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.status(200).json(user);
+
+  } catch (error) {
+    console.error("Get Public Profile Error:", error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 // Get user profile
 export const getProfile = async (req, res) => {
   try {

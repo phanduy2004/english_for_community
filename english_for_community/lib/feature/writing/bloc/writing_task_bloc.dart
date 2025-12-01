@@ -9,7 +9,7 @@ import 'package:english_for_community/core/entity/writing_submission_entity.dart
 // ⬇️ THÊM IMPORT
 import 'package:english_for_community/core/repository/writing_repository.dart';
 
-const String GEMINI_API_KEY = 'AIzaSyDaKl4YVyTT43LKrAUH_gAX-1CSOZuyC2A';
+const String GEMINI_API_KEY = 'AIzaSyBQ8dueXPQyHPfjg2-mPgB8BP6E5wbVVF0';
 
 // --- EVENTS ---
 abstract class WritingTaskEvent extends Equatable {

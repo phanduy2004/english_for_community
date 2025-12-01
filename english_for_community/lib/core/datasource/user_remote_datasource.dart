@@ -13,6 +13,12 @@ class UserRemoteDatasource {
     return UserEntity.fromJson(response.data);
   }
 
+  // 2. 🔥 API MỚI CHO ADMIN: Lấy chi tiết user khác (gồm cả Stats)
+  Future<UserEntity> getUserById(String userId) async {
+    // Gọi vào endpoint mới mà bạn vừa tạo ở Backend
+    final response = await dio.get('users/$userId/admin-details');
+    return UserEntity.fromJson(response.data);
+  }
   Future<UserEntity> updateProfile({
     String? fullName,
     String? username,
@@ -72,5 +78,9 @@ class UserRemoteDatasource {
 
   Future<void> deleteAccount() async {
     await dio.delete('users/profile');
+  }
+  Future<UserEntity> getPublicProfile(String userId) async {
+    final response = await dio.get('users/$userId/public');
+    return UserEntity.fromJson(response.data);
   }
 }

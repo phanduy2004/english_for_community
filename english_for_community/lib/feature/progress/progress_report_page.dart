@@ -1,4 +1,5 @@
 import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
+import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +11,7 @@ import 'package:english_for_community/feature/progress/bloc/progress_state.dart'
 import '../../core/get_it/get_it.dart';
 // ⚠️ Đảm bảo import Entity Leaderboard
 import '../../core/entity/leaderboard_entity.dart';
+import '../../core/repository/user_repository.dart';
 
 class ProgressReportPage extends StatefulWidget {
   const ProgressReportPage({super.key});
@@ -83,7 +85,68 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         }
     );
   }
+  void _showUserProfile(BuildContext context, String userId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        // Sử dụng FutureBuilder để gọi API lấy thông tin chi tiết ngay khi mở dialog
+        return FutureBuilder(
+          future: getIt<UserRepository>().getPublicProfile(userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              // Hiển thị loading trong lúc tải
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            }
 
+            if (snapshot.hasError) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text('Failed to load user profile.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Close'),
+                  ),
+                ],
+              );
+            }
+
+            if (snapshot.hasData) {
+              // Xử lý kết quả trả về từ Either<Failure, UserEntity>
+              return snapshot.data!.fold(
+                    (failure) => AlertDialog(
+                  title: const Text('Error'),
+                  content: Text(failure.message),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    )
+                  ],
+                ),
+                    (user) => UserProfileDialog(
+                  fullName: user.fullName,
+                  username: user.username,
+                  avatarUrl: user.avatarUrl,
+                  dateOfBirth: user.dateOfBirth,
+                  bio: user.bio,
+                  gender: user.gender,
+                  totalPoints: user.totalPoints ?? 0,
+                  level: user.level ?? 1,
+                  currentStreak: user.currentStreak ?? 0,
+                  isOnline: user.isOnline,
+                ),
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
     const bgPage = Color(0xFFF9FAFB);
@@ -412,12 +475,10 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       );
     }
 
-    // Render danh sách
     return Column(
       children: List.generate(users.length, (index) {
         final user = users[index];
 
-        // 1. Trường hợp là dấu phân cách "..."
         if (user.isSeparator) {
           return Container(
             width: double.infinity,
@@ -429,7 +490,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           );
         }
 
-        // 2. Render User Row
         return Column(
           children: [
             _LeaderRow(
@@ -438,8 +498,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               xp: user.xp,
               isMe: user.isMe,
               avatarUrl: user.avatarUrl,
+              // 🔥 GỌI HÀM SHOW DIALOG KHI NHẤN (Giả sử user có trường id)
+              onTap: () => _showUserProfile(context, user.id),
             ),
-            // Thêm Divider nếu không phải phần tử cuối cùng
             if (index < users.length - 1)
               Divider(height: 1, color: dividerColor),
           ],
@@ -448,9 +509,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 }
-
-// ... (Giữ nguyên các Widget _ShadcnCard, _FilterTab, _StatBox, _Bars, _LeaderRow, _SimpleDropdown)
-// Các widget con này không thay đổi, bạn giữ nguyên như cũ.
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -474,14 +532,13 @@ class _ShadcnCard extends StatelessWidget {
   }
 }
 
-// ... Paste lại các widget con khác (_FilterTab, _StatBox, _Bars, _LeaderRow, _SimpleDropdown) ở đây nếu file chưa có
-// Tôi sẽ để lại mã nguồn của _LeaderRow vì nó quan trọng
 class _LeaderRow extends StatelessWidget {
   final int rank;
   final String name;
   final String xp;
   final bool isMe;
   final String? avatarUrl;
+  final VoidCallback? onTap; // 1. Thêm tham số onTap
 
   const _LeaderRow({
     required this.rank,
@@ -489,123 +546,84 @@ class _LeaderRow extends StatelessWidget {
     required this.xp,
     this.isMe = false,
     this.avatarUrl,
+    this.onTap, // 2. Nhận tham số
   });
 
   @override
   Widget build(BuildContext context) {
     Color rankColor;
-    if (rank == 1) rankColor = const Color(0xFFEAB308); // Gold
-    else if (rank == 2) rankColor = const Color(0xFF94A3B8); // Silver
-    else if (rank == 3) rankColor = const Color(0xFFB45309); // Bronze
+    if (rank == 1) rankColor = const Color(0xFFEAB308);
+    else if (rank == 2) rankColor = const Color(0xFF94A3B8);
+    else if (rank == 3) rankColor = const Color(0xFFB45309);
     else rankColor = const Color(0xFF71717A);
 
-    return Container(
-      color: isMe ? const Color(0xFFF0F9FF) : Colors.transparent, // Highlight màu xanh nhạt nếu là user hiện tại
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 32, // Tăng width chút để số rank ko bị chèn
-            child: Text(
-              '#$rank',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: rankColor,
-                fontSize: 14,
+    // 3. Bọc trong Material & InkWell để có hiệu ứng nhấn (Ripple Effect)
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap, // 4. Gắn sự kiện
+        child: Container(
+          color: isMe ? const Color(0xFFF0F9FF) : Colors.transparent,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 32,
+                child: Text(
+                  '#$rank',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: rankColor,
+                    fontSize: 14,
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE4E4E7)),
-              image: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                  ? DecorationImage(image: NetworkImage(avatarUrl!), fit: BoxFit.cover)
-                  : null,
-              color: const Color(0xFFF4F4F5),
-            ),
-            child: (avatarUrl == null || avatarUrl!.isEmpty)
-                ? const Icon(Icons.person, size: 20, color: Color(0xFF71717A))
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: isMe ? FontWeight.w700 : FontWeight.w500,
-                color: const Color(0xFF09090B),
-                fontSize: 14,
+              const SizedBox(width: 8),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFE4E4E7)),
+                  image: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                      ? DecorationImage(image: NetworkImage(avatarUrl!), fit: BoxFit.cover)
+                      : null,
+                  color: const Color(0xFFF4F4F5),
+                ),
+                child: (avatarUrl == null || avatarUrl!.isEmpty)
+                    ? const Icon(Icons.person, size: 20, color: Color(0xFF71717A))
+                    : null,
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: isMe ? FontWeight.w700 : FontWeight.w500,
+                    color: const Color(0xFF09090B),
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                xp,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF09090B),
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Text(
-            xp,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF09090B),
-              fontSize: 13,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SimpleDropdown extends StatelessWidget {
-  final String value;
-  final List<String> items;
-  final ValueChanged<String?> onChanged;
-
-  const _SimpleDropdown({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          icon: const Padding(
-            padding: EdgeInsets.only(left: 8),
-            child: Icon(Icons.keyboard_arrow_down_rounded,
-                size: 16, color: Color(0xFF71717A)),
-          ),
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF09090B),
-          ),
-          onChanged: onChanged,
-          items: items.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
         ),
       ),
     );
   }
 }
-// ... Các class _FilterTab, _StatBox, _Bars giữ nguyên như file cũ
+
 class _FilterTab extends StatelessWidget {
   final String label;
   final bool selected;
