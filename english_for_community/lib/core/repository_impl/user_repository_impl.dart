@@ -22,7 +22,27 @@ class UserRepositoryImpl implements UserRepository {
     }
     return e.message ?? "Lỗi không xác định";
   }
-
+  @override
+  Future<Either<Failure, UserEntity>> getPublicProfile(String userId) async {
+    try {
+      return Right(await userRemoteDatasource.getPublicProfile(userId));
+    } on DioException catch (e) {
+      return Left(UserFailure(message: _handleDioError(e)));
+    } catch (e) {
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
+  // 🔥 IMPLEMENT HÀM ADMIN GET USER
+  @override
+  Future<Either<Failure, UserEntity>> getUserById(String id) async {
+    try {
+      return Right(await userRemoteDatasource.getUserById(id));
+    } on DioException catch (e) {
+      return Left(UserFailure(message: _handleDioError(e)));
+    } catch (e) {
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
   @override
   Future<Either<Failure, UserEntity>> getProfile() async {
     try {

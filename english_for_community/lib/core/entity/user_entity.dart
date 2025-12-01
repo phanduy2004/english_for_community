@@ -1,3 +1,4 @@
+import 'package:english_for_community/core/entity/progress_summary_entity.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -74,7 +75,7 @@ class UserEntity extends Equatable {
   // === ONLINE STATUS ===
   final bool isOnline;
   final DateTime? lastActivityDate;
-
+  final ProgressSummaryEntity? progressSummary;
   const UserEntity({
     required this.id,
     required this.fullName,
@@ -114,6 +115,7 @@ class UserEntity extends Equatable {
     // Online status
     this.isOnline = false,
     this.lastActivityDate,
+    this.progressSummary,
   });
 
   // 🔥 ADDED COPYWITH METHOD HERE
@@ -183,6 +185,7 @@ class UserEntity extends Equatable {
 
       isOnline: this.isOnline,
       lastActivityDate: this.lastActivityDate,
+
     );
   }
 
@@ -244,6 +247,9 @@ class UserEntity extends Equatable {
 
       isOnline: onlineStatus,
       lastActivityDate: _parseDate(json['lastActivityDate']),
+      progressSummary: json['progressSummary'] != null
+          ? ProgressSummaryEntity.fromJson(json['progressSummary'])
+          : null,
     );
   }
 
@@ -308,5 +314,6 @@ class UserEntity extends Equatable {
 
     // 🔥 THÊM: Props cho gender và isVerified
     gender, isVerified,
+    progressSummary
   ];
 }

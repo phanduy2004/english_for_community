@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../core/entity/user_entity.dart';
 import '../../dashboard_home/bloc/admin_bloc.dart';
 import '../../dashboard_home/bloc/admin_event.dart';
+import '../widgets/admin_user_details_dialog.dart'; // 🔥 Import dialog chi tiết
 import 'user_ban_dialog.dart';
 
 class UserActionMenu extends StatelessWidget {
@@ -14,7 +14,6 @@ class UserActionMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy trạng thái từ Entity (isBanned có thể null nên default false)
     final bool isBanned = user.isBanned;
 
     return PopupMenuButton<String>(
@@ -28,7 +27,9 @@ class UserActionMenu extends StatelessWidget {
       elevation: 4,
       onSelected: (value) => _handleAction(context, value, isBanned),
       itemBuilder: (context) => [
-        _buildItem('edit', Icons.edit_outlined, 'Chỉnh sửa thông tin', Colors.black87),
+        // 🔥 ĐỔI: Chỉnh sửa -> Xem thông tin
+        _buildItem('view', Icons.visibility_outlined, 'Xem thông tin chi tiết', Colors.black87),
+
         _buildItem(
           'ban',
           isBanned ? Icons.lock_open_rounded : Icons.block_rounded,
@@ -57,16 +58,16 @@ class UserActionMenu extends StatelessWidget {
 
   void _handleAction(BuildContext context, String value, bool isBanned) {
     switch (value) {
-      case 'edit':
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Tính năng Edit đang phát triển"))
+      case 'view':
+      // 🔥 GỌI DIALOG CHI TIẾT
+        showDialog(
+          context: context,
+          builder: (ctx) => AdminUserDetailsDialog(userId: user.id,),
         );
         break;
 
       case 'ban':
         if (isBanned) {
-          // Logic Mở khóa
-          // Sử dụng closure context (context cha) nên vẫn gọi được Bloc
           _showConfirmDialog(
               context,
               title: 'Mở khóa tài khoản?',
@@ -80,13 +81,10 @@ class UserActionMenu extends StatelessWidget {
               }
           );
         } else {
-          // Logic Khóa -> Hiện Dialog UserBanDialog
-          // 🔥 SỬA LỖI TẠI ĐÂY: Cần lấy Bloc ra trước khi mở Dialog
           final adminBloc = context.read<AdminBloc>();
-
           showDialog(
             context: context,
-            builder: (ctx) => BlocProvider.value( // ✅ Cung cấp Bloc hiện tại cho Dialog
+            builder: (ctx) => BlocProvider.value(
               value: adminBloc,
               child: UserBanDialog(userId: user.id),
             ),
@@ -131,8 +129,8 @@ class UserActionMenu extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(ctx); // Đóng dialog
-              onConfirm();        // Thực hiện hành động (dùng context cha)
+              Navigator.pop(ctx);
+              onConfirm();
             },
             style: TextButton.styleFrom(foregroundColor: confirmColor),
             child: Text(confirmText, style: const TextStyle(fontWeight: FontWeight.bold)),

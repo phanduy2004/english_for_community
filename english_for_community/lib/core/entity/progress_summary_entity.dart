@@ -54,7 +54,6 @@ class StudyTimeEntity {
 class StatsGridEntity {
   final int vocabLearned;
   final double avgWritingScore;
-  final int readingWpm;
   final int readingAccuracy;
   final int dictationAccuracy;
   final int speakingAccuracy;
@@ -63,7 +62,6 @@ class StatsGridEntity {
   StatsGridEntity({
     required this.vocabLearned,
     required this.avgWritingScore,
-    required this.readingWpm,
     required this.readingAccuracy,
     required this.dictationAccuracy,
     required this.speakingAccuracy,
@@ -74,7 +72,6 @@ class StatsGridEntity {
       StatsGridEntity(
         vocabLearned: json["vocabLearned"],
         avgWritingScore: (json["avgWritingScore"] as num).toDouble(),
-        readingWpm: json["readingWpm"],
         readingAccuracy: json["readingAccuracy"],
         dictationAccuracy: json["dictationAccuracy"],
         speakingAccuracy: json["speakingAccuracy"],

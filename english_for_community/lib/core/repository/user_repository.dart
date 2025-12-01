@@ -21,6 +21,7 @@ abstract class UserRepository {
     String? language,
     String? timezone,
   });
-
+  Future<Either<Failure, UserEntity>> getPublicProfile(String userId);
   Future<Either<Failure, void>> deleteAccount();
+  Future<Either<Failure, UserEntity>> getUserById(String id);
 }
