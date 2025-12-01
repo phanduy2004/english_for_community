@@ -30,3 +30,21 @@ class JobTypeFailure extends Failure{
 class WritingFailure extends Failure{
   WritingFailure({required super.message});
 }
+class SpeakingFailure extends Failure {
+  SpeakingFailure({required super.message});
+}
+class ReadingFailure extends Failure {
+  ReadingFailure({required super.message});
+}
+class DictionaryFailure extends Failure {
+  DictionaryFailure({required super.message});
+}
+class UserVocabFailure extends Failure {
+  UserVocabFailure({required super.message});
+}
+class ProgressFailure extends Failure {
+  ProgressFailure({required super.message});
+}
+class AiChatFailure extends Failure {
+  AiChatFailure({required super.message});
+}

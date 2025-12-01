@@ -73,6 +73,8 @@ abstract class CueRepository {
     required int cueIdx,
     required String userText,
     int? playedMs,
+    required int durationInSeconds
+
   });
 
   Future<Either<Failure, List<DictationAttemptEntity>>> listDictationAttempt(

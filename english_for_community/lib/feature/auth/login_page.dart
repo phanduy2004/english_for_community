@@ -1,18 +1,15 @@
-import 'dart:ui' show ImageFilter;
-
-import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:ui' show ImageFilter;
 
-import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
-import 'package:english_for_community/feature/auth/bloc/user_state.dart';
-import 'package:english_for_community/feature/auth/bloc/user_event.dart';
+import '../../feature/auth/bloc/user_bloc.dart';
+import '../../feature/auth/bloc/user_state.dart';
+import '../../feature/auth/bloc/user_event.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
-
   static String routeName = 'LoginPage';
   static String routePath = '/login';
 
@@ -20,384 +17,331 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> with SingleTickerProviderStateMixin {
-  final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _email = TextEditingController(text: 'testuser@example.com');
-  final _pass  = TextEditingController(text: 'Test@1234');
-  final _emailNode = FocusNode();
-  final _passNode  = FocusNode();
-  bool _obscure = true;
-  bool _remember = true;
+class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController(text: 'testuser@example.com');
+  final _passController = TextEditingController(text: 'Test@1234');
+  bool _obscurePassword = true;
+  bool _rememberMe = true;
 
-  late final AnimationController _ac;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
-
-  @override
-  void initState() {
-    super.initState();
-    _ac = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
-    _fade  = CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic);
-    _slide = Tween(begin: const Offset(0, .08), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ac, curve: Curves.easeOutCubic));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ac.forward());
-  }
+  // --- SHADCN/FOURI COLOR PALETTE ---
+  static const Color bgPage = Color(0xFFF9FAFB); // Zinc-50
+  static const Color textMain = Color(0xFF09090B); // Zinc-950
+  static const Color textMuted = Color(0xFF71717A); // Zinc-500
+  static const Color borderCol = Color(0xFFE4E4E7); // Zinc-200
+  static const Color primaryCol = Color(0xFF18181B); // Zinc-900 (Elegant Dark Button)
+  static const Color accentCol = Color(0xFF16A34A); // Green-600 (Brand Accent)
 
   @override
   void dispose() {
-    _email.dispose();
-    _pass.dispose();
-    _emailNode.dispose();
-    _passNode.dispose();
-    _ac.dispose();
+    _emailController.dispose();
+    _passController.dispose();
     super.dispose();
   }
 
   void _onSignIn({required bool isLoading}) {
     if (isLoading) return;
-    final email = _email.text.trim();
-    final pass = _pass.text;
+    final email = _emailController.text.trim();
+    final pass = _passController.text;
+
     if (email.isEmpty || pass.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
+      _showShadcnDialog(
+        context,
+        title: 'Missing Information',
+        message: 'Please enter your full email and password.',
+        isError: true,
       );
       return;
     }
     context.read<UserBloc>().add(LoginEvent(email: email, password: pass));
   }
 
-  void _onForgot() => context.pushNamed('ForgotPasswordPage');
-  void _onSignUp()   => context.pushNamed('RegisterPage');
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs    = theme.colorScheme;
-    final tt    = theme.textTheme;
-
-    final insets = MediaQuery.of(context).viewInsets;
-    final isKeyboard = insets.bottom > 0;
-
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
-        }
-        if (state.status == UserStatus.success) {
-          context.goNamed('HomePage');
+          _showShadcnDialog(context, title: 'Login Failed', message: state.errorMessage!, isError: true);
         }
       },
       builder: (context, state) {
-        final isLoading = state.status == UserStatus.loading;
+        final isLoading = state.isFormLoading;
 
-        return GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: Scaffold(
-            key: _scaffoldKey,
-            body: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Gradient nền “luxury”
-                DecoratedBox(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [ Color(0xFF101820), Color(0xFF1D976C), Color(0xFFA5D6A7) ],
-                      stops:  [ 0.0, 0.55, 1.0 ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+        return Scaffold(
+          backgroundColor: bgPage,
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // --- 1. LOGO & HEADER ---
+                    Center(
+                      child: Container(
+                        width: 64, height: 64,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderCol),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))
+                          ],
+                        ),
+                        child: const Icon(Icons.auto_stories_rounded, size: 32, color: accentCol),
+                      ),
                     ),
-                  ),
-                ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Welcome Back!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Enter your details to continue your learning journey.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 14, color: textMuted),
+                    ),
+                    const SizedBox(height: 32),
 
-                // Họa tiết tròn + blur nhẹ
-                Positioned(
-                  right: -60, top: -60,
-                  child: _Bubble(size: 180, color: Colors.white.withOpacity(.08)),
-                ),
-                Positioned(
-                  left: -40, top: 120,
-                  child: _Bubble(size: 140, color: Colors.white.withOpacity(.07)),
-                ),
-                Positioned(
-                  right: 30, bottom: 80,
-                  child: _Bubble(size: 90, color: Colors.white.withOpacity(.06)),
-                ),
+                    // --- 2. FORM CARD ---
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: borderCol),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Email Input
+                          _Label('Email'),
+                          const SizedBox(height: 8),
+                          _ShadcnInput(
+                            controller: _emailController,
+                            hintText: 'name@example.com',
+                            icon: Icons.email_outlined,
+                            enabled: !isLoading,
+                          ),
+                          const SizedBox(height: 16),
 
-                // Nội dung
-                SafeArea(
-                  child: LayoutBuilder(
-                    builder: (context, c) {
-                      // Responsive maxWidth cho card
-                      final maxW = c.maxWidth >= 900 ? 520.0 : (c.maxWidth >= 600 ? 480.0 : double.infinity);
-                      final topPad = isKeyboard ? 80.0 : (c.maxHeight * .18).clamp(140.0, 220.0);
-
-                      return SingleChildScrollView(
-                        padding: EdgeInsets.fromLTRB(16, topPad, 16, 16 + insets.bottom),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(maxWidth: maxW),
-                            child: FadeTransition(
-                              opacity: _fade,
-                              child: SlideTransition(
-                                position: _slide,
-                                child: _GlassCard(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      // Logo + tiêu đề
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: const EdgeInsets.all(12),
-                                            decoration: BoxDecoration(
-                                              color: cs.primary.withOpacity(.12),
-                                              borderRadius: BorderRadius.circular(14),
-                                            ),
-                                            child: const Icon(Icons.school_rounded, size: 30),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Text('Welcome back', style: tt.headlineSmall?.copyWith(
-                                            fontWeight: FontWeight.w800,
-                                          )),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text('Sign in to continue your learning path',
-                                        style: tt.bodyMedium?.copyWith(color: Colors.white70),
-                                      ),
-
-                                      const SizedBox(height: 24),
-
-                                      // Email
-                                      _buildTextField(
-                                        controller: _email,
-                                        focusNode: _emailNode,
-                                        hintText: 'Email address',
-                                        prefixIcon: Icons.email_outlined,
-                                        textInputAction: TextInputAction.next,
-                                        keyboardType: TextInputType.emailAddress,
-                                        enabled: !isLoading,
-                                      ),
-                                      const SizedBox(height: 16),
-
-                                      // Password
-                                      _buildTextField(
-                                        controller: _pass,
-                                        focusNode: _passNode,
-                                        hintText: 'Password',
-                                        prefixIcon: Icons.lock_outline,
-                                        obscureText: _obscure,
-                                        onFieldSubmitted: (_) => _onSignIn(isLoading: isLoading),
-                                        suffixIcon: IconButton(
-                                          onPressed: isLoading ? null : () => setState(() => _obscure = !_obscure),
-                                          icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility, size: 20),
-                                        ),
-                                        enabled: !isLoading,
-                                      ),
-
-                                      const SizedBox(height: 12),
-
-                                      // ✅ SỬA LỖI OVERFLOW: dùng Wrap thay vì Row + co giãn linh hoạt
-                                      Wrap(
-                                        alignment: WrapAlignment.spaceBetween,
-                                        crossAxisAlignment: WrapCrossAlignment.center,
-                                        runSpacing: 8,
-                                        children: [
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              SizedBox(
-                                                width: 22, height: 22,
-                                                child: Checkbox(
-                                                  value: _remember,
-                                                  onChanged: isLoading ? null : (v) => setState(() => _remember = v ?? true),
-                                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text('Remember me', style: tt.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                                            ],
-                                          ),
-                                          TextButton(
-                                            onPressed: isLoading ? null : _onForgot,
-                                            child: const Text('Forgot password?'),
-                                          ),
-                                        ],
-                                      ),
-
-                                      const SizedBox(height: 16),
-
-                                      // Nút Sign in
-                                      SizedBox(
-                                        width: double.infinity, height: 56,
-                                        child: FilledButton(
-                                          onPressed: () => _onSignIn(isLoading: isLoading),
-                                          child: AnimatedSwitcher(
-                                            duration: const Duration(milliseconds: 220),
-                                            child: isLoading
-                                                ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.2))
-                                                : Text('Sign In', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 18),
-
-                                      // Divider “or”
-                                      Row(
-                                        children: [
-                                          Expanded(child: Divider(color: Colors.white24)),
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                                            child: Text('or continue with', style: tt.bodyMedium?.copyWith(color: Colors.white70)),
-                                          ),
-                                          Expanded(child: Divider(color: Colors.white24)),
-                                        ],
-                                      ),
-
-                                      const SizedBox(height: 16),
-
-                                      // Google button
-                                      SizedBox(
-                                        width: double.infinity, height: 56,
-                                        child: OutlinedButton.icon(
-                                          onPressed: isLoading
-                                              ? null
-                                              : () => ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Google sign-in coming soon')),
-                                          ),
-                                          icon: SvgPicture.asset('assets/images/google.svg', height: 22, width: 22),
-                                          label: Text('Continue with Google', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 18),
-
-                                      // Sign up
-                                      Center(
-                                        child: Wrap(
-                                          crossAxisAlignment: WrapCrossAlignment.center,
-                                          children: [
-                                            Text("Don't have an account?  ", style: tt.bodyLarge?.copyWith(color: Colors.white70)),
-                                            TextButton(
-                                              onPressed: isLoading ? null : _onSignUp,
-                                              child: const Text('Sign Up'),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                          // Password Input
+                          _Label('Password'),
+                          const SizedBox(height: 8),
+                          _ShadcnInput(
+                            controller: _passController,
+                            hintText: 'Enter password...',
+                            icon: Icons.lock_outline,
+                            obscureText: _obscurePassword,
+                            enabled: !isLoading,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                size: 18, color: textMuted,
                               ),
+                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            ),
+                            onSubmitted: (_) => _onSignIn(isLoading: isLoading),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Remember Me & Forgot Password
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  SizedBox(
+                                    width: 20, height: 20,
+                                    child: Checkbox(
+                                      value: _rememberMe,
+                                      activeColor: primaryCol,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                      side: const BorderSide(color: borderCol, width: 1.5),
+                                      onChanged: (v) => setState(() => _rememberMe = v!),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
+                                ],
+                              ),
+                              GestureDetector(
+                                onTap: () => context.pushNamed('ForgotPasswordPage'),
+                                child: const Text('Forgot password?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Sign In Button
+                          SizedBox(
+                            width: double.infinity,
+                            height: 44,
+                            child: ElevatedButton(
+                              onPressed: () => _onSignIn(isLoading: isLoading),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryCol,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                  : const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                        ],
+                      ),
+                    ),
 
-                // Overlay khi loading
-                if (isLoading)
-                  IgnorePointer(
-                    child: Container(color: Colors.black.withOpacity(.04)),
-                  ),
-              ],
+                    const SizedBox(height: 24),
+
+                    // --- 3. SOCIAL LOGIN ---
+                    Row(
+                      children: [
+                        const Expanded(child: Divider(color: borderCol)),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('Or continue with', style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500)),
+                        ),
+                        const Expanded(child: Divider(color: borderCol)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    OutlinedButton.icon(
+                      onPressed: isLoading ? null : () {},
+                      icon: SvgPicture.asset('assets/images/google.svg', width: 18, height: 18),
+                      label: const Text('Continue with Google', style: TextStyle(color: textMain, fontWeight: FontWeight.w500)),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: const BorderSide(color: borderCol),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+
+                    const SizedBox(height: 32),
+
+                    // --- 4. SIGN UP LINK ---
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Don't have an account? ", style: TextStyle(fontSize: 14, color: textMuted)),
+                        GestureDetector(
+                          onTap: () => context.pushNamed('RegisterPage'),
+                          child: const Text('Sign Up Now', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         );
       },
     );
   }
+}
 
-  // Input
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required FocusNode focusNode,
-    required String hintText,
-    required IconData prefixIcon,
-    TextInputAction? textInputAction,
-    TextInputType? keyboardType,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    Function(String)? onFieldSubmitted,
-    bool enabled = true,
-  }) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+// --- REUSABLE WIDGETS ---
 
-    return TextFormField(
-      controller: controller,
-      focusNode: focusNode,
-      textInputAction: textInputAction,
-      keyboardType: keyboardType,
-      obscureText: obscureText,
-      onFieldSubmitted: onFieldSubmitted,
-      enabled: enabled,
-      style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white),
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: const TextStyle(color: Colors.white70),
-        prefixIcon: Icon(prefixIcon, color: Colors.white70, size: 20),
-        suffixIcon: suffixIcon,
-        filled: true,
-        fillColor: Colors.white.withOpacity(.10),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(.20), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: cs.primaryContainer, width: 1.2),
+class _Label extends StatelessWidget {
+  final String text;
+  const _Label(this.text);
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B)));
+  }
+}
+
+class _ShadcnInput extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final IconData icon;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final bool enabled;
+  final Function(String)? onSubmitted;
+
+  const _ShadcnInput({
+    required this.controller,
+    required this.hintText,
+    required this.icon,
+    this.obscureText = false,
+    this.suffixIcon,
+    this.enabled = true,
+    this.onSubmitted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1))],
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: obscureText,
+        enabled: enabled,
+        style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
+          prefixIcon: Icon(icon, size: 18, color: const Color(0xFF71717A)),
+          suffixIcon: suffixIcon,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.2)),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
   }
 }
 
-/// Bong bóng + blur
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.size, required this.color});
-  final double size; final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(width: size, height: size, color: color),
+// Helper function for the Dialog (Translated)
+void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      contentPadding: const EdgeInsets.all(24),
+      title: Row(
+        children: [
+          Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
+              color: isError ? Colors.red : Colors.green, size: 24),
+          const SizedBox(width: 12),
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ],
       ),
-    );
-  }
-}
-
-/// Thẻ “glassmorphism”
-class _GlassCard extends StatelessWidget {
-  const _GlassCard({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(.10),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(.18)),
-            boxShadow: const [BoxShadow(blurRadius: 30, spreadRadius: -4, color: Color(0x33000000))],
+      content: Text(message, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
+      actions: [
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: OutlinedButton.styleFrom(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              side: const BorderSide(color: Color(0xFFE4E4E7)),
+              foregroundColor: const Color(0xFF09090B),
+            ),
+            child: const Text('Close'),
           ),
-          child: child,
-        ),
-      ),
-    );
-  }
+        )
+      ],
+    ),
+  );
 }
