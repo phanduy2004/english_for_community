@@ -32,7 +32,7 @@ const WritingSubmissionSchema = new Schema({
   // BÀI LÀM
   content:   { type: String, default: '' },
   wordCount: Number,
-
+  durationInSeconds: { type: Number, default: 0, min: 0 }, // <-- ĐÃ THÊM
   // TRẠNG THÁI
   status:      { type: String, enum: ['draft','submitted','reviewed'], default: 'draft' },
   startedAt:   { type: Date, default: Date.now },
@@ -49,5 +49,5 @@ const WritingSubmissionSchema = new Schema({
 
 WritingSubmissionSchema.index({ userId: 1, topicId: 1, createdAt: -1 });
 
-const WritingSubmission = mongoose.model('WritingSubmission', WritingSubmissionSchema, 'writing_submissions');
+const WritingSubmission = mongoose.model('WritingSubmission', WritingSubmissionSchema, 'writingsubmissions');
 export default WritingSubmission;

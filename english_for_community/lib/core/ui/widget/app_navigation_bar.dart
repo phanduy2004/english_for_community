@@ -66,18 +66,11 @@ class AppNavigationBar extends StatelessWidget {
         routeName: homeRouteName,
       ),
       AppNavItem(
-        label: 'Vocabulary',
+        label: 'Progress',
         icon: Icons.style_outlined,
         selectedIcon: Icons.style,
         routeName: vocabularyRouteName,
         badge: vocabularyBadge,
-      ),
-      AppNavItem(
-        label: 'Practice',
-        icon: Icons.fitness_center_outlined,
-        selectedIcon: Icons.fitness_center,
-        routeName: practiceRouteName,
-        badge: practiceBadge,
       ),
       AppNavItem(
         label: 'Profile',

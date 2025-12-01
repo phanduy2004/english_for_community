@@ -39,7 +39,8 @@ dependencies:
   flutter_secure_storage: ^9.2.0
   just_audio: ^0.9.46
   audio_session: ^0.1.25
-
+  forui: ^0.16.0
+  speech_to_text: ^7.3.0
   # Core app libs (RUNTIME) → phải để ở dependencies
   dio: ^5.7.0
   get_it: ^7.7.0
@@ -48,20 +49,38 @@ dependencies:
   pretty_dio_logger: ^1.4.0
   rxdart: ^0.28.0
   cached_network_image: ^3.4.1
-  intl: ^0.19.0
+  intl: ^0.20.2
   image_picker: ^1.0.8
   socket_io_client: ^2.0.3
   shared_preferences: ^2.2.2
-
+  translator_plus: ^1.0.1 # ⬅️ THÊM DÒNG NÀY
+  audioplayers: ^6.0.0
+  path_provider: ^2.1.5
+  path: ^1.9.0
   # Firebase & Google
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   firebase_messaging: ^15.0.3
   google_sign_in: ^6.3.0
   flutter_svg: ^2.0.10+1
-
+  sqflite: ^2.3.3
   # JSON model annotations (runtime)
   json_annotation: ^4.9.0
+  pretty_diff_text: 2.1.0
+  google_generative_ai: ^0.4.1
+  permission_handler: ^11.4.0
+  flutter_tts: ^4.2.3
+  flutter_local_notifications: ^17.1.2
+  flutter_timezone: ^4.1.1
+  timezone: ^0.9.4
+  flutter_animate: ^4.5.0
+  #record: ^5.0.1
+  vapi: ^0.1.0
+  web_socket_channel: ^2.4.0
+  translator: ^1.0.0
+  flutter_markdown: ^0.6.14  # <--- Thêm dòng này
+  fl_chart: ^1.1.1
+  device_info_plus: ^10.0.0
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +96,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/db/dictionary.db
 
   fonts:
     - family: Lexend
@@ -90,3 +110,6 @@ flutter:
         - asset: assets/fonts/Lexend-Regular.ttf
         - asset: assets/fonts/Lexend-SemiBold.ttf
         - asset: assets/fonts/Lexend-Thin.ttf
+    - family: NotoSans
+      fonts:
+        - asset: assets/fonts/NotoSans-Regular.ttf

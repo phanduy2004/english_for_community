@@ -7,11 +7,17 @@ class DictationScore extends Equatable {
   final int? correctWords;
   final int? totalWords;
 
+  // 🔥 THÊM 2 TRƯỜNG MỚI ĐỂ KHỚP BACKEND
+  final bool? passed;
+  final double? thresholdWer;
+
   const DictationScore({
     this.wer,
     this.cer,
     this.correctWords,
     this.totalWords,
+    this.passed,       // <--- Thêm
+    this.thresholdWer, // <--- Thêm
   });
 
   factory DictationScore.fromJson(Map<String, dynamic> json) => DictationScore(
@@ -19,6 +25,10 @@ class DictationScore extends Equatable {
     cer: (json['cer'] as num?)?.toDouble(),
     correctWords: (json['correctWords'] as num?)?.toInt(),
     totalWords: (json['totalWords'] as num?)?.toInt(),
+
+    // 🔥 Map dữ liệu từ JSON
+    passed: json['passed'] as bool?,
+    thresholdWer: (json['thresholdWer'] as num?)?.toDouble(),
   );
 
   Map<String, dynamic> toJson() => {
@@ -26,6 +36,8 @@ class DictationScore extends Equatable {
     'cer': cer,
     'correctWords': correctWords,
     'totalWords': totalWords,
+    'passed': passed,            // <--- Serialize
+    'thresholdWer': thresholdWer, // <--- Serialize
   };
 
   DictationScore copyWith({
@@ -33,19 +45,22 @@ class DictationScore extends Equatable {
     double? cer,
     int? correctWords,
     int? totalWords,
+    bool? passed,             // <--- Thêm vào copyWith
+    double? thresholdWer,     // <--- Thêm vào copyWith
   }) {
     return DictationScore(
       wer: wer ?? this.wer,
       cer: cer ?? this.cer,
       correctWords: correctWords ?? this.correctWords,
       totalWords: totalWords ?? this.totalWords,
+      passed: passed ?? this.passed,
+      thresholdWer: thresholdWer ?? this.thresholdWer,
     );
   }
 
   @override
-  List<Object?> get props => [wer, cer, correctWords, totalWords];
+  List<Object?> get props => [wer, cer, correctWords, totalWords, passed, thresholdWer];
 }
-
 class DictationAttemptEntity extends Equatable {
   final String id;                 // _id/id
   final String? userId;            // ObjectId string
@@ -58,6 +73,7 @@ class DictationAttemptEntity extends Equatable {
   final DictationScore? score;     // { wer, cer, correctWords, totalWords }
 
   final int? playedMs;
+  final int? durationInSeconds; // <-- ĐÃ THÊM
   final DateTime? submittedAt;
 
   final DateTime? createdAt;
@@ -72,6 +88,7 @@ class DictationAttemptEntity extends Equatable {
     this.userTextNorm,
     this.score,
     this.playedMs,
+    this.durationInSeconds, // <-- ĐÃ THÊM
     this.submittedAt,
     this.createdAt,
     this.updatedAt,
@@ -93,6 +110,7 @@ class DictationAttemptEntity extends Equatable {
           ? DictationScore.fromJson(json['score'] as Map<String, dynamic>)
           : null,
       playedMs: (json['playedMs'] as num?)?.toInt(),
+      durationInSeconds: (json['durationInSeconds'] as num?)?.toInt(), // <-- ĐÃ THÊM
       submittedAt: _parseDate(json['submittedAt']),
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
@@ -108,6 +126,7 @@ class DictationAttemptEntity extends Equatable {
     'userTextNorm': userTextNorm,
     'score': score?.toJson(),
     'playedMs': playedMs,
+    'durationInSeconds': durationInSeconds, // <-- ĐÃ THÊM
     'submittedAt': submittedAt?.toIso8601String(),
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
@@ -122,6 +141,7 @@ class DictationAttemptEntity extends Equatable {
     String? userTextNorm,
     DictationScore? score,
     int? playedMs,
+    int? durationInSeconds, // <-- ĐÃ THÊM
     DateTime? submittedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -135,6 +155,7 @@ class DictationAttemptEntity extends Equatable {
       userTextNorm: userTextNorm ?? this.userTextNorm,
       score: score ?? this.score,
       playedMs: playedMs ?? this.playedMs,
+      durationInSeconds: durationInSeconds ?? this.durationInSeconds, // <-- ĐÃ THÊM
       submittedAt: submittedAt ?? this.submittedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -142,6 +163,7 @@ class DictationAttemptEntity extends Equatable {
   }
 
   static DateTime? _parseDate(Object? v) {
+    // ... (Nội dung hàm giữ nguyên)
     if (v == null) return null;
     if (v is DateTime) return v;
     if (v is String) return DateTime.tryParse(v);
@@ -159,6 +181,7 @@ class DictationAttemptEntity extends Equatable {
     userTextNorm,
     score,
     playedMs,
+    durationInSeconds, // <-- ĐÃ THÊM
     submittedAt,
     createdAt,
     updatedAt,

@@ -1,15 +1,22 @@
-// src/lib/jwt_token.js
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-dotenv.config();
+import jwt from "jsonwebtoken";
 
-export const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'your-access-secret-key';
+const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key';
+
+// Tạo Access Token (ngắn hạn, ví dụ: 15 phút)
+export const generateAccessToken = (userId) => {
+  return jwt.sign({ userId }, ACCESS_SECRET, { expiresIn: '15m' });
 };
 
-export const verifyToken = (token) => {
+// Tạo Refresh Token (dài hạn, ví dụ: 7 ngày)
+export const generateRefreshToken = (userId) => {
+  return jwt.sign({ userId }, REFRESH_SECRET, { expiresIn: '7d' });
+};
+
+// Xác thực Access Token
+export const verifyAccessToken = (token) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, ACCESS_SECRET);
     return { valid: true, expired: false, userId: decoded.userId };
   } catch (error) {
     return {
@@ -20,7 +27,20 @@ export const verifyToken = (token) => {
   }
 };
 
-// Chỉ lấy token từ Authorization header dạng "Bearer <token>"
+// Xác thực Refresh Token
+export const verifyRefreshToken = (token) => {
+  try {
+    const decoded = jwt.verify(token, REFRESH_SECRET);
+    return { valid: true, expired: false, userId: decoded.userId };
+  } catch (error) {
+    return {
+      valid: false,
+      expired: error.name === 'TokenExpiredError',
+      userId: null,
+    };
+  }
+};
+
 export const extractToken = (req) => {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -28,6 +48,3 @@ export const extractToken = (req) => {
   }
   return null;
 };
-
-// Không dùng cookie nữa nên clearToken là no-op (tuỳ thích)
-export const clearToken = () => {};

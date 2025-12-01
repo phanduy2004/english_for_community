@@ -7,7 +7,8 @@ import 'app_jwt_interceptor.dart';
 class ApiClient {
   Dio getDio({bool authorized = false}) {
     final dio = Dio(BaseOptions(baseUrl: '${ApiConfig.Base_URL}api/'));
-    if (authorized) dio.interceptors.add(AppJwtInterceptor());
+    if (authorized)
+      dio.interceptors.add(AppJwtInterceptor(dio: dio));
     dio.interceptors.add(PrettyDioLogger(
       request: true,
       requestBody: true,

@@ -1,110 +1,124 @@
-// src/controllers/listening.controller.js
+import { listeningService } from '../services/listeningService.js';
+import { trackUserProgress } from "../untils/progressTracker.js";
 import mongoose from 'mongoose';
-import Listening from '../models/Listening.js';
-import {Enrollment} from "../models/index.js";
 
-const basePopulate = [
-  {
-    path: 'lessonId',
-    select: '_id name description order type content imageUrl isActive createdAt updatedAt',
-  }
-];
+// ============================================================
+// 🌍 PUBLIC API
+// ============================================================
 
-/**
- * GET /api/listenings/:id
- */
-export const getListeningById = async (req, res) => {
+const getAllListenings = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!mongoose.Types.ObjectId.isValid(String(id))) {
-      return res.status(400).json({ message: 'Invalid listening id' });
-    }
+    const userId = req.user?.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const { difficulty, q } = req.query;
 
-    const doc = await Listening.findById(id, { transcript: 0 })
-    .populate(basePopulate)
-    .lean();
-
-    if (!doc) return res.status(404).json({ message: 'Listening not found' });
-    return res.status(200).json(doc);
-  } catch (error) {
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    const result = await listeningService.getAllListenings(
+      userId, { difficulty, q }, page, limit
+    );
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error: ' + err.message });
   }
 };
 
-/**
- * GET /api/listenings
- * Lấy danh sách listening (populate). Hỗ trợ filter qua query:
- * - lessonId (optional): chỉ lấy listening thuộc lesson này
- * - q (optional): tìm theo title/code (regex i)
- * - level (optional): beginner|intermediate|advanced -> map difficulty
- */
-export const listListenings = async (req, res) => {
+const getListeningById = async (req, res) => {
   try {
-    const { lessonId, q = '', level = '' } = req.query;
-    const userId = req.user?._id || null; // <-- 2. Lấy userId (nếu đã đăng nhập)
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
 
-    const find = {};
-    // ... (giữ nguyên logic find, keyword, difficulty)
-    if (lessonId) {
-      if (!mongoose.Types.ObjectId.isValid(String(lessonId))) {
-        return res.status(400).json({ message: 'Invalid lessonId' });
-      }
-      find.lessonId = lessonId;
+    const listening = await listeningService.getListeningById(id);
+    if (!listening) return res.status(404).json({ message: 'Not found' });
+
+    res.status(200).json({ data: listening });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error: ' + err.message });
+  }
+};
+
+// 🟢 Nộp bài (Thay thế dictationController.submitDictation)
+const submitAttempt = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const payload = req.body;
+
+    const result = await listeningService.submitAttempt(userId, payload);
+
+    // Tracking analytics
+    let normalizedScore = 0;
+    if (result.totalCues > 0) {
+      normalizedScore = result.correctCount / result.totalCues;
     }
-    const keyword = String(q).trim();
-    if (keyword) {
-      find.$or = [
-        { title: { $regex: keyword, $options: 'i' } },
-        { code:  { $regex: keyword, $options: 'i' } },
-      ];
-    }
-    const levelMap = { beginner: 'easy', intermediate: 'medium', advanced: 'hard' };
-    const difficulty = levelMap[String(level).toLowerCase()];
-    if (difficulty) find.difficulty = difficulty;
+    trackUserProgress(userId, 'dictation', {
+      duration: payload.durationInSeconds || 0,
+      score: normalizedScore,
+      isLessonJustFinished: result.isCompleted
+    });
 
-    const docs = await Listening.find(find, { transcript: 0 })
-    .populate(basePopulate)
-    .sort({ createdAt: -1, _id: -1 })
-    .lean();
+    res.status(201).json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error: ' + err.message });
+  }
+};
 
-    // 3. Logic lấy và trộn tiến độ (progress)
-    let docsWithProgress = docs;
+// 🟢 Lấy lịch sử (Thay thế dictationController.getDictationAttempts)
+const getAttempts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const listeningId = req.query.listeningId;
+    const latest = String(req.query.latest || 'true') === 'true';
 
-    if (userId) {
-      // Lấy tất cả enrollment của user này
-      const enrollments = await Enrollment.find(
-        { userId, listeningId: { $in: docs.map(d => d._id) } },
-        { listeningId: 1, progress: 1, _id: 0 } // chỉ lấy các trường cần thiết
-      ).lean();
+    if (!listeningId) return res.status(400).json({ message: 'listeningId required' });
 
-      // Tạo map để tra cứu nhanh
-      const progressMap = new Map();
-      for (const enr of enrollments) {
-        progressMap.set(enr.listeningId.toString(), enr.progress);
-      }
+    const attempts = await listeningService.getAttempts(userId, listeningId, latest);
+    res.status(200).json(attempts);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error: ' + err.message });
+  }
+};
 
-      // Map 'docs' để thêm trường 'userProgress'
-      docsWithProgress = docs.map(doc => {
-        const progress = progressMap.get(doc._id.toString()) ?? 0.0;
-        return {
-          ...doc,
-          userProgress: progress, // Thêm trường mới
-        };
-      });
-    } else {
-      // Nếu không đăng nhập, gán mặc định progress = 0
-      docsWithProgress = docs.map(doc => ({ ...doc, userProgress: 0.0 }));
-    }
+// ============================================================
+// 🔐 ADMIN API
+// ============================================================
 
-    // 4. Trả về mảng đã được trộn tiến độ
-    return res.status(200).json({ docs: docsWithProgress });
-
+const createListening = async (req, res) => {
+  try {
+    const result = await listeningService.createListening(req.body);
+    res.status(201).json({ message: 'Created successfully', data: result });
   } catch (error) {
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    if (error.code === 11000) return res.status(400).json({ message: 'Duplicate Code' });
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+const adminUpdate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await listeningService.updateListening(id, req.body);
+    res.status(200).json({ message: 'Update success', data: result });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+const deleteListening = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await listeningService.deleteListening(id);
+    if (!result) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json({ message: 'Deleted successfully', id });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 export const listeningController = {
+  getAllListenings,
   getListeningById,
-  listListenings,
+  submitAttempt,
+  getAttempts,
+  createListening,
+  adminUpdate,
+  deleteListening
 };

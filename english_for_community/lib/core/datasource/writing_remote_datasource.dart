@@ -1,4 +1,4 @@
-// writing_remote_data_source.dart
+// lib/core/datasource/writing_remote_datasource.dart
 import 'package:dio/dio.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
@@ -9,30 +9,35 @@ class WritingRemoteDataSource {
 
   /// GET /api/writing-topics
   Future<List<WritingTopicEntity>> getWritingTopics() async {
-    final res = await dio.get('/writing-topics');
-    // res.data expected: List<dynamic>
+    // ✍️ SỬA PATH: API của bạn là '/writing-topics'
+    final res = await dio.get('/writing');
     final data = res.data as List<dynamic>;
     return data
         .map((e) => WritingTopicEntity.fromJson(e as Map<String, dynamic>))
         .toList();
   }
-
+  Future<List<WritingSubmissionEntity>> getTopicSubmissions(String topicId) async {
+    // Gọi vào API bạn vừa tạo ở Backend
+    final res = await dio.get('/writing/$topicId/submissions');
+    final data = res.data as List<dynamic>;
+    return data
+        .map((e) => WritingSubmissionEntity.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
   /// POST /api/writing-topics/:id/start
-  /// - Nếu FE đã sinh đề: truyền [generatedPrompt] để backend chỉ tạo submission.
-  /// - Nếu không: để null, backend sẽ tự sinh đề (nếu bạn bật chế độ đó).
-  /// Trả về: submissionId + generatedPrompt + resumed
   Future<({String submissionId, GeneratedPrompt generatedPrompt, bool resumed})>
   startWriting({
     required String topicId,
     required String userId,
-    GeneratedPrompt? generatedPrompt,
+    required GeneratedPrompt generatedPrompt, // ✍️ BẮT BUỘC CÓ
   }) async {
     final body = {
       'userId': userId,
-      if (generatedPrompt != null) 'generatedPrompt': generatedPrompt.toJson(),
+      'generatedPrompt': generatedPrompt.toJson(),
     };
 
-    final res = await dio.post('/api/writing-topics/$topicId/start', data: body);
+    // ✍️ SỬA PATH: API của bạn là '/api/writing-topics/:id/start'
+    final res = await dio.post('/writing/$topicId/start', data: body);
     final map = res.data as Map<String, dynamic>;
     final submissionId = (map['submissionId'] ?? '') as String;
     if (submissionId.isEmpty) {
@@ -44,51 +49,45 @@ class WritingRemoteDataSource {
     return (submissionId: submissionId, generatedPrompt: gp, resumed: resumed);
   }
 
-  /// GET /api/submissions/:id
+  /// GET /api/submissions/:id (Hàm này bạn chưa có, nhưng nên có)
   Future<WritingSubmissionEntity> getSubmission(String submissionId) async {
-    final res = await dio.get('/api/submissions/$submissionId');
+    // ✍️ SỬA PATH: API có thể là '/api/writing-submissions/:id'
+    final res = await dio.get('/writing/$submissionId');
     return WritingSubmissionEntity.fromJson(res.data as Map<String, dynamic>);
   }
 
-  /// PATCH /api/submissions/:id/draft  (autosave nháp)
-  /// Body: { content }
-  Future<WritingSubmissionEntity> autosaveDraft({
+  /// PATCH /api/writing-submissions/:id/draft (Autosave)
+  Future<int> autosaveDraft({
     required String submissionId,
     required String content,
   }) async {
     final res = await dio.patch(
-      '/api/submissions/$submissionId/draft',
+      '/writing/$submissionId/draft', // ✍️ SỬA PATH
       data: {'content': content},
     );
     final map = res.data as Map<String, dynamic>;
-    final sub = map['submission'] as Map<String, dynamic>?;
-    if (sub == null) {
-      throw StateError('autosaveDraft: missing submission in response');
-    }
-    return WritingSubmissionEntity.fromJson(sub);
+    // ✍️ SỬA RESPONSE: API trả về { message, wordCount }
+    return (map['wordCount'] as int?) ?? 0;
   }
 
-  /// POST /api/submissions/:id/submit  (lưu bài nộp, KHÔNG chấm ở backend)
-  /// Body: { content }
-  Future<void> submitEssay({
+
+  /// POST /api/writing-submissions/:id/submit (Lưu bài nộp, feedback, và duration)
+  /// ✍️ HÀM NÀY SỬA HOÀN TOÀN ĐỂ KHỚP VỚI CONTROLLER
+  Future<WritingSubmissionEntity> submitForReview({
     required String submissionId,
     required String content,
-  }) async {
-    await dio.post(
-      '/api/submissions/$submissionId/submit',
-      data: {'content': content},
-    );
-  }
-
-  /// POST /api/submissions/:id/feedback  (FE chấm xong rồi đẩy feedback lên)
-  /// Body: { feedback: {...} }
-  Future<void> uploadFeedback({
-    required String submissionId,
     required FeedbackEntity feedback,
+    required int durationInSeconds,
   }) async {
-    await dio.post(
-      '/api/submissions/$submissionId/feedback',
-      data: {'feedback': feedback.toJson()},
+    final res = await dio.post(
+      '/writing/$submissionId/submit', // ✍️ SỬA PATH
+      data: {
+        'content': content,
+        'feedback': feedback.toJson(),
+        'durationInSeconds': durationInSeconds,
+      },
     );
+    // API trả về submission đã được cập nhật
+    return WritingSubmissionEntity.fromJson(res.data as Map<String, dynamic>);
   }
 }

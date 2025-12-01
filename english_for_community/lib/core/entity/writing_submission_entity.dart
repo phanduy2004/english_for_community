@@ -8,6 +8,7 @@ class WritingSubmissionEntity extends Equatable {
   final GeneratedPrompt? generatedPrompt;
   final String content;
   final int? wordCount;
+  final int? durationInSeconds; // <-- ĐÃ THÊM
 
   final String status;           // draft | submitted | reviewed
   final DateTime? startedAt;
@@ -27,6 +28,7 @@ class WritingSubmissionEntity extends Equatable {
     this.generatedPrompt,
     this.content = '',
     this.wordCount,
+    this.durationInSeconds, // <-- ĐÃ THÊM
     this.status = 'draft',
     this.startedAt,
     this.submittedAt,
@@ -36,6 +38,42 @@ class WritingSubmissionEntity extends Equatable {
     this.createdAt,
     this.updatedAt,
   });
+
+  WritingSubmissionEntity copyWith({
+    String? id,
+    String? userId,
+    String? topicId,
+    GeneratedPrompt? generatedPrompt,
+    String? content,
+    int? wordCount,
+    int? durationInSeconds, // <-- ĐÃ THÊM
+    String? status,
+    DateTime? startedAt,
+    DateTime? submittedAt,
+    FeedbackEntity? feedback,
+    double? score,
+    DateTime? reviewedAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return WritingSubmissionEntity(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      topicId: topicId ?? this.topicId,
+      generatedPrompt: generatedPrompt ?? this.generatedPrompt,
+      content: content ?? this.content,
+      wordCount: wordCount ?? this.wordCount,
+      durationInSeconds: durationInSeconds ?? this.durationInSeconds, // <-- ĐÃ THÊM
+      status: status ?? this.status,
+      startedAt: startedAt ?? this.startedAt,
+      submittedAt: submittedAt ?? this.submittedAt,
+      feedback: feedback ?? this.feedback,
+      score: score ?? this.score,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   factory WritingSubmissionEntity.fromJson(Map<String, dynamic> json) {
     final _id = (json['_id'] ?? json['id']) as String?;
@@ -51,6 +89,7 @@ class WritingSubmissionEntity extends Equatable {
           : null,
       content: (json['content'] ?? '') as String,
       wordCount: (json['wordCount'] as num?)?.toInt(),
+      durationInSeconds: (json['durationInSeconds'] as num?)?.toInt(), // <-- ĐÃ THÊM
       status: (json['status'] ?? 'draft') as String,
       startedAt: _parseDate(json['startedAt']),
       submittedAt: _parseDate(json['submittedAt']),
@@ -71,6 +110,7 @@ class WritingSubmissionEntity extends Equatable {
     'generatedPrompt': generatedPrompt?.toJson(),
     'content': content,
     'wordCount': wordCount,
+    'durationInSeconds': durationInSeconds, // <-- ĐÃ THÊM
     'status': status,
     'startedAt': startedAt?.toIso8601String(),
     'submittedAt': submittedAt?.toIso8601String(),
@@ -82,6 +122,7 @@ class WritingSubmissionEntity extends Equatable {
   };
 
   static DateTime? _parseDate(Object? v) {
+    // ... (Nội dung hàm giữ nguyên)
     if (v == null) return null;
     if (v is DateTime) return v;
     if (v is String) return DateTime.tryParse(v);
@@ -97,6 +138,7 @@ class WritingSubmissionEntity extends Equatable {
     generatedPrompt,
     content,
     wordCount,
+    durationInSeconds, // <-- ĐÃ THÊM
     status,
     startedAt,
     submittedAt,
@@ -108,6 +150,7 @@ class WritingSubmissionEntity extends Equatable {
   ];
 }
 
+// ... (Các class con: GeneratedPrompt, FeedbackEntity, v.v... giữ nguyên) ...
 class GeneratedPrompt extends Equatable {
   final String? title;
   final String? text;
@@ -240,6 +283,7 @@ class FeedbackEntity extends Equatable {
     if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
     return null;
   }
+
 
   @override
   List<Object?> get props => [
