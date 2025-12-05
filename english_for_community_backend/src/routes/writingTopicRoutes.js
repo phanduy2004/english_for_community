@@ -5,9 +5,10 @@ import {
   startWritingForTopic,
   submitForReview,
   updateDraft,
-  getTopicSubmissions // 1️⃣ Import hàm mới
+  getTopicSubmissions, getAdminWritingTopics, createWritingTopic, getWritingTopicDetail, updateWritingTopic,
+  deleteWritingTopic, deleteSubmission // 1️⃣ Import hàm mới
 } from '../controllers/writingTopicController.js';
-import { authenticate } from "../middleware/auth.js";
+import {authenticate, requireAdmin} from "../middleware/auth.js";
 
 const router = Router();
 
@@ -29,5 +30,12 @@ router.patch('/:id/draft', updateDraft);
 
 // Nộp bài để chấm điểm
 router.post('/:id/submit', submitForReview);
+router.delete('/submissions/:id', deleteSubmission);
 
+
+router.get('/admin/all',requireAdmin, getAdminWritingTopics); // Lấy list cho admin
+router.post('/', requireAdmin,createWritingTopic);            // Tạo mới
+router.get('/:id', requireAdmin,getWritingTopicDetail);       // Lấy chi tiết (đặt sau /admin/all để tránh conflict route)
+router.put('/:id',requireAdmin, updateWritingTopic);          // Sửa
+router.delete('/:id',requireAdmin, deleteWritingTopic);
 export default router;

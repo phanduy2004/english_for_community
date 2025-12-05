@@ -100,6 +100,7 @@ const getDashboardStats = async (req, res) => {
   try {
     const { range = 'week' } = req.query;
 
+    // Lấy khoảng thời gian dựa trên range (day, week, month)
     const { startDate, endDate, previousStartDate, previousEndDate, dateFormat } = getVnDateRange(range);
 
     const currentQuery = { $gte: startDate, $lte: endDate };
@@ -110,7 +111,7 @@ const getDashboardStats = async (req, res) => {
     const matchSpeaking = { isCompleted: true };
     const matchListening = { isCompleted: true };
 
-    // 1. METRICS
+    // 1. METRICS (SUBMISSIONS) - Giữ nguyên
     const [
       curW, curS, curR, curL,
       preW, preS, preR, preL
@@ -130,7 +131,7 @@ const getDashboardStats = async (req, res) => {
     const totalPrevious = preW + preS + preR + preL;
     const submissionTrend = calculateTrend(totalCurrent, totalPrevious);
 
-    // 2. AI COST
+    // 2. AI COST - Giữ nguyên
     const [writingCostAgg, speakingCostAgg, dictationCostAgg] = await Promise.all([
       WritingSubmission.aggregate([
         { $match: { ...matchWriting, createdAt: currentQuery } },
@@ -150,14 +151,20 @@ const getDashboardStats = async (req, res) => {
     const totalSeconds = (speakingCostAgg[0]?.totalSeconds || 0) + (dictationCostAgg[0]?.totalSeconds || 0);
     const estimatedCost = (totalWords * AI_PRICING.PER_WORD_WRITING) + (totalSeconds * AI_PRICING.PER_SECOND_AUDIO);
 
-    const todayStartVn = new Date();
-    todayStartVn.setUTCHours(todayStartVn.getUTCHours() + 7);
-    const todayStr = todayStartVn.toISOString().split('T')[0];
+    // 🔥🔥🔥 SỬA PHẦN NÀY 🔥🔥🔥
 
-    const activeUsersCount = await User.countDocuments({ lastActivityDate: todayStr });
-    const pendingReportsCount = await Report.countDocuments({ status: 'new' });
+    // 3. ACTIVE USERS & REPORTS (Theo Filter Range)
+    const [activeUsersCount, reportsCount] = await Promise.all([
+      // Đếm user có hoạt động trong khoảng thời gian lọc
+      User.countDocuments({ lastActivityDate: currentQuery, role: 'user' }),
 
-    // 3. CHART DATA
+      // Đếm report được tạo trong khoảng thời gian lọc
+      Report.countDocuments({ createdAt: currentQuery, status: 'pending' })
+    ]);
+
+    // 🔥🔥🔥 KẾT THÚC SỬA 🔥🔥🔥
+
+    // 4. CHART DATA - Giữ nguyên
     const chartLabels = generateChartLabels(range, startDate, endDate);
 
     const aggregateChart = async (Model, dateField, extraMatch = {}) => {
@@ -189,7 +196,6 @@ const getDashboardStats = async (req, res) => {
         submissions: {
           value: totalCurrent,
           trend: `${submissionTrend > 0 ? '+' : ''}${submissionTrend}%`,
-          // --- SỬA LẠI: Label đúng với so sánh hôm qua ---
           trendLabel: range === 'day' ? 'vs yesterday' : 'vs prev period',
           isPositive: submissionTrend >= 0
         },
@@ -198,12 +204,13 @@ const getDashboardStats = async (req, res) => {
           subLabel: `${totalWords} words • ${Math.round(totalSeconds/60)} mins`
         },
         reports: {
-          value: pendingReportsCount,
-          status: pendingReportsCount > 0 ? 'Needs Action' : 'All Good'
+          value: reportsCount,
+          // Nếu có report mới trong khoảng thời gian này thì báo Needs Action
+          status: reportsCount > 0 ? 'New Issues' : 'All Good'
         },
         activeUsers: {
           value: activeUsersCount,
-          subLabel: 'Active today'
+          subLabel: range === 'day' ? 'Active today' : 'Active in period'
         }
       },
       chart: {

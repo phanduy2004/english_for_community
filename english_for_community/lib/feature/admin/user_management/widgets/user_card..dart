@@ -26,7 +26,7 @@ class UserCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          // 🔥 CLICK VÀO CARD CŨNG MỞ DIALOG (UX TỐT HƠN)
+          // 🔥 CLICK CARD TO OPEN DIALOG
           onTap: () {
             showDialog(
               context: context,
@@ -96,10 +96,10 @@ class UserCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isOnline
-                                ? 'Đang hoạt động'
+                                ? 'Active now'
                                 : (user.lastActivityDate != null
-                                ? 'Truy cập ${DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal())}'
-                                : 'Chưa truy cập'),
+                                ? 'Last active: ${DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal())}'
+                                : 'Never active'),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -108,7 +108,7 @@ class UserCard extends StatelessWidget {
                   ),
                 ),
 
-                // --- MENU 3 CHẤM (Đã chỉnh sửa bên trên) ---
+                // --- 3 DOT MENU ---
                 UserActionMenu(user: user),
               ],
             ),

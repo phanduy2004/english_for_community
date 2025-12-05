@@ -10,6 +10,7 @@ import '../../../core/get_it/get_it.dart';
 import '../../auth/bloc/user_bloc.dart';
 import '../../auth/bloc/user_event.dart';
 import '../content_management/content_dashboard_page.dart';
+import '../report_management/report_management_page.dart';
 import '../user_management/user_management_page.dart';
 import 'bloc/admin_bloc.dart';
 import 'bloc/admin_event.dart';
@@ -107,7 +108,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
               child: OutlinedButton.icon(
                 onPressed: () => context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name)),
                 icon: const Icon(Icons.refresh),
-                label: const Text("Thử lại"),
+                label: const Text("Retry"), // Changed to English
               ),
             );
           }
@@ -126,12 +127,11 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- HEADER & FILTER ---
-                  // [FIX] Thay Row bằng Wrap để tránh lỗi overflow pixel
                   Wrap(
                     alignment: WrapAlignment.spaceBetween,
                     crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8.0, // Khoảng cách ngang
-                    runSpacing: 12.0, // Khoảng cách dọc khi xuống dòng
+                    spacing: 8.0,
+                    runSpacing: 12.0,
                     children: [
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +142,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Tổng quan',
+                            'Overview', // Changed to English
                             style: TextStyle(color: textMain, fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -155,11 +155,12 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           border: Border.all(color: borderCol),
                         ),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min, // Đảm bảo Row này chỉ chiếm không gian tối thiểu
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            _FilterTab(label: 'Ngày', selected: _selectedRange == _AdminRange.day, onTap: () => _onRangeChanged(_AdminRange.day)),
-                            _FilterTab(label: 'Tuần', selected: _selectedRange == _AdminRange.week, onTap: () => _onRangeChanged(_AdminRange.week)),
-                            _FilterTab(label: 'Tháng', selected: _selectedRange == _AdminRange.month, onTap: () => _onRangeChanged(_AdminRange.month)),
+                            // Labels changed to English
+                            _FilterTab(label: 'Day', selected: _selectedRange == _AdminRange.day, onTap: () => _onRangeChanged(_AdminRange.day)),
+                            _FilterTab(label: 'Week', selected: _selectedRange == _AdminRange.week, onTap: () => _onRangeChanged(_AdminRange.week)),
+                            _FilterTab(label: 'Month', selected: _selectedRange == _AdminRange.month, onTap: () => _onRangeChanged(_AdminRange.month)),
                           ],
                         ),
                       ),
@@ -177,7 +178,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                     childAspectRatio: 1.6,
                     children: [
                       _MetricCard(
-                        title: 'Bài nộp',
+                        title: 'Submissions', // Changed to English
                         value: '${metrics.submissions.value}',
                         trend: metrics.submissions.trend ?? '',
                         subLabel: metrics.submissions.trendLabel ?? '',
@@ -185,7 +186,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                         accentColor: colSpeaking,
                       ),
                       _MetricCard(
-                        title: 'Chi phí AI (Est)',
+                        title: 'AI Cost (Est)',
                         value: '${metrics.aiCost.value}',
                         trend: 'Usage',
                         subLabel: metrics.aiCost.subLabel ?? '',
@@ -193,19 +194,21 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                         accentColor: colDictation,
                       ),
                       _MetricCard(
-                        title: 'Báo cáo lỗi',
+                        title: 'Reports', // Changed to English
                         value: '${metrics.reports.value}',
                         trend: metrics.reports.status ?? '',
-                        subLabel: "Chờ xử lý",
+                        subLabel: "Pending", // Changed to English
                         icon: Icons.flag_outlined,
                         accentColor: const Color(0xFFF43F5E),
-                        isAlert: (metrics.reports.value is int && (metrics.reports.value as int) > 0),
+                        onTap: (){
+                          context.pushNamed(ReportManagementPage.routeName);
+                        },
                       ),
                       _MetricCard(
-                        title: 'Người dùng',
+                        title: 'Active Users', // Changed to English
                         value: '${metrics.activeUsers.value}',
                         trend: 'Online',
-                        subLabel: "Hôm nay",
+                        subLabel: "Today", // Changed to English
                         icon: Icons.group_outlined,
                         accentColor: const Color(0xFF10B981),
                         onTap: () {
@@ -232,7 +235,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Biểu đồ hoạt động',
+                                Text('Activity Chart', // Changed to English
                                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
                                 const SizedBox(height: 4),
                                 Text(
@@ -245,7 +248,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                                child: Text("Vuốt ngang để xem", style: TextStyle(fontSize: 10, color: textMuted)),
+                                child: Text("Swipe to view", style: TextStyle(fontSize: 10, color: textMuted)), // Changed to English
                               )
                           ],
                         ),
@@ -293,12 +296,12 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                   const SizedBox(height: 24),
 
                   // --- MANAGEMENT LINKS ---
-                  Text('Quản lý', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                  Text('Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)), // Changed to English
                   const SizedBox(height: 12),
                   _ManagementTile(
                     icon: Icons.library_books_outlined,
-                    title: 'Quản lý Nội dung',
-                    subtitle: 'Tạo đề bài, chỉnh sửa bài đọc & nghe',
+                    title: 'Content Manager', // Changed to English
+                    subtitle: 'Tasks, Reading & Listening editor', // Changed to English
                     color: textMain,
                     onTap: () {
                       context.pushNamed(ContentDashboardPage.routeName);
@@ -310,8 +313,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                       Expanded(
                         child: _ManagementTile(
                           icon: Icons.bug_report_outlined,
-                          title: 'Báo cáo',
-                          subtitle: 'Phản hồi lỗi',
+                          title: 'Reports', // Changed to English
+                          subtitle: 'Issue feedback', // Changed to English
                           color: const Color(0xFFF59E0B),
                           onTap: () {},
                         ),
@@ -320,8 +323,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                       Expanded(
                         child: _ManagementTile(
                           icon: Icons.people_alt_outlined,
-                          title: 'Người dùng',
-                          subtitle: 'Danh sách User',
+                          title: 'Users', // Changed to English
+                          subtitle: 'User list', // Changed to English
                           color: const Color(0xFF10B981),
                           onTap: () {
                             context.pushNamed(UserManagementPage.routeName);
@@ -340,12 +343,12 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
     );
   }
 
-  // Text phụ đề cho biểu đồ
+  // Text phụ đề cho biểu đồ (Translated)
   String _getChartSubtitle() {
     switch (_selectedRange) {
-      case _AdminRange.day: return 'Hôm nay (Theo giờ: 0h - 23h)';
-      case _AdminRange.week: return 'Tuần này (Bắt đầu từ Thứ 2)';
-      case _AdminRange.month: return '30 ngày gần nhất';
+      case _AdminRange.day: return 'Today (Hourly: 0h - 23h)';
+      case _AdminRange.week: return 'This Week (Starts Mon)';
+      case _AdminRange.month: return 'Last 30 Days';
     }
   }
 
@@ -522,17 +525,14 @@ class _FilterTab extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        // 👇 Đã chỉnh nhỏ padding lại (cũ: h16, v6)
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: selected ? const Color(0xFFF1F5F9) : Colors.transparent,
-          // 👇 Bo góc nhỏ hơn một chút (cũ: 6)
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
           label,
           style: TextStyle(
-            // 👇 Font chữ nhỏ hơn (cũ: 13)
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: selected ? const Color(0xFF0F172A) : const Color(0xFF64748B),

@@ -1,13 +1,11 @@
-// src/config/cloudinary.js
-import _cloudinary from 'cloudinary'; // 1. Import default package
+import _cloudinary from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// 2. Lấy v2 từ default package (Cách fix cho bản 1.x chạy trên ES Module)
-const cloudinary = _cloudinary.v2;
+const cloudinary = _cloudinary.v2; // 🔥 Biến này cần được export
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -17,13 +15,28 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: 'english_community_avatars',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
-    // transformation: [{ width: 500, height: 500, crop: 'limit' }]
+  params: async (req, file) => {
+    let folderName = 'english_community_avatars';
+    let resourceType = 'image';
+    let format = undefined;
+
+    if (file.mimetype.startsWith('audio')) {
+      folderName = 'english_community_audio';
+      resourceType = 'video';
+      format = 'mp3';
+    }
+
+    return {
+      folder: folderName,
+      resource_type: resourceType,
+      allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'mp3', 'wav', 'm4a'],
+    };
   },
 });
 
 const uploadCloud = multer({ storage });
+
+// 🔥 THÊM DÒNG NÀY ĐỂ EXPORT BIẾN CLOUDINARY
+export { cloudinary };
 
 export default uploadCloud;

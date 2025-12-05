@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:english_for_community/core/datasource/report_remote_datasource.dart';
 import '../datasource/admin_remote_datasource.dart';
 import '../entity/admin/admin_stats_entity.dart';
 import '../entity/admin/paginated_response.dart';
@@ -10,8 +11,8 @@ import '../repository/admin_repository.dart';
 
 class AdminRepositoryImpl implements AdminRepository {
   final AdminRemoteDatasource adminRemoteDatasource;
-
-  AdminRepositoryImpl({required this.adminRemoteDatasource});
+  final ReportRemoteDatasource  reportRemoteDatasource;
+  AdminRepositoryImpl({required this.adminRemoteDatasource,required this.reportRemoteDatasource});
 
   String _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
@@ -23,9 +24,6 @@ class AdminRepositoryImpl implements AdminRepository {
     }
     return e.message ?? "Lỗi không xác định";
   }
-
-  // ... (Các hàm cũ getDashboardStats, getAllUsers, getReports, updateReportStatus GIỮ NGUYÊN) ...
-
   @override
   Future<Either<Failure, AdminStatsEntity>> getDashboardStats({String range = 'week'}) async {
     try {
@@ -58,32 +56,54 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<Either<Failure, PaginatedResponse<ReportEntity>>> getReports({int page = 1, int limit = 20, String? status}) async {
+  Future<Either<Failure, PaginatedResponse<ReportEntity>>> getReports({
+    int page = 1,
+    int limit = 20,
+    String? status,
+  }) async {
     try {
-      final result = await adminRemoteDatasource.getReports(page: page, limit: limit, status: status);
+      final result = await reportRemoteDatasource.getReports(
+        page: page,
+        limit: limit,
+        status: status,
+      );
       return Right(result);
     } on DioException catch (e) {
-      return Left(UserFailure(message: _handleDioError(e)));
+      return Left(ServerFailure(message: _handleDioError(e))); // Sử dụng hàm handle lỗi của bạn
     } catch (e) {
-      return Left(UserFailure(message: e.toString()));
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, ReportEntity>> getReportDetail(String id) async {
+    try {
+      final result = await reportRemoteDatasource.getReportDetail(id);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _handleDioError(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, ReportEntity>> updateReportStatus({
-    required String reportId,
+    required String id,
     required String status,
-    String? adminResponse
+    String? adminResponse,
   }) async {
     try {
-      final result = await adminRemoteDatasource.updateReportStatus(
-        reportId: reportId, status: status, adminResponse: adminResponse,
+      final result = await reportRemoteDatasource.updateReportStatus(
+        id: id,
+        status: status,
+        adminResponse: adminResponse,
       );
       return Right(result);
     } on DioException catch (e) {
-      return Left(UserFailure(message: _handleDioError(e)));
+      return Left(ServerFailure(message: _handleDioError(e)));
     } catch (e) {
-      return Left(UserFailure(message: e.toString()));
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 

@@ -48,3 +48,6 @@ class ProgressFailure extends Failure {
 class AiChatFailure extends Failure {
   AiChatFailure({required super.message});
 }
+class ServerFailure extends Failure {
+  ServerFailure({required super.message});
+}

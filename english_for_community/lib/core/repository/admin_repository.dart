@@ -15,16 +15,19 @@ abstract class AdminRepository {
     String? search
   });
 
+  // Admin quản lý
   Future<Either<Failure, PaginatedResponse<ReportEntity>>> getReports({
-    int page,
-    int limit,
+    int page = 1,
+    int limit = 20,
     String? status
   });
 
+  Future<Either<Failure, ReportEntity>> getReportDetail(String id);
+
   Future<Either<Failure, ReportEntity>> updateReportStatus({
-    required String reportId,
+    required String id,
     required String status,
-    String? adminResponse,
+    String? adminResponse
   });
 
   // --- 🆕 METHODS MỚI ---

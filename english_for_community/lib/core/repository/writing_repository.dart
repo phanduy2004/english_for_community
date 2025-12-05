@@ -7,7 +7,8 @@ import '../model/failure.dart';
 abstract class WritingRepository {
   Future<Either<Failure, List<WritingTopicEntity>>> getWritingTopics();
 
-  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed})>>
+// 👇 SỬA DÒNG NÀY: Thêm 'String content' vào trong record return
+  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed, String content})>>
   startWriting({
     required String topicId,
     required String userId,
@@ -20,4 +21,16 @@ abstract class WritingRepository {
     required int durationInSeconds,
   });
   Future<Either<Failure, List<WritingSubmissionEntity>>> getTopicSubmissions(String topicId);
+  Future<Either<Failure, void>> deleteSubmission(String submissionId);
+
+  Future<Either<Failure, void>> saveDraft({
+    required String submissionId,
+    required String content,
+  });
+
+  Future<Either<Failure, List<WritingTopicEntity>>> getAdminWritingTopics();
+  Future<Either<Failure, WritingTopicEntity>> getWritingTopicDetail(String id);
+  Future<Either<Failure, void>> createWritingTopic(WritingTopicEntity topic);
+  Future<Either<Failure, void>> updateWritingTopic(WritingTopicEntity topic);
+  Future<Either<Failure, void>> deleteWritingTopic(String id);
 }

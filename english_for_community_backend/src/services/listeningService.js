@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import Listening from '../models/Listening.js';
 import Enrollment from '../models/Enrollment.js';
 import DictationAttempt from '../models/DictationAttempt.js';
-
+import { cloudinary } from '../config/cloudinary.js';
 // ============================================================
 // 🛠 HELPER: Chuẩn hóa nghiêm ngặt (Chỉ bỏ dấu câu & Case)
 // ============================================================
@@ -265,7 +265,7 @@ const createListening = async (payload) => {
   if (payload.cues && Array.isArray(payload.cues)) {
     payload.cues = payload.cues.map((cue) => ({
       ...cue,
-      textNorm: cue.textNorm || normalize(cue.text),
+      textNorm: cue.textNorm || normalize(cue.text), // Tự động chuẩn hóa nếu thiếu
     }));
     payload.totalCues = payload.cues.length;
   }
@@ -273,18 +273,54 @@ const createListening = async (payload) => {
 };
 
 const updateListening = async (id, payload) => {
-  if (Array.isArray(payload.cues)) {
-    payload.totalCues = payload.cues.length;
+  if (payload.cues && Array.isArray(payload.cues)) {
     payload.cues = payload.cues.map((cue) => ({
       ...cue,
-      textNorm: cue.textNorm || normalize(cue.text),
+      textNorm: cue.textNorm || normalize(cue.text), // Tự động chuẩn hóa nếu thiếu
     }));
+    payload.totalCues = payload.cues.length;
   }
   return await Listening.findByIdAndUpdate(id, payload, { new: true });
 };
 
+const getPublicIdFromUrl = (url) => {
+  try {
+    if (!url) return null;
+    const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+    const match = url.match(regex);
+    if (match && match[1]) {
+      return match[1]; // Trả về: english_community_audio/mnyfch174g8x96sir9ba
+    }
+
+    return null;
+  } catch (e) {
+    console.error("Error extracting publicId", e);
+    return null;
+  }
+};
+
 const deleteListening = async (id) => {
+  const listening = await Listening.findById(id);
+  if (!listening) return null;
+
   await DictationAttempt.deleteMany({ listeningId: id });
+
+  if (listening.audioUrl) {
+    const publicId = getPublicIdFromUrl(listening.audioUrl);
+
+    if (publicId) {
+      try {
+        // Lúc này biến cloudinary đã có dữ liệu, hàm destroy sẽ chạy ok
+        await cloudinary.uploader.destroy(publicId, {
+          resource_type: 'video'
+        });
+        console.log(`Deleted Cloudinary file: ${publicId}`);
+      } catch (err) {
+        console.error("Cloudinary delete error:", err);
+      }
+    }
+  }
+
   return await Listening.findByIdAndDelete(id);
 };
 

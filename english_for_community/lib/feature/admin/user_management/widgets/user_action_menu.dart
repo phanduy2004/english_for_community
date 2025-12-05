@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entity/user_entity.dart';
 import '../../dashboard_home/bloc/admin_bloc.dart';
 import '../../dashboard_home/bloc/admin_event.dart';
-import '../widgets/admin_user_details_dialog.dart'; // 🔥 Import dialog chi tiết
+import '../widgets/admin_user_details_dialog.dart'; // 🔥 Import detailed dialog
 import 'user_ban_dialog.dart';
 
 class UserActionMenu extends StatelessWidget {
@@ -27,17 +27,17 @@ class UserActionMenu extends StatelessWidget {
       elevation: 4,
       onSelected: (value) => _handleAction(context, value, isBanned),
       itemBuilder: (context) => [
-        // 🔥 ĐỔI: Chỉnh sửa -> Xem thông tin
-        _buildItem('view', Icons.visibility_outlined, 'Xem thông tin chi tiết', Colors.black87),
+        // 🔥 CHANGED: Edit -> View Info
+        _buildItem('view', Icons.visibility_outlined, 'View Details', Colors.black87),
 
         _buildItem(
           'ban',
           isBanned ? Icons.lock_open_rounded : Icons.block_rounded,
-          isBanned ? 'Mở khóa tài khoản' : 'Khóa tài khoản',
+          isBanned ? 'Unban Account' : 'Ban Account',
           isBanned ? Colors.green : Colors.orange,
         ),
         const PopupMenuDivider(height: 1),
-        _buildItem('delete', Icons.delete_outline, 'Xóa vĩnh viễn', Colors.red),
+        _buildItem('delete', Icons.delete_outline, 'Delete Permanently', Colors.red),
       ],
     );
   }
@@ -59,7 +59,7 @@ class UserActionMenu extends StatelessWidget {
   void _handleAction(BuildContext context, String value, bool isBanned) {
     switch (value) {
       case 'view':
-      // 🔥 GỌI DIALOG CHI TIẾT
+      // 🔥 CALL DETAIL DIALOG
         showDialog(
           context: context,
           builder: (ctx) => AdminUserDetailsDialog(userId: user.id,),
@@ -70,9 +70,9 @@ class UserActionMenu extends StatelessWidget {
         if (isBanned) {
           _showConfirmDialog(
               context,
-              title: 'Mở khóa tài khoản?',
-              content: 'Người dùng sẽ có thể đăng nhập và sử dụng dịch vụ bình thường.',
-              confirmText: 'Mở khóa',
+              title: 'Unban Account?',
+              content: 'User will be able to login and use services normally.',
+              confirmText: 'Unban',
               confirmColor: Colors.green,
               onConfirm: () {
                 context.read<AdminBloc>().add(
@@ -95,9 +95,9 @@ class UserActionMenu extends StatelessWidget {
       case 'delete':
         _showConfirmDialog(
           context,
-          title: 'Xóa người dùng?',
-          content: 'Hành động này KHÔNG THỂ hoàn tác. Tất cả dữ liệu học tập sẽ bị mất.',
-          confirmText: 'Xóa vĩnh viễn',
+          title: 'Delete User?',
+          content: 'This action CANNOT be undone. All learning data will be lost.',
+          confirmText: 'Delete',
           confirmColor: Colors.red,
           onConfirm: () {
             context.read<AdminBloc>().add(DeleteUserEvent(userId: user.id));
@@ -125,7 +125,7 @@ class UserActionMenu extends StatelessWidget {
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Hủy', style: TextStyle(color: Colors.grey))
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey))
           ),
           TextButton(
             onPressed: () {

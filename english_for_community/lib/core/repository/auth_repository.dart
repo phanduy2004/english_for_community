@@ -1,4 +1,5 @@
 
+import '../entity/auth_entity.dart';
 import '../entity/user_entity.dart';
 import '../model/either.dart';
 import '../model/failure.dart';
@@ -19,4 +20,5 @@ abstract class AuthRepository {
   Future<Either<Failure, void>> requestPasswordReset(String email);
   Future<Either<Failure, void>> resetPassword(String email, String otp, String newPassword);
   Future<Either<Failure, String>> refreshToken(String refreshToken);
+
 }

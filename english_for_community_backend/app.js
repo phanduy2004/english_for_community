@@ -11,6 +11,7 @@ import vocabRoutes from "./src/routes/vocabRoutes.js";
 import progressRoutes from "./src/routes/progressRoutes.js";
 import chatRoutes from "./src/routes/chatRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
+import reportRoutes from "./src/routes/reportRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -26,6 +27,7 @@ app.use('/api/vocab', vocabRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reports', reportRoutes);
 
 
 export default app;
