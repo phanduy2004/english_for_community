@@ -12,7 +12,7 @@ import '../dashboard_home/bloc/admin_bloc.dart';
 import '../dashboard_home/bloc/admin_event.dart';
 import '../dashboard_home/bloc/admin_state.dart';
 
-// Enum quản lý Tabs
+// Enum for Tab management
 enum UserFilter { all, today, online }
 
 class UserManagementPage extends StatelessWidget {
@@ -63,37 +63,37 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
       case UserFilter.online: _tabController.index = 2; break;
     }
 
-    // 1. Gọi API lần đầu
+    // 1. Call API initially
     _fetchUsers();
 
-    // 2. Lắng nghe chuyển Tab
+    // 2. Listen to Tab changes
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
         _fetchUsers();
       }
     });
 
-    // --- 3. KÍCH HOẠT SOCKET (QUAN TRỌNG) ---
+    // --- 3. ACTIVATE SOCKET (IMPORTANT) ---
     _initSocketListener();
   }
 
-  // Hàm lắng nghe sự thay đổi từ Server
+  // Function to listen for changes from Server
   void _initSocketListener() {
     final socket = getIt<SocketService>();
 
-    // Đảm bảo socket đã kết nối
+    // Ensure socket is connected
     socket.init();
 
-    // Admin tham gia phòng nhận tin
+    // Admin joins room to receive messages
     socket.joinAdminRoom();
 
-    // Đăng ký hàm callback: Khi có tin báo, làm gì? -> Gọi lại API
+    // Register callback: When alert received, reload list
     socket.listenToUserStatus((data) {
       print("⚡ Socket Alert: User status changed. Reloading list...");
 
-      // Kiểm tra mounted để tránh lỗi gọi setState khi widget đã đóng
+      // Check mounted to avoid setState error if widget is closed
       if (mounted) {
-        _fetchUsers(); // Tải lại danh sách ngay lập tức
+        _fetchUsers(); // Reload list immediately
       }
     });
   }
@@ -123,17 +123,14 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     _tabController.dispose();
     _searchController.dispose();
     _debounce?.cancel();
-    // Không cần disconnect socket ở đây nếu bạn muốn giữ kết nối cho trang Dashboard
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (Phần UI giữ nguyên như cũ)
     return Scaffold(
       backgroundColor: bgPage,
       appBar: AppBar(
-        // ... code cũ
         backgroundColor: white,
         elevation: 0,
         titleSpacing: 0,
@@ -141,7 +138,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
           icon: Icon(Icons.arrow_back, color: textMain),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Quản lý Người dùng', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 16)),
+        title: Text('User Management', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 16)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
@@ -155,9 +152,9 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
               indicatorSize: TabBarIndicatorSize.label,
               labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
               tabs: const [
-                Tab(text: 'Tất cả'),
-                Tab(text: 'Hôm nay'),
-                Tab(text: 'Đang Online'),
+                Tab(text: 'All'),
+                Tab(text: 'Today'),
+                Tab(text: 'Online'),
               ],
             ),
           ),
@@ -181,7 +178,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                 onChanged: _onSearchChanged,
                 style: TextStyle(color: textMain, fontSize: 13),
                 decoration: InputDecoration(
-                  hintText: 'Tìm kiếm theo tên hoặc email...',
+                  hintText: 'Search by name or email...',
                   hintStyle: TextStyle(color: textMuted),
                   prefixIcon: Icon(Icons.search, size: 18, color: textMuted),
                   border: InputBorder.none,
@@ -229,7 +226,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
         children: [
           Icon(Icons.search_off_rounded, size: 48, color: textMuted.withOpacity(0.5)),
           const SizedBox(height: 12),
-          Text("Không tìm thấy người dùng nào", style: TextStyle(color: textMuted, fontSize: 14)),
+          Text("No users found", style: TextStyle(color: textMuted, fontSize: 14)),
         ],
       ),
     );

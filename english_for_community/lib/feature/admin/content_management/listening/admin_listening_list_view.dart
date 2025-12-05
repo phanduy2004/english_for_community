@@ -45,8 +45,8 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
 
     await context.pushNamed(
       'ContentEditorRoute',
-      pathParameters: {'type': 'listening'},
-      extra: id, // 👈 Đảm bảo dòng này truyền đúng id
+      pathParameters: {'type': 'listening'}, // Bắt buộc phải có cái này để router hiểu :type là gì
+      extra: id,
     );
 
     if (mounted) {

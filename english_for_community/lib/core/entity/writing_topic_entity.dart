@@ -4,10 +4,6 @@ import 'package:equatable/equatable.dart';
 class WritingTopicEntity extends Equatable {
   final String id;              // _id / id
   final String name;
-  final String slug;
-  final String? icon;
-  final String? color;          // #RRGGBB
-  final int order;
   final bool isActive;
   final AiConfig? aiConfig;
   final TopicStats? stats;
@@ -17,10 +13,6 @@ class WritingTopicEntity extends Equatable {
   const WritingTopicEntity({
     required this.id,
     required this.name,
-    required this.slug,
-    this.icon,
-    this.color,
-    this.order = 0,
     this.isActive = true,
     this.aiConfig,
     this.stats,
@@ -36,10 +28,6 @@ class WritingTopicEntity extends Equatable {
     return WritingTopicEntity(
       id: _id,
       name: (json['name'] ?? '') as String,
-      slug: (json['slug'] ?? '') as String,
-      icon: json['icon'] as String?,
-      color: json['color'] as String?,
-      order: (json['order'] as num?)?.toInt() ?? 0,
       isActive: (json['isActive'] as bool?) ?? true,
       aiConfig: json['aiConfig'] != null ? AiConfig.fromJson(json['aiConfig'] as Map<String, dynamic>) : null,
       stats: json['stats'] != null ? TopicStats.fromJson(json['stats'] as Map<String, dynamic>) : null,
@@ -51,10 +39,6 @@ class WritingTopicEntity extends Equatable {
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
-    'slug': slug,
-    'icon': icon,
-    'color': color,
-    'order': order,
     'isActive': isActive,
     'aiConfig': aiConfig?.toJson(),
     'stats': stats?.toJson(),
@@ -71,7 +55,7 @@ class WritingTopicEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, slug, icon, color, order, isActive, aiConfig, stats, createdAt, updatedAt];
+  List<Object?> get props => [id, name, isActive, aiConfig, stats, createdAt, updatedAt];
 }
 
 class AiConfig extends Equatable {

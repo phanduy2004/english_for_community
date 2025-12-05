@@ -5,7 +5,7 @@ import '../../dashboard_home/bloc/admin_bloc.dart';
 import '../../dashboard_home/bloc/admin_event.dart';
 
 class UserBanDialog extends StatefulWidget {
-  final String userId; // Nhận ID user cần ban
+  final String userId; // Receive user ID to ban
 
   const UserBanDialog({super.key, required this.userId});
 
@@ -23,7 +23,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
   final textMuted = const Color(0xFF71717A);
   final borderCol = const Color(0xFFE4E4E7);
 
-  final List<int> _durationOptions = [1, 6, 12, 24, 72, 168]; // Giờ
+  final List<int> _durationOptions = [1, 6, 12, 24, 72, 168]; // Hours
 
   @override
   void dispose() {
@@ -37,7 +37,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text('Khóa tài khoản', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: textMain)),
+      title: Text('Ban Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: textMain)),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 400,
@@ -45,8 +45,8 @@ class _UserBanDialogState extends State<UserBanDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Chọn loại khóa
-              Text('Hình thức', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
+              // 1. Select Type
+              Text('Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
@@ -56,8 +56,8 @@ class _UserBanDialogState extends State<UserBanDialog> {
                 child: Column(
                   children: [
                     RadioListTile<String>(
-                      title: const Text('Tạm thời', style: TextStyle(fontSize: 14)),
-                      subtitle: const Text('Tự động mở sau thời gian nhất định', style: TextStyle(fontSize: 12)),
+                      title: const Text('Temporary', style: TextStyle(fontSize: 14)),
+                      subtitle: const Text('Automatically unbanned after duration', style: TextStyle(fontSize: 12)),
                       value: 'temporary',
                       groupValue: _selectedType,
                       activeColor: textMain,
@@ -65,8 +65,8 @@ class _UserBanDialogState extends State<UserBanDialog> {
                     ),
                     Divider(height: 1, color: borderCol),
                     RadioListTile<String>(
-                      title: const Text('Vĩnh viễn', style: TextStyle(fontSize: 14)),
-                      subtitle: const Text('Không thể truy cập lại', style: TextStyle(fontSize: 12)),
+                      title: const Text('Permanent', style: TextStyle(fontSize: 14)),
+                      subtitle: const Text('Cannot access again', style: TextStyle(fontSize: 12)),
                       value: 'permanent',
                       groupValue: _selectedType,
                       activeColor: Colors.red,
@@ -78,9 +78,9 @@ class _UserBanDialogState extends State<UserBanDialog> {
 
               const SizedBox(height: 20),
 
-              // 2. Chọn thời gian (Nếu là tạm thời)
+              // 2. Select Duration (If temporary)
               if (_selectedType == 'temporary') ...[
-                Text('Thời gian khóa', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
+                Text('Ban Duration', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -110,15 +110,15 @@ class _UserBanDialogState extends State<UserBanDialog> {
                 const SizedBox(height: 20),
               ],
 
-              // 3. Lý do
-              Text('Lý do (Bắt buộc)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
+              // 3. Reason
+              Text('Reason (Required)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textMain)),
               const SizedBox(height: 8),
               TextField(
                 controller: _reasonController,
                 maxLines: 3,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'VD: Spam tin nhắn, ngôn từ không phù hợp...',
+                  hintText: 'Ex: Spam messages, inappropriate language...',
                   hintStyle: TextStyle(color: textMuted, fontSize: 13),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -148,16 +148,16 @@ class _UserBanDialogState extends State<UserBanDialog> {
             side: BorderSide(color: borderCol),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          child: const Text('Hủy bỏ'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: () {
             if (_reasonController.text.trim().isEmpty) {
-              // Validate đơn giản (Có thể thêm thông báo lỗi UI nếu cần)
+              // Simple validation
               return;
             }
 
-            // --- GỌI BLOC TRỰC TIẾP TẠI ĐÂY ---
+            // --- CALL BLOC HERE ---
             context.read<AdminBloc>().add(BanUserEvent(
               userId: widget.userId,
               banType: _selectedType,
@@ -165,14 +165,14 @@ class _UserBanDialogState extends State<UserBanDialog> {
               reason: _reasonController.text,
             ));
 
-            Navigator.pop(context); // Đóng Dialog
+            Navigator.pop(context); // Close Dialog
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFDC2626), // Red-600
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          child: const Text('Xác nhận khóa'),
+          child: const Text('Confirm Ban'),
         ),
       ],
     );
@@ -181,8 +181,8 @@ class _UserBanDialogState extends State<UserBanDialog> {
   String _formatDuration(int hours) {
     if (hours >= 24) {
       final days = hours ~/ 24;
-      return '$days ngày';
+      return '$days days';
     }
-    return '$hours giờ';
+    return '$hours hours';
   }
 }
