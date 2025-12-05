@@ -38,7 +38,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     super.dispose();
   }
 
-  // Hàm chuyển đổi giữa 2 trang
+  // Function to toggle between 2 pages
   void _togglePage() {
     if (_currentPage == 0) {
       _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
@@ -64,15 +64,15 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
               child: Row(
                 children: [
                   Text(
-                    _currentPage == 0 ? 'Hồ sơ học tập' : 'Thông tin cá nhân',
+                    _currentPage == 0 ? 'Learning Profile' : 'Personal Info',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain),
                   ),
                   const Spacer(),
-                  // Nút chuyển đổi nhanh
+                  // Quick Switch Button
                   TextButton(
                     onPressed: _togglePage,
                     style: TextButton.styleFrom(foregroundColor: Colors.blue),
-                    child: Text(_currentPage == 0 ? 'Xem Info >' : '< Xem Stats'),
+                    child: Text(_currentPage == 0 ? 'View Info >' : '< View Stats'),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -94,14 +94,14 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                     return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text('Lỗi: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                    return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
                   }
 
                   return snapshot.data!.fold(
                         (failure) => Center(child: Text(failure.message)),
                         (UserEntity user) => Column(
                       children: [
-                        // 1. IDENTITY HEADER (Luôn hiển thị và có thể click để trượt)
+                        // 1. IDENTITY HEADER (Always visible and clickable to slide)
                         _buildIdentityHeader(user),
                         const Divider(height: 1, color: borderCol),
 
@@ -128,12 +128,12 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  // --- PHẦN 1: HEADER ĐỊNH DANH (Click để trượt) ---
+  // --- PART 1: IDENTITY HEADER (Click to slide) ---
   Widget _buildIdentityHeader(UserEntity user) {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: _togglePage, // 🔥 Nhấn vào đây sẽ trượt trang
+        onTap: _togglePage, // 🔥 Click here to slide page
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Row(
@@ -149,7 +149,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                         Text(user.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textMain)),
                         const SizedBox(width: 8),
                         if (_currentPage == 0)
-                          const Icon(Icons.info_outline, size: 16, color: Colors.blue) // Gợi ý nhấn
+                          const Icon(Icons.info_outline, size: 16, color: Colors.blue) // Hint to click
                         else
                           const Icon(Icons.bar_chart, size: 16, color: Colors.blue)
                       ],
@@ -179,7 +179,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  // --- PAGE 0: THỐNG KÊ HỌC TẬP (Cũ) ---
+  // --- PAGE 0: LEARNING STATS ---
   Widget _buildLearningStats(UserEntity user) {
     final summary = user.progressSummary;
     final stats = summary?.statsGrid;
@@ -191,26 +191,26 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HIGHLIGHTS
-          const Text('TỔNG QUAN HỌC TẬP', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('LEARNING OVERVIEW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _SummaryCard(label: 'Tổng thời gian', value: _fmtMinutes(studyTime?.totalMinutesInRange ?? 0), icon: Icons.history_toggle_off, color: Colors.orange)),
+              Expanded(child: _SummaryCard(label: 'Total Time', value: _fmtMinutes(studyTime?.totalMinutesInRange ?? 0), icon: Icons.history_toggle_off, color: Colors.orange)),
               const SizedBox(width: 12),
-              Expanded(child: _SummaryCard(label: 'Mục tiêu ngày', value: '${studyTime?.goalMinutes ?? 30} phút', icon: Icons.flag_circle, color: Colors.purple)),
+              Expanded(child: _SummaryCard(label: 'Daily Goal', value: '${studyTime?.goalMinutes ?? 30} min', icon: Icons.flag_circle, color: Colors.purple)),
             ],
           ),
           const SizedBox(height: 24),
 
           // STATS GRID
-          const Text('CHỈ SỐ CHI TIẾT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('DETAILED STATS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           GridView.count(
             shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2, childAspectRatio: 2.8, crossAxisSpacing: 12, mainAxisSpacing: 12,
             children: [
-              _StatSmallItem(icon: Icons.library_books, label: 'Bài học xong', value: '${stats?.lessonsCompleted ?? 0}', color: Colors.indigo),
-              _StatSmallItem(icon: Icons.translate, label: 'Từ vựng', value: '${stats?.vocabLearned ?? 0}', color: Colors.purple),
+              _StatSmallItem(icon: Icons.library_books, label: 'Lessons Done', value: '${stats?.lessonsCompleted ?? 0}', color: Colors.indigo),
+              _StatSmallItem(icon: Icons.translate, label: 'Vocab Learned', value: '${stats?.vocabLearned ?? 0}', color: Colors.purple),
               _StatSmallItem(icon: Icons.headphones, label: 'Listening Acc', value: '${stats?.dictationAccuracy ?? 0}%', color: Colors.blue),
               _StatSmallItem(icon: Icons.menu_book, label: 'Reading Acc', value: '${stats?.readingAccuracy ?? 0}%', color: Colors.cyan),
               _StatSmallItem(icon: Icons.mic, label: 'Speaking Acc', value: '${stats?.speakingAccuracy ?? 0}%', color: Colors.red),
@@ -220,7 +220,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           const SizedBox(height: 24),
 
           // CHART
-          const Text('HOẠT ĐỘNG 7 NGÀY QUA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('ACTIVITY (LAST 7 DAYS)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             height: 120, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -242,7 +242,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  // --- PAGE 1: THÔNG TIN CÁ NHÂN (Mới - Từ UserProfileDialog) ---
+  // --- PAGE 1: PERSONAL INFO ---
   Widget _buildPersonalInfo(UserEntity user) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -251,7 +251,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
         children: [
           // Bio
           if (user.bio != null && user.bio!.isNotEmpty) ...[
-            const Text('GIỚI THIỆU', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+            const Text('BIO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
@@ -262,8 +262,8 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
             const SizedBox(height: 24),
           ],
 
-          // Thông tin chi tiết
-          const Text('THÔNG TIN CHI TIẾT', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          // Detailed Info
+          const Text('DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -272,21 +272,21 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
               children: [
                 _DetailRow(icon: Icons.alternate_email, label: 'Username', value: '@${user.username}'),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.cake_outlined, label: 'Ngày sinh', value: _fmtDate(user.dateOfBirth)),
+                _DetailRow(icon: Icons.cake_outlined, label: 'Date of Birth', value: _fmtDate(user.dateOfBirth)),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.transgender_outlined, label: 'Giới tính', value: _capitalize(user.gender)),
+                _DetailRow(icon: Icons.transgender_outlined, label: 'Gender', value: _capitalize(user.gender)),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.phone_outlined, label: 'Số điện thoại', value: user.phone),
+                _DetailRow(icon: Icons.phone_outlined, label: 'Phone Number', value: user.phone),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.location_on_outlined, label: 'Múi giờ', value: user.timezone),
+                _DetailRow(icon: Icons.location_on_outlined, label: 'Timezone', value: user.timezone),
               ],
             ),
           ),
 
           const SizedBox(height: 24),
 
-          // Thông tin hệ thống
-          const Text('HỆ THỐNG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          // System Info
+          const Text('SYSTEM', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -297,7 +297,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                 const Divider(height: 1, color: borderCol),
                 _DetailRow(
                   icon: Icons.verified_user_outlined,
-                  label: 'Vai trò',
+                  label: 'Role',
                   value: user.role.toUpperCase(),
                   valueColor: user.role == 'admin' ? Colors.red : Colors.blue,
                 ),
@@ -320,12 +320,12 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  String _fmtMinutes(int min) => min < 60 ? '$min p' : '${(min/60).toStringAsFixed(1)} h';
-  String _fmtDate(DateTime? d) => d != null ? DateFormat('dd/MM/yyyy').format(d) : 'Chưa cập nhật';
-  String _capitalize(String? s) => (s != null && s.isNotEmpty) ? '${s[0].toUpperCase()}${s.substring(1)}' : 'Chưa cập nhật';
+  String _fmtMinutes(int min) => min < 60 ? '$min m' : '${(min/60).toStringAsFixed(1)} h';
+  String _fmtDate(DateTime? d) => d != null ? DateFormat('dd/MM/yyyy').format(d) : 'Not updated';
+  String _capitalize(String? s) => (s != null && s.isNotEmpty) ? '${s[0].toUpperCase()}${s.substring(1)}' : 'Not updated';
 }
 
-// Widget dòng chi tiết (Dùng cho Page 1)
+// Widget for detail row (Used in Page 1)
 class _DetailRow extends StatelessWidget {
   final IconData icon; final String label; final String? value; final bool isCopyable; final Color? valueColor;
   const _DetailRow({required this.icon, required this.label, required this.value, this.isCopyable = false, this.valueColor});
@@ -368,7 +368,7 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-// ... (Giữ nguyên _SummaryCard, _StatSmallItem, _StatusBadge từ code trước)
+// ... (Existing helpers)
 class _SummaryCard extends StatelessWidget {
   final String label; final String value; final IconData icon; final Color color;
   const _SummaryCard({required this.label, required this.value, required this.icon, required this.color});

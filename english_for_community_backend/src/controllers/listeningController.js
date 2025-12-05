@@ -84,7 +84,22 @@ const getAttempts = async (req, res) => {
 
 const createListening = async (req, res) => {
   try {
-    const result = await listeningService.createListening(req.body);
+    const payload = req.body;
+
+    // 2. Nếu có file Audio upload lên -> Lấy URL từ Cloudinary
+    if (req.file && req.file.path) {
+      payload.audioUrl = req.file.path;
+    }
+
+    // 3. Parse cues nếu gửi dạng JSON string (do FormData)
+    if (typeof payload.cues === 'string') {
+      try {
+        payload.cues = JSON.parse(payload.cues);
+      } catch (e) {
+        payload.cues = [];
+      }
+    }
+    const result = await listeningService.createListening(payload);
     res.status(201).json({ message: 'Created successfully', data: result });
   } catch (error) {
     if (error.code === 11000) return res.status(400).json({ message: 'Duplicate Code' });

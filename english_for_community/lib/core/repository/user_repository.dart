@@ -20,6 +20,7 @@ abstract class UserRepository {
     bool? strictCorrection,
     String? language,
     String? timezone,
+    String? gender
   });
   Future<Either<Failure, UserEntity>> getPublicProfile(String userId);
   Future<Either<Failure, void>> deleteAccount();

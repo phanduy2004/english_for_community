@@ -25,7 +25,6 @@ class AdminState extends Equatable {
 
   // Dữ liệu danh sách Report
   final PaginatedResponse<ReportEntity>? reports;
-
   const AdminState._({
     required this.status,
     this.errorMessage,

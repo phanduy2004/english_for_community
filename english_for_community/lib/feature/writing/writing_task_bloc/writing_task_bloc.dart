@@ -1,89 +1,21 @@
-// lib/feature/writing/bloc/writing_task_bloc.dart
 import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:equatable/equatable.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
-// ⬇️ THÊM IMPORT
 import 'package:english_for_community/core/repository/writing_repository.dart';
+
+// Import 2 file vừa tách
+import 'writing_task_event.dart';
+import 'writing_task_state.dart';
 
 const String GEMINI_API_KEY = 'AIzaSyBQ8dueXPQyHPfjg2-mPgB8BP6E5wbVVF0';
 
-// --- EVENTS ---
-abstract class WritingTaskEvent extends Equatable {
-  const WritingTaskEvent();
-  @override
-  List<Object> get props => [];
-}
-
-class GeneratePromptAndStartTask extends WritingTaskEvent {
-  final WritingTopicEntity topic;
-  final String userId; // ✍️ Cần userId để tạo submission
-  const GeneratePromptAndStartTask({required this.topic, required this.userId});
-  @override
-  List<Object> get props => [topic, userId];
-}
-
-class SubmitForFeedback extends WritingTaskEvent {
-  final String submissionId;
-  final String essayContent;
-  final String taskType;
-  final int durationInSeconds;
-  const SubmitForFeedback({
-    required this.submissionId,
-    required this.essayContent,
-    required this.taskType,
-    required this.durationInSeconds,
-  });
-  @override
-  List<Object> get props => [submissionId, essayContent, taskType, durationInSeconds];
-}
-
-// --- STATES ---
-// ... (State giữ nguyên) ...
-enum WritingTaskStatus { initial, loading, promptReady, submitting, success, error }
-
-class WritingTaskState extends Equatable {
-  final WritingTaskStatus status;
-  final WritingTopicEntity? topic;
-  final WritingSubmissionEntity? submission; // Bài làm (chứa prompt, content, id...)
-  final String? errorMessage;
-
-  const WritingTaskState({
-    this.status = WritingTaskStatus.initial,
-    this.topic,
-    this.submission,
-    this.errorMessage,
-  });
-
-  WritingTaskState copyWith({
-    WritingTaskStatus? status,
-    WritingTopicEntity? topic,
-    WritingSubmissionEntity? submission,
-    String? errorMessage,
-  }) {
-    return WritingTaskState(
-      status: status ?? this.status,
-      topic: topic ?? this.topic,
-      submission: submission ?? this.submission,
-      errorMessage: errorMessage ?? this.errorMessage,
-    );
-  }
-
-  @override
-  List<Object?> get props => [status, topic, submission, errorMessage];
-}
-
-
-// --- BLOC ---
 class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
-  // ⬇️ SỬA LẠI: Inject Repository
   final WritingRepository _writingRepo;
   final GenerativeModel _geminiModel;
 
-  // ✍️ Sửa constructor
   WritingTaskBloc({required WritingRepository writingRepository})
       : _writingRepo = writingRepository,
         _geminiModel = GenerativeModel(
@@ -98,29 +30,70 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
         super(const WritingTaskState()) {
     on<GeneratePromptAndStartTask>(_onGeneratePrompt);
     on<SubmitForFeedback>(_onSubmitForFeedback);
+    on<DiscardDraftAndStartNew>(_onDiscardDraftAndStartNew);
+    on<SaveDraftEvent>(_onSaveDraft);
   }
 
-  String _cleanGeminiJson(String rawResponse) {
-    // ... (Hàm này giữ nguyên)
-    final regExp = RegExp(r'```(json)?([\s\S]*)```');
-    final match = regExp.firstMatch(rawResponse);
-    if (match != null) {
-      return match.group(2)!.trim();
-    }
-    return rawResponse.trim();
+  // --- 1. LƯU NHÁP ---
+  Future<void> _onSaveDraft(
+      SaveDraftEvent event,
+      Emitter<WritingTaskState> emit,
+      ) async {
+    final result = await _writingRepo.saveDraft(
+      submissionId: event.submissionId,
+      content: event.content,
+    );
+
+    result.fold(
+          (failure) {
+        emit(state.copyWith(
+          status: WritingTaskStatus.error,
+          errorMessage: "Failed to save draft: ${failure.message}",
+        ));
+      },
+          (success) {
+        emit(state.copyWith(status: WritingTaskStatus.savedSuccess));
+      },
+    );
   }
 
+  // --- 2. XÓA NHÁP CŨ & TẠO MỚI ---
+  Future<void> _onDiscardDraftAndStartNew(
+      DiscardDraftAndStartNew event,
+      Emitter<WritingTaskState> emit,
+      ) async {
+    emit(state.copyWith(status: WritingTaskStatus.loading));
 
+    final deleteResult = await _writingRepo.deleteSubmission(event.oldSubmissionId);
+
+    await deleteResult.fold(
+          (failure) async {
+        emit(state.copyWith(
+            status: WritingTaskStatus.error,
+            errorMessage: "Cannot delete old draft: ${failure.message}"
+        ));
+      },
+          (success) async {
+        add(GeneratePromptAndStartTask(
+          topic: event.topic,
+          userId: event.userId,
+          taskType: event.taskType,
+        ));
+      },
+    );
+  }
+
+  // --- 3. TẠO ĐỀ ---
   Future<void> _onGeneratePrompt(GeneratePromptAndStartTask event,
       Emitter<WritingTaskState> emit,) async {
     emit(state.copyWith(status: WritingTaskStatus.loading, topic: event.topic));
     try {
-      // 1. Gọi Gemini (FE) để tạo đề
       final topic = event.topic;
+
+      // 👇 GIỮ NGUYÊN PROMPT CŨ CỦA BẠN
       final promptTemplate = topic.aiConfig?.generationTemplate ??
-          // ... (prompt của bạn giữ nguyên) ...
           'Generate an IELTS Writing Task 2 prompt for the topic: "${topic.name}". '
-              'Task type: ${topic.aiConfig?.defaultTaskType ?? "Discussion"}. '
+              'Task type: ${event.taskType}. '
               'Level: ${topic.aiConfig?.level ?? "Intermediate"}. '
               'Target word count: ${topic.aiConfig?.targetWordCount ?? "250–320"}. '
               'Respond in JSON format: {"title": "...", "text": "..."}';
@@ -133,44 +106,37 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
         throw Exception('Gemini returned no data for prompt');
       }
 
-      print('--- GEMINI RESPONSE (PROMPT) ---');
-      print(geminiResponse.text);
       final cleanJson = _cleanGeminiJson(geminiResponse.text!);
       final Map<String, dynamic> generatedPromptMap = jsonDecode(cleanJson);
 
-      // ✍️ Tạo đối tượng GeneratedPrompt đầy đủ
       final generatedPromptEntity = GeneratedPrompt(
         title: generatedPromptMap['title'] as String?,
         text: generatedPromptMap['text'] as String?,
-        taskType: topic.aiConfig?.defaultTaskType ?? "Discussion",
+        taskType: event.taskType,
         level: topic.aiConfig?.level ?? "Intermediate",
       );
 
-      // 2. ✍️ THAY THẾ GIẢ LẬP BẰNG API THẬT
       final startResultEither = await _writingRepo.startWriting(
         topicId: topic.id,
-        userId: event.userId, // ⬅️ Lấy từ event
+        userId: event.userId,
         generatedPrompt: generatedPromptEntity,
       );
 
-      // 3. Xử lý kết quả từ API
       await startResultEither.fold(
             (failure) {
-          // Lỗi từ API
           emit(state.copyWith(
             status: WritingTaskStatus.error,
             errorMessage: failure.message,
           ));
         },
             (result) async {
-          // Thành công!
-          // (result là một tuple: {submissionId, generatedPrompt, resumed})
           final submission = WritingSubmissionEntity(
             id: result.submissionId,
             topicId: topic.id,
             generatedPrompt: result.generatedPrompt,
             status: 'draft',
             userId: event.userId,
+            content: result.content, // Lấy nội dung từ API (quan trọng cho Resume)
           );
 
           emit(state.copyWith(
@@ -187,36 +153,7 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
     }
   }
 
-  bool isLikelyGibberish(String s) {
-    // ... (Hàm này giữ nguyên)
-    final text = s.trim();
-
-    // 1) Tối thiểu 150–200 từ cho IELTS Task 2
-    final words = text.isEmpty ? [] : text.split(RegExp(r'\s+'));
-    if (words.length < 150) return true;
-
-    // 2) Tỷ lệ ký tự chữ cái (VN/EN) tối thiểu 60%
-    final alpha = RegExp(r'[A-Za-zÀ-ỹ]');
-    final alphaCount = alpha
-        .allMatches(text)
-        .length;
-    final total = text.runes.length;
-    final alphaRatio = total == 0 ? 0 : alphaCount / total;
-    if (alphaRatio < 0.6) return true;
-
-    // 3) Tỷ lệ ký tự lặp bất thường (ví dụ 'aaaaaa', '!!!!')
-    final repeated = RegExp(r'(.)\1{6,}'); // 7 ký tự giống nhau liên tiếp
-    if (repeated.hasMatch(text)) return true;
-
-    // 4) Từ trung bình quá ngắn (nghi ngờ spam ký tự)
-    final avgLen = words.isEmpty ? 0 : text
-        .replaceAll(RegExp(r'\s+'), '')
-        .length / words.length;
-    if (avgLen < 3) return true;
-
-    return false;
-  }
-
+  // --- 4. CHẤM BÀI (FEEDBACK) ---
   Future<void> _onSubmitForFeedback(SubmitForFeedback event,
       Emitter<WritingTaskState> emit,) async {
     emit(state.copyWith(status: WritingTaskStatus.submitting));
@@ -228,13 +165,11 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
       return;
     }
     try {
-      // 1. Lấy prompt chấm bài
       final feedbackPrompt = _buildFeedbackPrompt(
         essayText: event.essayContent,
         taskType: event.taskType,
       );
 
-      // 2. Gọi Gemini (FE) để chấm bài
       final geminiResponse = await _geminiModel.generateContent([
         Content.text(feedbackPrompt)
       ]);
@@ -243,31 +178,25 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
         throw Exception('Gemini returned no data for feedback');
       }
 
-      // 3. Parse text feedback (JSON) thành FeedbackEntity
       final cleanJson = _cleanGeminiJson(geminiResponse.text!);
       final Map<String, dynamic> feedbackMap = jsonDecode(cleanJson);
       final FeedbackEntity feedback = FeedbackEntity.fromJson(feedbackMap);
 
-
-      // 4. ✍️ THAY THẾ GIẢ LẬP BẰNG API THẬT
       final updatedSubmissionEither = await _writingRepo.submitForReview(
         submissionId: event.submissionId,
         content: event.essayContent,
-        feedback: feedback, // <- Gán feedback THẬT
-        durationInSeconds: event.durationInSeconds, // <- Gán duration THẬT
+        feedback: feedback,
+        durationInSeconds: event.durationInSeconds,
       );
 
-      // 5. Xử lý kết quả từ API
       await updatedSubmissionEither.fold(
               (failure) {
-            // Lỗi từ API
             emit(state.copyWith(
                 status: WritingTaskStatus.error,
                 errorMessage: failure.message
             ));
           },
               (updatedSubmission) {
-            // Thành công!
             emit(state.copyWith(
               status: WritingTaskStatus.success,
               submission: updatedSubmission,
@@ -282,12 +211,42 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
     }
   }
 
-  // ... (Hàm _buildFeedbackPrompt giữ nguyên) ...
+  // --- HELPER METHODS ---
+
+  String _cleanGeminiJson(String rawResponse) {
+    final regExp = RegExp(r'```(json)?([\s\S]*)```');
+    final match = regExp.firstMatch(rawResponse);
+    if (match != null) {
+      return match.group(2)!.trim();
+    }
+    return rawResponse.trim();
+  }
+
+  bool isLikelyGibberish(String s) {
+    final text = s.trim();
+    final words = text.isEmpty ? [] : text.split(RegExp(r'\s+'));
+    if (words.length < 150) return true;
+
+    final alpha = RegExp(r'[A-Za-zÀ-ỹ]');
+    final alphaCount = alpha.allMatches(text).length;
+    final total = text.runes.length;
+    final alphaRatio = total == 0 ? 0 : alphaCount / total;
+    if (alphaRatio < 0.6) return true;
+
+    final repeated = RegExp(r'(.)\1{6,}');
+    if (repeated.hasMatch(text)) return true;
+
+    final avgLen = words.isEmpty ? 0 : text.replaceAll(RegExp(r'\s+'), '').length / words.length;
+    if (avgLen < 3) return true;
+
+    return false;
+  }
+
+  // 👇 GIỮ NGUYÊN PROMPT CŨ CỦA BẠN KHÔNG SỬA ĐỔI
   String _buildFeedbackPrompt({
     required String essayText,
     required String taskType,
   }) {
-    // ... (Nội dung prompt dài của bạn) ...
     return """
 Bạn là giám khảo IELTS Writing Task 2 (TR/CC/LR/GRA).
 Phần phân tích viết **bằng tiếng Việt**; **không dùng Markdown**; **CHỈ trả về MỘT đối tượng JSON hợp lệ** (không có \\\`\\\`\\\`json, không text ngoài JSON).

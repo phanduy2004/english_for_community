@@ -33,6 +33,7 @@ class UserRemoteDatasource {
     bool? strictCorrection,
     String? language,
     String? timezone,
+    String? gender
   }) async {
 
     // 1. Tạo Map dữ liệu trước
@@ -48,6 +49,7 @@ class UserRemoteDatasource {
       if (strictCorrection != null) 'strictCorrection': strictCorrection,
       if (language != null) 'language': language,
       if (timezone != null) 'timezone': timezone,
+      if (gender != null) 'gender': gender,
 
       // 🔥 SỬA LỖI Ở ĐÂY:
       // Luôn luôn gửi field 'reminder'.

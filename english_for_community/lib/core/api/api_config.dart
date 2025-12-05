@@ -1,10 +1,10 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // Để dùng kIsWeb
+import 'package:flutter/foundation.dart'; 
 import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiConfig {
   // Thay IP này bằng IP máy tính của bạn (kiểm tra bằng ipconfig)
-  static const _lanIp = '192.168.1.185';
+  static const _lanIp = '192.168.1.237';
   static const _port = 3000;
 
   static bool _isPhysicalAndroid = false;

@@ -1,9 +1,10 @@
+
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart'; // Import PaginatedResult
 import '../entity/dictation_attempt_entity.dart';
 import '../entity/listening_entity.dart';
 import '../model/either.dart';
 import '../model/failure.dart';
-
+import 'package:file_picker/file_picker.dart'; // 🔥 Import này
 abstract class ListeningRepository {
   // ==================== READ ====================
 
@@ -30,8 +31,8 @@ abstract class ListeningRepository {
 
   // ==================== ADMIN WRITE ====================
 
-  Future<Either<Failure, ListeningEntity>> createListening(ListeningEntity listening);
-  Future<Either<Failure, ListeningEntity>> updateListening(String id, ListeningEntity listening);
+  Future<Either<Failure, ListeningEntity>> createListening(ListeningEntity listening, {PlatformFile? audioFile});
+  Future<Either<Failure, ListeningEntity>> updateListening(String id, ListeningEntity listening, {PlatformFile? audioFile});
   Future<Either<Failure, void>> deleteListening(String id);
   Future<Either<Failure, List<DictationAttemptEntity>>> getDictationAttempts(String listeningId);
 }

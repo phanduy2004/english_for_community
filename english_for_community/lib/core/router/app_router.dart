@@ -12,6 +12,9 @@ import '../../feature/admin/content_management/reading/admin_reading_list_view.d
 import '../../feature/admin/content_management/reading/reading_editor_page.dart';
 import '../../feature/admin/content_management/speaking/admin_speaking_list_view.dart';
 import '../../feature/admin/content_management/speaking/speaking_editor_page.dart';
+import '../../feature/admin/content_management/writing/admin_writing_list_view.dart';
+import '../../feature/admin/content_management/writing/writing_topic_editor_page.dart';
+import '../../feature/admin/report_management/report_management_page.dart';
 import '../../feature/auth/forgot_password_page.dart';
 import '../../feature/auth/otp_verification_page.dart';
 import '../../feature/auth/register_page.dart';
@@ -177,7 +180,11 @@ class AppRouter {
           return UserManagementPage(initialFilter: initialFilter);
         },
       ),
-
+      GoRoute(
+        path: '/admin/reports', // Khớp với routePath bạn đã đặt trong file Page
+        name: ReportManagementPage.routeName,
+        builder: (context, state) => const ReportManagementPage(),
+      ),
       // 👇 QUẢN LÝ NỘI DUNG (NESTED ROUTES) 👇
       GoRoute(
         path: '/admin/content',
@@ -202,9 +209,10 @@ class AppRouter {
               else if (type == 'speaking') {
                 return const AdminSpeakingListView();
               }
-              // Sau này làm Writing, Speaking thì thêm case vào đây
-
-              return Scaffold(body: Center(child: Text("Chưa làm skill: $type")));
+              else if (type == 'writing') {
+                return const AdminWritingListView();
+              }
+              return Scaffold(body: Center(child: Text("Unknown type: $type")));
             },
             routes: [
               // 2. Route Editor
@@ -230,6 +238,9 @@ class AppRouter {
                   // 👇 THÊM CASE SPEAKING
                   else if (type == 'speaking') {
                     return SpeakingEditorPage(id: id);
+                  }
+                  else if (type == 'writing') {
+                    return WritingTopicEditorPage(id: id);
                   }
                   return Scaffold(body: Center(child: Text("Error: $type")));
                 },
