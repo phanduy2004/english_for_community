@@ -1,17 +1,15 @@
-import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
-import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
+import 'package:english_for_community/feature/progress/report_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-
 import 'package:english_for_community/core/entity/progress_summary_entity.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
-import '../../core/get_it/get_it.dart';
-// ⚠️ Đảm bảo import Entity Leaderboard
-import '../../core/entity/leaderboard_entity.dart';
-import '../../core/repository/user_repository.dart';
+import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
+import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
+import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/entity/leaderboard_entity.dart';
+import 'package:english_for_community/core/repository/user_repository.dart';
 
 class ProgressReportPage extends StatefulWidget {
   const ProgressReportPage({super.key});
@@ -27,13 +25,13 @@ enum _Range { day, week, month }
 class _ProgressReportPageState extends State<ProgressReportPage> {
   _Range _range = _Range.week;
 
-  void _downloadReport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF export feature coming soon.')),
+  void _openReportDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => const ReportDialog(),
     );
   }
 
-  // ... (Giữ nguyên các hàm helper: _fmtHhMm, _rangeToString, _onRangeSelected, v.v.)
   String _fmtHhMm(int totalMinutes) {
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
@@ -85,16 +83,15 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         }
     );
   }
+
   void _showUserProfile(BuildContext context, String userId) {
     showDialog(
       context: context,
       builder: (context) {
-        // Sử dụng FutureBuilder để gọi API lấy thông tin chi tiết ngay khi mở dialog
         return FutureBuilder(
           future: getIt<UserRepository>().getPublicProfile(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              // Hiển thị loading trong lúc tải
               return const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               );
@@ -114,7 +111,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             }
 
             if (snapshot.hasData) {
-              // Xử lý kết quả trả về từ Either<Failure, UserEntity>
               return snapshot.data!.fold(
                     (failure) => AlertDialog(
                   title: const Text('Error'),
@@ -147,6 +143,14 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       },
     );
   }
+
+  Future<void> _onRefresh(BuildContext context) async {
+    final bloc = context.read<ProgressBloc>();
+    bloc.add(FetchProgressData(range: _rangeToString(_range)));
+    bloc.add(FetchLeaderboard());
+    await Future.delayed(const Duration(milliseconds: 800));
+  }
+
   @override
   Widget build(BuildContext context) {
     const bgPage = Color(0xFFF9FAFB);
@@ -156,7 +160,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     return BlocProvider(
       create: (context) => getIt<ProgressBloc>()
         ..add(FetchProgressData(range: _rangeToString(_range)))
-        ..add(FetchLeaderboard()), // 🔥 GỌI SỰ KIỆN TẢI LEADERBOARD
+        ..add(FetchLeaderboard()),
       child: Scaffold(
         backgroundColor: bgPage,
         appBar: AppBar(
@@ -174,23 +178,21 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           ),
           actions: [
             IconButton(
-              tooltip: 'Download Report',
-              icon: const Icon(Icons.download_rounded, color: textMain),
-              onPressed: _downloadReport,
+              tooltip: 'Report Issue',
+              icon: const Icon(Icons.flag_outlined, color: textMain),
+              onPressed: _openReportDialog,
             ),
           ],
         ),
         body: SafeArea(
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
-              // Logic Loading chung cho trang
               if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
                 return const Center(child: CircularProgressIndicator(strokeWidth: 2));
               }
               if (state.status == ProgressStatus.error) {
                 return _buildErrorUI(context, state.errorMessage);
               }
-              // Render UI khi có Summary (Leaderboard có thể đang loading hoặc load xong)
               if (state.summary != null) {
                 return _buildSuccessUI(context, state);
               }
@@ -202,7 +204,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 
-  // ... (Giữ nguyên _buildErrorUI)
   Widget _buildErrorUI(BuildContext context, String? message) {
     return Center(
       child: Column(
@@ -215,7 +216,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           Text(message ?? 'Please try again later', style: TextStyle(color: Colors.grey[600])),
           const SizedBox(height: 24),
           OutlinedButton(
-            onPressed: () => context.read<ProgressBloc>().add(FetchProgressData(range: _rangeToString(_range))),
+            onPressed: () => _onRefresh(context),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.black, side: const BorderSide(color: Colors.grey)),
             child: const Text('Retry'),
           )
@@ -224,10 +225,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 
-  // 🔥 SỬA: Nhận vào toàn bộ State để lấy cả Summary và Leaderboard
   Widget _buildSuccessUI(BuildContext context, ProgressState state) {
     final progressBloc = context.read<ProgressBloc>();
-    final summary = state.summary!; // Đã check null ở trên
+    final summary = state.summary!;
 
     final studyTime = summary.studyTime;
     final stats = summary.statsGrid;
@@ -240,218 +240,213 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     const borderColor = Color(0xFFE4E4E7);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ... (Giữ nguyên Header & Filter & Study Time Card & Stats Grid)
-          // --- Header & Filter ---
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)),
-                  const SizedBox(height: 4),
-                  const Text('Performance metrics', style: TextStyle(fontSize: 14, color: textMuted)),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF4F4F5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    _FilterTab(label: 'Day', selected: _range == _Range.day, onTap: () => _onRangeSelected(context, _Range.day)),
-                    _FilterTab(label: 'Week', selected: _range == _Range.week, onTap: () => _onRangeSelected(context, _Range.week)),
-                    _FilterTab(label: 'Month', selected: _range == _Range.month, onTap: () => _onRangeSelected(context, _Range.month)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // --- Study Time Card ---
-          _ShadcnCard(
-            child: Column(
+    return RefreshIndicator(
+      onRefresh: () => _onRefresh(context),
+      color: primaryColor,
+      backgroundColor: Colors.white,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _range == _Range.day ? 'Today' : (_range == _Range.week ? 'This Week' : 'This Month'),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _range == _Range.day ? _fmtHhMm(studyTime.todayMinutes) : _fmtHhMm(studyTime.totalMinutesInRange),
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
-                        ),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                      child: Icon(Icons.timer_outlined, color: Theme.of(context).colorScheme.primary, size: 24),
-                    )
+                    const Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)),
+                    const SizedBox(height: 4),
+                    const Text('Performance metrics', style: TextStyle(fontSize: 14, color: textMuted)),
                   ],
                 ),
-                const SizedBox(height: 16),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    minHeight: 8,
-                    value: progress,
-                    color: primaryColor,
-                    backgroundColor: const Color(0xFFF4F4F5),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF4F4F5),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Goal: ${_fmtHhMm(studyTime.goalMinutes)}', style: const TextStyle(fontSize: 12, color: textMuted)),
-                    Text('${(progress * 100).round()}% completed', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // --- Stats Grid ---
-          const Text('Detailed Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.85,
-            children: [
-              _StatBox(
-                icon: Icons.psychology, iconColor: const Color(0xFF8B5CF6),
-                value: '${stats.vocabLearned}', label: 'Vocabulary',
-                onTap: () => _showStatDetailDialog(progressBloc, 'vocab', _range),
-              ),
-              _StatBox(
-                icon: Icons.menu_book, iconColor: const Color(0xFF3B82F6),
-                value: '${stats.readingAccuracy}%', label: 'Reading',
-                onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
-              ),
-              _StatBox(
-                icon: Icons.headphones, iconColor: const Color(0xFF22C55E),
-                value: '${stats.dictationAccuracy}%', label: 'Listening',
-                onTap: () => _showStatDetailDialog(progressBloc, 'dictation', _range),
-              ),
-              _StatBox(
-                icon: Icons.task_alt, iconColor: const Color(0xFFF97316),
-                value: '${stats.lessonsCompleted}', label: 'Lessons',
-                onTap: () => _showStatDetailDialog(progressBloc, 'lessons', _range),
-              ),
-              _StatBox(
-                icon: Icons.edit, iconColor: const Color(0xFFEC4899),
-                value: stats.avgWritingScore.toStringAsFixed(1), label: 'Writing',
-                onTap: () => _showStatDetailDialog(progressBloc, 'writing', _range),
-              ),
-              _StatBox(
-                icon: Icons.mic, iconColor: const Color(0xFF14B8A6),
-                value: '${stats.speakingAccuracy}%', label: 'Speaking',
-                onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // -----------------------------------------------------------------
-          // 🔥 LEADERBOARD SECTION (ĐÃ CẬP NHẬT LOGIC REAL DATA)
-          // -----------------------------------------------------------------
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Leaderboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          _ShadcnCard(
-            padding: EdgeInsets.zero,
-            child: _buildLeaderboardContent(state, borderColor),
-          ),
-          // -----------------------------------------------------------------
-
-          const SizedBox(height: 24),
-
-          // --- Chart Section ---
-          _ShadcnCard(
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-                    const Icon(Icons.bar_chart, color: Color(0xFF71717A), size: 20),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  height: 160,
-                  child: _Bars(
-                    values: chart.minutes,
-                    labels: chart.labels,
-                    barColor: primaryColor,
-                    highlightIndex: chart.labels.length - 1,
-                    highlightColor: const Color(0xFFF59E0B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-          // --- Callout ---
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              border: Border.all(color: const Color(0xFFBBF7D0)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const Icon(Icons.celebration_rounded, color: Color(0xFF16A34A), size: 32),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(callout.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF15803D))),
-                      const SizedBox(height: 4),
-                      Text(callout.message, style: const TextStyle(fontSize: 13, color: Color(0xFF166534))),
+                      _FilterTab(label: 'Day', selected: _range == _Range.day, onTap: () => _onRangeSelected(context, _Range.day)),
+                      _FilterTab(label: 'Week', selected: _range == _Range.week, onTap: () => _onRangeSelected(context, _Range.week)),
+                      _FilterTab(label: 'Month', selected: _range == _Range.month, onTap: () => _onRangeSelected(context, _Range.month)),
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: Color(0xFF15803D)),
               ],
             ),
-          ),
-          const SizedBox(height: 40),
-        ],
+            const SizedBox(height: 24),
+
+            _ShadcnCard(
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _range == _Range.day ? 'Today' : (_range == _Range.week ? 'This Week' : 'This Month'),
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _range == _Range.day ? _fmtHhMm(studyTime.todayMinutes) : _fmtHhMm(studyTime.totalMinutesInRange),
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                        child: Icon(Icons.timer_outlined, color: Theme.of(context).colorScheme.primary, size: 24),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      minHeight: 8,
+                      value: progress,
+                      color: primaryColor,
+                      backgroundColor: const Color(0xFFF4F4F5),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Goal: ${_fmtHhMm(studyTime.goalMinutes)}', style: const TextStyle(fontSize: 12, color: textMuted)),
+                      Text('${(progress * 100).round()}% completed', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Detailed Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+            const SizedBox(height: 12),
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 3,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.85,
+              children: [
+                _StatBox(
+                  icon: Icons.psychology, iconColor: const Color(0xFF8B5CF6),
+                  value: '${stats.vocabLearned}', label: 'Vocabulary',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'vocab', _range),
+                ),
+                _StatBox(
+                  icon: Icons.menu_book, iconColor: const Color(0xFF3B82F6),
+                  value: '${stats.readingAccuracy}%', label: 'Reading',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
+                ),
+                _StatBox(
+                  icon: Icons.headphones, iconColor: const Color(0xFF22C55E),
+                  value: '${stats.dictationAccuracy}%', label: 'Listening',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'dictation', _range),
+                ),
+                _StatBox(
+                  icon: Icons.task_alt, iconColor: const Color(0xFFF97316),
+                  value: '${stats.lessonsCompleted}', label: 'Lessons',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'lessons', _range),
+                ),
+                _StatBox(
+                  icon: Icons.edit, iconColor: const Color(0xFFEC4899),
+                  value: stats.avgWritingScore.toStringAsFixed(1), label: 'Writing',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'writing', _range),
+                ),
+                _StatBox(
+                  icon: Icons.mic, iconColor: const Color(0xFF14B8A6),
+                  value: '${stats.speakingAccuracy}%', label: 'Speaking',
+                  onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Leaderboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            _ShadcnCard(
+              padding: EdgeInsets.zero,
+              child: _buildLeaderboardContent(state, borderColor),
+            ),
+
+            const SizedBox(height: 24),
+
+            _ShadcnCard(
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+                      const Icon(Icons.bar_chart, color: Color(0xFF71717A), size: 20),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    height: 160,
+                    child: _Bars(
+                      values: chart.minutes,
+                      labels: chart.labels,
+                      barColor: primaryColor,
+                      highlightIndex: chart.labels.length - 1,
+                      highlightColor: const Color(0xFFF59E0B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                border: Border.all(color: const Color(0xFFBBF7D0)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.celebration_rounded, color: Color(0xFF16A34A), size: 32),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(callout.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF15803D))),
+                        const SizedBox(height: 4),
+                        Text(callout.message, style: const TextStyle(fontSize: 13, color: Color(0xFF166534))),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Color(0xFF15803D)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
       ),
     );
   }
 
-  // 🔥 HÀM RENDER NỘI DUNG LEADERBOARD
   Widget _buildLeaderboardContent(ProgressState state, Color dividerColor) {
     if (state.leaderboardStatus == LeaderboardStatus.loading) {
       return const Padding(
@@ -463,7 +458,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     if (state.leaderboardStatus == LeaderboardStatus.error) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(child: Text(state.errorMessage ?? 'Không tải được xếp hạng', style: const TextStyle(fontSize: 12))),
+        child: Center(child: Text(state.errorMessage ?? 'Cannot load leaderboard', style: const TextStyle(fontSize: 12))),
       );
     }
 
@@ -471,7 +466,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     if (users.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(24.0),
-        child: Center(child: Text('Chưa có dữ liệu bảng xếp hạng', style: TextStyle(color: Colors.grey))),
+        child: Center(child: Text('No leaderboard data available', style: TextStyle(color: Colors.grey))),
       );
     }
 
@@ -498,7 +493,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               xp: user.xp,
               isMe: user.isMe,
               avatarUrl: user.avatarUrl,
-              // 🔥 GỌI HÀM SHOW DIALOG KHI NHẤN (Giả sử user có trường id)
               onTap: () => _showUserProfile(context, user.id),
             ),
             if (index < users.length - 1)
@@ -509,6 +503,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 }
+
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -538,7 +533,7 @@ class _LeaderRow extends StatelessWidget {
   final String xp;
   final bool isMe;
   final String? avatarUrl;
-  final VoidCallback? onTap; // 1. Thêm tham số onTap
+  final VoidCallback? onTap;
 
   const _LeaderRow({
     required this.rank,
@@ -546,7 +541,7 @@ class _LeaderRow extends StatelessWidget {
     required this.xp,
     this.isMe = false,
     this.avatarUrl,
-    this.onTap, // 2. Nhận tham số
+    this.onTap,
   });
 
   @override
@@ -557,11 +552,10 @@ class _LeaderRow extends StatelessWidget {
     else if (rank == 3) rankColor = const Color(0xFFB45309);
     else rankColor = const Color(0xFF71717A);
 
-    // 3. Bọc trong Material & InkWell để có hiệu ứng nhấn (Ripple Effect)
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: onTap, // 4. Gắn sự kiện
+        onTap: onTap,
         child: Container(
           color: isMe ? const Color(0xFFF0F9FF) : Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

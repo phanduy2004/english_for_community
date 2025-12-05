@@ -13,12 +13,7 @@ const TASK_TYPES = [
 const WritingTopicSchema = new mongoose.Schema(
   {
     name:     { type: String, required: true },                  // "Art", "Technology", ...
-    slug:     { type: String, required: true, unique: true, index: true },
-    icon:     { type: String },                                  // 'brush', 'memory', ...
-    color:    { type: String, match: /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/ }, // #RRGGBB or #RRGGBBAA (optional)
-    order:    { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
-
     // cấu hình để GEN đề khi user bấm vào topic
     aiConfig: {
       language:        { type: String, default: 'vi-VN' },

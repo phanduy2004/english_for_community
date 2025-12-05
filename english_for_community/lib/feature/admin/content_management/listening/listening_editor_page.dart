@@ -1,8 +1,11 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:just_audio/just_audio.dart';
 
-// ✅ SỬA 1: Dùng absolute import để tránh lỗi đường dẫn
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/entity/cue_entity.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
@@ -36,14 +39,18 @@ class _ListeningEditorView extends StatefulWidget {
 class _ListeningEditorViewState extends State<_ListeningEditorView> {
   final _titleCtrl = TextEditingController();
   final _codeCtrl = TextEditingController();
-  final _audioUrlCtrl = TextEditingController();
   final _cefrCtrl = TextEditingController();
 
+  PlatformFile? _selectedAudioFile;
+  String? _currentAudioUrl;
+
   final ScrollController _scrollController = ScrollController();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   ListeningDifficulty _difficulty = ListeningDifficulty.easy;
   List<Map<String, dynamic>> cues = [];
   bool _isLoadingDetail = false;
+  String? _playingCueKey;
 
   @override
   void initState() {
@@ -60,9 +67,9 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
   void dispose() {
     _titleCtrl.dispose();
     _codeCtrl.dispose();
-    _audioUrlCtrl.dispose();
     _cefrCtrl.dispose();
     _scrollController.dispose();
+    _audioPlayer.dispose();
     getIt<AdminListeningBloc>().add(ClearSelectedListeningEvent());
     super.dispose();
   }
@@ -70,9 +77,9 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
   void _populateData(ListeningEntity item) {
     _titleCtrl.text = item.title;
     _codeCtrl.text = item.code ?? '';
-    _audioUrlCtrl.text = item.audioUrl;
     _cefrCtrl.text = item.cefr ?? '';
     _difficulty = item.difficulty ?? ListeningDifficulty.easy;
+    _currentAudioUrl = item.audioUrl;
 
     final cuesList = item.cues;
 
@@ -88,12 +95,109 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     });
   }
 
+  Future<void> _pickAudio() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      withData: kIsWeb,
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedAudioFile = result.files.first;
+      });
+    }
+  }
+  String _getMimeType(String filename) {
+    final name = filename.toLowerCase();
+    if (name.endsWith('.wav')) return 'audio/wav';
+    if (name.endsWith('.m4a')) return 'audio/mp4';
+    if (name.endsWith('.aac')) return 'audio/aac';
+    if (name.endsWith('.ogg')) return 'audio/ogg';
+    return 'audio/mpeg'; // Mặc định cho mp3
+  }
+  Future<void> _previewAudioSegment(String key, String? startStr, String? endStr) async {
+    final int startMs = int.tryParse(startStr ?? '') ?? 0;
+    final int endMs = int.tryParse(endStr ?? '') ?? 0;
+
+    if (endMs <= startMs) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thời gian kết thúc phải lớn hơn bắt đầu")));
+      return;
+    }
+
+    try {
+      UriAudioSource? source;
+
+      // TRƯỜNG HỢP 1: Đang chọn file mới từ máy
+      if (_selectedAudioFile != null) {
+        if (kIsWeb) {
+          // 🔥 FIX CHO WEB: Dùng Bytes chuyển thành Data URI
+          if (_selectedAudioFile!.bytes != null) {
+            final mimeType = _getMimeType(_selectedAudioFile!.name);
+            source = AudioSource.uri(
+                Uri.dataFromBytes(_selectedAudioFile!.bytes!, mimeType: mimeType)
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lỗi: Không đọc được dữ liệu file trên Web")));
+            return;
+          }
+        } else {
+          // 📱 MOBILE/DESKTOP: Dùng đường dẫn file (path)
+          if (_selectedAudioFile!.path != null) {
+            source = AudioSource.file(_selectedAudioFile!.path!);
+          }
+        }
+      }
+      // TRƯỜNG HỢP 2: Đang sửa bài cũ (Dùng URL có sẵn)
+      else if (_currentAudioUrl != null && _currentAudioUrl!.isNotEmpty) {
+        source = AudioSource.uri(Uri.parse(_currentAudioUrl!));
+      }
+
+      if (source == null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Chưa có file audio")));
+        return;
+      }
+
+      // Cắt đoạn audio cần nghe
+      final clippingSource = ClippingAudioSource(
+        child: source,
+        start: Duration(milliseconds: startMs),
+        end: Duration(milliseconds: endMs),
+      );
+
+      // Cập nhật trạng thái đang play
+      setState(() => _playingCueKey = key);
+
+      await _audioPlayer.stop();
+      await _audioPlayer.setAudioSource(clippingSource);
+      await _audioPlayer.play();
+
+      // Khi phát xong (hoặc dừng)
+      if (mounted) {
+        setState(() => _playingCueKey = null);
+      }
+
+    } catch (e) {
+      print("Error playing preview: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi phát audio: $e")));
+        setState(() => _playingCueKey = null);
+      }
+    }
+  }
+
   void _onSubmit() {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    if (_titleCtrl.text.isEmpty || _audioUrlCtrl.text.isEmpty) {
+    if (_titleCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập Title và Audio URL")),
+        const SnackBar(content: Text("Vui lòng nhập Title")),
+      );
+      return;
+    }
+
+    if (widget.id == null && _selectedAudioFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Vui lòng chọn file Audio để tạo bài nghe")),
       );
       return;
     }
@@ -103,9 +207,8 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
       final c = cues[i];
       final text = c['text']?.toString().trim() ?? '';
 
-      // ✅ SỬA 2: Bỏ listeningId và idx vì CueEntity mới không cần nữa
       cueEntities.add(CueEntity(
-        id: '', // Server tự sinh ID, client gửi rỗng
+        id: '',
         startMs: int.tryParse(c['startMs'].toString()) ?? 0,
         endMs: int.tryParse(c['endMs'].toString()) ?? 0,
         spk: c['spk']?.toString().trim(),
@@ -114,12 +217,11 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
       ));
     }
 
-
     final newListening = ListeningEntity(
       id: widget.id ?? '',
       title: _titleCtrl.text,
       code: _codeCtrl.text,
-      audioUrl: _audioUrlCtrl.text,
+      audioUrl: '',
       difficulty: _difficulty,
       cefr: _cefrCtrl.text,
       totalCues: cueEntities.length,
@@ -129,11 +231,19 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     if (widget.id != null) {
       context.read<AdminListeningBloc>().add(
           UpdateListeningEvent(
-              id: widget.id!, listening: newListening, cues: cueEntities)
+              id: widget.id!,
+              listening: newListening,
+              cues: cueEntities,
+              audioFile: _selectedAudioFile
+          )
       );
     } else {
       context.read<AdminListeningBloc>().add(
-          CreateListeningEvent(listening: newListening, cues: cueEntities)
+          CreateListeningEvent(
+              listening: newListening,
+              cues: cueEntities,
+              audioFile: _selectedAudioFile
+          )
       );
     }
   }
@@ -169,7 +279,6 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Giữ nguyên phần build UI, không thay đổi)
     return BlocListener<AdminListeningBloc, AdminListeningState>(
       listener: (context, state) {
         if (state.status == AdminListeningStatus.failure) {
@@ -259,9 +368,6 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     );
   }
 
-  // ... (Các widget _buildSectionHeader, _buildGeneralInfoCard, _buildCueCardsList, _buildCueCard, _CompactTableInput giữ nguyên như cũ)
-
-  // (Tôi copy lại các helper widget để bạn copy-paste cho tiện, không cần tìm lại code cũ)
   Widget _buildSectionHeader(String title) {
     return Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kTextMain));
   }
@@ -286,7 +392,9 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
             ],
           ),
           const SizedBox(height: 16),
-          ShadcnInput(label: "Audio URL", controller: _audioUrlCtrl, hint: "/assets/audio/file.mp3"),
+
+          _buildAudioUploader(),
+
           const SizedBox(height: 16),
 
           Column(
@@ -336,6 +444,73 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     );
   }
 
+  Widget _buildAudioUploader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Audio Source", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: kTextMain)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: _pickAudio,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: kWhite,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: kBorder),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.audio_file_outlined, size: 20, color: kTextMain),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _selectedAudioFile != null
+                            ? _selectedAudioFile!.name
+                            : (_currentAudioUrl != null && _currentAudioUrl!.isNotEmpty
+                            ? "Current: ...${_currentAudioUrl!.substring((_currentAudioUrl!.length - 20).clamp(0, _currentAudioUrl!.length))}"
+                            : "Click to select audio file"),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: _selectedAudioFile != null ? FontWeight.w600 : FontWeight.normal,
+                            color: kTextMain
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_selectedAudioFile == null && _currentAudioUrl == null)
+                        const Text("Supports MP3, WAV, M4A", style: TextStyle(fontSize: 12, color: kTextMuted)),
+                    ],
+                  ),
+                ),
+                if (_selectedAudioFile != null)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 18, color: Colors.red),
+                    onPressed: () => setState(() => _selectedAudioFile = null),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  )
+                else
+                  const Icon(Icons.upload_file_rounded, size: 18, color: kTextMuted),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildCueCardsList() {
     if (cues.isEmpty) {
       return Container(
@@ -361,6 +536,9 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
   }
 
   Widget _buildCueCard(int index, Map<String, dynamic> cue) {
+    final String cueKeyStr = cue['key'].toString();
+    final bool isPlaying = _playingCueKey == cueKeyStr;
+
     return Container(
       key: cue['key'],
       margin: const EdgeInsets.only(bottom: 12),
@@ -404,10 +582,36 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
                 const Text("Timing (ms)", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMuted)),
                 const SizedBox(height: 6),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: _CompactTableInput(hint: "Start", value: cue['startMs'], onChanged: (v) => cue['startMs'] = v, isNumber: true)),
                     const SizedBox(width: 8),
                     Expanded(child: _CompactTableInput(hint: "End", value: cue['endMs'], onChanged: (v) => cue['endMs'] = v, isNumber: true)),
+                    const SizedBox(width: 8),
+
+                    InkWell(
+                      onTap: () {
+                        if (isPlaying) {
+                          _audioPlayer.stop();
+                          setState(() => _playingCueKey = null);
+                        } else {
+                          _previewAudioSegment(cueKeyStr, cue['startMs'], cue['endMs']);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        height: 48,
+                        width: 48,
+                        decoration: BoxDecoration(
+                          color: isPlaying ? Colors.red.withOpacity(0.1) : kTextMain.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: isPlaying ? Colors.red : kTextMain),
+                        ),
+                        child: isPlaying
+                            ? const Icon(Icons.stop_rounded, color: Colors.red)
+                            : const Icon(Icons.play_arrow_rounded, color: kTextMain),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),

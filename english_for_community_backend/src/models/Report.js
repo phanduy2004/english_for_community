@@ -1,51 +1,37 @@
 import mongoose from 'mongoose';
 
 const reportSchema = new mongoose.Schema({
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  // Loại báo cáo
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Ai gửi
+
   type: {
     type: String,
-    enum: ['content_error', 'system_bug', 'feature_request', 'other'],
-    default: 'content_error'
-  },
-  // Tiêu đề ngắn (User nhập hoặc FE tự generate ví dụ: "Lỗi bài Reading #123")
-  title: {
-    type: String,
+    enum: ['bug', 'feature', 'improvement', 'other'],
     required: true
-  },
-  // Nội dung chi tiết user mô tả
-  description: {
-    type: String,
-    required: true
-  },
-  // Nếu báo lỗi nội dung cụ thể, lưu ID của đối tượng đó
-  targetId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: false // Không bắt buộc vì nếu là 'system_bug' thì không có target cụ thể
-  },
-  // Tên Collection của đối tượng bị lỗi (để Admin biết mà query ngược lại)
-  // Ví dụ: 'ReadingPassage', 'Vocabulary', 'SpeakingTopic'
-  targetModel: {
-    type: String,
-    required: false
-  },
-  // Trạng thái xử lý của Admin
-  status: {
-    type: String,
-    enum: ['new', 'in_progress', 'resolved', 'rejected'],
-    default: 'new'
+  }, // Loại báo cáo
+
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+
+  // URL ảnh đính kèm (nếu bạn muốn cho user gửi ảnh màn hình lỗi)
+  images: [{ type: String }],
+
+  // Thông tin thiết bị (Rất quan trọng khi fix bug)
+  deviceInfo: {
+    platform: String, // iOS/Android
+    version: String,  // 14.0, 11.0...
+    device: String    // iPhone 12, Samsung S21...
   },
 
-  // Ghi chú của Admin (Ví dụ: "Đã sửa trong bản update v1.2")
+  status: {
+    type: String,
+    enum: ['pending', 'reviewed', 'resolved', 'rejected'],
+    default: 'pending'
+  },
   adminResponse: {
-    type: String
-  }
-}, {
-  timestamps: true // Tự động có createdAt, updatedAt
+    type: String,
+  },
+
+  createdAt: { type: Date, default: Date.now }
 });
 
 const Report = mongoose.model('Report', reportSchema);

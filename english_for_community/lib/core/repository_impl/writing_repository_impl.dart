@@ -36,8 +36,9 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
       return Left(WritingFailure(message: e.toString()));
     }
   }
+
   @override
-  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed})>>
+  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed, String content})>> // 👈 Thêm String content
   startWriting({
     required String topicId,
     required String userId,
@@ -56,7 +57,24 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
       return Left(WritingFailure(message: e.toString()));
     }
   }
-
+  @override
+  Future<Either<Failure, void>> saveDraft({
+    required String submissionId,
+    required String content,
+  }) async {
+    try {
+      // Gọi AutosaveDraft trong datasource (bạn có thể đổi tên hàm trong datasource cho khớp nếu muốn)
+      await writingRemoteDataSource.autosaveDraft(
+        submissionId: submissionId,
+        content: content,
+      );
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
   @override
   Future<Either<Failure, WritingSubmissionEntity>> submitForReview({
     required String submissionId,
@@ -78,6 +96,77 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
       return Left(WritingFailure(message: e.toString()));
     }
   }
+  @override
+  Future<Either<Failure, void>> deleteSubmission(String submissionId) async {
+    try {
+      await writingRemoteDataSource.deleteSubmission(submissionId);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
+// 👇 IMPLEMENT ADMIN METHODS 👇
 
+  @override
+  Future<Either<Failure, List<WritingTopicEntity>>> getAdminWritingTopics() async {
+    try {
+      final result = await writingRemoteDataSource.getAdminWritingTopics();
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, WritingTopicEntity>> getWritingTopicDetail(String id) async {
+    try {
+      final result = await writingRemoteDataSource.getWritingTopicDetail(id);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> createWritingTopic(WritingTopicEntity topic) async {
+    try {
+      await writingRemoteDataSource.createWritingTopic(topic);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> updateWritingTopic(WritingTopicEntity topic) async {
+    try {
+      await writingRemoteDataSource.updateWritingTopic(topic);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> deleteWritingTopic(String id) async {
+    try {
+      await writingRemoteDataSource.deleteWritingTopic(id);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(WritingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(WritingFailure(message: e.toString()));
+    }
+  }
 // (Bạn có thể thêm getSubmission và autosaveDraft nếu BLoC cần)
 }

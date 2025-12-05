@@ -1,6 +1,7 @@
 import express from 'express';
 import { listeningController } from '../controllers/listeningController.js';
-import { authenticate } from '../middleware/auth.js';
+import {authenticate, requireAdmin} from '../middleware/auth.js';
+import uploadCloud from "../config/cloudinary.js";
 
 const router = express.Router();
 
@@ -33,12 +34,9 @@ router.get('/:id', listeningController.getListeningById);
 // ============================================================
 
 // Tạo mới
-router.post('/', listeningController.createListening);
-
+router.post('/', requireAdmin, uploadCloud.single('audio'), listeningController.createListening);
 // Cập nhật
-router.put('/:id', listeningController.adminUpdate);
-
-// Xóa
-router.delete('/:id', listeningController.deleteListening);
+router.put('/:id', requireAdmin, uploadCloud.single('audio'), listeningController.adminUpdate);
+router.delete('/:id', requireAdmin, listeningController.deleteListening);
 
 export default router;

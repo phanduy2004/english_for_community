@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
+import 'package:flutter/foundation.dart';
 import '../entity/dictation_attempt_entity.dart';
-
+import 'package:file_picker/file_picker.dart'; // Import PlatformFile
 class ListeningRemoteDatasource {
   final Dio dio;
 
@@ -100,19 +104,87 @@ class ListeningRemoteDatasource {
   // 🛡️ ADMIN ACTIONS
   // ==================================================
 
-  Future<ListeningEntity> createListening(Map<String, dynamic> payload) async {
-    final res = await dio.post(_endpoint, data: payload);
-    final data = res.data['data'];
-    return ListeningEntity.fromJson(data);
+  Future<ListeningEntity> createListening(Map<String, dynamic> payload, PlatformFile? audioFile) async {
+    final formData = FormData.fromMap({
+      'title': payload['title'],
+      'code': payload['code'],
+      'cefr': payload['cefr'],
+      'difficulty': payload['difficulty'],
+      'cues': jsonEncode(payload['cues']),
+    });
+
+    if (audioFile != null) {
+      // Gọi hàm helper xử lý file
+      if (kIsWeb) {
+        // Trên Web phải xử lý đồng bộ hoặc đảm bảo bytes có sẵn
+        formData.files.add(MapEntry(
+          'audio',
+          MultipartFile.fromBytes(audioFile.bytes!, filename: audioFile.name),
+        ));
+      } else {
+        if (audioFile.path != null) {
+          formData.files.add(MapEntry(
+            'audio',
+            await MultipartFile.fromFile(audioFile.path!),
+          ));
+        }
+      }
+    }
+
+    final res = await dio.post(_endpoint, data: formData);
+    return ListeningEntity.fromJson(res.data['data']);
   }
 
-  Future<ListeningEntity> updateListening(String id, Map<String, dynamic> payload) async {
-    final res = await dio.put('$_endpoint/$id', data: payload);
-    final data = res.data['data'];
-    return ListeningEntity.fromJson(data);
+  // Tương tự cho updateListening...
+  Future<ListeningEntity> updateListening(String id, Map<String, dynamic> payload, PlatformFile? audioFile) async {
+    final formData = FormData.fromMap({
+      'title': payload['title'],
+      'code': payload['code'],
+      'cefr': payload['cefr'],
+      'difficulty': payload['difficulty'],
+      'cues': jsonEncode(payload['cues']),
+    });
+
+    if (audioFile != null) {
+      if (kIsWeb) {
+        formData.files.add(MapEntry(
+          'audio',
+          MultipartFile.fromBytes(audioFile.bytes!, filename: audioFile.name),
+        ));
+      } else {
+        if (audioFile.path != null) {
+          formData.files.add(MapEntry(
+            'audio',
+            await MultipartFile.fromFile(audioFile.path!),
+          ));
+        }
+      }
+    }
+
+    final res = await dio.put('$_endpoint/$id', data: formData);
+    return ListeningEntity.fromJson(res.data['data']);
   }
 
   Future<void> deleteListening(String id) async {
     await dio.delete('$_endpoint/$id');
+  }
+  void _addAudioFileToFormData(FormData formData, PlatformFile file) async {
+    if (kIsWeb) {
+      // 🌐 WEB: Dùng bytes
+      if (file.bytes != null) {
+        formData.files.add(MapEntry(
+          'audio',
+          MultipartFile.fromBytes(file.bytes!, filename: file.name),
+        ));
+      }
+    } else {
+      // 📱 MOBILE/DESKTOP: Dùng path
+      if (file.path != null) {
+        formData.files.add(MapEntry(
+          'audio',
+          await MultipartFile.fromFile(file.path!, filename: file.name),
+        ));
+      }
+    }
   }
 }

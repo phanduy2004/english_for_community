@@ -27,7 +27,7 @@ class UpdateProfileEvent extends UserEvent {
   final bool? strictCorrection;
   final String? language;
   final String? timezone;
-
+  final String? gender;
   UpdateProfileEvent({
     this.fullName,
     this.username,
@@ -41,7 +41,7 @@ class UpdateProfileEvent extends UserEvent {
     this.reminder,
     this.strictCorrection,
     this.language,
-    this.timezone,
+    this.timezone, this.gender,
   });
 }
 

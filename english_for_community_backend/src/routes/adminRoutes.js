@@ -21,9 +21,4 @@ router.patch('/users/:id/ban', adminController.banUser);
 // Xóa User
 router.delete('/users/:id', adminController.deleteUser);
 // -----------------------------
-
-// 3. Quản lý Báo cáo (Reports)
-router.get('/reports', adminController.getReports);
-router.patch('/reports/:id', adminController.updateReportStatus);
-
 export default router;

@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as apiClient;
 
 import '../datasource/auth_remote_datasource.dart';
+import '../entity/auth_entity.dart';
 import '../entity/user_entity.dart';
 import '../model/either.dart';
 import '../model/failure.dart';

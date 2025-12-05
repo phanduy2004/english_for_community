@@ -80,6 +80,7 @@ class UserRepositoryImpl implements UserRepository {
     bool? strictCorrection,
     String? language,
     String? timezone,
+    String? gender
   }) async {
     try {
       return Right(
@@ -97,6 +98,7 @@ class UserRepositoryImpl implements UserRepository {
           strictCorrection: strictCorrection,
           language: language,
           timezone: timezone,
+          gender: gender
         ),
       );
     } on DioException catch (e) {

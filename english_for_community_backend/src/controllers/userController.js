@@ -230,7 +230,7 @@ export const updateProfile = async (req, res) => {
       phone: req.body.phone,
       dateOfBirth: req.body.dateOfBirth,
       avatarUrl: avatarUrl,
-
+      gender: req.body.gender,
       goal: req.body.goal,
       cefr: req.body.cefr,
       dailyMinutes: req.body.dailyMinutes,

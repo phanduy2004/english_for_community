@@ -1,3 +1,5 @@
+// feature/admin/dashboard_home/bloc/admin_event.dart
+
 abstract class AdminEvent {}
 
 class GetDashboardStatsEvent extends AdminEvent {

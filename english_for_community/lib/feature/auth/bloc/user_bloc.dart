@@ -257,6 +257,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       dailyMinutes: event.dailyMinutes,
       cefr: event.cefr,
       goal: event.goal,
+      gender: event.gender
     );
 
     result.fold((l) {
@@ -278,33 +279,30 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   Future<void> onLoginEvent(LoginEvent event, Emitter<UserState> emit) async {
-    // 1. Bắt đầu loading form -> Spinner quay
-    // 🔥 QUAN TRỌNG: Chỉ bật isFormLoading, KHÔNG đổi status sang loading
-    // Điều này ngăn Router chuyển hướng sang màn hình Splash
+    // 1. Loading
     emit(state.copyWith(
         isFormLoading: true,
-        errorMessage: null // Reset lỗi cũ nếu có
+        errorMessage: null
     ));
 
-    // 2. Gọi API
+    // 2. Gọi Repository
     final result = await authRepository.login(event.email, event.password);
 
     // 3. Xử lý kết quả
     result.fold(
           (failure) {
-        // Thất bại: Tắt spinner, set status error để UI hiện Dialog báo lỗi
+        // Thất bại
         emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.error,
             errorMessage: failure.message
         ));
       },
-          (data) {
-        // Thành công: Tắt spinner, set status success để Router chuyển vào App
+          (userEntity) {
         emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.success,
-            userEntity: data
+            userEntity: userEntity
         ));
       },
     );

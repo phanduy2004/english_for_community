@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:english_for_community/core/datasource/listening_remote_datasource.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
@@ -6,7 +8,7 @@ import 'package:english_for_community/core/model/failure.dart';
 import 'package:english_for_community/core/repository/listening_repository.dart';
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
 import '../entity/dictation_attempt_entity.dart';
-
+import 'package:file_picker/file_picker.dart'; // Import PlatformFile
 class ListeningRepositoryImpl implements ListeningRepository {
   final ListeningRemoteDatasource listeningRemoteDatasource;
 
@@ -87,26 +89,29 @@ class ListeningRepositoryImpl implements ListeningRepository {
   // ==================== ADMIN WRITE IMPL ====================
 
   @override
-  Future<Either<Failure, ListeningEntity>> createListening(ListeningEntity listening) async {
+  Future<Either<Failure, ListeningEntity>> createListening(
+      ListeningEntity listening, {
+        PlatformFile? audioFile, // 🔥 Đổi từ File? sang PlatformFile?
+      }) async {
     try {
       final body = _prepareBody(listening);
-      final result = await listeningRemoteDatasource.createListening(body);
+      final result = await listeningRemoteDatasource.createListening(body, audioFile);
       return Right(result);
-    } on DioException catch (e) {
-      return Left(ListeningFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {
       return Left(ListeningFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, ListeningEntity>> updateListening(String id, ListeningEntity listening) async {
+  Future<Either<Failure, ListeningEntity>> updateListening(
+      String id,
+      ListeningEntity listening, {
+        PlatformFile? audioFile, // 🔥 Đổi từ File? sang PlatformFile?
+      }) async {
     try {
       final body = _prepareBody(listening);
-      final result = await listeningRemoteDatasource.updateListening(id, body);
+      final result = await listeningRemoteDatasource.updateListening(id, body, audioFile);
       return Right(result);
-    } on DioException catch (e) {
-      return Left(ListeningFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {
       return Left(ListeningFailure(message: e.toString()));
     }
