@@ -47,7 +47,17 @@ export const initSocket = (httpServer) => {
       console.log(`🛡️ Admin joined: ${socket.id}`);
       socket.join('admin_room');
     });
+    socket.on('join_listening_room', (listeningId) => {
+      const roomName = `listening_${listeningId}`;
+      socket.join(roomName);
+      console.log(`🎧 Socket ${socket.id} joined room: ${roomName}`);
+    });
 
+    socket.on('leave_listening_room', (listeningId) => {
+      const roomName = `listening_${listeningId}`;
+      socket.leave(roomName);
+      console.log(`🔇 Socket ${socket.id} left room: ${roomName}`);
+    });
     // 4. Disconnect (Mất mạng / Kill App)
     socket.on('disconnect', async (reason) => {
       console.log(`❌ Disconnected: ${socket.id} | Reason: ${reason}`);

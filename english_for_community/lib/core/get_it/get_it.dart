@@ -8,6 +8,7 @@ import '../../feature/admin/content_management/speaking/bloc/admin_speaking_bloc
 import '../../feature/admin/content_management/writing/bloc/admin_writing_bloc.dart';
 import '../../feature/admin/dashboard_home/bloc/admin_bloc.dart';
 import '../../feature/home/bloc_ai/ai_chat_bloc.dart';
+import '../../feature/home/bloc_noti/notification_bloc.dart';
 import '../../feature/listening/listening_skill/bloc/cue_bloc.dart';
 import '../../feature/progress/bloc/progress_bloc.dart';
 import '../../feature/progress/bloc_report/report_bloc.dart';
@@ -21,6 +22,7 @@ import '../datasource/admin_remote_datasource.dart';
 import '../datasource/ai_chat_remote_datasource.dart';
 import '../datasource/dictionary_local_datasource.dart';
 import '../datasource/listening_remote_datasource.dart';
+import '../datasource/notification_remote_datasource.dart';
 import '../datasource/progress_remote_datasource.dart';
 import '../datasource/reading_remote_datasource.dart';
 import '../datasource/report_remote_datasource.dart';
@@ -34,6 +36,7 @@ import '../repository/ai_chat_repository.dart';
 import '../repository/auth_repository.dart';
 import '../repository/dictionary_repository.dart';
 import '../repository/listening_repository.dart';
+import '../repository/notification_repository.dart';
 import '../repository/progress_repository.dart';
 import '../repository/reading_repository.dart';
 import '../repository/report_repository.dart';
@@ -45,6 +48,7 @@ import '../repository_impl/ai_chat_repository_impl.dart';
 import '../repository_impl/auth_repository_impl.dart';
 import '../repository_impl/dictionary_repository_impl.dart';
 import '../repository_impl/listening_repository_impl.dart';
+import '../repository_impl/notification_repository_impl.dart';
 import '../repository_impl/progress_repository_impl.dart';
 import '../repository_impl/reading_repository_impl.dart';
 import '../repository_impl/report_repository_impl.dart';
@@ -117,6 +121,9 @@ void registerDataSource() {
  getIt.registerSingleton<ReportRemoteDatasource>(
   ReportRemoteDatasource(dio: dioAuth),
  );
+ getIt.registerSingleton<NotificationRemoteDataSource>(
+  NotificationRemoteDataSource(dio: dioAuth),
+ );
 }
 
 void registerRepositories() {
@@ -157,7 +164,9 @@ void registerRepositories() {
  getIt.registerSingleton<ReportRepository>(
   ReportRepositoryImpl(reportRemoteDatasource: getIt()),
  );
-
+ getIt.registerSingleton<NotificationRepository>(
+  NotificationRepositoryImpl(dataSource: getIt()),
+ );
 }
 
 void registerBloc() {
@@ -191,5 +200,7 @@ void registerBloc() {
  getIt.registerFactory(() => AdminSpeakingBloc(getIt<SpeakingRepository>()));
  getIt.registerFactory(() => ReportBloc(reportRepository: getIt()));
  getIt.registerFactory(() => AdminWritingBloc(getIt<WritingRepository>()));
-
+ getIt.registerLazySingleton<NotificationBloc>(
+      () => NotificationBloc(repository: getIt()),
+ );
 }

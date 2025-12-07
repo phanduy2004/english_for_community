@@ -7,6 +7,7 @@ import 'package:english_for_community/core/model/either.dart';
 import 'package:english_for_community/core/model/failure.dart';
 import 'package:english_for_community/core/repository/listening_repository.dart';
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
+import '../entity/comment_entity.dart';
 import '../entity/dictation_attempt_entity.dart';
 import 'package:file_picker/file_picker.dart'; // Import PlatformFile
 class ListeningRepositoryImpl implements ListeningRepository {
@@ -15,7 +16,39 @@ class ListeningRepositoryImpl implements ListeningRepository {
   ListeningRepositoryImpl({required this.listeningRemoteDatasource});
 
   // ==================== READ IMPL ====================
+  @override
+  Future<Either<Failure, List<CommentEntity>>> getCueComments(String listeningId, String cueId, int page) async {
+    try {
+      final response = await listeningRemoteDatasource.getCueComments(listeningId, cueId, page);
+      final List data = response['data'];
+      final result = data.map((e) => CommentEntity.fromJson(e)).toList();
+      return Right(result);
+    } catch (e) {
+      return Left(ListeningFailure(message: e.toString()));
+    }
+  }
 
+  @override
+  Future<Either<Failure, CommentEntity>> postComment({
+    required String listeningId,
+    required String cueId,
+    required String content,
+    String? parentId,
+  }) async {
+    try {
+      final result = await listeningRemoteDatasource.postComment(
+        listeningId: listeningId,
+        cueId: cueId,
+        content: content,
+        parentId: parentId,
+      );
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(ListeningFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(ListeningFailure(message: e.toString()));
+    }
+  }
   @override
   Future<Either<Failure, PaginatedResult<ListeningEntity>>> getListenings({
     int page = 1,
@@ -85,7 +118,20 @@ class ListeningRepositoryImpl implements ListeningRepository {
       return Left(ListeningFailure(message: e.toString()));
     }
   }
-
+  @override
+  Future<Either<Failure, void>> reactToComment({
+    required String commentId,
+    required String type,
+  }) async {
+    try {
+      await listeningRemoteDatasource.reactToComment(commentId: commentId, type: type);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(ListeningFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(ListeningFailure(message: e.toString()));
+    }
+  }
   // ==================== ADMIN WRITE IMPL ====================
 
   @override
