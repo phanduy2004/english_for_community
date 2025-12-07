@@ -11,6 +11,7 @@ import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
 import '../auth/login_page.dart';
+import 'change_password_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -32,8 +33,12 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
-  void _goChangePassword() => context.pushNamed('ChangePasswordPage');
-
+  void _goChangePassword() {
+    showDialog(
+      context: context,
+      builder: (context) => const ChangePasswordDialog(),
+    );
+  }
   // Placeholders
   void _goOfflineManager() {}
   void _goExportData() {}
@@ -232,9 +237,6 @@ class _ProfilePageState extends State<ProfilePage> {
               preferredSize: const Size.fromHeight(1),
               child: Container(color: borderCol, height: 1),
             ),
-            leading: Navigator.canPop(context)
-                ? IconButton(icon: const Icon(Icons.arrow_back, color: textMain), onPressed: () => context.pop())
-                : null,
             title: const Text('Profile & Settings', style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
           ),
           body: RefreshIndicator(

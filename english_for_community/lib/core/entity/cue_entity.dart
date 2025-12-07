@@ -7,7 +7,7 @@ class CueEntity extends Equatable {
   final String? spk;        // speaker
   final String? text;       // ground truth (nội dung gốc)
   final String? textNorm;   // normalized (để chấm điểm)
-
+  final String? meaning; // 🔥 THÊM TRƯỜNG NÀY
   const CueEntity({
     required this.id,
     required this.startMs,
@@ -15,6 +15,7 @@ class CueEntity extends Equatable {
     this.spk,
     this.text,
     this.textNorm,
+    this.meaning,
   });
 
   factory CueEntity.fromJson(Map<String, dynamic> json) {
@@ -34,6 +35,7 @@ class CueEntity extends Equatable {
       spk: json['spk'] as String?,
       text: json['text'] as String?,
       textNorm: json['textNorm'] as String?,
+      meaning: json['meaning'] as String?,
     );
   }
 
@@ -47,6 +49,7 @@ class CueEntity extends Equatable {
       'spk': spk,
       'text': text,
       'textNorm': textNorm,
+      'meaning': meaning,
     };
   }
 
@@ -55,5 +58,4 @@ class CueEntity extends Equatable {
   String toString() => 'Cue($startMs - $endMs: $text)';
 
   @override
-  List<Object?> get props => [id, startMs, endMs, spk, text, textNorm];
-}
+  List<Object?> get props => [id, startMs, endMs, spk, text, textNorm, meaning];}

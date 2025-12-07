@@ -12,7 +12,12 @@ class UserRemoteDatasource {
     final response = await dio.get('users/profile');
     return UserEntity.fromJson(response.data);
   }
-
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await dio.post('/users/change-password', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
   // 2. 🔥 API MỚI CHO ADMIN: Lấy chi tiết user khác (gồm cả Stats)
   Future<UserEntity> getUserById(String userId) async {
     // Gọi vào endpoint mới mà bạn vừa tạo ở Backend
