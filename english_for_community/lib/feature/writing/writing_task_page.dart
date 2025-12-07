@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
@@ -98,7 +99,13 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     _writingStopwatch.stop();
     super.dispose();
   }
-
+  void _showInstructionDialog() {
+    if (_taskType == null) return;
+    showDialog(
+      context: context,
+      builder: (context) => WritingTaskInstructionDialog(taskType: _taskType!),
+    );
+  }
   Future<void> _onWillPop(bool didPop) async {
     if (didPop) return;
     final state = context.read<WritingTaskBloc>().state;
@@ -240,6 +247,13 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600, fontSize: 16),
           ),
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.lightbulb_outline, color: Color(0xFF09090B)),
+              tooltip: 'How to write this task?',
+              onPressed: _showInstructionDialog, // Gọi hàm hiển thị dialog
+            ),
+          ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
             child: Container(color: const Color(0xFFE4E4E7), height: 1),

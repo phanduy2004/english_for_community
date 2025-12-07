@@ -12,6 +12,7 @@ import progressRoutes from "./src/routes/progressRoutes.js";
 import chatRoutes from "./src/routes/chatRoutes.js";
 import adminRoutes from "./src/routes/adminRoutes.js";
 import reportRoutes from "./src/routes/reportRoutes.js";
+import notificationRoutes from "./src/routes/notificationRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -28,6 +29,6 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
-
+app.use('/api/notifications', notificationRoutes);
 
 export default app;

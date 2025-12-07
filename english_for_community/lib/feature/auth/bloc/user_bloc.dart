@@ -26,6 +26,29 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<RequestForgotPasswordEvent>(onRequestForgotPasswordEvent);
     on<ResetPasswordEvent>(onResetPasswordEvent);
     on<RefreshTokenEvent>(onRefreshTokenEvent);
+    on<ChangePasswordEvent>(_onChangePasswordEvent);
+  }
+  Future<void> _onChangePasswordEvent(ChangePasswordEvent event, Emitter<UserState> emit) async {
+    emit(state.copyWith(isFormLoading: true, errorMessage: null));
+
+    final result = await userRepository.changePassword(event.currentPassword, event.newPassword);
+
+    result.fold(
+          (failure) {
+        emit(state.copyWith(
+          isFormLoading: false,
+          status: UserStatus.error, // Hoặc giữ nguyên status hiện tại, chỉ bắn lỗi
+          errorMessage: failure.message,
+        ));
+      },
+          (_) {
+        emit(state.copyWith(
+          isFormLoading: false,
+          // Dùng success message tạm thời qua biến errorMessage hoặc cơ chế khác
+          errorMessage: "Password changed successfully!",
+        ));
+      },
+    );
   }
   Future<void> onRequestForgotPasswordEvent(RequestForgotPasswordEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));

@@ -25,4 +25,5 @@ abstract class UserRepository {
   Future<Either<Failure, UserEntity>> getPublicProfile(String userId);
   Future<Either<Failure, void>> deleteAccount();
   Future<Either<Failure, UserEntity>> getUserById(String id);
+  Future<Either<Failure, void>> changePassword(String currentPassword, String newPassword);
 }

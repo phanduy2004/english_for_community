@@ -1,5 +1,6 @@
 
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart'; // Import PaginatedResult
+import '../entity/comment_entity.dart';
 import '../entity/dictation_attempt_entity.dart';
 import '../entity/listening_entity.dart';
 import '../model/either.dart';
@@ -28,11 +29,21 @@ abstract class ListeningRepository {
     required List<Map<String, dynamic>> answers,
     required int durationInSeconds,
   });
-
+  Future<Either<Failure, List<CommentEntity>>> getCueComments(String listeningId, String cueId, int page);
+  Future<Either<Failure, CommentEntity>> postComment({
+    required String listeningId,
+    required String cueId,
+    required String content,
+    String? parentId,
+  });
   // ==================== ADMIN WRITE ====================
 
   Future<Either<Failure, ListeningEntity>> createListening(ListeningEntity listening, {PlatformFile? audioFile});
   Future<Either<Failure, ListeningEntity>> updateListening(String id, ListeningEntity listening, {PlatformFile? audioFile});
   Future<Either<Failure, void>> deleteListening(String id);
   Future<Either<Failure, List<DictationAttemptEntity>>> getDictationAttempts(String listeningId);
+  Future<Either<Failure, void>> reactToComment({
+    required String commentId,
+    required String type,
+  });
 }

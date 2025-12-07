@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
 import 'package:flutter/foundation.dart';
+import '../entity/comment_entity.dart';
 import '../entity/dictation_attempt_entity.dart';
 import 'package:file_picker/file_picker.dart'; // Import PlatformFile
 class ListeningRemoteDatasource {
@@ -37,7 +37,15 @@ class ListeningRemoteDatasource {
     }
     return [];
   }
-
+  Future<void> reactToComment({
+    required String commentId,
+    required String type, // Gửi String: 'LIKE', 'LOVE', ...
+  }) async {
+    // endpoint: POST /api/listening/comments/:commentId/react
+    await dio.post('$_endpoint/comments/$commentId/react', data: {
+      'type': type,
+    });
+  }
   // ==================================================
   // 📋 GET LIST
   // ==================================================
@@ -99,7 +107,33 @@ class ListeningRemoteDatasource {
     );
     return res.data as Map<String, dynamic>;
   }
+  Future<Map<String, dynamic>> getCueComments(String listeningId, String cueId, int page) async {
+    final res = await dio.get(
+      '$_endpoint/$listeningId/cues/$cueId/comments',
+      queryParameters: {
+        'page': page,
+        'limit': 20, // Load 20 tin mỗi lần
+      },
+    );
+    return res.data; // Trả về cả cục JSON { data: [], pagination: {} }
+  }
+  // 2. Gửi comment mới
+  Future<CommentEntity> postComment({
+    required String listeningId,
+    required String cueId,
+    required String content,
+    String? parentId,
+  }) async {
+    // POST /api/listenings/comments
+    final res = await dio.post('$_endpoint/comments', data: {
+      'listeningId': listeningId,
+      'cueId': cueId,
+      'content': content,
+      'parentId': parentId,
+    });
 
+    return CommentEntity.fromJson(res.data);
+  }
   // ==================================================
   // 🛡️ ADMIN ACTIONS
   // ==================================================
