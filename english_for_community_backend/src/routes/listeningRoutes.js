@@ -28,7 +28,11 @@ router.get('/attempts', listeningController.getAttempts);
 // GET /api/listenings/:id
 // ⚠️ QUAN TRỌNG: Route có param /:id phải để cuối cùng trong nhóm GET
 router.get('/:id', listeningController.getListeningById);
+router.get('/:listeningId/cues/:cueId/comments', listeningController.getCueComments);
 
+// POST /api/listenings/comments
+router.post('/comments', listeningController.postCueComment);
+router.post('/comments/:commentId/react', listeningController.reactToComment);
 // ============================================================
 // 🔐 ADMIN ROUTES
 // ============================================================

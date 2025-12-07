@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import UserDailyProgress from "../models/UserDailyProgress.js";
+import bcrypt from "bcrypt";
 
 // Helper tính trung bình: Tổng điểm / Số lần (tránh chia cho 0)
 const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
@@ -267,6 +268,39 @@ export const deleteAccount = async (req, res) => {
     await User.findByIdAndDelete(req.user._id);
     res.status(200).json({ message: 'Account deleted successfully' });
   } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Missing password fields' });
+    }
+
+    // 1. Tìm User (lấy cả field password)
+    const user = await User.findById(userId).select('+password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // 2. Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    // 3. Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // 4. Lưu
+    user.password = hashedPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error("Change Password Error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

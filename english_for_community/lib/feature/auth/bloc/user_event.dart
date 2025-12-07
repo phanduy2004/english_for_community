@@ -1,7 +1,11 @@
 import 'dart:io';
 
 abstract class UserEvent {}
-
+class ChangePasswordEvent extends UserEvent {
+  final String currentPassword;
+  final String newPassword;
+  ChangePasswordEvent({required this.currentPassword, required this.newPassword});
+}
 class LoginEvent extends UserEvent {
   final String email;
   final String password;

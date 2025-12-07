@@ -64,7 +64,35 @@ class LocalNotificationService {
       },
     );
   }
+  Future<void> showInstantNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+    AndroidNotificationDetails(
+      'social_channel', // ID kênh riêng cho thông báo xã hội
+      'Thông báo tương tác', // Tên kênh hiển thị trong cài đặt
+      channelDescription: 'Thông báo khi có người trả lời hoặc thả tim',
+      importance: Importance.max,
+      priority: Priority.high,
+      ticker: 'ticker',
+      color: Color(0xFF2E7D32),
+      icon: '@mipmap/ic_launcher',
+    );
 
+    const NotificationDetails platformChannelSpecifics =
+    NotificationDetails(android: androidPlatformChannelSpecifics);
+    debugPrint("🔔 [Local Notification] Received Notification Data of body: $body");
+    await _flutterLocalNotificationsPlugin.show(
+      id,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
+    );
+  }
   // 🟢 2. HÀM ĐIỀU HƯỚNG (Khi bấm vào thông báo)
   void _navigateToVocabulary(String payload) {
     // Sử dụng GlobalKey để điều hướng từ bất cứ đâu

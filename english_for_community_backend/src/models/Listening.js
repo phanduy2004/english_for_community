@@ -8,7 +8,8 @@ const CueSubSchema = new Schema({
   endMs:   { type: Number, required: true },
   spk:     { type: String },                 // 'A', 'B'...
   text:    { type: String, required: true }, // Đáp án gốc
-  textNorm:{ type: String }                  // Đáp án chuẩn hóa để chấm điểm
+  textNorm:{ type: String },              // Đáp án chuẩn hóa để chấm điểm
+  meaning: { type: String, default: '' }
 }, { _id: false }); // _id: false ở option nhưng define bên trong để control type
 
 // 2️⃣ Main Schema cho Listening

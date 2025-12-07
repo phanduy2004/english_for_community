@@ -5,7 +5,7 @@ import {
   updateProfile,
   deleteAccount,
   getPublicProfile,
-  getUserDetailsForAdmin
+  getUserDetailsForAdmin, changePassword
 } from '../controllers/userController.js';
 import { authenticate } from '../middleware/auth.js';
 import uploadCloud from "../config/cloudinary.js";
@@ -17,4 +17,6 @@ router.put('/profile', uploadCloud.single('avatar'), updateProfile);
 router.delete('/profile', deleteAccount);
 router.get('/:id/public', getPublicProfile);
 router.get('/:id/admin-details', getUserDetailsForAdmin);
+router.post('/change-password', changePassword);
+
 export default router;
