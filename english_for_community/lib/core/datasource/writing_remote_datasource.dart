@@ -33,33 +33,30 @@ class WritingRemoteDataSource {
   startWriting({
     required String topicId,
     required String userId,
-    required GeneratedPrompt generatedPrompt,
+    required String taskType, // 👈 THAY ĐỔI: Chỉ gửi taskType, không gửi generatedPrompt
   }) async {
     final body = {
       'userId': userId,
-      'generatedPrompt': generatedPrompt.toJson(),
+      'taskType': taskType, // Server sẽ dùng cái này để tạo prompt
     };
 
     final res = await dio.post('/writing/$topicId/start', data: body);
     final map = res.data as Map<String, dynamic>;
 
     final submissionId = (map['submissionId'] ?? '') as String;
-    if (submissionId.isEmpty) {
-      throw StateError('startWriting: missing submissionId');
-    }
 
+    // Server trả về prompt đã tạo
     final gp = GeneratedPrompt.fromJson(
         (map['generatedPrompt'] as Map<String, dynamic>?) ?? const {});
-    final resumed = (map['resumed'] as bool?) ?? false;
 
-    // 👇 LẤY CONTENT TỪ API
+    final resumed = (map['resumed'] as bool?) ?? false;
     final content = (map['content'] as String?) ?? '';
 
     return (
     submissionId: submissionId,
     generatedPrompt: gp,
     resumed: resumed,
-    content: content // 👈 Trả về content
+    content: content
     );
   }
   /// GET /api/submissions/:id (Hàm này bạn chưa có, nhưng nên có)
@@ -83,23 +80,20 @@ class WritingRemoteDataSource {
     return (map['wordCount'] as int?) ?? 0;
   }
 
-  /// POST /api/writing-submissions/:id/submit (Lưu bài nộp, feedback, và duration)
-  /// ✍️ HÀM NÀY SỬA HOÀN TOÀN ĐỂ KHỚP VỚI CONTROLLER
   Future<WritingSubmissionEntity> submitForReview({
     required String submissionId,
     required String content,
-    required FeedbackEntity feedback,
+    // 👈 BỎ: required FeedbackEntity feedback (Server tự làm)
     required int durationInSeconds,
   }) async {
     final res = await dio.post(
-      '/writing/$submissionId/submit', // ✍️ SỬA PATH
+      '/writing/$submissionId/submit',
       data: {
         'content': content,
-        'feedback': feedback.toJson(),
+        // 'feedback': ... -> BỎ
         'durationInSeconds': durationInSeconds,
       },
     );
-    // API trả về submission đã được cập nhật
     return WritingSubmissionEntity.fromJson(res.data as Map<String, dynamic>);
   }
 

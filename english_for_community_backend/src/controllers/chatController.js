@@ -1,33 +1,93 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getUserContext } from "../services/aiContextService.js";
 import { geminiTools } from "../tools/definitions.js";
 import { toolImplementations } from "../tools/implementations.js";
+// 1. Import Groq SDK
+import Groq from "groq-sdk";
 
-const API_KEY = process.env.GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(API_KEY);
+// 2. Khởi tạo Groq Client
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+// --- HELPER 1: CHUYỂN ĐỔI TOOL ---
+const convertGeminiToolsToOpenAI = (googleTools) => {
+  const openAITools = [];
+  const toolsArray = Array.isArray(googleTools) ? googleTools : [googleTools];
+
+  const normalizeParams = (originalParams) => {
+    if (!originalParams) return { type: "object", properties: {} };
+    const params = JSON.parse(JSON.stringify(originalParams));
+    if (params.type) params.type = params.type.toLowerCase();
+    if (params.properties) {
+      for (const key in params.properties) {
+        if (params.properties[key].type) {
+          params.properties[key].type = params.properties[key].type.toLowerCase();
+        }
+      }
+    }
+    return params;
+  };
+
+  toolsArray.forEach(toolGroup => {
+    const functions = toolGroup.functionDeclarations || toolGroup.function_declarations;
+    if (functions && Array.isArray(functions)) {
+      functions.forEach(fn => {
+        openAITools.push({
+          type: "function",
+          function: {
+            name: fn.name,
+            description: fn.description,
+            parameters: normalizeParams(fn.parameters)
+          }
+        });
+      });
+    } else if (toolGroup.name) {
+      openAITools.push({
+        type: "function",
+        function: {
+          name: toolGroup.name,
+          description: toolGroup.description,
+          parameters: normalizeParams(toolGroup.parameters)
+        }
+      });
+    }
+  });
+  return openAITools;
+};
+
+// --- HELPER 2: CHUYỂN ĐỔI HISTORY ---
+const normalizeHistory = (historyItems) => {
+  if (!Array.isArray(historyItems)) return [];
+  return historyItems.map(item => {
+    let role = item.role === 'model' ? 'assistant' : item.role;
+    let content = "";
+    if (typeof item.parts === 'string') {
+      content = item.parts;
+    } else if (Array.isArray(item.parts)) {
+      content = item.parts.map(p => p.text).join("\n");
+    } else if (item.content) {
+      content = item.content;
+    }
+    if (!content || content.trim() === "") content = " ";
+    return { role, content };
+  });
+};
 
 export const chatWithAI = async (req, res) => {
   const startT = Date.now();
   try {
-    console.log(`\n--- 🟢 [CHAT START] ${new Date().toLocaleTimeString()} ---`);
-    const {message, history} = req.body;
+    console.log(`\n--- 🚀 [GROQ START] ${new Date().toLocaleTimeString()} ---`);
+    const { message, history } = req.body;
     const userId = req.user.id;
 
-    // 1. Lấy Context
-    const userContext = await getUserContext(userId);
+    if (!message) return res.status(400).json({ message: "Message required" });
 
-    // Lấy ngày hiện tại
+    const userContext = await getUserContext(userId);
     const today = new Date();
     const todayStr = today.toLocaleDateString('en-CA');
-    const weekday = today.toLocaleDateString('vi-VN', {weekday: 'long'});
+    const weekday = today.toLocaleDateString('vi-VN', { weekday: 'long' });
 
-    // 2. Cấu hình Model với System Instruction 2-IN-1
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      systemInstruction: {
-        parts: [
-          {
-            text: `# 🎓 VAI TRÒ KÉP: GIÁO VIÊN & TRỢ LÝ HỌC TẬP
+    // --- SYSTEM PROMPT (GIỮ NGUYÊN) ---
+    const systemPrompt = `
+# 🎓 VAI TRÒ KÉP: GIÁO VIÊN & TRỢ LÝ HỌC TẬP
 
 Bạn là **AI English Learning Companion** - Kết hợp 2 vai trò:
 
@@ -150,8 +210,7 @@ Mỗi ngày kể 1 câu về trải nghiệm của bạn với Present Perfect:
 
 🎯 **Phương pháp 4-STEP (Hiệu quả đã kiểm chứng):**
 
-**STEP 1: HỌC ĐÚNG CÁCH** 
-• Không học thuộc lòng nghĩa Việt!
+**STEP 1: HỌC ĐÚNG CÁCH** • Không học thuộc lòng nghĩa Việt!
 • Học từ qua NGỮ CẢNH (context)
 • Đọc 3-5 ví dụ câu thực tế
 
@@ -267,17 +326,9 @@ Nếu làm đúng → 300 từ mới + 90% nhớ lâu!
 4. Làm lại bài sau 2 ngày → Đạt 80%+
 \`\`\`
 
----`
-          },
+---
 
-          {
-            text: `# BỐI CẢNH
-📅 Hôm nay: **${weekday}**, ${todayStr}
-${userContext}`
-          },
-
-          {
-            text: `# 📊 CHIẾN LƯỢC GỌI TOOLS (CHO CÂU HỎI DỮ LIỆU)
+# 📊 CHIẾN LƯỢC GỌI TOOLS (CHO CÂU HỎI DỮ LIỆU)
 
 ## 🚨 QUY TẮC: "ĐÀO SÂU, KHÔNG DỪNG Ở BÊ MẶT"
 
@@ -339,11 +390,11 @@ get_learning_history({ startDate: "...", endDate: "..." })
 - "Hôm nay": ${todayStr}
 - "Tuần này": Từ thứ 2 tuần này
 - "Tháng này": Từ ngày 1
-- "7 ngày qua": Hôm nay - 7`
-          },
+- "7 ngày qua": Hôm nay - 7
 
-          {
-            text: `# 🎨 PHONG CÁCH GIAO TIẾP
+---
+
+# 🎨 PHONG CÁCH GIAO TIẾP
 
 ## Khi trả lời về DỮ LIỆU:
 - 📊 Dùng số liệu cụ thể
@@ -377,11 +428,11 @@ get_learning_history({ startDate: "...", endDate: "..." })
 1. **Thân thiện nhưng chuyên nghiệp**
 2. **Động viên nhưng thẳng thắn**
 3. **Đơn giản nhưng chính xác**
-4. **Lý thuyết + Thực hành**`
-          },
+4. **Lý thuyết + Thực hành**
 
-          {
-            text: `# 📱 FORMAT TRẢ LỜI
+---
+
+# 📱 FORMAT TRẢ LỜI
 
 ## CÂU HỎI DỮ LIỆU:
 \`\`\`
@@ -422,88 +473,165 @@ get_learning_history({ startDate: "...", endDate: "..." })
 - Không dùng bảng (table)
 - Mỗi mục tối đa 5 dòng
 - Sử dụng emoji hợp lý
-- Xuống dòng thường xuyên`
-          }
-        ]
-      },
-      tools: geminiTools,
-      toolConfig: {functionCallingConfig: {mode: "AUTO"}},
-    });
+- Xuống dòng thường xuyên
 
-    // 3. Chat Session
-    let validHistory = Array.isArray(history) ? history : [];
+---
 
-    if (validHistory.length > 0 && validHistory[0].role === 'model') {
-      console.log("⚠️ Đã loại bỏ tin nhắn chào mừng (role: model) khỏi lịch sử.");
-      validHistory.shift();
-    }
+# BỐI CẢNH
+📅 Hôm nay: **${weekday}**, ${todayStr}
+👤 User Info:
+${userContext}
+    `;
 
-    const chatSession = model.startChat({history: validHistory});
+    // --- 3. Chuẩn bị Messages Array ---
+    const validHistory = normalizeHistory(history);
 
-    // 4. Gửi tin nhắn
-    console.log(`💬 User: "${message}"`);
-    let result = await chatSession.sendMessage(message);
-    let response = result.response;
+    // 🔥 FIX 413: GIỚI HẠN LỊCH SỬ CHAT
+    // Chỉ lấy tối đa 10 tin nhắn gần nhất để tránh tràn bộ nhớ token của Groq Free Tier
+    const recentHistory = validHistory
+      .filter(h => h.role === 'user' || h.role === 'assistant')
+      .slice(-10); // Lấy 10 tin cuối cùng
 
-    // 5. Xử lý Function Calling (Multi-turn)
-    let maxIterations = 3;
+    const messages = [
+      { role: "system", content: systemPrompt },
+      ...recentHistory,
+      { role: "user", content: message }
+    ];
+
+    // --- 4. Chuẩn bị Tools ---
+    const tools = convertGeminiToolsToOpenAI(geminiTools);
+    console.log(`🛠️ Converted ${tools.length} tools to OpenAI format.`);
+
+    // --- 5. Vòng lặp Xử lý (Groq Execution Loop) ---
     let iteration = 0;
+    const maxIterations = 5;
+    let finalResponse = "";
 
-    while (response.functionCalls() && iteration < maxIterations) {
-      const functionCalls = response.functionCalls();
-      console.log(`🤖 [Iteration ${iteration + 1}] Gemini gọi ${functionCalls.length} tools:`,
-        functionCalls.map(f => f.name));
+    while (iteration < maxIterations) {
+      console.log(`🔄 Iteration ${iteration + 1}...`);
 
-      const functionResponses = [];
-      for (const call of functionCalls) {
-        const functionName = call.name;
-        const args = call.args;
+      let responseMessage;
+      let toolCalls = [];
 
-        const functionToCall = toolImplementations[functionName];
-        if (functionToCall) {
-          try {
-            console.log(`   → Calling ${functionName}...`);
-            const apiResponse = await functionToCall(userId, args);
-            functionResponses.push({
-              functionResponse: {
-                name: functionName,
-                response: {result: apiResponse}
+      try {
+        const completion = await groq.chat.completions.create({
+          messages: messages,
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.5,
+          max_completion_tokens: 4096,
+          top_p: 1,
+          stream: false,
+          tools: tools.length > 0 ? tools : undefined,
+          tool_choice: "auto"
+        });
+
+        responseMessage = completion.choices[0].message;
+        toolCalls = responseMessage.tool_calls || [];
+
+      } catch (apiError) {
+        // 🔥 CƠ CHẾ FALLBACK "BẤT TỬ": Tự động sửa lỗi tool_use_failed
+        if (apiError.status === 400 && apiError.error?.error?.failed_generation) {
+          console.warn("⚠️ Groq Tool Error caught. Attempting manual parse...");
+          const rawGen = apiError.error.error.failed_generation;
+
+          // Regex linh hoạt: Bắt cả trường hợp thiếu dấu ngoặc ()
+          const match = rawGen.match(/<function=(\w+)[^\{]*(\{.*?\})/);
+
+          if (match) {
+            const fnName = match[1];
+            const fnArgsStr = match[2];
+            console.log(`✅ Manually recovered tool call: ${fnName}`);
+
+            toolCalls = [{
+              id: "call_manual_" + Date.now(),
+              function: {
+                name: fnName,
+                arguments: fnArgsStr
               }
-            });
-          } catch (e) {
-            console.error(`   ❌ Error calling ${functionName}:`, e.message);
-            functionResponses.push({
-              functionResponse: {
-                name: functionName,
-                response: {error: e.message}
-              }
-            });
+            }];
+
+            responseMessage = {
+              role: "assistant",
+              content: null,
+              tool_calls: toolCalls
+            };
+          } else {
+            throw apiError;
           }
+        } else {
+          throw apiError;
         }
       }
 
-      if (functionResponses.length > 0) {
-        console.log(`   🚀 Sending ${functionResponses.length} results back to Gemini...`);
-        result = await chatSession.sendMessage(functionResponses);
-        response = result.response;
+      if (toolCalls && toolCalls.length > 0) {
+        console.log(`🤖 Groq gọi ${toolCalls.length} tools:`, toolCalls.map(t => t.function.name));
+        messages.push(responseMessage);
+
+        for (const toolCall of toolCalls) {
+          const functionName = toolCall.function.name;
+          const toolCallId = toolCall.id;
+          let functionArgs = {};
+
+          try {
+            if (typeof toolCall.function.arguments === 'object') {
+              functionArgs = toolCall.function.arguments;
+            } else {
+              functionArgs = JSON.parse(toolCall.function.arguments);
+            }
+          } catch (e) {
+            console.error("❌ Parse args error:", e);
+            messages.push({
+              tool_call_id: toolCallId,
+              role: "tool",
+              name: functionName,
+              content: JSON.stringify({ error: "Invalid JSON arguments" })
+            });
+            continue;
+          }
+
+          let functionResult;
+          const functionToCall = toolImplementations[functionName];
+
+          if (functionToCall) {
+            try {
+              console.log(`   → Calling ${functionName}...`);
+              const apiResponse = await functionToCall(userId, functionArgs);
+              functionResult = JSON.stringify(apiResponse);
+            } catch (e) {
+              console.error(`   ❌ Tool Error (${functionName}):`, e.message);
+              functionResult = JSON.stringify({ error: e.message });
+            }
+          } else {
+            console.warn(`   ⚠️ Tool not found: ${functionName}`);
+            functionResult = JSON.stringify({ error: "Function implementation not found" });
+          }
+
+          messages.push({
+            tool_call_id: toolCallId,
+            role: "tool",
+            name: functionName,
+            content: functionResult
+          });
+        }
         iteration++;
       } else {
+        finalResponse = responseMessage.content;
         break;
       }
     }
 
-    // 6. Trả kết quả
-    const textReply = response.text();
     const duration = Date.now() - startT;
     console.log(`✅ Response time: ${duration}ms, Iterations: ${iteration}`);
 
-    return res.json({reply: textReply});
+    return res.json({ reply: finalResponse || "Xin lỗi, tôi chưa thể trả lời lúc này." });
 
   } catch (error) {
-    console.error("❌ CHAT ERROR:", error);
+    console.error("❌ GROQ ERROR:", error);
+    if (error.error) console.error("Groq Details:", error.error);
+
     res.status(500).json({
       message: "Lỗi hệ thống AI",
       error: error.message
     });
   }
-}
+};

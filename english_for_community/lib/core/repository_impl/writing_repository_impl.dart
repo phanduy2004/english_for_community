@@ -38,17 +38,18 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
   }
 
   @override
-  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed, String content})>> // 👈 Thêm String content
+  Future<Either<Failure, ({String submissionId, GeneratedPrompt generatedPrompt, bool resumed, String content})>>
   startWriting({
     required String topicId,
     required String userId,
-    required GeneratedPrompt generatedPrompt,
+    // required GeneratedPrompt generatedPrompt, -> BỎ
+    required String taskType, // -> THÊM
   }) async {
     try {
       final result = await writingRemoteDataSource.startWriting(
         topicId: topicId,
         userId: userId,
-        generatedPrompt: generatedPrompt,
+        taskType: taskType, // Truyền taskType xuống datasource
       );
       return Right(result);
     } on DioException catch (e) {
@@ -79,20 +80,19 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
   Future<Either<Failure, WritingSubmissionEntity>> submitForReview({
     required String submissionId,
     required String content,
-    required FeedbackEntity feedback,
+    // required FeedbackEntity feedback, -> BỎ
     required int durationInSeconds,
   }) async {
     try {
       final result = await writingRemoteDataSource.submitForReview(
         submissionId: submissionId,
         content: content,
-        feedback: feedback,
+        // feedback: feedback, -> BỎ
         durationInSeconds: durationInSeconds,
       );
       return Right(result);
-    } on DioException catch (e) {
-      return Left(WritingFailure(message: e.response?.data['message']));
     } catch (e) {
+      // ... catch block
       return Left(WritingFailure(message: e.toString()));
     }
   }
