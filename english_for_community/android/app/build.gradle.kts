@@ -22,10 +22,10 @@ android {
 
     defaultConfig {
         applicationId = "com.example.english_for_community"
-        ndk {
+     /*   ndk {
             // Cú pháp đúng: Dùng += listOf() để thêm vào danh sách
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
-        }
+        }*/
         // Nếu có plugin đòi minSdk cao (vd. flutter_timezone), đảm bảo >= 26.
         // Nếu không, có thể giữ nguyên flutter.minSdkVersion.
         minSdk = flutter.minSdkVersion

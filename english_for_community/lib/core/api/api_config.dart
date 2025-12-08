@@ -1,76 +1,74 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 
 class ApiConfig {
-  // Thay IP này bằng IP máy tính của bạn (kiểm tra bằng ipconfig)
-  static const _lanIp = '192.168.1.80';
-  static const _port = 3000;
+  // ============================================================
+  // 1. CẤU HÌNH THÔNG SỐ (Sửa lại IP LAN của bạn ở đây)
+  // ============================================================
 
-  static bool _isPhysicalAndroid = false;
-  static bool _initialized = false;
+  // ☁️ Server Render (Online)
+  static const String _renderUrl = "https://english-for-community.onrender.com";
 
-  // Hàm này gọi ở main.dart trước runApp
+  // 🏠 Server Local (Máy tính của bạn) - Thay đổi IP này theo máy bạn
+  static const String _localLanIp = "192.168.1.80";
+  static const int _localPort = 3000;
+
+  // ============================================================
+  // 2. CÔNG TẮC CHUYỂN ĐỔI (CHỌN 1 TRONG 2 CÁCH DƯỚI ĐÂY)
+  // ============================================================
+
+  /// 👉 CÁCH 1: CHỈNH TAY (Khuyên dùng khi Dev)
+  /// - true: Dùng Local (192.168...) để code cho nhanh.
+  /// - false: Dùng Server Render (https...) để test giống người dùng thật.
+  static const bool _useLocal = true;
+
+  /// 👉 CÁCH 2: TỰ ĐỘNG (Nâng cao)
+  /// Nếu đang chạy Debug (F5) thì dùng Local, còn Build ra file APK thì tự dùng Server.
+  /// Muốn dùng cách này thì mở comment dòng dưới và đóng dòng trên lại.
+  // static const bool _useLocal = kDebugMode;
+
+  // ============================================================
+  // 3. LOGIC XỬ LÝ (Không cần sửa gì ở dưới này)
+  // ============================================================
+
   static Future<void> init() async {
-    if (_initialized) return;
-
-    // 1. QUAN TRỌNG: Check Web trước. Nếu là Web thì dừng luôn.
-    // Vì Web không hỗ trợ thư viện device_info_plus của Mobile
-    if (kIsWeb) {
-      _initialized = true;
-      return;
-    }
-
-    // 2. Logic Mobile
-    try {
-      if (Platform.isAndroid) {
-        final deviceInfo = DeviceInfoPlugin();
-        final info = await deviceInfo.androidInfo;
-        _isPhysicalAndroid = info.isPhysicalDevice ?? true;
-      }
-    } catch (e) {
-      // Phòng hờ lỗi crash nếu chạy trên môi trường lạ
-      debugPrint("Lỗi check device info: $e");
-    }
-    _initialized = true;
+    // Không cần logic phức tạp nữa
   }
 
   static String get Base_URL {
-    // ---------------------------------------------------------
-    // ƯU TIÊN 1: WEB (Chạy trên Edge/Chrome)
-    // Phải return ngay, không được để code chạy xuống dòng Platform bên dưới
-    // ---------------------------------------------------------
+    // A. Nếu dùng SERVER ONLINE (Render)
+    if (!_useLocal) {
+      return '$_renderUrl/';
+    }
+
+    // B. Nếu dùng SERVER LOCAL (Máy tính)
+    // 1. Web: Luôn là localhost
     if (kIsWeb) {
-      return 'http://localhost:$_port/';
+      return 'http://localhost:$_localPort/';
     }
 
-    // ---------------------------------------------------------
-    // ƯU TIÊN 2: MOBILE (Android/iOS)
-    // ---------------------------------------------------------
-
-    // Nếu chưa init hoặc có lỗi, dùng IP LAN cho an toàn (máy thật hay ảo đều connect được)
-    if (!_initialized) return 'http://$_lanIp:$_port/';
-
+    // 2. Android: Cần xử lý riêng cho Emulator
     if (Platform.isAndroid) {
-      // Máy thật: Dùng IP LAN (192.168...)
-      // Emulator: Dùng IP đặc biệt (10.0.2.2) để trỏ về localhost máy tính
-      return _isPhysicalAndroid
-          ? 'http://$_lanIp:$_port/'
-          : 'http://10.0.2.2:$_port/';
+      // Nếu chạy trên máy ảo Android (Emulator) -> Dùng 10.0.2.2
+      // Nếu chạy trên điện thoại thật -> Dùng IP LAN
+      // (Cách đơn giản để check emulator là check model, hoặc cứ mặc định dùng LAN IP nếu test máy thật là chính)
+      const bool isEmulator = false; // Đổi thành true nếu bạn code bằng Máy ảo Android Studio
+
+      return isEmulator
+          ? 'http://10.0.2.2:$_localPort/'
+          : 'http://$_localLanIp:$_localPort/';
     }
 
-    if (Platform.isIOS) {
-      // iOS Simulator hay máy thật đều dùng IP LAN
-      return 'http://$_lanIp:$_port/';
-    }
-
-    // Mặc định cho các nền tảng khác (Windows/Mac app)
-    return 'http://localhost:$_port/';
+    // 3. iOS / Các nền tảng khác: Dùng IP LAN
+    return 'http://$_localLanIp:$_localPort/';
   }
 
   static String get Socket_URL {
+    // Socket.io client không cần dấu '/' ở cuối
     var url = Base_URL;
-    if (url.endsWith('/')) url = url.substring(0, url.length - 1);
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
     return url;
   }
 }
