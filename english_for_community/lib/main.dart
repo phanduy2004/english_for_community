@@ -5,6 +5,7 @@ import 'package:forui/forui.dart';
 import 'core/get_it/get_it.dart';
 import 'core/notification/local_notification_service.dart';
 import 'core/router/app_router.dart';
+import 'core/sqflite/dict_db.dart';
 import 'core/sqflite/notification_service.dart';
 import 'core/theme/app_theme.dart';
 
@@ -19,7 +20,7 @@ Future<void> main() async {
   await NotificationService.I.init();
 
   setup(); // Khởi tạo Dependency Injection (GetIt)
-
+  await DictDb.I.db;
   //NotificationService.I.scheduleDaily9AMNotification();
   await LocalNotificationService().init();
   runApp(MyApp());
