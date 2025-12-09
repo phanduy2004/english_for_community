@@ -23,7 +23,7 @@ export const chatWithAI = async (req, res) => {
 
     // 2. Cấu hình Model với System Instruction 2-IN-1
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: {
         parts: [
           {
