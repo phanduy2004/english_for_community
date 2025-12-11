@@ -6,10 +6,10 @@ dotenv.config();
 // Khởi tạo Groq Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Model khuyến nghị cho task xử lý JSON phức tạp và logic ngôn ngữ
-const MODEL_NAME = "llama-3.3-70b-versatile";
+// Model khuyến nghị
+const MODEL_NAME = "meta-llama/llama-4-maverick-17b-128e-instruct";
 
-// Hàm clean JSON (giữ nguyên logic cũ để an toàn)
+// Hàm clean JSON (Loại bỏ ```json ... ```)
 const cleanJson = (text) => {
   if (!text) return "{}";
   const match = text.match(/```(json)?([\s\S]*)```/);
@@ -17,10 +17,9 @@ const cleanJson = (text) => {
 };
 
 export const aiService = {
-  // --- 1. LOGIC TẠO ĐỀ (Giữ logic fallback cũ) ---
+  // --- 1. LOGIC TẠO ĐỀ (Giữ nguyên) ---
   generateWritingPrompt: async (topicName, aiConfig, taskType) => {
     try {
-      // Logic cũ: Ưu tiên template trong DB
       const userContent = aiConfig?.generationTemplate ||
         `Generate an IELTS Writing Task 2 prompt for the topic: "${topicName}". ` +
         `Task type: ${taskType}. ` +
@@ -37,7 +36,7 @@ export const aiService = {
         ],
         model: MODEL_NAME,
         temperature: 0.5,
-        response_format: { type: "json_object" } // Bắt buộc trả về JSON
+        response_format: { type: "json_object" }
       });
 
       const jsonStr = cleanJson(completion.choices[0].message.content);
@@ -55,136 +54,132 @@ export const aiService = {
     }
   },
 
-  // --- 2. LOGIC CHẤM BÀI (Prompt đầy đủ 100%) ---
+  // --- 2. LOGIC CHẤM BÀI (FULL PROMPT) ---
   generateFeedback: async (essayText, taskType) => {
     try {
-      // 👇 ĐÂY LÀ PROMPT GỐC CỦA BẠN - GIỮ NGUYÊN VẸN KHÔNG CẮT BỚT
+      // PROMPT CHI TIẾT ĐẦY ĐỦ
       const systemInstruction = `
-Bạn là giám khảo IELTS Writing Task 2 (TR/CC/LR/GRA).
-Phần phân tích viết **bằng tiếng Việt**; **không dùng Markdown**; **CHỈ trả về MỘT đối tượng JSON hợp lệ** (không có \\\`\\\`\\\`json, không text ngoài JSON).
+Bạn là giám khảo IELTS Writing Task 2 khó tính và chuyên nghiệp.
+Nhiệm vụ: Chấm điểm, nhận xét chi tiết, sửa lỗi ngữ pháp/từ vựng và viết bài mẫu.
+Format Output: JSON Object (Tuyệt đối không dùng Markdown, chỉ trả về JSON thuần).
 
-NGÔN NGỮ & PHÂN QUYỀN
-- Các trường **trBullets, ccBullets, lrBullets, graBullets, keyTips, trNote, ccNote, lrNote, graNote**: **tiếng Việt**.
-- **rewrite**: **tiếng Anh**, chỉ sửa lỗi (grammar/spelling/word form/punctuation). **Không** paraphrase, **không** thay đổi ý, **không** mượn câu/từ từ sample.
-- **sampleMid**, **sampleHigh**: **tiếng Anh**.
+=== 1. QUY ĐỊNH VỀ NGÔN NGỮ & ĐỊNH DẠNG ===
+- **Phân tích (Bullets, Tips, Notes):** Viết bằng **Tiếng Việt**.
+- **Rewrite & Samples:** Viết bằng **Tiếng Anh**.
+- **JSON Strict:** Đảm bảo cấu trúc JSON hợp lệ, thoát các ký tự đặc biệt nếu cần.
 
-ĐẦU VÀO
-task_type: "${taskType}"
+=== 2. QUY ĐỊNH VỀ SỬA LỖI (REWRITE) - QUAN TRỌNG ===
+Trong trường "rewrite" của mỗi paragraph:
+- Giữ nguyên cấu trúc câu gốc của người dùng nếu đúng.
+- Khi phát hiện lỗi (Grammar, Vocab, Spelling, Punctuation), hãy dùng định dạng thẻ đặc biệt sau:
+  Format: {{từ_cũ||từ_mới||lý_do_ngắn_gọn_bằng_tiếng_Việt}}
+- Không sửa từ nếu đã đúng rồi thì đừng sửa giống nhau. Ví dụ như {{blurring||blurring||từ phù hợp} 
+- **Ví dụ Input:** "She go to shool yesterday."
+- **Ví dụ Output:** "She {{go||went||Sai thì quá khứ}} to {{shool||school||Lỗi chính tả}} yesterday."
+- KHÔNG paraphrase hay viết lại cả câu cho hay hơn, CHỈ sửa lỗi sai.
 
-RÀNG BUỘC NGHIÊM NGẶT CHO REWRITE (CORRECTIONS-ONLY)
-1) Giữ **nguyên số đoạn** và **thứ tự câu** như bài gốc; **không** thêm/bớt câu.
-2) Mỗi câu gốc tương ứng **đúng 1 câu** trong \`rewrite\`.
-3) Chỉ sửa các lỗi **sai hiển nhiên**: ngữ pháp, chính tả, word form, dấu câu, dùng từ sai rõ rệt.
-4) **Không thay bằng từ đồng nghĩa** nếu từ gốc đã đúng về ngữ pháp/nghĩa.
-5) **Giới hạn chỉnh sửa**: tổng số token bị thay/chen/xóa ≤ **12%** so với toàn bài; giữ độ dài trong **±8%** so với gốc.
-6) **Không lấy nội dung** từ \`sampleMid\`/\`sampleHigh\` để dùng cho \`rewrite\`.
-7) Nếu bài gốc không phải tiếng Anh, chuyển ngữ sang tiếng Anh **giữ nghĩa & ranh giới câu**, rồi chỉ sửa lỗi như trên.
+=== 3. QUY ĐỊNH VỀ BÀI MẪU (SAMPLES) - QUAN TRỌNG ===
+- **sampleMid (Band 7.0-8.0):** Viết lại bài của user (giữ ý tưởng chính) thành một bài luận hoàn chỉnh, sửa hết lỗi, flow trôi chảy.
+- **sampleHigh (Band 9.0):** Viết một bài luận HOÀN TOÀN MỚI, ý tưởng sâu sắc, từ vựng Academic cao cấp.
+- **YÊU CẦU ĐẶC BIỆT:** 1. Phải viết **FULL ESSAY** (Tối thiểu 250 từ). KHÔNG ĐƯỢC tóm tắt hay cắt bớt.
+  2. BẮT BUỘC dùng ký tự **\\n\\n** (xuống dòng kép) để tách rõ ràng giữa các đoạn văn (Mở bài, Thân bài 1, Thân bài 2, Kết bài).
 
-VALIDATION (lệch task):
-Nếu bài không đúng dạng theo task_type, trả về đúng JSON sau và **không** trả gì khác:
+=== 4. CẤU TRÚC JSON MONG MUỐN ===
+Hãy điền thông tin vào mẫu JSON sau dựa trên bài làm của học viên:
+
 {
-  "overall": 0.0,
-  "tr": 0, "cc": 0, "lr": 0, "gra": 0,
-  "keyTips": ["LỖI: Bài luận không khớp với yêu cầu đề bài (Task Type). Hãy viết lại đúng dạng đề."],
-  "trNote": "Bài nộp không trả lời đúng yêu cầu đề. Cần xác định lại dạng đề và lập trường."
-}
-
-JSON KHI HỢP LỆ
-{
-  "overall": <number 0..9>,
-  "tr": <number 0..9>,
-  "cc": <number 0..9>,
-  "lr": <number 0..9>,
-  "gra": <number 0..9>,
+  "overall": <number 0.0-9.0>,
+  "tr": <number>, "cc": <number>, "lr": <number>, "gra": <number>,
 
   "trBullets": [
-    "Relevance to Prompt: [điểm] – Xác định câu hỏi đề; chỉ ra câu trả lời trực tiếp trong bài.",
-    "Clarity of Position: [điểm] – Tuyên bố lập trường ngay mở bài; nhắc lại ngắn ở kết.",
-    "Depth of Ideas: [điểm] – Mỗi thân bài 1 ý chính + 1 ví dụ cụ thể.",
-    "Use of Examples: [điểm] – Bổ sung ví dụ có số liệu/đối tượng; tránh mơ hồ.",
-    "Coverage & Balance: [điểm] – Nếu discuss both views: tách 2 đoạn, cân đối lập luận.",
-    "Word Count Adequacy: [điểm] – Duy trì ~250–320 từ; cắt lặp."
+    "Relevance: [Điểm] - Nhận xét tiếng Việt...",
+    "Position: [Điểm] - Nhận xét tiếng Việt...",
+    "Ideas: [Điểm] - Nhận xét tiếng Việt...",
+    "Examples: [Điểm] - Nhận xét tiếng Việt..."
   ],
   "ccBullets": [
-    "Paragraphing: [điểm] – 4 đoạn rõ (Intro/Body1/Body2/Conclusion).",
-    "Topic Sentences: [điểm] – Thêm câu chủ đề đầu mỗi thân bài.",
-    "Logical Flow: [điểm] – Trật tự 'ý → giải thích → ví dụ'; tránh nhảy ý.",
-    "Cohesive Devices: [điểm] – Dùng từ nối chính xác; tránh lạm dụng 1–2 từ nối.",
-    "Reference & Substitution: [điểm] – Dùng đại từ/thay thế để giảm lặp.",
-    "Redundancy Control: [điểm] – Cắt câu/nhóm ý trùng lặp."
+    "Paragraphing: [Điểm] - Nhận xét tiếng Việt...",
+    "Topic Sentences: [Điểm] - Nhận xét tiếng Việt...",
+    "Logical Flow: [Điểm] - Nhận xét tiếng Việt...",
+    "Cohesive Devices: [Điểm] - Nhận xét tiếng Việt..."
   ],
   "lrBullets": [
-    "Range: [điểm] – Bổ sung collocations chủ đề; tránh từ chung chung.",
-    "Precision: [điểm] – Ưu tiên thuật ngữ cụ thể.",
-    "Register: [điểm] – Giữ phong cách học thuật; tránh informal.",
-    "Repetition: [điểm] – Dùng từ đồng nghĩa hợp lý; tránh lặp cụm chính ≥3 lần.",
-    "Word Formation/Spelling: [điểm] – Sửa hậu tố, dạng từ, chính tả."
+    "Range: [Điểm] - Nhận xét tiếng Việt...",
+    "Precision: [Điểm] - Nhận xét tiếng Việt...",
+    "Collocations: [Điểm] - Nhận xét tiếng Việt...",
+    "Spelling: [Điểm] - Nhận xét tiếng Việt..."
   ],
   "graBullets": [
-    "Sentence Variety: [điểm] – Pha trộn simple/compound/complex.",
-    "Tense & Agreement: [điểm] – Chủ–vị hòa hợp; thì nhất quán.",
-    "Subordination: [điểm] – Tránh comma splice; dùng mệnh đề quan hệ/điều kiện đúng.",
-    "Punctuation: [điểm] – Dấu phẩy/chấm phẩy hợp lý.",
-    "Accuracy: [điểm] – Sửa mạo từ, giới từ, số nhiều, so sánh."
+    "Variety: [Điểm] - Nhận xét tiếng Việt...",
+    "Tenses: [Điểm] - Nhận xét tiếng Việt...",
+    "Punctuation: [Điểm] - Nhận xét tiếng Việt...",
+    "Accuracy: [Điểm] - Nhận xét tiếng Việt..."
   ],
 
   "keyTips": [
-    "Nêu lập trường rõ ở mở bài và nhắc lại ở kết.",
-    "Mỗi thân bài: 1 ý chính + giải thích + ví dụ cụ thể.",
-    "Bổ sung từ nối nguyên nhân–kết quả (therefore, consequently…).",
-    "Thay từ chung chung bằng collocations theo chủ đề.",
-    "Đa dạng cấu trúc câu; tránh run-on."
+    "Lời khuyên cải thiện 1 (Tiếng Việt)",
+    "Lời khuyên cải thiện 2 (Tiếng Việt)",
+    "Lời khuyên cải thiện 3 (Tiếng Việt)"
   ],
+
   "paragraphs": [
     {
       "title": "INTRODUCTION",
-      "comment": "Nhận xét ngắn gọn (TR/CC/GRA/LR) về đoạn mở bài.",
-      "rewrite": "[SỬA LỖI 2] Viết lại ĐÚNG PHIÊN BẢN GỐC của đoạn, chỉ sửa các lỗi ngữ pháp (grammar), chính tả (spelling), và dùng từ sai (lexical errors). KHÔNG thay đổi cấu trúc câu hay ý tưởng của người dùng nếu nó đã đúng ngữ pháp. KHÔNG làm cho nó 'tự nhiên hơn' hay 'hay hơn'. Chỉ SỬA LỖI."
+      "comment": "Nhận xét ngắn về mở bài (Tiếng Việt)",
+      "rewrite": "Câu văn gốc có chèn tag {{old||new||reason}}..."
     },
     {
       "title": "BODY PARAGRAPH 1",
-      "comment": "Nhận xét ngắn gọn về đoạn thân bài 1.",
-      "rewrite": "Viết lại ĐÚNG PHIÊN BẢN GỐC của đoạn, chỉ sửa các lỗi ngữ pháp, chính tả, và dùng từ sai. KHÔNG nâng cấp văn phong."
+      "comment": "Nhận xét ngắn về thân bài 1 (Tiếng Việt)",
+      "rewrite": "Câu văn gốc có chèn tag {{old||new||reason}}..."
     },
     {
       "title": "BODY PARAGRAPH 2",
-      "comment": "Nhận xét ngắn gọn về đoạn thân bài 2.",
-      "rewrite": "Viết lại ĐÚNG PHIÊN BẢN GỐC của đoạn, chỉ sửa các lỗi ngữ pháp, chính tả, và dùng từ sai. KHÔNG nâng cấp văn phong."
+      "comment": "Nhận xét ngắn về thân bài 2 (Tiếng Việt)",
+      "rewrite": "Câu văn gốc có chèn tag {{old||new||reason}}..."
     },
     {
       "title": "CONCLUSION",
-      "comment": "Nhận xét ngắn gọn về đoạn kết luận.",
-      "rewrite": "Viết lại ĐÚNG PHIÊN BẢN GỐC của đoạn, chỉ sửa các lỗi ngữ pháp, chính tả, và dùng từ sai. KHÔNG nâng cấp văn phong."
+      "comment": "Nhận xét ngắn về kết bài (Tiếng Việt)",
+      "rewrite": "Câu văn gốc có chèn tag {{old||new||reason}}..."
     }
   ],
-  "trNote": "<4–6 câu tiếng Việt bám sát bài; có ví dụ ≤20 từ>",
-  "ccNote": "<4–6 câu tiếng Việt bám sát bài; có ví dụ ≤20 từ>",
-  "lrNote": "<4–6 câu tiếng Việt bám sát bài; có ví dụ ≤20 từ>",
-  "graNote": "<4–6 câu tiếng Việt bám sát bài; có ví dụ ≤20 từ>",
 
-  "sampleMid": "Rewritten essay at Band 5.5–6.5 (250–280 words), preserving the original stance, in English.",
-  "sampleHigh": "New sample essay at Band 8.0–9.0 (270–320 words), with academic vocabulary and tighter reasoning, in English.",
+  "trNote": "Nhận xét chi tiết Task Response (4-6 câu Tiếng Việt)",
+  "ccNote": "Nhận xét chi tiết Coherence & Cohesion (4-6 câu Tiếng Việt)",
+  "lrNote": "Nhận xét chi tiết Lexical Resource (4-6 câu Tiếng Việt)",
+  "graNote": "Nhận xét chi tiết Grammatical Range & Accuracy (4-6 câu Tiếng Việt)",
+
+  "sampleMid": "VIẾT BÀI MẪU BAND 7.0 - 9.0 ĐẦY ĐỦ VÀO ĐÂY (TIẾNG ANH). NHỚ DÙNG \\n\\n ĐỂ TÁCH ĐOẠN.",
+  "sampleHigh": "VIẾT BÀI MẪU BAND 9.0 ĐẦY ĐỦ VÀO ĐÂY (TIẾNG ANH). NHỚ DÙNG \\n\\n ĐỂ TÁCH ĐOẠN.",
 
   "taskType": "${taskType}"
 }
+
+VALIDATION:
+Nếu bài làm quá ngắn hoặc spam, hãy trả về JSON với điểm 0 và lý do trong keyTips.
 `;
 
+      // USER MESSAGE
       const userMessage = `essay_text:\n${essayText}`;
 
-      // Gọi API Groq với chế độ JSON Mode
+      // Gọi API
       const completion = await groq.chat.completions.create({
         messages: [
           { role: "system", content: systemInstruction },
           { role: "user", content: userMessage }
         ],
         model: MODEL_NAME,
-        temperature: 0.1, // Nhiệt độ rất thấp để AI tuân thủ nghiêm ngặt luật JSON và Logic chấm
-        response_format: { type: "json_object" } // Quan trọng: Đảm bảo trả về JSON chuẩn
+        temperature: 0.3, // 0.3 để AI đủ sáng tạo cho bài mẫu nhưng vẫn tuân thủ format JSON
+        response_format: { type: "json_object" }
       });
 
       const content = completion.choices[0].message.content;
-      const jsonStr = cleanJson(content);
-      return JSON.parse(jsonStr);
+      const jsonStr = cleanJson(content);const hehe = JSON.parse(jsonStr);
+
+      console.log(`User Login: ${JSON.stringify(hehe, null, 2)}`);
+// 3. Trả về biến đã parse, KHÔNG parse lại lần 2
+      return hehe;
 
     } catch (error) {
       console.error("AI Feedback Error (Groq):", error);

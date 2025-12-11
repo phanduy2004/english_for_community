@@ -27,8 +27,8 @@ const getListeningById = async (id) => {
 const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
   const query = {};
 
-  if (filters.difficulty && filters.difficulty !== 'all') {
-    query.difficulty = filters.difficulty;
+  if (filters.difficulty) {
+    query.difficulty = filters.difficulty; // ✅ Áp dụng lọc theo độ khó
   }
 
   if (filters.q) {

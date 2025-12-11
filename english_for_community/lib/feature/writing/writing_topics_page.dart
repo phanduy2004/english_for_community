@@ -35,7 +35,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
 
   // 👇 1. THÊM BIẾN CHO BỘ LỌC
   int _selectedFilterIndex = 0;
-  final _filters = ['All', 'Beginner', 'Intermediate', 'Advanced'];
+  final _filters = ['Beginner', 'Intermediate', 'Advanced'];
 
   @override
   void initState() {

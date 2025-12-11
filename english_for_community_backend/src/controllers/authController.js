@@ -19,7 +19,17 @@ const register = async (req, res) => {
     return res.status(status).json({ message: error.message || 'Server error' });
   }
 };
-
+const googleLogin = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    // Gọi service xử lý
+    const result = await authService.loginWithGoogle(idToken);
+    return res.status(200).json(result);
+  } catch (error) {
+    const status = getStatusCode(error);
+    return res.status(status).json({ message: error.message || 'Google Auth Failed' });
+  }
+};
 // POST /auth/login
 const login = async (req, res) => {
   try {
@@ -124,5 +134,6 @@ export const authController = {
   verifyOtp,
   requestPasswordReset,
   resetPassword,
-  refreshToken
+  refreshToken,
+  googleLogin
 };

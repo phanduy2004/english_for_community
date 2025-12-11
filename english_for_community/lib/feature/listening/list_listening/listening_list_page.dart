@@ -22,115 +22,144 @@ class ListeningListPage extends StatefulWidget {
 
 class _ListeningListPageState extends State<ListeningListPage> {
   int _selectedFilterIndex = 0;
-  final List<String> _filters = const ['All', 'Beginner', 'Intermediate', 'Advanced'];
+  final List<String> _filters = const ['Beginner', 'Intermediate', 'Advanced'];
+
+  String _getDifficultyForIndex(int index) {
+    switch (_filters[index]) {
+      case 'Beginner':
+        return 'easy';
+      case 'Intermediate':
+        return 'medium';
+      case 'Advanced':
+        return 'hard';
+      default:
+        return 'easy';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Màu nền và chữ chuẩn Shadcn
-    const bgPage = Color(0xFFF9FAFB); // Zinc-50
-    const borderCol = Color(0xFFE4E4E7); // Zinc-200
-    const textMain = Color(0xFF09090B); // Zinc-950
-
-    // Lấy màu Primary từ Theme của bạn (Màu Xanh)
+    const bgPage = Color(0xFFF9FAFB);
+    const textMain = Color(0xFF09090B);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return BlocProvider<ListeningBloc>(
-      create: (context) => getIt<ListeningBloc>()..add(GetListListeningEvent()),
-      child: Scaffold(
-        backgroundColor: bgPage,
-        appBar: AppBar(
-          backgroundColor: bgPage,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: textMain),
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
-          title: const Text(
-            'Listening Practice',
-            style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
-          ),
-          centerTitle: true,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.bar_chart_outlined, color: textMain),
-              onPressed: () {},
-            ),
-            IconButton(
-              icon: const Icon(Icons.settings_outlined, color: textMain),
-              onPressed: () {},
-            ),
-          ],
-        ),
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    clipBehavior: Clip.none,
-                    children: [
-                      const SizedBox(height: 8),
-                      _buildHeader(context), // Giữ Banner Gradient tối màu cho sang trọng
-                      const SizedBox(height: 20),
-                      _buildSearchBox(context, primaryColor),
-                      const SizedBox(height: 16),
-                      _FilterRow(
-                        filters: _filters,
-                        selectedIndex: _selectedFilterIndex,
-                        primaryColor: primaryColor, // Truyền màu xanh vào Filter
-                        onSelected: (i) {
-                          setState(() => _selectedFilterIndex = i);
-                          context.read<ListeningBloc>().add(GetListListeningEvent());
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      BlocBuilder<ListeningBloc, ListeningState>(
-                        builder: (context, state) {
-                          switch (state.status) {
-                            case ListeningStatus.loading:
-                              return const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 40),
-                                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                              );
-                            case ListeningStatus.error:
-                              return _ErrorView(
-                                message: state.errorMessage ?? 'Something went wrong',
-                                onRetry: () => context.read<ListeningBloc>().add(GetListListeningEvent()),
-                              );
-                            case ListeningStatus.success:
-                              final items = state.listListeningEntity ?? const <ListeningEntity>[];
-                              if (items.isEmpty) return const _EmptyView();
+      // 1. Khởi tạo BLoC với bộ lọc mặc định ('easy')
+      create: (_) => getIt<ListeningBloc>()
+        ..add(GetListListeningEvent(
+            difficulty: _getDifficultyForIndex(_selectedFilterIndex))),
+      // 2. Sử dụng Builder để lấy Context mới (chứa Provider)
+      child: Builder(
+        builder: (context) {
+          // 3. Định nghĩa hàm refresh tại đây (sử dụng context mới)
+          void refreshList() {
+            final difficulty = _getDifficultyForIndex(_selectedFilterIndex);
+            context.read<ListeningBloc>().add(
+              GetListListeningEvent(difficulty: difficulty),
+            );
+          }
 
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: items.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                                itemBuilder: (context, index) => _ListeningCard(
-                                  entity: items[index],
-                                  primaryColor: primaryColor, // Truyền màu xanh vào Card
-                                ),
-                              );
-                            default:
-                              return const SizedBox.shrink();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+          return Scaffold(
+            backgroundColor: bgPage,
+            appBar: AppBar(
+              backgroundColor: bgPage,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: textMain),
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              title: const Text(
+                'Listening Practice',
+                style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
+              ),
+              centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.bar_chart_outlined, color: textMain),
+                  onPressed: () {},
+                ),
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined, color: textMain),
+                  onPressed: () {},
                 ),
               ],
             ),
-          ),
-        ),
+            body: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const SizedBox(height: 8),
+                          _buildHeader(context),
+                          const SizedBox(height: 20),
+                          _buildSearchBox(context, primaryColor),
+                          const SizedBox(height: 16),
+                          _FilterRow(
+                            filters: _filters,
+                            selectedIndex: _selectedFilterIndex,
+                            primaryColor: primaryColor,
+                            onSelected: (i) {
+                              setState(() => _selectedFilterIndex = i);
+                              // 4. Gọi BLoC với filter mới
+                              context.read<ListeningBloc>().add(
+                                GetListListeningEvent(
+                                    difficulty: _getDifficultyForIndex(i)),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          BlocBuilder<ListeningBloc, ListeningState>(
+                            builder: (context, state) {
+                              switch (state.status) {
+                                case ListeningStatus.loading:
+                                  return const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 40),
+                                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                  );
+                                case ListeningStatus.error:
+                                  return _ErrorView(
+                                    message: state.errorMessage ?? 'Something went wrong',
+                                    onRetry: refreshList, // Dùng hàm refreshList đã định nghĩa
+                                  );
+                                case ListeningStatus.success:
+                                  final items = state.listListeningEntity ?? const <ListeningEntity>[];
+                                  if (items.isEmpty) return const _EmptyView();
+
+                                  return ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: items.length,
+                                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                                    itemBuilder: (context, index) => _ListeningCard(
+                                      entity: items[index],
+                                      primaryColor: primaryColor,
+                                      onLessonFinished: refreshList, // Truyền callback refresh
+                                    ),
+                                  );
+                                default:
+                                  return const SizedBox.shrink();
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 40),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  // Banner giữ nguyên Dark Gradient (Rất hợp với Shadcn)
   Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
@@ -230,7 +259,6 @@ class _ListeningListPageState extends State<ListeningListPage> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           isDense: true,
-          // Focus Border màu Xanh
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: primaryColor, width: 1.5),
@@ -243,9 +271,15 @@ class _ListeningListPageState extends State<ListeningListPage> {
 }
 
 class _ListeningCard extends StatelessWidget {
-  const _ListeningCard({required this.entity, required this.primaryColor});
+  const _ListeningCard({
+    required this.entity,
+    required this.primaryColor,
+    this.onLessonFinished,
+  });
+
   final ListeningEntity entity;
-  final Color primaryColor; // Nhận màu xanh từ cha
+  final Color primaryColor;
+  final VoidCallback? onLessonFinished;
 
   String _difficultyLabel(ListeningDifficulty? d) {
     switch (d) {
@@ -309,7 +343,6 @@ class _ListeningCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Badges Row
                           Row(
                             children: [
                               _Badge(
@@ -336,7 +369,6 @@ class _ListeningCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
-                          // Info Row
                           Row(
                             children: [
                               const Icon(Icons.format_list_bulleted, size: 14, color: textMuted),
@@ -358,14 +390,12 @@ class _ListeningCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Play Icon Box - Dùng màu Xanh
                     Container(
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1), // Nền xanh nhạt
+                        color: primaryColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
-                        // border: Border.all(color: primaryColor.withOpacity(0.2)),
                       ),
                       child: Icon(Icons.play_arrow_rounded, color: primaryColor, size: 28),
                     ),
@@ -376,7 +406,6 @@ class _ListeningCard extends StatelessWidget {
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5)),
                 const SizedBox(height: 12),
 
-                // Progress & Action Button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -390,7 +419,6 @@ class _ListeningCard extends StatelessWidget {
                               value: progress,
                               minHeight: 4,
                               backgroundColor: const Color(0xFFF4F4F5),
-                              // ✅ Progress bar dùng màu Xanh
                               color: primaryColor,
                             ),
                           ),
@@ -409,8 +437,8 @@ class _ListeningCard extends StatelessWidget {
                           ? OutlinedButton(
                         onPressed: () => _handlePress(context),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: primaryColor, // Chữ xanh
-                          side: BorderSide(color: primaryColor.withOpacity(0.5)), // Viền xanh nhạt
+                          foregroundColor: primaryColor,
+                          side: BorderSide(color: primaryColor.withOpacity(0.5)),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
@@ -420,8 +448,8 @@ class _ListeningCard extends StatelessWidget {
                           : ElevatedButton(
                         onPressed: () => _handlePress(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor, // Nền xanh
-                          foregroundColor: Colors.white, // Chữ trắng
+                          backgroundColor: primaryColor,
+                          foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
@@ -440,6 +468,7 @@ class _ListeningCard extends StatelessWidget {
     );
   }
 
+
   Future<void> _handlePress(BuildContext context) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -454,8 +483,9 @@ class _ListeningCard extends StatelessWidget {
         ),
       ),
     );
+    // Gọi callback để yêu cầu ListeningListPageState refresh BLoC sau khi quay lại
     if (context.mounted) {
-      context.read<ListeningBloc>().add(GetListListeningEvent());
+      onLessonFinished?.call();
     }
   }
 }
@@ -489,11 +519,9 @@ class _FilterRow extends StatelessWidget {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  // ✅ Selected background dùng màu Xanh
                   color: selected ? primaryColor : Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    // ✅ Selected border dùng màu Xanh
                     color: selected ? primaryColor : const Color(0xFFE4E4E7),
                   ),
                   boxShadow: selected ? [
@@ -507,7 +535,6 @@ class _FilterRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    // ✅ Selected text dùng màu Trắng
                     color: selected ? Colors.white : const Color(0xFF52525B),
                   ),
                 ),

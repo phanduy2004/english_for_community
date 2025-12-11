@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -14,13 +15,14 @@ import 'core/socket/socket_lifecycle_manager.dart';
 
 import 'feature/auth/bloc/user_bloc.dart';
 import 'feature/auth/bloc/user_event.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.I.init();
-
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   setup(); // Khởi tạo Dependency Injection (GetIt)
-  await DictDb.I.db;
+  //await DictDb.I.db;
   //NotificationService.I.scheduleDaily9AMNotification();
   await LocalNotificationService().init();
   runApp(MyApp());
