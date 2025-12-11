@@ -1,12 +1,37 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
-import {generateAccessToken, generateRefreshToken, verifyRefreshToken} from '../lib/jwt_token.js';
-// import { getIO } from '../socket/socket.js'; // ĐÃ XÓA: Loại bỏ import socket
-import sendMail from '../untils/sendMailUtil.js';// Cấu hình OTP
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../lib/jwt_token.js';
+import sendMail from '../untils/sendMailUtil.js';
+import admin from "firebase-admin";
+const FIREBASE_CONFIG_BASE64 = process.env.FIREBASE_CONFIG_BASE64;
+
+let serviceAccount = null;
+
+if (FIREBASE_CONFIG_BASE64) {
+  try {
+    // 1. Giải mã chuỗi Base64 thành chuỗi JSON
+    const jsonString = Buffer.from(FIREBASE_CONFIG_BASE64, 'base64').toString('utf8');
+
+    // 2. Parse chuỗi JSON đó thành đối tượng
+    serviceAccount = JSON.parse(jsonString);
+    console.log("[CONFIG] Đã tải Firebase Service Account từ Base64 (Env).");
+
+  } catch (e) {
+    // Lỗi này xảy ra khi có lỗi trong quá trình Buffer.from() hoặc JSON.parse()
+    console.error("LỖI CẤU HÌNH: Không thể Parse hoặc Giải mã Base64 Firebase Key.", e);
+  }
+} else {
+  console.warn("CẢNH BÁO: Biến môi trường FIREBASE_CONFIG_BASE64 chưa được thiết lập!");
+}
+// Cấu hình OTP
 const OTP_TTL_MS = 10 * 60 * 1000; // 10 phút
 const RESEND_COOLDOWN_MS = 60 * 1000; // 60s
 const OTP_MAX_ATTEMPTS = 5;
-
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
 // Helper tạo lỗi có status code
 const createError = (status, message, reason = null) => {
   const err = new Error(message);
@@ -281,6 +306,57 @@ const refreshToken = async (token) => {
 
   return newAccessToken;
 };
+const loginWithGoogle = async (idToken) => {
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, name, picture, uid } = decodedToken;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        email,
+        fullName: name,
+        username: email.split('@')[0],
+        avatarUrl: picture,
+        password: `google_${uid}`,
+        isVerified: true,
+        role: 'user',
+        loginMethod: 'google'
+      });
+      await user.save();
+    }
+
+    if (user.isBanned) {
+      // Translated Error: Account is banned
+      const error = new Error('Account is banned');
+      error.statusCode = 403;
+      error.reason = user.banReason;
+      throw error;
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    user.isOnline = true;
+    user.lastActivityDate = new Date();
+    await user.save();
+
+    return {
+      user: user.toJSON(),
+      accessToken: accessToken,
+      refreshToken: refreshToken
+    };
+
+  } catch (error) {
+    console.error("Firebase Error:", error);
+    // Translated Error: Google Auth Failed
+    const err = new Error('Google Auth Failed: ' + (error.message || ''));
+    err.statusCode = 401;
+    throw err;
+  }
+};
 export const authService = {
   registerUser,
   requestSignupVerification,
@@ -289,5 +365,6 @@ export const authService = {
   logoutUser,
   requestPasswordReset,
   resetPassword,
-  refreshToken
+  refreshToken,
+  loginWithGoogle
 };

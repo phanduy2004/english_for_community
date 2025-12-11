@@ -7,7 +7,23 @@ class AuthRemoteDatasource {
   final Dio dio;
 
   AuthRemoteDatasource({required this.dio});
+  Future<UserEntity> loginWithGoogle(String idToken) async {
+    final res = await dio.post('auth/google', data: {
+      'idToken': idToken,
+    });
 
+    final accessToken = res.data['accessToken'] as String?;
+    final refreshToken = res.data['refreshToken'] as String?;
+
+    if (accessToken == null || refreshToken == null) {
+      throw Exception('Login Google failed: Tokens not provided');
+    }
+
+    await TokenStorage.saveAccessToken(accessToken);
+    await TokenStorage.saveRefreshToken(refreshToken);
+
+    return UserEntity.fromJson(res.data['user']);
+  }
   Future<UserEntity> login(String email, String password) async {
     // Đảm bảo endpoint này khớp với auth_routes.js (vd: 'auth/login')
     final res = await dio.post('auth/login', data: {

@@ -15,10 +15,16 @@ const getAllListenings = async (req, res) => {
     const userId = req.user?.id;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const { difficulty, q } = req.query;
+    const { difficulty, q } = req.query; // ✅ Đã lấy difficulty
+
+    // 🔥 SỬA: Đảm bảo chỉ truyền difficulty nếu nó có giá trị (Để tránh lỗi nếu FE gửi string rỗng)
+    const filters = {
+      difficulty: difficulty || undefined,
+      q: q || undefined
+    };
 
     const result = await listeningService.getAllListenings(
-      userId, { difficulty, q }, page, limit
+      userId, filters, page, limit // ✅ Đã truyền filters chứa difficulty
     );
     res.status(200).json(result);
   } catch (err) {

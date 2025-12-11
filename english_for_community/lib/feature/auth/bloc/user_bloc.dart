@@ -3,6 +3,8 @@ import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:bloc/bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../../core/api/token_storage.dart';
 import '../../../core/repository/auth_repository.dart';
 
@@ -27,6 +29,66 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<ResetPasswordEvent>(onResetPasswordEvent);
     on<RefreshTokenEvent>(onRefreshTokenEvent);
     on<ChangePasswordEvent>(_onChangePasswordEvent);
+    on<LoginWithGoogleEvent>(_onLoginWithGoogleEvent);
+  }
+  Future<void> _onLoginWithGoogleEvent(
+      LoginWithGoogleEvent event, Emitter<UserState> emit) async {
+    emit(state.copyWith(isFormLoading: true, errorMessage: null));
+
+    try {
+      // 1. Trigger Google Sign In Flow
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+      if (googleUser == null) {
+        // User hủy login
+        emit(state.copyWith(isFormLoading: false));
+        return;
+      }
+
+      // 2. Lấy Auth Credential
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 3. Sign in Firebase để lấy ID Token chuẩn
+      final UserCredential userCredential =
+      await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final String? idToken = await userCredential.user?.getIdToken();
+
+      if (idToken == null) {
+        throw Exception("Không lấy được ID Token từ Google");
+      }
+
+      // 4. Gửi ID Token lên Backend của mình
+      final result = await authRepository.loginWithGoogle(idToken);
+
+      result.fold(
+            (failure) {
+          emit(state.copyWith(
+            isFormLoading: false,
+            status: UserStatus.error,
+            errorMessage: failure.message,
+          ));
+        },
+            (userEntity) {
+          emit(state.copyWith(
+            isFormLoading: false,
+            status: UserStatus.success,
+            userEntity: userEntity,
+          ));
+        },
+      );
+    } catch (e) {
+      emit(state.copyWith(
+        isFormLoading: false,
+        status: UserStatus.error,
+        errorMessage: "Lỗi đăng nhập Google: ${e.toString()}",
+      ));
+    }
   }
   Future<void> _onChangePasswordEvent(ChangePasswordEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
@@ -247,7 +309,17 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   Future<void> onSignOutEvent(
       SignOutEvent event, Emitter<UserState> emit) async {
     await TokenStorage.clearAllTokens();
-    await authRepository.logout();
+    try {
+      await authRepository.logout();
+    } catch (_) {
+    }
+    try {
+      await FirebaseAuth.instance.signOut();
+      await GoogleSignIn().signOut();
+
+    } catch (e) {
+      print("Lỗi khi đăng xuất Google: $e");
+    }
     emit(UserState.initial().copyWith(status: UserStatus.unauthenticated));
   }
 

@@ -33,6 +33,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   }
 
   String _fmtHhMm(int totalMinutes) {
+    if (totalMinutes < 0) return '0h 0m';
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
     return '${h}h ${m}m';
@@ -61,6 +62,31 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       case _Range.month: return StatDetailRange.month;
     }
   }
+
+  // 🔥 Hàm mới: Tính số ngày chính xác trong tháng hiện tại
+  int _daysInMonth(DateTime date) {
+    // Lấy ngày đầu tiên của tháng tiếp theo (tháng hiện tại + 1)
+    final nextMonth = DateTime(date.year, date.month + 1, 1);
+    // Trừ đi 1 ngày sẽ ra ngày cuối cùng của tháng hiện tại
+    final lastDay = nextMonth.subtract(const Duration(days: 1));
+    return lastDay.day;
+  }
+
+  // 🔥 Sửa đổi hàm tính toán mục tiêu tổng
+  int _calculateTotalGoalMinutes(_Range range, int dailyGoal) {
+    switch (range) {
+      case _Range.day:
+        return dailyGoal;
+      case _Range.week:
+        return dailyGoal * 7;
+      case _Range.month:
+      // ✅ Lấy số ngày chính xác của tháng hiện tại
+        final today = DateTime.now();
+        final days = _daysInMonth(today);
+        return dailyGoal * days;
+    }
+  }
+
 
   void _onRangeSelected(BuildContext blocContext, _Range newRange) {
     if (_range == newRange) return;
@@ -233,7 +259,18 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final stats = summary.statsGrid;
     final chart = summary.weeklyChart;
     final callout = summary.callout;
-    final double progress = (studyTime.progressPercent).clamp(0.0, 1.0);
+
+    // 1. Tính tổng số phút đã học trong phạm vi hiện tại
+    final totalMinutesInActualRange = _range == _Range.day
+        ? studyTime.todayMinutes
+        : studyTime.totalMinutesInRange;
+
+    // 2. Tính tổng Mục tiêu cho phạm vi hiện tại (Sử dụng số ngày chính xác)
+    final totalGoalMinutes = _calculateTotalGoalMinutes(_range, studyTime.goalMinutes);
+
+    // 3. Tính lại progress (tiến trình) chính xác
+    final progress = (totalGoalMinutes > 0 ? (totalMinutesInActualRange / totalGoalMinutes) : 0.0).clamp(0.0, 1.0);
+
 
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
@@ -293,8 +330,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain),
                           ),
                           const SizedBox(height: 4),
+                          // Hiển thị tổng số phút đã học
                           Text(
-                            _range == _Range.day ? _fmtHhMm(studyTime.todayMinutes) : _fmtHhMm(studyTime.totalMinutesInRange),
+                            _fmtHhMm(totalMinutesInActualRange),
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
                           ),
                         ],
@@ -311,7 +349,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       minHeight: 8,
-                      value: progress,
+                      value: progress, // Sử dụng progress đã tính lại
                       color: primaryColor,
                       backgroundColor: const Color(0xFFF4F4F5),
                     ),
@@ -320,7 +358,8 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Goal: ${_fmtHhMm(studyTime.goalMinutes)}', style: const TextStyle(fontSize: 12, color: textMuted)),
+                      // Hiển thị mục tiêu tổng đã tính lại
+                      Text('Goal: ${_fmtHhMm(totalGoalMinutes)}', style: const TextStyle(fontSize: 12, color: textMuted)),
                       Text('${(progress * 100).round()}% completed', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
                     ],
                   ),
@@ -503,6 +542,10 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 }
+
+// ==============================================================================
+// 🏞️ WIDGET COMPONENTS (Giữ nguyên)
+// ==============================================================================
 
 class _ShadcnCard extends StatelessWidget {
   final Widget child;

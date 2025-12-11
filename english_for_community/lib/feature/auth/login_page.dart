@@ -215,7 +215,9 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 20),
                     OutlinedButton.icon(
-                      onPressed: isLoading ? null : () {},
+                      onPressed: isLoading
+                          ? null
+                          : () => context.read<UserBloc>().add(LoginWithGoogleEvent()),
                       icon: SvgPicture.asset('assets/images/google.svg', width: 18, height: 18),
                       label: const Text('Continue with Google', style: TextStyle(color: textMain, fontWeight: FontWeight.w500)),
                       style: OutlinedButton.styleFrom(

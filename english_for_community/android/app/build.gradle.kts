@@ -1,13 +1,23 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android")      // đúng cho Kotlin DSL
-    id("dev.flutter.flutter-gradle-plugin") // sau Android & Kotlin
+    id("org.jetbrains.kotlin.android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+// 🔥 BƯỚC 1: Đọc file key.properties Ở NGOÀI khối android { }
+// Để tránh lỗi "Unresolved reference: util"
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
-
     namespace = "com.example.english_for_community"
-    compileSdk =36
+    compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,21 +32,33 @@ android {
 
     defaultConfig {
         applicationId = "com.example.english_for_community"
-     /*   ndk {
-            // Cú pháp đúng: Dùng += listOf() để thêm vào danh sách
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
-        }*/
-        // Nếu có plugin đòi minSdk cao (vd. flutter_timezone), đảm bảo >= 26.
-        // Nếu không, có thể giữ nguyên flutter.minSdkVersion.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // 🔥 BƯỚC 2: Cấu hình ký số (Signing Config)
+    signingConfigs {
+        create("release") {
+            // Chỉ đọc nếu file tồn tại để tránh lỗi null
+            if (keystoreProperties["keyAlias"] != null) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
+    }
+
     buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            // 🔥 BƯỚC 3: Áp dụng cấu hình release
+            signingConfig = signingConfigs.getByName("release")
+
+            // Tắt các tối ưu hóa phức tạp để tránh lỗi build R8
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }
@@ -46,9 +68,5 @@ flutter {
 }
 
 dependencies {
-    // Desugaring (ổn)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-
-    // ❌ KHÔNG cần thêm kotlin-stdlib — plugin Kotlin đã kéo sẵn.
-    // Nếu vẫn muốn chỉ rõ, dùng: implementation(kotlin("stdlib"))  (không cần version)
 }
