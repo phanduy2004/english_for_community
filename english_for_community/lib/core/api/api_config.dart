@@ -10,7 +10,7 @@ class ApiConfig {
   static const String _renderUrl = "https://english-for-community.onrender.com";
 
   // 🏠 Server Local (Máy tính của bạn) - Thay đổi IP này theo máy bạn
-  static const String _localLanIp = "192.168.1.129";
+  static const String _localLanIp = "192.168.1.146";
   static const int _localPort = 3000;
 
   // ============================================================
@@ -20,7 +20,7 @@ class ApiConfig {
   /// 👉 CÁCH 1: CHỈNH TAY (Khuyên dùng khi Dev)
   /// - true: Dùng Local (192.168...) để code cho nhanh.
   /// - false: Dùng Server Render (https...) để test giống người dùng thật.
-  static const bool _useLocal = true;
+  static const bool _useLocal = false;
 
   /// 👉 CÁCH 2: TỰ ĐỘNG (Nâng cao)
   /// Nếu đang chạy Debug (F5) thì dùng Local, còn Build ra file APK thì tự dùng Server.

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Để dùng Clipboard
+import 'package:flutter/services.dart'; // For Clipboard
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -45,7 +45,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _usernameController.text = user.username;
       _bioController.text = user.bio ?? '';
       _phoneController.text = user.phone ?? '';
-      _selectedGender = user.gender; // Giả sử UserEntity đã có field gender như bạn yêu cầu
+      _selectedGender = user.gender;
 
       if (user.dateOfBirth != null) {
         _dobController.text = DateFormat('dd/MM/yyyy').format(user.dateOfBirth!);
@@ -102,10 +102,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   void _save() {
     if (!_formKey.currentState!.validate() || _profile == null) return;
-
     final old = context.read<UserBloc>().state.userEntity!;
 
-    // Dispatch Update Event
     context.read<UserBloc>().add(UpdateProfileEvent(
       fullName: _fullNameController.text.trim(),
       username: _usernameController.text.trim(),
@@ -113,11 +111,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       bio: _bioController.text.trim(),
       dateOfBirth: _profile!.dateOfBirth,
       avatarFile: _pickedImageFile,
-
-      // 🔥 Thêm Gender vào Event (Bạn cần update UpdateProfileEvent để nhận field này)
       gender: _selectedGender,
 
-      // Giữ nguyên settings cũ
+      // Giữ nguyên các settings cũ
       goal: old.goal,
       cefr: old.cefr,
       dailyMinutes: old.dailyMinutes,
@@ -130,15 +126,16 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    // Shadcn Zinc Colors
+    const bgPage = Color(0xFFF9FAFB); // Zinc 50
+    const textMain = Color(0xFF09090B); // Zinc 950
+    final primaryColor = Theme.of(context).primaryColor;
 
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
           context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cập nhật hồ sơ thành công')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
         }
       },
       builder: (context, state) {
@@ -147,25 +144,38 @@ class _EditProfilePageState extends State<EditProfilePage> {
         return Scaffold(
           backgroundColor: bgPage,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: bgPage,
             elevation: 0,
-            scrolledUnderElevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: textMain),
+              icon: const Icon(Icons.arrow_back, color: textMain),
               onPressed: () => context.pop(),
             ),
-            title: const Text('Chỉnh sửa hồ sơ', style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
-            centerTitle: true,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(1),
-              child: Container(color: const Color(0xFFE4E4E7), height: 1),
+            title: const Text(
+                'Edit Profile',
+                // Không set fontFamily để dùng font mặc định của app
+                style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17)
             ),
+            centerTitle: true,
             actions: [
-              TextButton(
-                onPressed: (_isDirty && !isLoading) ? _save : null,
-                child: isLoading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text('Lưu', style: TextStyle(fontWeight: FontWeight.w700, color: _isDirty ? Theme.of(context).primaryColor : textMuted)),
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: TextButton(
+                  onPressed: (_isDirty && !isLoading) ? _save : null,
+                  style: TextButton.styleFrom(
+                    backgroundColor: (_isDirty && !isLoading) ? primaryColor : Colors.transparent,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: isLoading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(
+                    'Save',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: (_isDirty && !isLoading) ? Colors.white : const Color(0xFF71717A),
+                    ),
+                  ),
+                ),
               )
             ],
           ),
@@ -174,79 +184,87 @@ class _EditProfilePageState extends State<EditProfilePage> {
               : Form(
             key: _formKey,
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               children: [
                 // --- 1. AVATAR SECTION ---
                 Center(
-                  child: Stack(
+                  child: Column(
                     children: [
-                      Container(
-                        width: 100, height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFFF4F4F5),
-                          border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
-                          image: DecorationImage(
-                            fit: BoxFit.cover,
-                            image: _pickedImageFile != null
-                                ? FileImage(_pickedImageFile!)
-                                : (_profile!.avatarUrl != null && _profile!.avatarUrl!.isNotEmpty)
-                                ? NetworkImage(_profile!.avatarUrl!) as ImageProvider
-                                : const AssetImage('assets/avatar.png'), // Placeholder
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0, right: 0,
-                        child: GestureDetector(
-                          onTap: _pickImage,
-                          child: Container(
-                            width: 32, height: 32,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
+                      Stack(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
                               shape: BoxShape.circle,
-                              border: Border.all(color: const Color(0xFFE4E4E7)),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+                              color: Colors.white, // Nền trắng đơn giản
                             ),
-                            child: const Icon(Icons.camera_alt_outlined, color: textMain, size: 16),
+                            child: Container(
+                              width: 100, height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: const Color(0xFFE4E4E7), width: 1), // Zinc 200 Border
+                                image: DecorationImage(
+                                  fit: BoxFit.cover,
+                                  image: _pickedImageFile != null
+                                      ? FileImage(_pickedImageFile!)
+                                      : (_profile!.avatarUrl != null && _profile!.avatarUrl!.isNotEmpty)
+                                      ? NetworkImage(_profile!.avatarUrl!) as ImageProvider
+                                      : const AssetImage('assets/avatar.png'),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      )
+                          Positioned(
+                            bottom: 0, right: 0,
+                            child: GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: textMain,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(_profile!.email, style: const TextStyle(fontSize: 13, color: textMuted)),
-                ),
                 const SizedBox(height: 32),
 
-                // --- 2. PUBLIC INFO ---
-                const _SectionHeader('THÔNG TIN CÔNG KHAI'),
-                _ShadcnGroup(
+                // --- 2. PUBLIC INFO (Blue Accents) ---
+                const _SectionHeader('PUBLIC INFO'),
+                _ColorfulGroup(
                   children: [
-                    _ShadcnInput(
-                      icon: Icons.person_outline,
-                      label: 'Họ và tên',
+                    _ColorfulInput(
+                      icon: Icons.person_rounded,
+                      iconColor: Colors.blue,
+                      label: 'Full Name',
                       controller: _fullNameController,
                       onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.alternate_email,
+                    _ColorfulInput(
+                      icon: Icons.alternate_email_rounded,
+                      iconColor: Colors.indigo,
                       label: 'Username',
                       controller: _usernameController,
                       prefixText: '@',
                       onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? 'Vui lòng nhập username' : null,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.edit_note,
-                      label: 'Tiểu sử',
+                    _ColorfulInput(
+                      icon: Icons.edit_note_rounded,
+                      iconColor: Colors.cyan,
+                      label: 'Bio',
                       controller: _bioController,
-                      hint: 'Giới thiệu ngắn về bạn...',
+                      hint: 'Tell us about yourself...',
                       maxLines: 3,
                       onChanged: (_) => _markDirty(),
                     ),
@@ -254,13 +272,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 24),
 
-                // --- 3. PRIVATE DETAILS ---
-                const _SectionHeader('CHI TIẾT CÁ NHÂN'),
-                _ShadcnGroup(
+                // --- 3. PRIVATE DETAILS (Warm Accents) ---
+                const _SectionHeader('PRIVATE DETAILS'),
+                _ColorfulGroup(
                   children: [
-                    _ShadcnDropdown(
-                      icon: Icons.transgender_outlined,
-                      label: 'Giới tính',
+                    _ColorfulDropdown(
+                      icon: Icons.wc_rounded,
+                      iconColor: Colors.pink,
+                      label: 'Gender',
                       value: _selectedGender,
                       items: const ['Male', 'Female', 'Other'],
                       onChanged: (val) {
@@ -271,52 +290,57 @@ class _EditProfilePageState extends State<EditProfilePage> {
                       },
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.cake_outlined,
-                      label: 'Ngày sinh',
+                    _ColorfulInput(
+                      icon: Icons.cake_rounded,
+                      iconColor: Colors.orange,
+                      label: 'Birthday',
                       controller: _dobController,
                       readOnly: true,
-                      hint: 'DD/MM/YYYY',
+                      hint: 'Select date',
                       onTap: _pickDate,
                       suffixIcon: Icons.calendar_today_rounded,
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.phone_outlined,
-                      label: 'Số điện thoại',
+                    _ColorfulInput(
+                      icon: Icons.phone_rounded,
+                      iconColor: Colors.green,
+                      label: 'Phone',
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      hint: 'Thêm số điện thoại',
+                      hint: '+84...',
                       onChanged: (_) => _markDirty(),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // --- 4. SYSTEM INFO (READ ONLY) ---
-                const _SectionHeader('THÔNG TIN HỆ THỐNG'),
-                _ShadcnGroup(
+                // --- 4. SYSTEM INFO (Neutral Accents) ---
+                const _SectionHeader('SYSTEM INFO'),
+                _ColorfulGroup(
                   children: [
-                    _ShadcnInput(
-                      icon: Icons.email_outlined,
+                    _ColorfulInput(
+                      icon: Icons.email_rounded,
+                      iconColor: Colors.teal,
                       label: 'Email',
                       initialValue: _profile!.email,
                       readOnly: true,
-                      enabled: false, // Gray out
-                      suffixIcon: _profile!.isVerified ? Icons.verified : Icons.warning_amber_rounded,
+                      enabled: false,
+                      suffixIcon: _profile!.isVerified ? Icons.verified_rounded : Icons.info_outline,
                       suffixColor: _profile!.isVerified ? Colors.blue : Colors.orange,
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.admin_panel_settings_outlined,
-                      label: 'Vai trò',
+                    _ColorfulInput(
+                      icon: Icons.security_rounded,
+                      iconColor: Colors.blueGrey,
+                      label: 'Role',
                       initialValue: _profile!.role.toUpperCase(),
                       readOnly: true,
                       enabled: false,
                     ),
                     const _Divider(),
-                    _ShadcnInput(
-                      icon: Icons.key,
+                    _ColorfulInput(
+                      icon: Icons.fingerprint_rounded,
+                      iconColor: Colors.grey,
                       label: 'User ID',
                       initialValue: _profile!.id,
                       readOnly: true,
@@ -336,7 +360,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 }
 
 // -----------------------------------------------------------------------------
-// ✨ SHADCN / FOURI INSPIRED WIDGETS
+// 🎨 COLORFUL & CLEAN COMPONENTS (SHADCN COLORS)
 // -----------------------------------------------------------------------------
 
 class _SectionHeader extends StatelessWidget {
@@ -348,23 +372,30 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF71717A), letterSpacing: 0.5),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF71717A), // Zinc 500
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
 }
 
-class _ShadcnGroup extends StatelessWidget {
+class _ColorfulGroup extends StatelessWidget {
   final List<Widget> children;
-  const _ShadcnGroup({required this.children});
+  const _ColorfulGroup({required this.children});
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1))],
+        border: Border.all(color: const Color(0xFFE4E4E7)), // Zinc 200 Border
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1)),
+        ],
       ),
       child: Column(children: children),
     );
@@ -374,11 +405,31 @@ class _ShadcnGroup extends StatelessWidget {
 class _Divider extends StatelessWidget {
   const _Divider();
   @override
-  Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5), indent: 48); // indent để icon không bị cắt
+  Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5), indent: 52); // Zinc 100
 }
 
-class _ShadcnInput extends StatelessWidget {
+// ✨ Icon với nền màu Pastel (Điểm nhấn màu sắc)
+class _ColorIcon extends StatelessWidget {
   final IconData icon;
+  final Color color;
+  const _ColorIcon(this.icon, this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32, height: 32,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1), // Nền màu rất nhạt
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Icon(icon, size: 18, color: color),
+    );
+  }
+}
+
+class _ColorfulInput extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
   final String label;
   final TextEditingController? controller;
   final String? initialValue;
@@ -395,8 +446,9 @@ class _ShadcnInput extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool isCopyable;
 
-  const _ShadcnInput({
+  const _ColorfulInput({
     required this.icon,
+    required this.iconColor,
     required this.label,
     this.controller,
     this.initialValue,
@@ -416,78 +468,94 @@ class _ShadcnInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Màu chữ chuẩn Shadcn
+    const textMain = Color(0xFF09090B);
+    const textMuted = Color(0xFF71717A);
+    const textPlaceholder = Color(0xFFA1A1AA);
+
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
           children: [
-            // Icon bên trái
+            // Icon
             Padding(
-              padding: EdgeInsets.only(top: maxLines > 1 ? 12 : 0),
-              child: Icon(icon, size: 20, color: const Color(0xFF71717A)),
+              padding: EdgeInsets.only(top: maxLines > 1 ? 4 : 0),
+              child: _ColorIcon(icon, iconColor),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
 
-            // Label và Input field
+            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Label nhỏ phía trên (giống Material Design nhưng tinh tế hơn)
-                  // Hoặc Label bên trái?
-                  // Ở đây tôi chọn style: Label là placeholder hoặc label nhỏ nếu có value
-                  TextFormField(
-                    controller: controller,
-                    initialValue: initialValue,
-                    readOnly: readOnly,
-                    enabled: enabled,
-                    maxLines: maxLines,
-                    keyboardType: keyboardType,
-                    onTap: onTap,
-                    onChanged: onChanged,
-                    validator: validator,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: enabled ? const Color(0xFF09090B) : const Color(0xFF71717A)
+                  // Layout: Label bên trái, Input bên phải (Right Aligned)
+                  if (maxLines == 1)
+                    Row(
+                      children: [
+                        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: controller,
+                            initialValue: initialValue,
+                            readOnly: readOnly,
+                            enabled: enabled,
+                            textAlign: TextAlign.right, // Đẩy input sang phải cho gọn
+                            style: TextStyle(fontSize: 14, color: enabled ? const Color(0xFF52525B) : textMuted),
+                            decoration: InputDecoration.collapsed(
+                              hintText: hint,
+                              hintStyle: const TextStyle(color: textPlaceholder, fontWeight: FontWeight.normal),
+                            ),
+                            onChanged: onChanged,
+                            validator: validator,
+                          ),
+                        ),
+                      ],
+                    )
+                  else ...[
+                    // Layout: Label trên, Input dưới (cho Bio nhiều dòng)
+                    Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: controller,
+                      initialValue: initialValue,
+                      readOnly: readOnly,
+                      enabled: enabled,
+                      maxLines: maxLines,
+                      style: TextStyle(fontSize: 14, color: enabled ? const Color(0xFF52525B) : textMuted),
+                      decoration: InputDecoration.collapsed(
+                        hintText: hint,
+                        hintStyle: const TextStyle(color: textPlaceholder),
+                      ),
+                      onChanged: onChanged,
+                      validator: validator,
                     ),
-                    decoration: InputDecoration(
-                      labelText: label, // Label sẽ trôi lên trên khi nhập
-                      labelStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
-                      floatingLabelStyle: const TextStyle(color: Color(0xFF71717A), fontSize: 12, fontWeight: FontWeight.w600),
-                      hintText: hint,
-                      hintStyle: const TextStyle(color: Color(0xFFD4D4D8)),
-                      prefixText: prefixText,
-                      prefixStyle: const TextStyle(color: Color(0xFF71717A)),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      alignLabelWithHint: maxLines > 1,
-                    ),
-                  ),
+                  ]
                 ],
               ),
             ),
 
-            // Suffix Icon (Copy hoặc Custom Icon)
+            // Suffix
             if (isCopyable)
-              IconButton(
-                icon: const Icon(Icons.copy, size: 16, color: Color(0xFF71717A)),
-                onPressed: () {
+              GestureDetector(
+                onTap: () {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã sao chép'), duration: Duration(seconds: 1)));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)));
                   }
                 },
+                child: const Padding(padding: EdgeInsets.only(left: 12), child: Icon(Icons.copy_rounded, size: 16, color: textPlaceholder)),
               )
             else if (suffixIcon != null)
               Padding(
-                padding: EdgeInsets.only(top: maxLines > 1 ? 12 : 0),
-                child: Icon(suffixIcon, size: 18, color: suffixColor ?? const Color(0xFFA1A1AA)),
+                padding: const EdgeInsets.only(left: 12),
+                child: Icon(suffixIcon, size: 18, color: suffixColor ?? textPlaceholder),
               )
           ],
         ),
@@ -496,15 +564,17 @@ class _ShadcnInput extends StatelessWidget {
   }
 }
 
-class _ShadcnDropdown extends StatelessWidget {
+class _ColorfulDropdown extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String label;
   final String? value;
   final List<String> items;
   final ValueChanged<String?> onChanged;
 
-  const _ShadcnDropdown({
+  const _ColorfulDropdown({
     required this.icon,
+    required this.iconColor,
     required this.label,
     required this.value,
     required this.items,
@@ -513,25 +583,23 @@ class _ShadcnDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const textMain = Color(0xFF09090B);
+    const textPlaceholder = Color(0xFFA1A1AA);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: const Color(0xFF71717A)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownButtonFormField<String>(
+          _ColorIcon(icon, iconColor),
+          const SizedBox(width: 16),
+          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
+          const Spacer(),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
               value: (value != null && items.contains(value)) ? value : null,
-              icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFFA1A1AA)),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF09090B)),
-              decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
-                floatingLabelStyle: const TextStyle(color: Color(0xFF71717A), fontSize: 12, fontWeight: FontWeight.w600),
-                border: InputBorder.none,
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: textPlaceholder),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), fontWeight: FontWeight.w500),
+              hint: const Text('Select', style: TextStyle(color: textPlaceholder, fontSize: 14)),
               items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
               onChanged: onChanged,
             ),

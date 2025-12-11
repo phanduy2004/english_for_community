@@ -236,8 +236,8 @@ const getProgressSummary = async (req, res) => {
         minutes: chartMinutes,
       },
       callout: {
-        title: todayMinutes >= (dailyGoal || 30) ? 'Tuyệt vời!' : 'Cố lên!',
-        message: `Bạn đã học ${todayMinutes} phút hôm nay.`,
+        title: todayMinutes >= (dailyGoal || 30) ? 'Great job!' : 'Keep going!',
+        message: `You've studied ${todayMinutes} minutes today.`,
       }
     });
 

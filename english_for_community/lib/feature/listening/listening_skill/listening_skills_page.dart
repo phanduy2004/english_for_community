@@ -12,7 +12,7 @@ import '../../../core/socket/socket_service.dart';
 
 import '../widget/discussion_tab.dart';
 import '../widget/listening_common_widgets.dart';
-import '../widget/practice_tab.dart';
+import '../widget/practice_tab.dart'; // Import gốc của bạn
 import 'bloc/cue_bloc.dart';
 import 'bloc/cue_event.dart';
 import 'bloc/cue_state.dart';
@@ -42,9 +42,17 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
   final Stopwatch _cueStopwatch = Stopwatch();
 
   bool _audioReady = false;
+
+  // Mặc định là true để khi Next/Prev thì tự chạy.
+  // Nhưng lần đầu vào (Cue 1) sẽ được xử lý riêng để KHÔNG tự chạy.
   bool _autoPlayAfterClip = true;
+
   String? _lastHint;
   bool _showHint = false;
+
+  // 🔥 Biến mới: Theo dõi index hiện tại để tránh xung đột khi gõ phím
+  int _currentIndex = -1;
+
   StreamSubscription<ja.PlayerState>? _psSub;
 
   @override
@@ -52,19 +60,26 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     super.initState();
     _player = ja.AudioPlayer();
     _tabController = TabController(length: 2, vsync: this);
+
+    // Khởi tạo Audio và Socket
     _initAudio();
+    _initSocketListeners();
+
+    // Logic: Khi chạy hết clip (Cue) thì pause và tua về đầu Cue đó
     _psSub = _player.playerStateStream.listen((st) async {
       if (st.processingState == ja.ProcessingState.completed) {
         await _player.pause();
         await _player.seek(Duration.zero);
       }
     });
-    _cueStopwatch.start();
 
+    _cueStopwatch.start();
+  }
+
+  void _initSocketListeners() {
     final socketService = GetIt.I<SocketService>();
     socketService.joinListeningRoom(widget.listeningId);
 
-    // Lắng nghe reaction socket
     socketService.listenToReactionUpdates((commentId, reactionsJson) {
       final reactions = reactionsJson.map((e) => ReactionEntity.fromJson(e)).toList();
       if (mounted) {
@@ -72,7 +87,6 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
       }
     });
 
-    // Lắng nghe comment mới socket
     socketService.listenToNewComments((data) {
       try {
         final newCommentJson = data['comment'];
@@ -82,9 +96,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
             context.read<CueBloc>().add(IncomingSocketComment(newComment));
           }
         }
-      } catch (e) {
-        print("❌ Error parsing socket comment: $e");
-      }
+      } catch (_) {}
     });
   }
 
@@ -95,30 +107,54 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     _player.dispose();
     _tabController.dispose();
     _cueStopwatch.stop();
-    super.dispose();
     GetIt.I<SocketService>().leaveListeningRoom(widget.listeningId);
+    super.dispose();
   }
 
+  // 🔥 FIX 1: Load Audio và chuẩn bị sẵn Cue 1 (nhưng không phát)
   Future<void> _initAudio() async {
     try {
       final url = widget.audioUrl.startsWith('http')
           ? widget.audioUrl
           : '${ApiConfig.Base_URL}${widget.audioUrl.startsWith('/') ? '' : '/'}${widget.audioUrl}';
+
       await _player.setUrl(url);
-      if (mounted) setState(() => _audioReady = true);
+
+      if (mounted) {
+        setState(() => _audioReady = true);
+
+        // Lấy state hiện tại (thường là Cue 0)
+        final state = context.read<CueBloc>().state;
+        if (state.currentCue != null) {
+          // Cập nhật index để đồng bộ
+          _currentIndex = state.selectedIndex;
+          // Cắt audio cho Cue 1, nhưng ép PAUSE (forcePause: true)
+          await _applyCueClip(state.currentCue!, forcePause: true);
+        }
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audio Error: $e')));
     }
   }
 
-  Future<void> _applyCueClip(CueEntity cue) async {
+  // Hàm xử lý cắt clip audio
+  Future<void> _applyCueClip(CueEntity cue, {bool forcePause = false}) async {
     if (!_audioReady) return;
     try {
       final start = Duration(milliseconds: cue.startMs ?? 0);
       final end = cue.endMs != null ? Duration(milliseconds: cue.endMs!) : null;
+
+      // Cắt vùng nghe
       await _player.setClip(start: start, end: end);
+      // Đưa con trỏ về đầu clip
       await _player.seek(Duration.zero);
-      if (_autoPlayAfterClip) _player.play(); else _player.pause();
+
+      // Nếu là lần đầu (forcePause) hoặc người dùng tắt autoPlay -> Pause
+      if (forcePause || !_autoPlayAfterClip) {
+        await _player.pause();
+      } else {
+        _player.play();
+      }
     } catch (_) {}
   }
 
@@ -167,7 +203,6 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 LẤY ID THẬT TỪ AUTH BLOC
     final String myUserId = context.select((UserBloc bloc) => bloc.state.userEntity?.id ?? "");
 
     return Scaffold(
@@ -184,16 +219,26 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
         child: BlocConsumer<CueBloc, CueState>(
           listenWhen: (p, c) => p.selectedIndex != c.selectedIndex || p.userAnswer != c.userAnswer,
           listener: (context, state) {
+            // 1. Đồng bộ Text hiển thị (nếu cần)
             if (_dictationCtrl.text != state.userAnswer) {
               _dictationCtrl.text = state.userAnswer;
               _dictationCtrl.selection = TextSelection.collapsed(offset: state.userAnswer.length);
             }
-            if (state.currentCue != null) {
+
+            // 🔥 FIX 2: Chỉ reset Audio khi CHUYỂN CÂU (Index thay đổi)
+            // Không chạy khi người dùng đang gõ phím
+            if (state.currentCue != null && state.selectedIndex != _currentIndex) {
+              _currentIndex = state.selectedIndex; // Cập nhật index mới
+
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _cueStopwatch.reset();
                 _cueStopwatch.start();
                 setState(() { _lastHint = null; _showHint = false; });
-                if (_audioReady) _applyCueClip(state.currentCue!);
+
+                // Audio đã sẵn sàng thì cắt và tự play (theo biến _autoPlayAfterClip)
+                if (_audioReady) {
+                  _applyCueClip(state.currentCue!);
+                }
               });
             }
           },
@@ -214,6 +259,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                   const SizedBox(height: 24),
                   ListeningPlayer(
                     player: _player,
+                    // Nút Play/Pause ở Player chính
                     onTogglePlay: () => _player.playing ? _player.pause() : _player.play(),
                     onSeek: (d) => _player.seek(d),
                   ),
@@ -252,9 +298,14 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                               PracticeTab(
                                 state: state,
                                 controller: _dictationCtrl,
+                                // Khi gõ, chỉ gửi event update text, KHÔNG ảnh hưởng audio
                                 onTextChange: (v) => context.read<CueBloc>().add(UpdateUserAnswer(v)),
                                 onSubmit: () => _submitAndScore(context),
-                                onReplay: () async { await _player.seek(Duration.zero); _player.play(); },
+                                // Nút Replay: Tua về đầu Clip và Play
+                                onReplay: () async {
+                                  await _player.seek(Duration.zero);
+                                  _player.play();
+                                },
                                 onNext: () => context.read<CueBloc>().add(const NextCue()),
                                 onPrev: () => context.read<CueBloc>().add(const PrevCue()),
                                 showHint: _showHint,
@@ -265,19 +316,17 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                               DiscussionTab(
                                 comments: state.comments,
                                 isLoading: state.isCommentsLoading,
-                                // 🔥 Truyền ID thật
                                 currentUserId: myUserId,
                                 onSend: (content, parentId) {
-                                  if (myUserId.isEmpty) return; // Chặn nếu chưa login
+                                  if (myUserId.isEmpty) return;
                                   context.read<CueBloc>().add(PostCommentEvent(content: content, parentId: parentId));
                                 },
-                                // 🔥 Callback react: Truyền luôn userId vào Event
                                 onReact: (commentId, type) {
                                   if (myUserId.isEmpty) return;
                                   context.read<CueBloc>().add(ReactToCommentEvent(
                                       commentId: commentId,
                                       type: type,
-                                      userId: myUserId // Truyền ID cho Bloc
+                                      userId: myUserId
                                   ));
                                 },
                               ),

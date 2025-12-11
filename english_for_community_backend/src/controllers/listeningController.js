@@ -163,14 +163,13 @@ const getCueComments = async (req, res) => {
     res.status(500).json({ message: 'Server error: ' + err.message });
   }
 };
-
-// 🔥 2. Đăng comment mới (Có hỗ trợ Reply)
+// 🔥 2. Post New Comment (Supports Reply)
 const postCueComment = async (req, res) => {
   try {
     const { listeningId, cueId, content, parentId } = req.body;
-    const userId = req.user.id; // ID người đang gửi (ví dụ: User C)
+    const userId = req.user.id; // User sending the comment (e.g., User C)
 
-    // 1. Tạo comment mới
+    // 1. Create new comment
     const newComment = await CueComment.create({
       listeningId,
       cueId,
@@ -179,43 +178,45 @@ const postCueComment = async (req, res) => {
       parentId: parentId || null
     });
 
-    // 2. Xử lý Notification Logic (Thread Subscription)
+    // 2. Handle Notification Logic (Thread Subscription)
     if (parentId) {
       const parentComment = await CueComment.findById(parentId);
 
       if (parentComment) {
-        // A. Lấy tiêu đề bài học
+        // A. Get lesson title
         const listening = await Listening.findById(listeningId);
-        const lessonTitle = listening ? listening.title : 'bài học';
+        // Changed 'bài học' -> 'the lesson'
+        const lessonTitle = listening ? listening.title : 'the lesson';
 
-        // B. Tìm tất cả những người đã tham gia thảo luận trong thread này
-        // (Bao gồm chủ comment gốc + những người đã reply trước đó)
+        // B. Find all participants in this thread
+        // (Includes root comment owner + previous repliers)
         const participantComments = await CueComment.find({ parentId: parentId }).select('userId');
 
-        // C. Dùng Set để lọc trùng ID (User A, User B...)
+        // C. Use Set to filter unique IDs
         const recipientSet = new Set();
 
-        // Thêm chủ comment gốc (Nếu populate rồi thì lấy ._id, nếu chưa thì lấy thẳng)
+        // Add root comment owner
         const rootUserId = parentComment.userId._id ? parentComment.userId._id.toString() : parentComment.userId.toString();
         recipientSet.add(rootUserId);
 
-        // Thêm những người đã reply khác
+        // Add other repliers
         participantComments.forEach(c => {
           const pid = c.userId._id ? c.userId._id.toString() : c.userId.toString();
           recipientSet.add(pid);
         });
 
-        // D. Loại bỏ chính mình (User C) khỏi danh sách nhận
+        // D. Remove self (User C) from recipient list
         recipientSet.delete(userId);
 
-        // E. Gửi thông báo cho từng người
+        // E. Send notification to each recipient
         const notificationsPromises = Array.from(recipientSet).map(recipientId => {
           return notificationService.createNotification({
-            recipientId: recipientId, // Đã là chuỗi String chuẩn
+            recipientId: recipientId,
             senderId: userId,
             type: 'COMMENT_REPLY',
-            title: 'Thảo luận mới',
-            message: `đã trả lời trong cuộc thảo luận của bạn tại bài "${lessonTitle}"`,
+            title: 'New Reply', // Changed from 'Thảo luận mới'
+            // Changed message to English
+            message: `replied to a discussion in "${lessonTitle}"`,
             data: {
               listeningId: listeningId,
               commentId: newComment._id.toString()
@@ -227,7 +228,7 @@ const postCueComment = async (req, res) => {
       }
     }
 
-    // 3. Populate và trả về Client (như cũ)
+    // 3. Populate and return to Client
     const populatedComment = await newComment.populate('userId', 'fullName avatarUrl');
 
     try {
@@ -247,7 +248,7 @@ const postCueComment = async (req, res) => {
   }
 };
 
-// 🔥 2. THẢ TIM (Clean Code ID)
+// 🔥 2. REACT TO COMMENT (Clean Code ID)
 const reactToComment = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -283,25 +284,31 @@ const reactToComment = async (req, res) => {
 
     if (isNewReaction) {
       const listening = await Listening.findById(comment.listeningId);
-      const lessonTitle = listening ? listening.title : 'bài học';
+      // Changed 'bài học' -> 'the lesson'
+      const lessonTitle = listening ? listening.title : 'the lesson';
 
       const emotionIcons = { LIKE: '👍', LOVE: '❤️', HAHA: '😂', WOW: '😮', SAD: '😢', ANGRY: '😡' };
-      const icon = emotionIcons[type] || 'thả tim';
+      // Changed 'thả tim' -> 'reaction'
+      const icon = emotionIcons[type] || 'reaction';
 
-      // CLEAN CODE: Trích xuất ID chuẩn trước khi gọi Service
+      // CLEAN CODE: Extract standard ID string before calling Service
       const recipientIdStr = comment.userId._id ? comment.userId._id.toString() : comment.userId.toString();
 
-      await notificationService.createNotification({
-        recipientId: recipientIdStr, // Đã là chuỗi String
-        senderId: userId,
-        type: 'COMMENT_REACTION',
-        title: 'Cảm xúc mới',
-        message: `đã thả ${icon} vào bình luận của bạn trong bài "${lessonTitle}": "${comment.content.substring(0, 20)}..."`,
-        data: {
-          listeningId: comment.listeningId.toString(),
-          commentId: comment._id.toString()
-        }
-      });
+      // Only notify if reacting to someone else's comment
+      if (recipientIdStr !== userId) {
+        await notificationService.createNotification({
+          recipientId: recipientIdStr,
+          senderId: userId,
+          type: 'COMMENT_REACTION',
+          title: 'New Reaction', // Changed from 'Cảm xúc mới'
+          // Changed message to English
+          message: `reacted ${icon} to your comment in "${lessonTitle}": "${comment.content.substring(0, 20)}..."`,
+          data: {
+            listeningId: comment.listeningId.toString(),
+            commentId: comment._id.toString()
+          }
+        });
+      }
     }
 
     try {

@@ -18,28 +18,28 @@ class SocketLifecycleManager extends StatefulWidget {
 
 class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
 
-  // Hàm xử lý logic khi bị Ban
+  // Logic to handle forced logout (Ban)
   void _setupForceLogoutListener() {
     GetIt.I<SocketService>().listenToForceLogout((reason) {
       print("🚨 [Global Socket] Received Ban Signal: $reason");
 
-      // 1. Ngắt kết nối Socket ngay lập tức để không nhận tin nữa
+      // 1. Disconnect Socket immediately to stop receiving messages
       GetIt.I<SocketService>().disconnect();
 
-      // 2. 🔥 XÓA TOKEN NGAY LẬP TỨC (QUAN TRỌNG) 🔥
-      // Nếu người dùng reload app ngay lúc này, họ sẽ bị đá ra Login vì token đã mất.
-      // Nhưng KHÔNG chuyển trang ngay để còn hiện Dialog.
+      // 2. 🔥 CLEAR TOKEN IMMEDIATELY (IMPORTANT) 🔥
+      // If the user reloads the app now, they will be sent to Login because the token is gone.
+      // But DO NOT navigate yet, keep the Dialog visible.
       GetIt.I<UserBloc>().add(ClearUserDataEvent());
 
-      // 3. Hiện Dialog thông báo
+      // 3. Show Alert Dialog
       final context = rootNavigatorKey.currentContext;
 
       if (context != null) {
         showDialog(
           context: context,
-          barrierDismissible: false, // Chặn không cho bấm ra ngoài
+          barrierDismissible: false, // Prevent dismissing by tapping outside
           builder: (ctx) => PopScope(
-            canPop: false, // Chặn nút Back của Android
+            canPop: false, // Prevent Android Back button
             child: AlertDialog(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
@@ -48,14 +48,14 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                 children: const [
                   Icon(Icons.block_rounded, color: Colors.red, size: 28),
                   SizedBox(width: 10),
-                  Text('Tài khoản bị khóa', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  Text('Account Suspended', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                 ],
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Phiên đăng nhập của bạn đã bị chấm dứt.", style: TextStyle(fontWeight: FontWeight.w500)),
+                  const Text("Your session has been terminated.", style: TextStyle(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -68,7 +68,7 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Lý do:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                        const Text("Reason:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
                         const SizedBox(height: 4),
                         Text(reason, style: const TextStyle(fontSize: 14, color: Color(0xFF7F1D1D))),
                       ],
@@ -81,10 +81,10 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // 4. 🔥 KHI NGƯỜI DÙNG BẤM NÚT -> MỚI CHUYỂN TRANG 🔥
-                      Navigator.of(ctx).pop(); // Đóng Dialog
+                      // 4. 🔥 ONLY NAVIGATE WHEN USER CLICKS BUTTON 🔥
+                      Navigator.of(ctx).pop(); // Close Dialog
 
-                      // Gọi lệnh đăng xuất (Chuyển state -> GoRouter tự chuyển về Login)
+                      // Trigger Sign Out (Updates state -> GoRouter redirects to Login)
                       GetIt.I<UserBloc>().add(SignOutEvent());
                     },
                     style: ElevatedButton.styleFrom(
@@ -93,7 +93,7 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Đồng ý & Đăng xuất', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: const Text('Agree & Logout', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 )
               ],
@@ -101,7 +101,7 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
           ),
         );
       } else {
-        // Fallback: Nếu không lấy được context (hiếm gặp), thì đành logout luôn
+        // Fallback: If context is unavailable (rare), force logout immediately
         GetIt.I<UserBloc>().add(SignOutEvent());
       }
     });
@@ -109,19 +109,19 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
 
   @override
   Widget build(BuildContext context) {
-    // Lắng nghe trạng thái User để quản lý kết nối Socket
+    // Listen to User state to manage Socket connection
     return BlocListener<UserBloc, UserState>(
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
-        // Khi đăng nhập thành công
+        // On Login Success
         if (state.status == UserStatus.success && state.userEntity != null) {
           print("🌐 [Global Socket] User Authenticated");
           GetIt.I<SocketService>().userLogin(state.userEntity!.id);
 
-          // Đăng ký lắng nghe sự kiện Ban
+          // Setup Ban listener
           _setupForceLogoutListener();
         }
-        // Khi đăng xuất
+        // On Logout
         else if (state.status == UserStatus.unauthenticated) {
           print("🔌 [Global Socket] User Logout -> Disconnect");
           GetIt.I<SocketService>().disconnect();

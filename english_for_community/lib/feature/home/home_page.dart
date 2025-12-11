@@ -63,6 +63,7 @@ class _HomePageState extends State<HomePage> {
     _notificationBloc.add(const NotificationLoadStarted());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<UserBloc>().add(GetProfileEvent());
       _initializeLocalNotifications();
       // Check user state to connect socket immediately (in case of hot restart)
       final userState = context.read<UserBloc>().state;
