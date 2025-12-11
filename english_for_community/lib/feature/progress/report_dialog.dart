@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 
-// 🔥 Import các file Bloc/Event/State/GetIt
+// 🔥 Import your project specific files
 import '../../../core/get_it/get_it.dart';
 import 'bloc_report/report_bloc.dart';
 import 'bloc_report/report_event.dart';
@@ -22,16 +22,15 @@ class _ReportDialogState extends State<ReportDialog> {
   final _descController = TextEditingController();
   String _selectedType = 'bug';
 
-  // Quản lý danh sách ảnh
   final List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
-  // Map hiển thị tiếng Việt
+  // English Mapping
   final Map<String, String> _reportTypes = {
-    'bug': 'Báo lỗi (Bug)',
-    'feature': 'Đề xuất tính năng',
-    'improvement': 'Cải thiện trải nghiệm',
-    'other': 'Khác'
+    'bug': 'Bug Report',
+    'feature': 'Feature Request',
+    'improvement': 'Improvement',
+    'other': 'Other'
   };
 
   @override
@@ -41,7 +40,6 @@ class _ReportDialogState extends State<ReportDialog> {
     super.dispose();
   }
 
-  // Chọn ảnh từ thư viện
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage(imageQuality: 70);
     if (images.isNotEmpty) {
@@ -51,24 +49,20 @@ class _ReportDialogState extends State<ReportDialog> {
     }
   }
 
-  // Xóa ảnh đã chọn
   void _removeImage(int index) {
     setState(() {
       _selectedImages.removeAt(index);
     });
   }
 
-  // 🔥 Hàm Submit dùng Bloc
   Future<void> _submit(BuildContext context) async {
-    // 1. Validate
-    if (_titleController.text.isEmpty || _descController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập tiêu đề và mô tả')),
-      );
+    // 1. Validation
+    if (_titleController.text.trim().isEmpty || _descController.text.trim().isEmpty) {
+      _showToast(context, 'Please enter a title and description.', isError: true);
       return;
     }
 
-    // 2. Lấy thông tin thiết bị (Device Info)
+    // 2. Device Info
     final deviceInfoPlugin = DeviceInfoPlugin();
     Map<String, dynamic> deviceData = {};
 
@@ -92,7 +86,7 @@ class _ReportDialogState extends State<ReportDialog> {
       deviceData = {'platform': 'Unknown', 'device': 'Unknown', 'version': ''};
     }
 
-    // 3. Gửi Event sang Bloc
+    // 3. Send Event
     context.read<ReportBloc>().add(SendReportEvent(
       title: _titleController.text,
       description: _descController.text,
@@ -102,24 +96,33 @@ class _ReportDialogState extends State<ReportDialog> {
     ));
   }
 
+  void _showToast(BuildContext context, String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    // Shadcn Colors
+    const textMain = Color(0xFF09090B); // Zinc 950
+    const textMuted = Color(0xFF71717A); // Zinc 500
 
-    // 🔥 Bọc trong BlocProvider để cấp phát Bloc mới cho Dialog này
     return BlocProvider(
       create: (_) => getIt<ReportBloc>(),
       child: BlocConsumer<ReportBloc, ReportState>(
         listener: (context, state) {
           if (state.status == ReportStatus.success) {
-            Navigator.of(context).pop(); // Đóng form nhập
-            _showSuccessDialog(context); // Hiện thông báo thành công
+            Navigator.of(context).pop();
+            _showSuccessDialog(context);
           }
           if (state.status == ReportStatus.error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage ?? 'Gửi thất bại'), backgroundColor: Colors.red),
-            );
+            _showToast(context, state.errorMessage ?? 'Submission failed', isError: true);
           }
         },
         builder: (context, state) {
@@ -127,11 +130,11 @@ class _ReportDialogState extends State<ReportDialog> {
 
           return Dialog(
             backgroundColor: Colors.white,
-            surfaceTintColor: Colors.white,
+            surfaceTintColor: Colors.transparent,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            insetPadding: const EdgeInsets.all(16),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
+              constraints: const BoxConstraints(maxWidth: 480),
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -139,30 +142,39 @@ class _ReportDialogState extends State<ReportDialog> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
+                      // --- Header ---
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Góp ý & Báo lỗi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
-                              SizedBox(height: 4),
-                              Text('Giúp chúng tôi cải thiện ứng dụng.', style: TextStyle(fontSize: 13, color: textMuted)),
-                            ],
+                          const Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Feedback & Support',
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)
+                                ),
+                                SizedBox(height: 6),
+                                Text('Let us know about an issue or suggestion.',
+                                    style: TextStyle(fontSize: 14, color: textMuted)
+                                ),
+                              ],
+                            ),
                           ),
-                          IconButton(
-                            onPressed: () => Navigator.of(context).pop(),
-                            icon: const Icon(Icons.close, color: textMuted, size: 20),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
+                          InkWell(
+                            onTap: () => Navigator.of(context).pop(),
+                            borderRadius: BorderRadius.circular(4),
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(Icons.close, color: textMuted, size: 22),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 24),
 
-                      // Loại báo cáo
-                      const _Label('Loại phản hồi'),
+                      // --- Form Fields ---
+                      const _ShadcnLabel('Report Type'),
                       _ShadcnDropdown(
                         value: _selectedType,
                         items: _reportTypes,
@@ -170,50 +182,59 @@ class _ReportDialogState extends State<ReportDialog> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Tiêu đề
-                      const _Label('Tiêu đề'),
+                      const _ShadcnLabel('Title'),
                       _ShadcnInput(
                         controller: _titleController,
-                        hint: 'Tóm tắt vấn đề...',
+                        hint: 'Brief summary of the issue',
                       ),
                       const SizedBox(height: 16),
 
-                      // Mô tả
-                      const _Label('Mô tả chi tiết'),
+                      const _ShadcnLabel('Description'),
                       _ShadcnInput(
                         controller: _descController,
-                        hint: 'Mô tả chi tiết lỗi hoặc ý tưởng của bạn...',
+                        hint: 'Please describe the details...',
                         maxLines: 4,
                       ),
                       const SizedBox(height: 16),
 
-                      // Chọn ảnh
-                      const _Label('Ảnh đính kèm (Tùy chọn)'),
+                      const _ShadcnLabel('Attachments (Optional)'),
                       _buildImagePicker(),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 28),
 
-                      // Actions
+                      // --- Actions ---
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          // Cancel Button (Outline)
                           TextButton(
                             onPressed: () => Navigator.of(context).pop(),
-                            child: const Text('Hủy', style: TextStyle(color: textMain)),
+                            style: TextButton.styleFrom(
+                              foregroundColor: textMain,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: const BorderSide(color: Color(0xFFE4E4E7)),
+                              ),
+                            ),
+                            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w500)),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
+
+                          // Submit Button (Primary Black)
                           ElevatedButton(
                             onPressed: isLoading ? null : () => _submit(context),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).primaryColor,
+                              backgroundColor: textMain, // Black background
                               foregroundColor: Colors.white,
                               elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shadowColor: Colors.transparent,
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             ),
                             child: isLoading
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Gửi báo cáo', style: TextStyle(fontWeight: FontWeight.w600)),
+                                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                : const Text('Submit Report', style: TextStyle(fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ),
@@ -233,19 +254,40 @@ class _ReportDialogState extends State<ReportDialog> {
       context: context,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Column(children: [
-          Icon(Icons.check_circle, color: Colors.green, size: 48),
-          SizedBox(height: 12),
-          Text("Đã gửi báo cáo", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        ]),
-        content: const Text("Cảm ơn đóng góp của bạn!", textAlign: TextAlign.center),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text("Đóng"),
-          )
-        ],
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(color: Color(0xFFDCFCE7), shape: BoxShape.circle), // Green-100
+              child: const Icon(Icons.check, color: Color(0xFF15803D), size: 32), // Green-700
+            ),
+            const SizedBox(height: 16),
+            const Text("Thank you!", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+            const SizedBox(height: 8),
+            const Text("We have received your report and will look into it shortly.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFF71717A))
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text("Close", style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            )
+          ],
+        ),
       ),
     );
   }
@@ -256,30 +298,40 @@ class _ReportDialogState extends State<ReportDialog> {
       children: [
         if (_selectedImages.isNotEmpty)
           Container(
-            height: 80,
+            height: 72,
             margin: const EdgeInsets.only(bottom: 12),
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _selectedImages.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) => const SizedBox(width: 12),
               itemBuilder: (context, index) {
                 return Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        File(_selectedImages[index].path),
-                        width: 80, height: 80, fit: BoxFit.cover,
+                    Container(
+                      width: 72, height: 72,
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFFE4E4E7)),
+                          image: DecorationImage(
+                            image: FileImage(File(_selectedImages[index].path)),
+                            fit: BoxFit.cover,
+                          )
                       ),
                     ),
                     Positioned(
-                      top: 2, right: 2,
+                      top: -6, right: -6,
                       child: GestureDetector(
                         onTap: () => _removeImage(index),
                         child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE4E4E7)),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2)]
+                          ),
+                          child: const Icon(Icons.close, size: 12, color: Colors.black),
                         ),
                       ),
                     ),
@@ -291,20 +343,21 @@ class _ReportDialogState extends State<ReportDialog> {
 
         InkWell(
           onTap: _pickImages,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F4F5),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFE4E4E7), style: BorderStyle.solid),
+              color: const Color(0xFFFAFAFA), // Zinc 50
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0xFFE4E4E7), style: BorderStyle.solid), // Dashed look simulated with solid light gray
             ),
             child: const Column(
               children: [
-                Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF71717A)),
-                SizedBox(height: 4),
-                Text("Thêm ảnh minh họa", style: TextStyle(fontSize: 12, color: Color(0xFF71717A))),
+                Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF71717A), size: 24),
+                SizedBox(height: 6),
+                Text("Click to upload screenshots", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B))),
+                Text("Supported formats: JPEG, PNG", style: TextStyle(fontSize: 11, color: Color(0xFF71717A))),
               ],
             ),
           ),
@@ -314,16 +367,21 @@ class _ReportDialogState extends State<ReportDialog> {
   }
 }
 
-// --- Các Widget Shadcn (Input, Label, Dropdown) ---
+// -----------------------------------------------------------------------------
+// SHADCN UI COMPONENTS (Reusable)
+// -----------------------------------------------------------------------------
 
-class _Label extends StatelessWidget {
+class _ShadcnLabel extends StatelessWidget {
   final String text;
-  const _Label(this.text);
+  const _ShadcnLabel(this.text);
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B))),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+          text,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF09090B))
+      ),
     );
   }
 }
@@ -336,23 +394,23 @@ class _ShadcnInput extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: TextField(
-        controller: controller,
-        maxLines: maxLines,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-          hintText: hint,
-          hintStyle: const TextStyle(color: Color(0xFF71717A), fontSize: 14),
-          border: InputBorder.none,
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        hintText: hint,
+        hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14), // Zinc 400
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFFE4E4E7)), // Zinc 200
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.5), // Zinc 900
         ),
       ),
     );
@@ -368,10 +426,9 @@ class _ShadcnDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: const Color(0xFFE4E4E7)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -379,8 +436,9 @@ class _ShadcnDropdown extends StatelessWidget {
         child: DropdownButton<String>(
           value: value,
           isExpanded: true,
-          icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF71717A)),
-          style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
+          icon: const Icon(Icons.unfold_more, size: 18, color: Color(0xFF71717A)),
+          style: const TextStyle(fontSize: 14, color: Color(0xFF09090B), fontWeight: FontWeight.w400),
+          borderRadius: BorderRadius.circular(8),
           items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
           onChanged: onChanged,
         ),
