@@ -60,7 +60,7 @@ class ListeningRemoteDatasource {
       'page': page,
       'limit': limit,
     };
-    if (difficulty != null && difficulty != 'all') queryParams['difficulty'] = difficulty;
+    if (difficulty != null) queryParams['difficulty'] = difficulty;
     if (q != null && q.isNotEmpty) queryParams['q'] = q;
     if (lessonId != null) queryParams['lessonId'] = lessonId;
 

@@ -16,7 +16,7 @@ class LoginEvent extends UserEvent {
 class GetProfileEvent extends UserEvent {}
 
 class DeleteAccountEvent extends UserEvent {}
-
+class LoginWithGoogleEvent extends UserEvent {}
 class UpdateProfileEvent extends UserEvent {
   final String? fullName;
   final String? username;

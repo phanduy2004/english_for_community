@@ -25,8 +25,11 @@ class ListeningBloc extends Bloc<ListeningEvent, ListeningState> {
     emit(state.copyWith(status: ListeningStatus.loading));
 
     // ✅ Gọi hàm mới getListenings (có phân trang)
-    var result = await listeningRepository.getListenings(page: 1, limit: 100);
-
+    var result = await listeningRepository.getListenings(
+        page: 1,
+        limit: 100,
+        difficulty: event.difficulty // <= TRUYỀN THAM SỐ
+    );
     result.fold(
           (l) => emit(state.copyWith(status: ListeningStatus.error, errorMessage: l.message)),
           (r) {

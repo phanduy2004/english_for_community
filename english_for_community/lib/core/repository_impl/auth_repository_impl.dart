@@ -35,7 +35,15 @@ class AuthRepositoryImpl implements AuthRepository {
     // 3. Lỗi mặc định
     return e.message ?? "Lỗi xác thực không xác định";
   }
-
+  @override
+  Future<Either<Failure, UserEntity>> loginWithGoogle(String idToken) async {
+    try {
+      final user = await authRemoteDatasource.loginWithGoogle(idToken);
+      return Right(user);
+    } catch (e) {
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
   @override
   Future<Either<Failure, UserEntity>> login(String email, String password) async {
     try {
