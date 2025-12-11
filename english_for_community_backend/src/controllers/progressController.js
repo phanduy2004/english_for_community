@@ -3,16 +3,16 @@ import User from '../models/User.js';
 import UserDailyProgress from '../models/UserDailyProgress.js';
 
 // 🔥 IMPORT CÁC MODELS CẦN THIẾT CHO VIỆC LẤY DATA CHI TIẾT
-import ReadingProgress from '../models/ReadingProgress.js'; // Model ReadingProgress (Cần thay bằng ReadingAttempt nếu bạn có)
+import ReadingProgress from '../models/ReadingProgress.js';
 import WritingSubmission from '../models/WritingSubmission.js';
-import SpeakingEnrollment from '../models/SpeakingEnrollment.js'; // Thường dùng cho bộ bài nói
-import Enrollment from '../models/Enrollment.js'; // Giả sử dùng cho Listening/Dictation
-import Word from '../models/Word.js'; // Giả sử dùng cho Vocabulary
+import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
+import Enrollment from '../models/Enrollment.js';
+import Word from '../models/Word.js';
 
-// --- Helper Functions (Đã khôi phục logic cũ của bạn) ---
+// --- Helper Functions ---
 
 /**
- * Lấy 00:00:00 theo múi giờ của user (Giữ nguyên logic của bạn)
+ * Lấy 00:00:00 theo múi giờ của user (Không đổi)
  */
 const _getStartDateInUserTz = (date, timezone) => {
   const dateStr = date.toLocaleDateString('en-CA', { timeZone: timezone });
@@ -29,21 +29,21 @@ const _getStartDateInUserTz = (date, timezone) => {
 }
 
 /**
- * 🔥 HELPER MỚI: Tính toán StartDate và EndDate cho Query Mongoose
+ * 🔥 SỬA: Tính toán StartDate và EndDate cho Query Mongoose (Dùng cho getStatDetail)
  * EndDate sẽ là cuối ngày hôm nay (23:59:59.999) theo múi giờ của user.
  */
 const _calculateDateRange = (range, timezone) => {
   const now = new Date();
   const userTodayStart = _getStartDateInUserTz(now, timezone);
 
-  let startDate = userTodayStart; // Mặc định là ngày hôm nay
+  let startDate = userTodayStart;
 
-  // 1. Xác định StartDate (00:00:00)
+  // 1. Xác định StartDate (00:00:00) theo múi giờ User
   if (range === 'week') {
-    const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, weekday: 'short' }).formatToParts(now).reduce((acc, part) => { acc[part.type] = part.value; return acc; }, {});
-    const dayMap = {'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6};
-    const dayOfWeekIdx = dayMap[parts.weekday];
-    const offset = (dayOfWeekIdx === 0) ? 6 : dayOfWeekIdx - 1;
+    // Lấy ngày trong tuần (0: CN, 1: T2, ..., 6: T7)
+    const dayOfWeek = userTodayStart.getDay();
+    // Mặc định tuần bắt đầu từ T2 (dayOfWeek 1)
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
   } else if (range === 'month') {
     const dayOfMonth = userTodayStart.getDate();
@@ -52,79 +52,70 @@ const _calculateDateRange = (range, timezone) => {
 
   // 2. Xác định EndDate (Cuối ngày hôm nay 23:59:59.999)
   const userTomorrowStart = new Date(userTodayStart.getTime() + 24 * 60 * 60 * 1000);
-  const endDate = new Date(userTomorrowStart.getTime() - 1);
+  const endDate = new Date(userTomorrowStart.getTime() - 1); // 23:59:59.999
 
   return { startDate, endDate };
 };
 
 /**
- * Cấu hình dải ngày theo logic cũ (Ngày, Tuần, Tháng)
+ * 🔥 SỬA CHỮA: Cấu hình dải ngày cho biểu đồ (getProgessSummary)
  */
 const _getDateRangeConfig = (range, timezone) => {
-  // Logic cũ của bạn (giữ nguyên để không phá vỡ getProgressSummary)
-  // ... (Nội dung của _getDateRangeConfig)
   const now = new Date();
   const chartLabels = [];
   const queryDateKeys = []; // Mảng chứa các chuỗi "YYYY-MM-DD" để map vào biểu đồ
 
   const getDayLabel = (date, tz) => {
+    // Lấy nhãn ngày (T2, T3, ...) theo múi giờ user
     const labels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-    const weekdayStr = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(date);
-    const dayMap = {'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6};
-    return labels[dayMap[weekdayStr]] || '??';
+    const dayOfWeek = new Date(date.toLocaleString('en-US', { timeZone: tz })).getDay();
+    // getDay() trả về 0 cho Chủ Nhật
+    const index = (dayOfWeek === 0) ? 0 : dayOfWeek;
+    return labels[index];
   };
 
-  let startDate;
+  // Hàm lấy ngày bắt đầu của ngày hôm nay theo múi giờ user
   const userTodayStart = _getStartDateInUserTz(now, timezone);
+  let startDate = userTodayStart;
+  let dayCount = 0; // Số ngày cần hiển thị trên biểu đồ
 
-  // Lấy thông tin ngày tháng
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: timezone, year: 'numeric', month: 'numeric', day: 'numeric', weekday: 'short'
-  }).formatToParts(now).reduce((acc, part) => { acc[part.type] = part.value; return acc; }, {});
-
-  const dayOfMonth = Number(parts.day);
-  const dayMap = {'Sun': 0, 'Mon': 1, 'Tue': 2, 'Wed': 3, 'Thu': 4, 'Fri': 5, 'Sat': 6};
-  const dayOfWeekIdx = dayMap[parts.weekday];
-
-  // --- Logic xác định StartDate ---
+  // --- Logic xác định StartDate và Day Count ---
   if (range === 'month') {
-    // Từ ngày 1 đầu tháng
+    const dayOfMonth = userTodayStart.getDate();
     startDate = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
-    const todayDateNum = dayOfMonth;
-
-    for (let i = 0; i < todayDateNum; i++) {
-      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-      // Label: dd/MM
-      chartLabels.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', timeZone: 'UTC' }));
-      // Key để query DB: YYYY-MM-DD
-      queryDateKeys.push(date.toLocaleDateString('en-CA', { timeZone: timezone }));
-    }
-
+    dayCount = dayOfMonth; // Biểu đồ chỉ hiển thị từ ngày 1 đến ngày hôm nay
   } else if (range === 'day') {
-    // Chỉ lấy hôm nay
-    startDate = userTodayStart;
-
-    // NHƯNG biểu đồ vẫn cần hiện 7 ngày gần nhất để user thấy xu hướng (theo logic cũ của bạn)
-    const chartStart = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
-    for (let i = 0; i <= 6; i++) {
-      const date = new Date(chartStart.getTime() + i * 24 * 60 * 60 * 1000);
-      chartLabels.push(getDayLabel(date, timezone));
-      queryDateKeys.push(date.toLocaleDateString('en-CA', { timeZone: timezone }));
-    }
-
+    // Biểu đồ vẫn hiện 7 ngày gần nhất (từ 6 ngày trước đến hôm nay)
+    startDate = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+    dayCount = 7;
   } else {
     // Mặc định: Tuần (Từ thứ 2 hoặc CN tùy logic)
-    const offset = (dayOfWeekIdx === 0) ? 6 : dayOfWeekIdx - 1;
+    const dayOfWeek = userTodayStart.getDay();
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; // 0=CN -> 6 ngày trước, 1=T2 -> 0 ngày trước
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
-
-    for (let i = 0; i <= offset; i++) {
-      const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
-      chartLabels.push(getDayLabel(date, timezone));
-      queryDateKeys.push(date.toLocaleDateString('en-CA', { timeZone: timezone }));
-    }
+    dayCount = offset + 1; // Từ ngày bắt đầu tuần đến hôm nay
   }
 
-  return { startDate, chartLabels, queryDateKeys };
+  // --- Tạo nhãn và key cho biểu đồ ---
+  for (let i = 0; i < dayCount; i++) {
+    const date = new Date(startDate.getTime() + i * 24 * 60 * 60 * 1000);
+
+    // 🔥 FIX Label: Hiển thị ngày/tháng
+    if (range === 'month') {
+      // Dùng date.getDate() và date.getMonth() trong múi giờ user để lấy ngày/tháng
+      const dateStringInTz = date.toLocaleDateString('en-CA', { timeZone: timezone });
+      const [year, month, day] = dateStringInTz.split('-').map(Number);
+      chartLabels.push(`${day}/${month}`);
+    } else {
+      // Dùng nhãn T2, T3, ...
+      chartLabels.push(getDayLabel(date, timezone));
+    }
+
+    // Key để query DB: YYYY-MM-DD
+    queryDateKeys.push(date.toLocaleDateString('en-CA', { timeZone: timezone }));
+  }
+
+  return { startDate: userTodayStart, chartLabels, queryDateKeys };
 };
 
 // --- Controller Functions ---
@@ -139,24 +130,28 @@ const getProgressSummary = async (req, res) => {
     const userTimezone = user?.timezone || 'Asia/Ho_Chi_Minh';
     const dailyGoal = user?.dailyMinutes || 0;
 
-    // 2. Lấy cấu hình ngày tháng (Sử dụng hàm helper của bạn)
-    const { startDate, chartLabels, queryDateKeys } = _getDateRangeConfig(range, userTimezone);
-    // ... (logic tính toán thống kê và trả về response)
+    // 2. Lấy cấu hình ngày tháng (Sử dụng hàm helper đã sửa)
+    const { startDate: userTodayStart, chartLabels, queryDateKeys } = _getDateRangeConfig(range, userTimezone);
 
-    // Chuyển startDate sang chuỗi YYYY-MM-DD để so sánh với DB
-    const startDateString = startDate.toLocaleDateString('en-CA', { timeZone: userTimezone });
-    const todayString = new Date().toLocaleDateString('en-CA', { timeZone: userTimezone });
-
-    // 3. Query dữ liệu từ bảng UserDailyProgress (Nhanh hơn aggregate cũ)
-    // Logic: Lấy tất cả record có ngày >= startDate của logic cũ
-    // Lưu ý: Với range='day', ta cần lấy data 7 ngày cho chart, nhưng chỉ tính stats cho hôm nay.
-
-    // Xác định minDate để query DB (Nếu là 'day' thì phải lấy lùi lại 6 ngày cho chart)
-    let minQueryDate = startDateString;
+    // StartDate thực tế cho Stats Grid (Khác với StartDate cho Chart khi range='day')
+    let startDateForStats;
     if (range === 'day') {
-      // Với range day, queryDateKeys[0] là ngày cách đây 6 ngày
-      minQueryDate = queryDateKeys[0];
+      startDateForStats = userTodayStart;
+    } else if (range === 'week') {
+      const dayOfWeek = userTodayStart.getDay();
+      const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+      startDateForStats = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
+    } else { // month
+      const dayOfMonth = userTodayStart.getDate();
+      startDateForStats = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
     }
+
+    // Chuyển startDateForStats sang chuỗi YYYY-MM-DD để so sánh với DB
+    const startDateString = startDateForStats.toLocaleDateString('en-CA', { timeZone: userTimezone });
+    const todayString = userTodayStart.toLocaleDateString('en-CA', { timeZone: userTimezone }); // Ngày hôm nay theo format DB
+
+    // 3. Query dữ liệu từ bảng UserDailyProgress
+    let minQueryDate = queryDateKeys[0]; // Ngày sớm nhất cần cho chart
 
     const records = await UserDailyProgress.find({
       userId: userId,
@@ -167,8 +162,6 @@ const getProgressSummary = async (req, res) => {
     const recordsMap = new Map(records.map(r => [r.date, r]));
 
     // 4. Tính toán Stats Grid & Study Time
-    // Logic của bạn: Grid chỉ tính từ startDate trở đi.
-
     let totalSecondsInRange = 0;
     let todayMinutes = 0;
 
@@ -185,8 +178,7 @@ const getProgressSummary = async (req, res) => {
 
     // Duyệt qua các record để tính Stats Grid
     records.forEach(rec => {
-      // ⚠️ QUAN TRỌNG: Chỉ cộng dồn vào Grid nếu ngày nằm trong phạm vi startDate logic cũ
-      // Ví dụ: range='day' -> startDate là hôm nay. Record hôm qua không được cộng vào Grid.
+      // QUAN TRỌNG: Chỉ cộng dồn vào Grid nếu ngày nằm trong phạm vi startDateForStats trở đi.
       if (rec.date >= startDateString) {
         totalSecondsInRange += (rec.studySeconds || 0);
         vocabSum += (rec.vocabLearned || 0);
@@ -212,7 +204,6 @@ const getProgressSummary = async (req, res) => {
     });
 
     // 5. Tính toán Weekly/Monthly Chart
-    // Chart cần hiển thị đúng theo labels và queryDateKeys đã tạo từ helper
     const chartMinutes = queryDateKeys.map(dateKey => {
       const rec = recordsMap.get(dateKey);
       return rec ? Math.round(rec.studySeconds / 60) : 0;
@@ -224,7 +215,7 @@ const getProgressSummary = async (req, res) => {
     const statsGrid = {
       vocabLearned: vocabSum,
       lessonsCompleted: lessonsSum,
-      readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100), // Giả sử lưu 0.85 -> 85
+      readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100),
       dictationAccuracy: Math.round(calcAvg(aggs.dictationAcc) * 100),
       speakingAccuracy: Math.round(calcAvg(aggs.speakingScore) * 100),
       avgWritingScore: parseFloat(calcAvg(aggs.writingScore).toFixed(1)),
@@ -267,6 +258,7 @@ const getStatDetail = async (req, res) => {
 
     const user = await User.findById(userId).select('timezone').lean();
     const userTimezone = user?.timezone || 'Asia/Ho_Chi_Minh';
+    // ✅ Dùng _calculateDateRange đã sửa, trả về StartDate và EndDate chuẩn Mongoose Query
     const { startDate, endDate } = _calculateDateRange(range, userTimezone);
 
     let queryResult = [];
@@ -285,7 +277,6 @@ const getStatDetail = async (req, res) => {
       readings.forEach(r => queryResult.push({
         original: r, type: 'Reading', date: r.lastAttemptedAt,
         title: r.readingId?.title,
-        // Score Reading trong DB là 0-100, giữ nguyên
         score: r.highScore || 0
       }));
 
@@ -297,7 +288,6 @@ const getStatDetail = async (req, res) => {
       writings.forEach(w => queryResult.push({
         original: w, type: 'Writing', date: w.submittedAt,
         title: w.generatedPrompt?.title,
-        // Score Writing thường là Band Score (ví dụ 7.0), để nguyên hoặc quy đổi nếu muốn
         score: w.score || 0
       }));
 
@@ -309,7 +299,6 @@ const getStatDetail = async (req, res) => {
       speakings.forEach(s => queryResult.push({
         original: s, type: 'Speaking', date: s.lastAccessedAt,
         title: s.speakingSetId?.title,
-        // Score Speaking: 1 - WER. Ví dụ WER 0.2 -> 0.8 -> 80%
         score: Math.round((1 - (s.averageWer || 0)) * 100)
       }));
 
@@ -338,7 +327,6 @@ const getStatDetail = async (req, res) => {
           dateFilterField = 'lastAttemptedAt';
           sortField = 'lastAttemptedAt';
           populateOpts = { path: 'readingId', select: 'title' };
-          // Lấy highScore (0-100)
           selectOpts = 'highScore attemptsCount lastAttemptedAt readingId';
           break;
 
@@ -382,11 +370,9 @@ const getStatDetail = async (req, res) => {
       queryResult = await q.select(selectOpts).sort({ [sortField]: -1 }).lean();
     }
 
-    // --- 2. ĐỊNH DẠNG DỮ LIỆU TRẢ VỀ (FIX LỖI 5000% & DURATION) ---
+    // --- 2. ĐỊNH DẠNG DỮ LIỆU TRẢ VỀ ---
 
     const formattedData = queryResult.map(item => {
-      // Nếu là lessons mode, item là object wrapper ta tự tạo ở trên
-      // Nếu là single mode, item là mongoose doc
       const doc = isLessonMode ? item.original : item;
 
       // Xác định ngày
@@ -396,7 +382,7 @@ const getStatDetail = async (req, res) => {
       const base = {
         id: doc._id,
         date: dateStr,
-        duration: 0, // 🔥 Mặc định 0 theo yêu cầu
+        duration: 0,
       };
 
       // A. Logic cho 'lessons' (Tổng hợp)
@@ -405,7 +391,7 @@ const getStatDetail = async (req, res) => {
           ...base,
           title: item.title || 'Bài học',
           type: item.type,
-          score: item.score, // Score đã tính toán ở bước gom nhóm trên
+          score: item.score,
         };
       }
 
@@ -414,7 +400,6 @@ const getStatDetail = async (req, res) => {
         return {
           ...base,
           title: doc.readingId?.title || 'Bài đọc',
-          // 🔥 FIX SCORE: Dữ liệu DB là 50, lấy thẳng 50. Không nhân 100 nữa.
           score: doc.highScore || 0,
           attempts: doc.attemptsCount || 0,
           wpm: 0
@@ -426,7 +411,6 @@ const getStatDetail = async (req, res) => {
         return {
           ...base,
           title: doc.speakingSetId?.title || 'Bài nói',
-          // WER là tỉ lệ lỗi (0.2), Accuracy = (1 - 0.2) * 100 = 80
           score: Math.round((1 - (doc.averageWer || 0)) * 100),
           isCompleted: doc.isCompleted || false
         };
@@ -437,8 +421,7 @@ const getStatDetail = async (req, res) => {
         return {
           ...base,
           title: doc.generatedPrompt?.title || 'Bài viết',
-          score: doc.score || 0, // Band score
-          // Writing có duration, nếu muốn hiển thị thì tính, ko thì để 0
+          score: doc.score || 0,
           duration: Math.round((doc.durationInSeconds || 0) / 60)
         };
       }
@@ -460,7 +443,7 @@ const getStatDetail = async (req, res) => {
           title: doc.headword,
           subtitle: doc.shortDefinition,
           status: doc.status,
-          score: 0 // Vocab không có điểm số
+          score: 0
         };
       }
 
@@ -474,6 +457,8 @@ const getStatDetail = async (req, res) => {
     res.status(500).json({ message: 'Lỗi server.' });
   }
 };
+
+
 const getLeaderboard = async (req, res) => {
   try {
     const currentUserId = req.user.id;
@@ -486,7 +471,6 @@ const getLeaderboard = async (req, res) => {
       .lean();
 
     // 2. Tìm vị trí (index) của User hiện tại
-    // Lưu ý: allUsers là mảng objectId, cần convert sang string để so sánh
     const myIndex = allUsers.findIndex(u => u._id.toString() === currentUserId);
 
     // Nếu user không tìm thấy (trường hợp lạ), trả về list rỗng
@@ -507,7 +491,6 @@ const getLeaderboard = async (req, res) => {
     const neighborList = allUsers.slice(startWindow, endWindow);
 
     // 4. Gộp danh sách và loại bỏ trùng lặp
-    // Dùng Map với key là _id string để lọc trùng (ví dụ nếu user nằm trong top 3)
     const uniqueMap = new Map();
 
     [...topList, ...neighborList].forEach(user => {
@@ -523,21 +506,15 @@ const getLeaderboard = async (req, res) => {
     for (let i = 0; i < mergedList.length; i++) {
       const user = mergedList[i];
 
-      // Tính Rank thực tế (dựa trên index trong danh sách gốc allUsers)
-      // Cộng 1 vì index bắt đầu từ 0
-      // Tối ưu: Tìm rank bằng cách so sánh điểm hoặc dùng lại index nếu có thể mapping
-      // Ở đây dùng findIndex trên allUsers để chính xác nhất
       const realRank = allUsers.findIndex(u => u._id.toString() === user._id.toString()) + 1;
 
       // Kiểm tra để chèn dấu '...' (Separator)
-      // Nếu đây không phải người đầu tiên, và Rank hiện tại > Rank người trước đó + 1
       if (i > 0) {
-        const prevUserRank = finalLeaderboard[finalLeaderboard.length - 1].rank;
-        // Lưu ý: item cuối trong finalLeaderboard có thể là separator, nên cần check
-        if (finalLeaderboard[finalLeaderboard.length - 1].isSeparator !== true) {
-          if (realRank > prevUserRank + 1) {
-            finalLeaderboard.push({ isSeparator: true });
-          }
+        const prevUser = mergedList[i-1];
+        const prevUserRank = allUsers.findIndex(u => u._id.toString() === prevUser._id.toString()) + 1;
+
+        if (realRank > prevUserRank + 1) {
+          finalLeaderboard.push({ isSeparator: true });
         }
       }
 
@@ -553,6 +530,16 @@ const getLeaderboard = async (req, res) => {
       });
     }
 
+    // 6. Xử lý trường hợp separator ở cuối nếu list chỉ có top 3 + user ở xa
+    const lastItemRank = finalLeaderboard.length > 0 ? finalLeaderboard[finalLeaderboard.length - 1].rank : 0;
+    if (lastItemRank < totalDocs && !finalLeaderboard[finalLeaderboard.length - 1].isSeparator) {
+      // Kiểm tra xem có người dùng nào nằm giữa rank cuối cùng và tổng docs không
+      if (totalDocs > lastItemRank) {
+        // Không cần chèn separator, logic này bị dư
+      }
+    }
+
+
     // Trả về kết quả
     res.status(200).json({
       leaderboard: finalLeaderboard,
@@ -566,4 +553,4 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-export const progressController = { getProgressSummary, getStatDetail,getLeaderboard }; // 🔥 EXPORT HÀM MỚI
+export const progressController = { getProgressSummary, getStatDetail, getLeaderboard };

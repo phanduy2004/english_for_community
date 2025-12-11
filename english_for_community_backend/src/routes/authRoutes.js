@@ -19,5 +19,5 @@ router.post('/reset-password', authController.resetPassword);
 
 // --- Token Management (Logic cũ của bạn đã được chuyển vào controller này) ---
 router.post('/refresh', authController.refreshToken);
-
+router.post('/google', authController.googleLogin);
 export default router;

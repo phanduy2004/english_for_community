@@ -12,12 +12,13 @@ abstract class WritingRepository {
   startWriting({
     required String topicId,
     required String userId,
-    required GeneratedPrompt generatedPrompt,
+    // required GeneratedPrompt generatedPrompt, -> BỎ
+    required String taskType, // -> THÊM
   });
   Future<Either<Failure, WritingSubmissionEntity>> submitForReview({
     required String submissionId,
     required String content,
-    required FeedbackEntity feedback,
+    // required FeedbackEntity feedback, -> BỎ
     required int durationInSeconds,
   });
   Future<Either<Failure, List<WritingSubmissionEntity>>> getTopicSubmissions(String topicId);

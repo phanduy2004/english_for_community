@@ -3,6 +3,7 @@ import WritingSubmission from '../models/WritingSubmission.js';
 import WritingTopic from "../models/WritingTopics.js";
 import {updateGamificationStats} from "../services/gamificationService.js";
 import {trackUserProgress} from "../untils/progressTracker.js";
+import {aiService} from "../services/aiService.js";
 
 export const getTopicSubmissions = async (req, res) => {
   try {
@@ -79,7 +80,7 @@ export const getWritingTopics = async (req, res) => {
 export const startWritingForTopic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { generatedPrompt } = req.body;
+    const { taskType } = req.body; // Client gửi taskType lên
     const { userId } = req;
 
     if (!userId) return res.status(401).json({ message: 'User not authenticated' });
@@ -90,37 +91,55 @@ export const startWritingForTopic = async (req, res) => {
     // 1. Tìm bài draft cũ
     const existing = await WritingSubmission.findOne({
       userId, topicId: topic._id, status: 'draft'
-    }).sort({ updatedAt: -1 }).lean();
+    }).sort({ updatedAt: -1 }); // Bỏ lean() để có thể dùng .deleteOne() nếu cần
 
-    // 2. NẾU CÓ DRAFT -> TRẢ VỀ KÈM CONTENT
+    // 2. LOGIC FIX: Kiểm tra Draft cũ
     if (existing) {
-      return res.status(200).json({
-        submissionId: existing._id,
-        generatedPrompt: existing.generatedPrompt,
-        // 👇 QUAN TRỌNG: Trả về nội dung cũ để client hiển thị
-        content: existing.content || '',
-        resumed: true,
-      });
+      // Nếu draft cũ có nội dung thực sự -> Trả về để Resume
+      if (existing.content && existing.content.trim().length > 0) {
+        return res.status(200).json({
+          submissionId: existing._id,
+          generatedPrompt: existing.generatedPrompt,
+          content: existing.content,
+          resumed: true,
+        });
+      } else {
+        // Nếu draft cũ RỖNG -> Đây là bản nháp rác -> XÓA NÓ ĐI
+        await WritingSubmission.deleteOne({ _id: existing._id });
+        // Sau đó chạy tiếp xuống dưới để tạo mới -> Khắc phục lỗi "chọn cái khác vẫn ra cái cũ"
+      }
     }
 
-    // 3. NẾU KHÔNG CÓ -> TẠO MỚI (Content rỗng)
+    // 3. TẠO MỚI (Logic gọi AI Service như đã sửa ở bước trước)
+    let aiPromptData;
+    try {
+      aiPromptData = await aiService.generateWritingPrompt(
+        topic.name,
+        topic.aiConfig,
+        taskType || "Essay"
+      );
+    } catch (aiError) {
+      console.error("Error generating prompt:", aiError);
+      aiPromptData = {
+        title: topic.name,
+        text: `Write about ${topic.name}. Task Type: ${taskType}`,
+        taskType: taskType,
+        level: topic.aiConfig?.level || "Intermediate"
+      };
+    }
+
     const sub = await WritingSubmission.create({
       userId,
       topicId: topic._id,
-      generatedPrompt: {
-        title: generatedPrompt.title,
-        text: generatedPrompt.text,
-        taskType: generatedPrompt.taskType,
-        level: generatedPrompt.level,
-      },
+      generatedPrompt: aiPromptData,
       status: 'draft',
-      content: '', // Mới tinh thì content rỗng
+      content: '',
     });
 
     return res.status(200).json({
       submissionId: sub._id,
       generatedPrompt: sub.generatedPrompt,
-      content: '', // 👇 Trả về rỗng
+      content: '',
       resumed: false,
     });
   } catch (error) {
@@ -168,29 +187,45 @@ export const updateDraft = async (req, res) => {
 export const submitForReview = async (req, res) => {
   try {
     const { id } = req.params;
-    const { content, feedback, durationInSeconds } = req.body;
+    // 👇 7. KHÔNG NHẬN FEEDBACK TỪ CLIENT, CHỈ NHẬN CONTENT
+    const { content, durationInSeconds } = req.body;
     const { userId } = req;
-
-    if (!feedback || !feedback.overall) {
-      return res.status(400).json({ message: 'Feedback object is required' });
-    }
 
     if (durationInSeconds == null || durationInSeconds < 0) {
       return res.status(400).json({ message: 'durationInSeconds is required' });
     }
 
+    // Lấy submission để biết taskType
+    const submissionCheck = await WritingSubmission.findOne({ _id: id, userId });
+    if (!submissionCheck) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+
+    // 👇 8. GỌI AI SERVICE ĐỂ CHẤM BÀI TẠI SERVER
+    let feedbackData;
+    try {
+      const taskType = submissionCheck.generatedPrompt?.taskType || "Essay";
+      feedbackData = await aiService.generateFeedback(content, taskType);
+
+      // Gán thời gian chấm
+      feedbackData.evaluatedAt = new Date();
+    } catch (aiError) {
+      return res.status(500).json({ message: 'AI Grading failed', error: aiError.message });
+    }
+
+    // 9. UPDATE VÀO DB
     const submission = await WritingSubmission.findOneAndUpdate(
       { _id: id, userId, status: 'draft' },
       {
         $set: {
           content,
           wordCount: content.trim().split(/\s+/).length,
-          feedback,
-          score: feedback.overall,
+          feedback: feedbackData, // Dữ liệu từ AI Service
+          score: feedbackData.overall,
           durationInSeconds: durationInSeconds,
           status: 'reviewed',
           submittedAt: new Date(),
-          reviewedAt: feedback.evaluatedAt || new Date(),
+          reviewedAt: new Date(),
         }
       },
       { new: true }
@@ -200,12 +235,13 @@ export const submitForReview = async (req, res) => {
       return res.status(404).json({ message: 'Submission not found or already submitted' });
     }
 
+    // Logic thống kê giữ nguyên
     const activityData = { durationInSeconds: durationInSeconds };
     updateGamificationStats(userId, 'writing', activityData);
     updateTopicStats(submission.topicId);
     trackUserProgress(userId, 'writing', {
       duration: durationInSeconds,
-      score: feedback.overall,
+      score: feedbackData.overall,
       isLessonJustFinished: true
     });
 

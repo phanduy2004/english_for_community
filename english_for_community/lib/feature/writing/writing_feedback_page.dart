@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/writing/widgets/interactive_diff_text.dart';
 import 'package:flutter/material.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 import '../../core/entity/writing_submission_entity.dart';
@@ -208,25 +209,28 @@ class WritingFeedbackPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Diff View Correction', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-                  const SizedBox(height: 12),
+                  const Text(
+                    'Detailed Correction',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B)),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Tap on highlighted text to see explanation.',
+                    style: TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                  ),
+                  const SizedBox(height: 16),
+
                   _ShadcnCard(
-                    child: _DiffViewer(
-                      oldText: submission.content,
-                      newText: (() {
-                        final fb = submission.feedback!;
-                        if (fb.paragraphs != null && fb.paragraphs!.isNotEmpty) {
-                          final combinedRewrite = fb.paragraphs!.map((p) => p.rewrite ?? '').join('\n\n').trim();
-                          if (combinedRewrite.isNotEmpty) return combinedRewrite;
+                    child: InteractiveDiffText(
+                      text: (() {
+                        final fb = submission.feedback;
+                        if (fb != null && fb.paragraphs != null && fb.paragraphs!.isNotEmpty) {
+                          // Nối các đoạn rewrite lại với nhau bằng \n\n
+                          return fb.paragraphs!.map((p) => p.rewrite ?? '').join('\n\n\n');
                         }
                         return 'No corrections available.';
                       })(),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '* Red highlights indicate removed/changed text. Green highlights indicate additions/corrections.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF71717A), fontStyle: FontStyle.italic),
                   ),
                 ],
               ),
@@ -402,17 +406,49 @@ class _BulletedList extends StatelessWidget {
 class _SampleCard extends StatelessWidget {
   final String title;
   final String content;
-  const _SampleCard({required this.title, required this.content});
+
+  const _SampleCard({super.key, required this.title, required this.content});
 
   @override
   Widget build(BuildContext context) {
+    // Regex tách đoạn văn (xử lý cả \n và \\n)
+    final RegExp splitRegex = RegExp(r'(\s*\\n\s*)+|(\s*\n\s*)+');
+
+    final paragraphs = content.split(splitRegex);
+
     return _ShadcnCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF09090B))),
+          // Tiêu đề (Header)
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600, // Shadcn thường dùng w600 cho tiêu đề
+              color: Color(0xFF09090B),
+            ),
+          ),
           const SizedBox(height: 12),
-          Text(content, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.6)),
+
+          // Nội dung (Body)
+          ...paragraphs.map((paragraph) {
+            if (paragraph.trim().isEmpty) return const SizedBox.shrink();
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Text(
+                paragraph.trim(),
+                // 👇 CẬP NHẬT STYLE GIỐNG HỆT INTERACTIVE DIFF TEXT
+                style: const TextStyle(
+                  fontSize: 15,
+                  height: 1.6,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF09090B), // Màu đen chuẩn
+                ),
+              ),
+            );
+          }).toList(),
         ],
       ),
     );

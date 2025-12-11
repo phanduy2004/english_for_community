@@ -64,13 +64,12 @@ class _HomePageState extends State<HomePage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeLocalNotifications();
-      // Kiểm tra user state để connect socket ngay (trường hợp hot restart)
+      // Check user state to connect socket immediately (in case of hot restart)
       final userState = context.read<UserBloc>().state;
       if (userState.status == UserStatus.success && userState.userEntity != null) {
         _setupSocketConnection(userState.userEntity!.id);
       }
     });
-
   }
 
   void _setupSocketConnection(String userId) {
@@ -81,43 +80,42 @@ class _HomePageState extends State<HomePage> {
 
     socketService.userLogin(userId);
 
-    // 🔥 SỬA ĐOẠN NÀY
     socketService.listenToNotifications((data) {
       try {
         debugPrint("🔔 [HomePage] Received Notification Data: $data");
 
-        // 1. Cập nhật Badge (Chấm đỏ) trong App
+        // 1. Update Badge (Red dot) in App
         final noti = NotificationEntity.fromJson(data);
         _notificationBloc.add(NotificationIncomingReceived(noti));
 
-        // 2. Xử lý dữ liệu để hiện thông báo đẩy
-        // Lấy tên người gửi từ object senderId
+        // 2. Process data to show push notification
+        // Get sender name from senderId object
         String senderName = '';
         if (data['senderId'] != null && data['senderId'] is Map) {
-          senderName = data['senderId']['fullName'] ?? 'ssss';
+          senderName = data['senderId']['fullName'] ?? 'Unknown User';
         }
 
-        // Lấy nội dung tin nhắn (ví dụ: "đã trả lời...")
+        // Get message content
         String serverMessage = data['message'] ?? '';
 
-        // Ghép thành: "Phan Đăng Dương đã trả lời..."
+        // Combine: "John Doe replied..."
         String displayBody = "$senderName $serverMessage".trim();
 
-        // Lấy Tiêu đề (nếu server gửi null thì tự đặt)
-        String title = data['title'] ?? 'Thông báo mới';
+        // Get Title (default if server sends null)
+        String title = data['title'] ?? 'New Notification';
 
-        // Tạo Payload để khi bấm vào sẽ nhảy trang
-        // Backend gửi: data: { listeningId: "..." }
+        // Create Payload for navigation when tapped
+        // Backend sends: data: { listeningId: "..." }
         String? payload;
         if (data['data'] != null) {
           payload = jsonEncode(data['data']);
         }
 
-        // 3. Bắn thông báo Local Notification
+        // 3. Trigger Local Notification
         LocalNotificationService().showInstantNotification(
           id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-          title: title,       // "Thảo luận mới"
-          body: displayBody,  // "phan đăng dương đã trả lời trong cuộc thảo luận..."
+          title: title,
+          body: displayBody,
           payload: payload,
         );
 
@@ -231,7 +229,7 @@ class _HomePageState extends State<HomePage> {
             child: IndexedStack(index: _tab, children: _pages),
           ),
 
-          // 🔥 NÚT ACTION NHỎ GỌN HƠN
+          // 🔥 COMPACT ACTION BUTTONS
           floatingActionButton: _tab == 0 ? _buildHomeFABs() : null,
 
           bottomNavigationBar: AppNavigationBar.main(
@@ -249,7 +247,7 @@ class _HomePageState extends State<HomePage> {
 
   // 🔥 CUSTOM FAB GROUP (Compact Size)
   Widget _buildHomeFABs() {
-    // 🔽 Đã giảm kích thước từ 56.0 xuống 48.0
+    // 🔽 Reduced size from 56.0 to 48.0
     const double buttonSize = 48.0;
     const double iconSize = 22.0;
 
@@ -279,10 +277,10 @@ class _HomePageState extends State<HomePage> {
                     child: const Icon(Icons.notifications_outlined, color: Color(0xFF09090B), size: iconSize),
                   ),
 
-                  // Badge (Chấm đỏ)
+                  // Badge (Red dot)
                   if (state.unreadCount > 0)
                     Positioned(
-                      top: -2,  // Vị trí sát mép
+                      top: -2,
                       right: -2,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -290,7 +288,7 @@ class _HomePageState extends State<HomePage> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2), // Viền trắng
+                          border: Border.all(color: Colors.white, width: 2),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 2, offset: const Offset(0, 1))
                           ],
@@ -300,7 +298,7 @@ class _HomePageState extends State<HomePage> {
                             state.unreadCount > 99 ? '99+' : '${state.unreadCount}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 9, // Font nhỏ lại chút cho vừa
+                              fontSize: 9,
                               fontWeight: FontWeight.w700,
                               height: 1.0,
                             ),
@@ -314,7 +312,7 @@ class _HomePageState extends State<HomePage> {
           },
         ),
 
-        const SizedBox(height: 12), // Khoảng cách
+        const SizedBox(height: 12), // Spacing
 
         // 2. AI Assistant Button
         SizedBox(
@@ -354,10 +352,10 @@ class _HomeContentView extends StatelessWidget {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
         }
         if (state.status == UserStatus.error) {
-          return const Center(child: Text('Không thể tải dữ liệu', style: TextStyle(color: textMuted)));
+          return const Center(child: Text('Unable to load data', style: TextStyle(color: textMuted)));
         }
         if (state.status == UserStatus.unauthenticated) {
-          return const Center(child: Text('Vui lòng đăng nhập'));
+          return const Center(child: Text('Please sign in'));
         }
 
         if (state.status == UserStatus.success && state.userEntity != null) {
@@ -384,7 +382,7 @@ class _HomeContentView extends StatelessWidget {
             ),
           );
         }
-        return const Center(child: Text('Không có dữ liệu'));
+        return const Center(child: Text('No data available'));
       },
     );
   }
@@ -396,9 +394,9 @@ class _HomeContentView extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Chào, $name 👋', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF09090B), letterSpacing: -0.5)),
+            Text('Hi, $name 👋', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF09090B), letterSpacing: -0.5)),
             const SizedBox(height: 4),
-            const Text('Sẵn sàng học tiếp chưa?', style: TextStyle(fontSize: 14, color: Color(0xFF71717A))),
+            const Text('Ready to continue learning?', style: TextStyle(fontSize: 14, color: Color(0xFF71717A))),
           ],
         ),
         Container(
@@ -429,9 +427,9 @@ class _HomeContentView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Mục tiêu ngày', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textMain)),
+                  Text('Daily Goal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textMain)),
                   const SizedBox(height: 4),
-                  Text('$progress / $goal bài học hoàn thành', style: TextStyle(fontSize: 13, color: textMuted)),
+                  Text('$progress / $goal lessons completed', style: TextStyle(fontSize: 13, color: textMuted)),
                 ],
               ),
               const Text('🏆', style: TextStyle(fontSize: 24)),
@@ -470,13 +468,13 @@ class _HomeContentView extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Bài học hôm nay', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+            Text('Today\'s Lessons', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
             ValueListenableBuilder<bool>(
               valueListenable: showAllNotifier,
               builder: (context, showAll, child) {
                 return GestureDetector(
                   onTap: () => showAllNotifier.value = !showAll,
-                  child: Text(showAll ? 'Thu gọn' : 'Xem tất cả', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
+                  child: Text(showAll ? 'Show less' : 'See all', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
                 );
               },
             ),
@@ -511,15 +509,15 @@ class _HomeContentView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Truy cập nhanh', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+        Text('Quick Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: const [
-            _QuickAction(colorBg: Color(0xFFF3E8FF), icon: Icons.favorite, iconColor: Color(0xFFA855F7), label: 'Yêu thích'),
+            _QuickAction(colorBg: Color(0xFFF3E8FF), icon: Icons.favorite, iconColor: Color(0xFFA855F7), label: 'Favorites'),
             _QuickAction(colorBg: Color(0xFFF0FDF4), icon: Icons.style, iconColor: Color(0xFF22C55E), label: 'Flashcards'),
-            _QuickAction(colorBg: Color(0xFFFEF2F2), icon: Icons.trending_up, iconColor: Color(0xFFEF4444), label: 'Thống kê'),
-            _QuickAction(colorBg: Color(0xFFEFF6FF), icon: Icons.history, iconColor: Color(0xFF3B82F6), label: 'Lịch sử'),
+            _QuickAction(colorBg: Color(0xFFFEF2F2), icon: Icons.trending_up, iconColor: Color(0xFFEF4444), label: 'Stats'),
+            _QuickAction(colorBg: Color(0xFFEFF6FF), icon: Icons.history, iconColor: Color(0xFF3B82F6), label: 'History'),
           ],
         ),
       ],
@@ -527,7 +525,7 @@ class _HomeContentView extends StatelessWidget {
   }
 }
 
-// ... Copy các class _ShadcnCard, _StatItem, _LessonCard, _QuickAction ở đây (như cũ) ...
+// ... Shared Widgets ...
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
