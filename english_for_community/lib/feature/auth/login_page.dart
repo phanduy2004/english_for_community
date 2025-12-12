@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'dart:ui' show ImageFilter;
+import 'package:shared_preferences/shared_preferences.dart'; // Import để lưu trạng thái
 
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -18,18 +18,50 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController(text: 'testuser@example.com');
-  final _passController = TextEditingController(text: 'Test@1234');
+  // 1. Xóa text mặc định
+  final _emailController = TextEditingController();
+  final _passController = TextEditingController();
+
   bool _obscurePassword = true;
-  bool _rememberMe = true;
+  bool _rememberMe = false; // Mặc định là false
 
   // --- SHADCN/FOURI COLOR PALETTE ---
-  static const Color bgPage = Color(0xFFF9FAFB); // Zinc-50
-  static const Color textMain = Color(0xFF09090B); // Zinc-950
-  static const Color textMuted = Color(0xFF71717A); // Zinc-500
-  static const Color borderCol = Color(0xFFE4E4E7); // Zinc-200
-  static const Color primaryCol = Color(0xFF18181B); // Zinc-900 (Elegant Dark Button)
-  static const Color accentCol = Color(0xFF16A34A); // Green-600 (Brand Accent)
+  static const Color bgPage = Color(0xFFF9FAFB);
+  static const Color textMain = Color(0xFF09090B);
+  static const Color textMuted = Color(0xFF71717A);
+  static const Color borderCol = Color(0xFFE4E4E7);
+  static const Color primaryCol = Color(0xFF18181B);
+  static const Color accentCol = Color(0xFF16A34A);
+
+  @override
+  void initState() {
+    super.initState();
+    // 2. Load thông tin đã lưu khi mở màn hình
+    _loadUserCredentials();
+  }
+
+  // Hàm load thông tin từ bộ nhớ máy
+  Future<void> _loadUserCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('remember_me') ?? false;
+      if (_rememberMe) {
+        _emailController.text = prefs.getString('saved_email') ?? '';
+      }
+    });
+  }
+
+  // Hàm lưu thông tin
+  Future<void> _saveUserCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('remember_me', _rememberMe);
+
+    if (_rememberMe) {
+      await prefs.setString('saved_email', _emailController.text.trim());
+    } else {
+      await prefs.remove('saved_email');
+    }
+  }
 
   @override
   void dispose() {
@@ -52,6 +84,10 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
+
+    // 3. Gọi hàm lưu trước khi Login
+    _saveUserCredentials();
+
     context.read<UserBloc>().add(LoginEvent(email: email, password: pass));
   }
 
@@ -77,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // --- 1. LOGO & HEADER ---
+                    // --- HEADER ---
                     Center(
                       child: Container(
                         width: 64, height: 64,
@@ -100,13 +136,13 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Enter your details to continue your learning journey.',
+                      'Enter your details to continue.',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: textMuted),
                     ),
                     const SizedBox(height: 32),
 
-                    // --- 2. FORM CARD ---
+                    // --- FORM CARD ---
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -120,7 +156,6 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Email Input
                           _Label('Email'),
                           const SizedBox(height: 8),
                           _ShadcnInput(
@@ -131,7 +166,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Password Input
                           _Label('Password'),
                           const SizedBox(height: 8),
                           _ShadcnInput(
@@ -151,25 +185,27 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 20),
 
-                          // Remember Me & Forgot Password
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                children: [
-                                  SizedBox(
-                                    width: 20, height: 20,
-                                    child: Checkbox(
-                                      value: _rememberMe,
-                                      activeColor: primaryCol,
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                                      side: const BorderSide(color: borderCol, width: 1.5),
-                                      onChanged: (v) => setState(() => _rememberMe = v!),
+                              GestureDetector(
+                                onTap: () => setState(() => _rememberMe = !_rememberMe),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 20, height: 20,
+                                      child: Checkbox(
+                                        value: _rememberMe,
+                                        activeColor: primaryCol,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                                        side: const BorderSide(color: borderCol, width: 1.5),
+                                        onChanged: (v) => setState(() => _rememberMe = v!),
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
-                                ],
+                                    const SizedBox(width: 8),
+                                    const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
+                                  ],
+                                ),
                               ),
                               GestureDetector(
                                 onTap: () => context.pushNamed('ForgotPasswordPage'),
@@ -179,7 +215,6 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Sign In Button
                           SizedBox(
                             width: double.infinity,
                             height: 44,
@@ -202,42 +237,32 @@ class _LoginPageState extends State<LoginPage> {
 
                     const SizedBox(height: 24),
 
-                    // --- 3. SOCIAL LOGIN ---
+                    // --- DIVIDER ---
                     Row(
                       children: [
                         const Expanded(child: Divider(color: borderCol)),
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text('Or continue with', style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500)),
+                          child: Text('OR', style: TextStyle(fontSize: 11, color: textMuted, fontWeight: FontWeight.w600)),
                         ),
                         const Expanded(child: Divider(color: borderCol)),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    OutlinedButton.icon(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.read<UserBloc>().add(LoginWithGoogleEvent()),
-                      icon: SvgPicture.asset('assets/images/google.svg', width: 18, height: 18),
-                      label: const Text('Continue with Google', style: TextStyle(color: textMain, fontWeight: FontWeight.w500)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: borderCol),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        backgroundColor: Colors.white,
-                      ),
-                    ),
+                    const SizedBox(height: 24),
+
+                    // --- 4. NEW GOOGLE BUTTON (Modern Style) ---
+                    _buildGoogleButton(context, isLoading),
 
                     const SizedBox(height: 32),
 
-                    // --- 4. SIGN UP LINK ---
+                    // --- SIGN UP LINK ---
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text("Don't have an account? ", style: TextStyle(fontSize: 14, color: textMuted)),
                         GestureDetector(
                           onTap: () => context.pushNamed('RegisterPage'),
-                          child: const Text('Sign Up Now', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                          child: const Text('Sign Up', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textMain)),
                         ),
                       ],
                     ),
@@ -250,9 +275,58 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
+
+  // 🔥 4. Widget Button Google Đẹp hơn
+  Widget _buildGoogleButton(BuildContext context, bool isLoading) {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderCol),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: isLoading ? null : () => context.read<UserBloc>().add(LoginWithGoogleEvent()),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo Google
+                SvgPicture.asset(
+                    'assets/images/google.svg',
+                    width: 22,
+                    height: 22
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Continue with Google',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: textMain,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-// --- REUSABLE WIDGETS ---
+// --- GIỮ NGUYÊN CÁC WIDGET CON (REUSABLE) ---
 
 class _Label extends StatelessWidget {
   final String text;
@@ -312,7 +386,6 @@ class _ShadcnInput extends StatelessWidget {
   }
 }
 
-// Helper function for the Dialog (Translated)
 void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
   showDialog(
     context: context,
