@@ -458,10 +458,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 32),
-
+//
                   // 👇 BUTTON TEST THẦN THÁNH (NOTIFICATION - DATA THẬT) 👇
-                  SizedBox(
+                  /*SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
@@ -514,7 +513,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
-                  ),
+                  ),*/
 
                   const SizedBox(height: 40),
 
