@@ -27,6 +27,7 @@ class UpdateProfileEvent extends UserEvent {
   final String? goal;
   final String? cefr;
   final int? dailyMinutes;
+  final int? dailyLessonGoal;
   final Map<String, int>? reminder;
   final bool? strictCorrection;
   final String? language;
@@ -42,6 +43,7 @@ class UpdateProfileEvent extends UserEvent {
     this.goal,
     this.cefr,
     this.dailyMinutes,
+    this.dailyLessonGoal,
     this.reminder,
     this.strictCorrection,
     this.language,

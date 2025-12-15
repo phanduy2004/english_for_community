@@ -167,7 +167,7 @@ const getCueComments = async (req, res) => {
 const postCueComment = async (req, res) => {
   try {
     const { listeningId, cueId, content, parentId } = req.body;
-    const userId = req.user.id; // User sending the comment (e.g., User C)
+    const userId = req.user.id;
 
     // 1. Create new comment
     const newComment = await CueComment.create({
@@ -178,47 +178,37 @@ const postCueComment = async (req, res) => {
       parentId: parentId || null
     });
 
-    // 2. Handle Notification Logic (Thread Subscription)
+    // 2. Handle Notification Logic
     if (parentId) {
       const parentComment = await CueComment.findById(parentId);
 
       if (parentComment) {
-        // A. Get lesson title
         const listening = await Listening.findById(listeningId);
-        // Changed 'bài học' -> 'the lesson'
         const lessonTitle = listening ? listening.title : 'the lesson';
 
-        // B. Find all participants in this thread
-        // (Includes root comment owner + previous repliers)
         const participantComments = await CueComment.find({ parentId: parentId }).select('userId');
-
-        // C. Use Set to filter unique IDs
         const recipientSet = new Set();
 
-        // Add root comment owner
         const rootUserId = parentComment.userId._id ? parentComment.userId._id.toString() : parentComment.userId.toString();
         recipientSet.add(rootUserId);
 
-        // Add other repliers
         participantComments.forEach(c => {
           const pid = c.userId._id ? c.userId._id.toString() : c.userId.toString();
           recipientSet.add(pid);
         });
 
-        // D. Remove self (User C) from recipient list
         recipientSet.delete(userId);
 
-        // E. Send notification to each recipient
         const notificationsPromises = Array.from(recipientSet).map(recipientId => {
           return notificationService.createNotification({
             recipientId: recipientId,
             senderId: userId,
             type: 'COMMENT_REPLY',
-            title: 'New Reply', // Changed from 'Thảo luận mới'
-            // Changed message to English
+            title: 'New Reply',
             message: `replied to a discussion in "${lessonTitle}"`,
             data: {
               listeningId: listeningId,
+              cueId: cueId, // 🔥 ĐÃ THÊM: Frontend cần cái này để mở đúng Cue
               commentId: newComment._id.toString()
             }
           });
@@ -228,12 +218,11 @@ const postCueComment = async (req, res) => {
       }
     }
 
-    // 3. Populate and return to Client
     const populatedComment = await newComment.populate('userId', 'fullName avatarUrl');
 
     try {
       getIO().to(`listening_${listeningId}`).emit('new_comment', {
-        cueId,
+        cueId: cueId, // 🔥 QUAN TRỌNG: Thêm dòng này để Client biết comment thuộc câu nào
         comment: populatedComment,
         parentId: parentId
       });
@@ -248,7 +237,7 @@ const postCueComment = async (req, res) => {
   }
 };
 
-// 🔥 2. REACT TO COMMENT (Clean Code ID)
+// 🔥 2. REACT TO COMMENT
 const reactToComment = async (req, res) => {
   try {
     const { commentId } = req.params;
@@ -261,6 +250,7 @@ const reactToComment = async (req, res) => {
     }
 
     const comment = await CueComment.findById(commentId);
+    console.log("👉 DEBUG REACT COMMENT:", comment); // Xem log này trên server
     if (!comment) return res.status(404).json({ message: 'Comment not found' });
 
     const existingReactionIndex = comment.reactions.findIndex(
@@ -284,27 +274,23 @@ const reactToComment = async (req, res) => {
 
     if (isNewReaction) {
       const listening = await Listening.findById(comment.listeningId);
-      // Changed 'bài học' -> 'the lesson'
       const lessonTitle = listening ? listening.title : 'the lesson';
 
       const emotionIcons = { LIKE: '👍', LOVE: '❤️', HAHA: '😂', WOW: '😮', SAD: '😢', ANGRY: '😡' };
-      // Changed 'thả tim' -> 'reaction'
       const icon = emotionIcons[type] || 'reaction';
 
-      // CLEAN CODE: Extract standard ID string before calling Service
       const recipientIdStr = comment.userId._id ? comment.userId._id.toString() : comment.userId.toString();
 
-      // Only notify if reacting to someone else's comment
       if (recipientIdStr !== userId) {
         await notificationService.createNotification({
           recipientId: recipientIdStr,
           senderId: userId,
           type: 'COMMENT_REACTION',
-          title: 'New Reaction', // Changed from 'Cảm xúc mới'
-          // Changed message to English
+          title: 'New Reaction',
           message: `reacted ${icon} to your comment in "${lessonTitle}": "${comment.content.substring(0, 20)}..."`,
           data: {
             listeningId: comment.listeningId.toString(),
+            cueId: comment.cueId ? comment.cueId.toString() : "", // 🔥 ĐÃ THÊM: Lấy cueId từ comment gốc
             commentId: comment._id.toString()
           }
         });
@@ -314,6 +300,7 @@ const reactToComment = async (req, res) => {
     try {
       getIO().to(`listening_${comment.listeningId}`).emit('comment_reaction_updated', {
         commentId: comment._id,
+        cueId: comment.cueId, // 🟢 THÊM DÒNG NÀY: Để client biết reaction này thuộc câu nào
         reactions: comment.reactions
       });
     } catch (socketErr) {

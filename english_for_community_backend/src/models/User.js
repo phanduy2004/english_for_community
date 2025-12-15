@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
     hour:   { type: Number, min: 0, max: 23, default: null },
     minute: { type: Number, min: 0, max: 59, default: null }
   },
-  dailyActivityGoal: { type: Number, default: 5, min: 1, max: 100 },
+  dailyLessonGoal: { type: Number, default: 5, min: 1, max: 100 },
   dailyActivityProgress: { type: Number, default: 0 },
   dailyProgressDate: { type: String, default: null},
 
@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema({
 
   _destroy: { type: Boolean, default: false },
   refreshToken: { type: String, default: null },
-
+  fcmTokens: [{ type: String }], // Một user có thể dùng nhiều máy (Điện thoại, Tablet)
   // OTP quên mật khẩu
   resetOtp: { type: String, default: null },
   resetOtpExpiresAt: { type: Date, default: null },

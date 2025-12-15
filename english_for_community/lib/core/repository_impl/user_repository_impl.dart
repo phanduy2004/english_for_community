@@ -11,6 +11,25 @@ class UserRepositoryImpl implements UserRepository {
 
   UserRepositoryImpl({required this.userRemoteDatasource});
 
+  @override
+  Future<Either<Failure, void>> triggerTestNotification() async {
+    try {
+      await userRemoteDatasource.triggerTestNotification();
+      return Right(null);
+    } catch (e) {
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
+  @override
+  Future<Either<Failure, void>> updateFcmToken(String token) async {
+    try {
+      await userRemoteDatasource.updateFcmToken(token);
+      return Right(null);
+    } catch (e) {
+      // Lỗi update token không quá nghiêm trọng, có thể chỉ log lại
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
   // Helper xử lý lỗi an toàn
   String _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
@@ -77,6 +96,7 @@ class UserRepositoryImpl implements UserRepository {
     String? cefr,
     int? dailyMinutes,
     Map<String, int>? reminder,
+    int? dailyLessonGoal,
     bool? strictCorrection,
     String? language,
     String? timezone,
@@ -95,6 +115,7 @@ class UserRepositoryImpl implements UserRepository {
           cefr: cefr,
           dailyMinutes: dailyMinutes,
           reminder: reminder,
+          dailyLessonGoal: dailyLessonGoal,
           strictCorrection: strictCorrection,
           language: language,
           timezone: timezone,

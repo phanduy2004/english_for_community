@@ -1,8 +1,6 @@
 import User from '../models/User.js';
 import UserDailyProgress from "../models/UserDailyProgress.js";
 import bcrypt from "bcrypt";
-
-// Helper tính trung bình: Tổng điểm / Số lần (tránh chia cho 0)
 const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
 
 // 🔥 API ADMIN: Lấy chi tiết User + Thống kê học tập
@@ -235,7 +233,7 @@ export const updateProfile = async (req, res) => {
       goal: req.body.goal,
       cefr: req.body.cefr,
       dailyMinutes: req.body.dailyMinutes,
-
+      dailyLessonGoal: req.body.dailyLessonGoal,
       reminder: reminder, // Có thể là Object {hour, minute} hoặc null (để xóa)
 
       strictCorrection: req.body.strictCorrection,
@@ -302,5 +300,23 @@ export const changePassword = async (req, res) => {
   } catch (error) {
     console.error("Change Password Error:", error);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+export const updateFcmToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    const userId = req.user.id;
+
+    if (!token) return res.status(400).json({ message: 'Token is required' });
+
+    // Thêm token vào mảng fcmTokens nếu chưa có (addToSet tránh trùng lặp)
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { fcmTokens: token }
+    });
+
+    res.status(200).json({ message: 'FCM Token updated successfully' });
+  } catch (error) {
+    console.error('Update FCM Token Error:', error);
+    res.status(500).json({ message: error.message });
   }
 };

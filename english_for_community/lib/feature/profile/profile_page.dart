@@ -4,8 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../core/entity/user_entity.dart';
-import '../../core/notification/local_notification_service.dart';
-import '../../core/repository/user_vocab_repository.dart'; // 🔥 Import Repository
 import '../../core/socket/socket_service.dart';
 import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_event.dart';
@@ -24,27 +22,21 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // Navigation Handlers
+  // --- NAVIGATION ---
   void _goEditProfile() {
     context.pushNamed('EditProfilePage').then((_) {
-      if (mounted) {
-        context.read<UserBloc>().add(GetProfileEvent());
-      }
+      if (mounted) context.read<UserBloc>().add(GetProfileEvent());
     });
   }
 
   void _goChangePassword() {
-    showDialog(
-      context: context,
-      builder: (context) => const ChangePasswordDialog(),
-    );
+    showDialog(context: context, builder: (context) => const ChangePasswordDialog());
   }
-  // Placeholders
-  void _goOfflineManager() {}
-  void _goExportData() {}
+
+  void _goOfflineManager() {} // Placeholder
+  void _goExportData() {} // Placeholder
 
   // --- ACTIONS ---
-
   void _handleLogout() {
     GetIt.I<SocketService>().disconnect();
     context.read<UserBloc>().add(SignOutEvent());
@@ -55,13 +47,9 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Account?'),
-        content: const Text(
-            'This action cannot be undone. All your learning data will be permanently deleted.'),
+        content: const Text('This action cannot be undone. All data will be deleted.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -76,11 +64,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 🔥 1. QUICK UPDATE FUNCTION
+  // 🔥 1. HÀM UPDATE NHANH (Bao gồm cả Lesson Goal)
   void _quickUpdateProfile({
     int? dailyMinutes,
+    int? dailyLessonGoal, // Tham số mới
     TimeOfDay? reminder,
-    bool? strictCorrection,
     bool? isToggleReminder,
   }) {
     final currentUser = context.read<UserBloc>().state.userEntity;
@@ -88,15 +76,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
     Map<String, int>? reminderMap;
 
+    // Logic xử lý Reminder
     if (isToggleReminder == true) {
       if (currentUser.reminder != null) {
-        reminderMap = null;
+        reminderMap = null; // Tắt reminder
       } else {
-        reminderMap = {"hour": 19, "minute": 0};
+        reminderMap = {"hour": 19, "minute": 0}; // Mặc định bật lúc 19:00
       }
     } else if (reminder != null) {
       reminderMap = {"hour": reminder.hour, "minute": reminder.minute};
     } else if (currentUser.reminder != null) {
+      // Giữ nguyên reminder cũ nếu không đổi
       reminderMap = {"hour": currentUser.reminder!.hour, "minute": currentUser.reminder!.minute};
     }
 
@@ -111,14 +101,18 @@ class _ProfilePageState extends State<ProfilePage> {
       avatarFile: null,
       language: currentUser.language,
       timezone: currentUser.timezone,
+      gender: currentUser.gender,
+      strictCorrection: currentUser.strictCorrection,
+
+      // Update các trường Learning
       dailyMinutes: dailyMinutes ?? currentUser.dailyMinutes,
+      dailyLessonGoal: dailyLessonGoal ?? currentUser.dailyLessonGoal,
       reminder: reminderMap,
-      strictCorrection: strictCorrection ?? currentUser.strictCorrection,
     ));
   }
 
-  // 🔥 2. SHOW BOTTOM SHEET
-  void _showDailyGoalPicker(BuildContext context, int currentGoal) {
+  // 🔥 2. PICKER: Chọn Thời Gian Học (Phút)
+  void _showDailyTimePicker(BuildContext context, int currentMinutes) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -128,22 +122,16 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                margin: const EdgeInsets.only(top: 8, bottom: 16),
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-              ),
-              const Text('Select Learning Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 16),
+              const Text('Set Daily Time Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
               ...[15, 30, 45, 60].map((mins) => ListTile(
-                title: Text('$mins mins / day'),
+                title: Text('$mins minutes / day'),
                 leading: const Icon(Icons.timer_outlined, color: Colors.grey),
-                trailing: currentGoal == mins ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
+                trailing: currentMinutes == mins ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
                 onTap: () {
                   Navigator.pop(ctx);
-                  if (currentGoal != mins) {
-                    _quickUpdateProfile(dailyMinutes: mins);
-                  }
+                  if (currentMinutes != mins) _quickUpdateProfile(dailyMinutes: mins);
                 },
               )),
               const SizedBox(height: 16),
@@ -154,20 +142,49 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 🔥 3. SHOW TIME PICKER
+  // 🔥 3. PICKER: Chọn Số Bài Học (Bài)
+  void _showLessonGoalPicker(BuildContext context, int currentGoal) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              const Text('Set Daily Lesson Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 8),
+              ...[3, 5, 7, 10].map((count) => ListTile(
+                title: Text('$count lessons / day'),
+                leading: const Icon(Icons.flag_outlined, color: Colors.grey),
+                trailing: currentGoal == count ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
+                onTap: () {
+                  Navigator.pop(ctx);
+                  if (currentGoal != count) _quickUpdateProfile(dailyLessonGoal: count);
+                },
+              )),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 🔥 4. PICKER: Chọn Giờ Nhắc Nhở
   Future<void> _showTimePicker(BuildContext context, TimeOfDay current) async {
     final picked = await showTimePicker(
       context: context,
       initialTime: current,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary),
-            timePickerTheme: const TimePickerThemeData(backgroundColor: Colors.white),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.light(primary: Theme.of(context).colorScheme.primary),
+          timePickerTheme: const TimePickerThemeData(backgroundColor: Colors.white),
+        ),
+        child: child!,
+      ),
     );
 
     if (picked != null && picked != current) {
@@ -184,9 +201,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
-        if (state.status == UserStatus.unauthenticated) {
-          context.goNamed(LoginPage.routeName);
-        }
+        if (state.status == UserStatus.unauthenticated) context.goNamed(LoginPage.routeName);
         if (state.status == UserStatus.error && state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
@@ -197,33 +212,18 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         final user = state.userEntity;
+        if (user == null) return const SizedBox();
 
-        final String fullName = user?.fullName ?? 'User';
-        final String email = user?.email ?? '';
-        final String avatarUrl = user?.avatarUrl ?? '';
-        final String language = user?.language ?? 'English';
-        final String timezone = user?.timezone ?? 'GMT+7';
-
-        // Data logic
-        final int dailyMinutes = user?.dailyMinutes ?? 15;
-        final bool isReminderOn = user?.reminder != null;
-
-        // Info Display
-        final String role = (user?.role == 'admin') ? 'Admin' : 'Member';
-        final Color roleColor = (user?.role == 'admin') ? Colors.red : Colors.indigo;
-        final String level = 'Level ${user?.level ?? 1}';
-
-        // 🔥 LẤY ĐIỂM (TOTAL POINTS)
-        final int points = user?.totalPoints ?? 0;
+        // Data Prep
+        final int dailyMinutes = user.dailyMinutes ?? 15;
+        final int dailyLessonGoal = user.dailyLessonGoal ?? 5; // Lấy từ Entity
+        final bool isReminderOn = user.reminder != null;
 
         String reminderTimeStr = '19:00';
         TimeOfDay reminderTimeVal = const TimeOfDay(hour: 19, minute: 0);
-
-        if (user?.reminder != null) {
-          reminderTimeVal = user!.reminder!;
-          final h = reminderTimeVal.hour.toString().padLeft(2, '0');
-          final m = reminderTimeVal.minute.toString().padLeft(2, '0');
-          reminderTimeStr = '$h:$m';
+        if (user.reminder != null) {
+          reminderTimeVal = user.reminder!;
+          reminderTimeStr = '${reminderTimeVal.hour.toString().padLeft(2, '0')}:${reminderTimeVal.minute.toString().padLeft(2, '0')}';
         }
 
         return Scaffold(
@@ -231,87 +231,20 @@ class _ProfilePageState extends State<ProfilePage> {
           appBar: AppBar(
             backgroundColor: Colors.white,
             elevation: 0,
-            scrolledUnderElevation: 0,
             centerTitle: true,
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(1),
-              child: Container(color: borderCol, height: 1),
-            ),
+            bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: borderCol, height: 1)),
             title: const Text('Profile & Settings', style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
           ),
           body: RefreshIndicator(
-            onRefresh: () async {
-              context.read<UserBloc>().add(GetProfileEvent());
-            },
+            onRefresh: () async => context.read<UserBloc>().add(GetProfileEvent()),
             child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- PROFILE CARD ---
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderCol),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 64, height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: borderCol, width: 1),
-                            image: DecorationImage(
-                              image: (avatarUrl.isNotEmpty)
-                                  ? NetworkImage(avatarUrl)
-                                  : const AssetImage('assets/avatar.png') as ImageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
-                              const SizedBox(height: 2),
-                              Text(email, style: const TextStyle(fontSize: 13, color: textMuted)),
-                              const SizedBox(height: 8),
-
-                              // 🔥 DÒNG HIỂN THỊ BADGE (ROLE - LEVEL - POINTS)
-                              SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: Row(
-                                  children: [
-                                    _ShadcnBadge(label: role, color: roleColor),
-                                    const SizedBox(width: 8),
-                                    _ShadcnBadge(label: level, color: Colors.teal),
-                                    const SizedBox(width: 8),
-                                    _ShadcnBadge(
-                                        label: '$points XP',
-                                        color: Colors.amber[700]!
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _goEditProfile,
-                          tooltip: 'Edit Profile',
-                          style: IconButton.styleFrom(backgroundColor: const Color(0xFFF4F4F5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                          icon: const Icon(Icons.edit_outlined, size: 20, color: textMain),
-                        )
-                      ],
-                    ),
-                  ),
-
+                  // --- PROFILE HEADER ---
+                  _buildProfileHeader(user, textMain, textMuted, borderCol),
                   const SizedBox(height: 32),
 
                   // --- LEARNING SETTINGS ---
@@ -320,12 +253,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       _SettingsTile(
                         icon: Icons.timer_outlined,
-                        title: 'Daily Goal',
+                        title: 'Daily Time Goal',
                         value: '$dailyMinutes mins',
-                        onTap: () => _showDailyGoalPicker(context, dailyMinutes),
+                        onTap: () => _showDailyTimePicker(context, dailyMinutes),
                       ),
                       const _Divider(),
-
+                      // 🔥 MỤC TIÊU SỐ BÀI HỌC
+                      _SettingsTile(
+                        icon: Icons.flag_outlined,
+                        title: 'Daily Lesson Goal',
+                        value: '$dailyLessonGoal lessons',
+                        onTap: () => _showLessonGoalPicker(context, dailyLessonGoal),
+                      ),
+                      const _Divider(),
                       _SettingsTile(
                         icon: Icons.notifications_none_rounded,
                         title: 'Daily Reminder',
@@ -335,7 +275,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           onChanged: (v) => _quickUpdateProfile(isToggleReminder: true),
                         ),
                       ),
-
                       if (isReminderOn) ...[
                         const _Divider(),
                         _SettingsTile(
@@ -345,61 +284,18 @@ class _ProfilePageState extends State<ProfilePage> {
                           onTap: () => _showTimePicker(context, reminderTimeVal),
                         ),
                       ],
-                      const _Divider(),
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  // --- GENERAL ---
+                  // --- GENERAL SETTINGS ---
                   const _SectionTitle('GENERAL SETTINGS'),
                   _ShadcnGroup(
                     children: [
-                      _SettingsTile(
-                        icon: Icons.language,
-                        title: 'App Language',
-                        value: language,
-                        onTap: (){},
-                      ),
+                      _SettingsTile(icon: Icons.language, title: 'App Language', value: user.language ?? 'English', onTap: () {}),
                       const _Divider(),
-                      _SettingsTile(
-                        icon: Icons.public,
-                        title: 'Timezone',
-                        value: timezone,
-                        onTap: (){},
-                      ),
-                      const _Divider(),
-                      _SettingsTile(
-                        icon: Icons.palette_outlined,
-                        title: 'Theme',
-                        value: 'System',
-                        onTap: () {},
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // --- STORAGE ---
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      _SectionTitle('OFFLINE DATA', paddingBottom: 0),
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 8),
-                        child: Text('0 MB used', style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500)),
-                      )
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  _ShadcnGroup(
-                    children: [
-                      _SettingsTile(
-                        icon: Icons.cloud_download_outlined,
-                        title: 'Basic Vocabulary Pack',
-                        value: 'Not downloaded',
-                        onTap: _goOfflineManager,
-                      ),
+                      _SettingsTile(icon: Icons.public, title: 'Timezone', value: user.timezone ?? 'GMT+7', onTap: () {}),
                     ],
                   ),
 
@@ -409,24 +305,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   const _SectionTitle('ACCOUNT & SECURITY'),
                   _ShadcnGroup(
                     children: [
-                      _SettingsTile(
-                        icon: Icons.lock_outline,
-                        title: 'Change Password',
-                        onTap: _goChangePassword,
-                      ),
+                      _SettingsTile(icon: Icons.lock_outline, title: 'Change Password', onTap: _goChangePassword),
                       const _Divider(),
-                      _SettingsTile(
-                        icon: Icons.file_download_outlined,
-                        title: 'Export Data',
-                        subtitle: 'Download your learning history',
-                        onTap: _goExportData,
-                      ),
+                      _SettingsTile(icon: Icons.file_download_outlined, title: 'Export Data', subtitle: 'Download learning history', onTap: _goExportData),
                     ],
                   ),
 
                   const SizedBox(height: 32),
 
-                  // --- ACTIONS ---
+                  // --- LOGOUT ---
                   SizedBox(
                     width: double.infinity,
                     child: TextButton(
@@ -435,14 +322,9 @@ class _ProfilePageState extends State<ProfilePage> {
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         foregroundColor: textMain,
                         backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: borderCol),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: borderCol)),
                       ),
-                      child: state.status == UserStatus.loading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -450,83 +332,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     width: double.infinity,
                     child: TextButton(
                       onPressed: _handleDeleteAccount,
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        foregroundColor: const Color(0xFFDC2626),
-                      ),
+                      style: TextButton.styleFrom(foregroundColor: Colors.red),
                       child: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
-
-//
-                  // 👇 BUTTON TEST THẦN THÁNH (NOTIFICATION - DATA THẬT) 👇
-                  /*SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        // 1. Báo hiệu đang tải
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Đang lấy từ vựng từ Server...')),
-                        );
-
-                        // 2. Gọi Repository lấy 3 từ mới (Dữ liệu thật)
-                        final vocabRepo = GetIt.I<UserVocabRepository>();
-                        final result = await vocabRepo.getDailyReminders();
-
-                        result.fold(
-                              (failure) {
-                            // Lỗi
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Lỗi: ${failure.message}')),
-                            );
-                          },
-                              (words) async {
-                            if (words.isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Server không trả về từ nào (Hãy chắc chắn bạn có từ vựng đang học)')),
-                              );
-                              return;
-                            }
-
-                            // 3. Convert Entity sang Map để ném vào hàm Test
-                            final wordsData = words.map((e) => {
-                              'id': e.id, // 🔥 Rất quan trọng để payload không bị null
-                              'headword': e.headword,
-                              'shortDefinition': e.shortDefinition ?? 'Chạm để học',
-                            }).toList();
-
-                            // 4. Gọi hàm Test Dữ liệu thật (Có logic hiện ngay lập tức)
-                            await LocalNotificationService().requestPermissions();
-                            await LocalNotificationService().testWithRealData(wordsData);
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã xong! Thông báo đầu tiên sẽ hiện NGAY LẬP TỨC!')),
-                            );
-                          },
-                        );
-                      },
-                      icon: const Icon(Icons.science), // Icon ống nghiệm test
-                      label: const Text("TEST VỚI TỪ VỰNG THẬT"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple, // Đổi màu tím cho khác biệt
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),*/
-
                   const SizedBox(height: 40),
-
-                  Center(
-                    child: Column(
-                      children: const [
-                        Text('Version 1.0.0', style: TextStyle(color: textMuted, fontSize: 12)),
-                        SizedBox(height: 4),
-                        Text('© 2025 English For Community', style: TextStyle(color: textMuted, fontSize: 12)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -535,27 +345,79 @@ class _ProfilePageState extends State<ProfilePage> {
       },
     );
   }
+
+  Widget _buildProfileHeader(UserEntity user, Color textMain, Color textMuted, Color borderCol) {
+    final roleColor = (user.role == 'admin') ? Colors.red : Colors.indigo;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderCol),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        children: [
+          // ... (Phần Avatar giữ nguyên)
+          Container(
+            width: 64, height: 64,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: borderCol),
+              image: DecorationImage(
+                image: (user.avatarUrl != null) ? NetworkImage(user.avatarUrl!) : const AssetImage('assets/avatar.png') as ImageProvider,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(user.fullName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                const SizedBox(height: 2),
+                Text(user.email, style: TextStyle(fontSize: 13, color: textMuted)),
+                const SizedBox(height: 8),
+
+                // 🔥 SỬA LỖI OVERFLOW TẠI ĐÂY
+                // Bọc Row bằng SingleChildScrollView
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _ShadcnBadge(label: user.role == 'admin' ? 'Admin' : 'Member', color: roleColor),
+                      const SizedBox(width: 8),
+                      _ShadcnBadge(label: 'Lv.${user.level ?? 1}', color: Colors.teal),
+                      const SizedBox(width: 8),
+                      _ShadcnBadge(label: '${user.totalPoints ?? 0} XP', color: Colors.amber[700]!),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: _goEditProfile,
+            style: IconButton.styleFrom(backgroundColor: const Color(0xFFF4F4F5), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            icon: Icon(Icons.edit_outlined, size: 20, color: textMain),
+          )
+        ],
+      ),
+    );
+  }
 }
 
-// ... (Phần Widget con _SectionTitle, _SettingsTile... giữ nguyên như cũ) ...
+// ... (Các Widget phụ trợ: _SectionTitle, _ShadcnGroup, _SettingsTile, _ShadcnBadge giữ nguyên như code cũ)
 class _SectionTitle extends StatelessWidget {
   final String title;
-  final double paddingBottom;
-  const _SectionTitle(this.title, {this.paddingBottom = 8});
-
+  const _SectionTitle(this.title);
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF71717A), // Zinc-500
-          letterSpacing: 0.8,
-        ),
-      ),
+      child: Text(title, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF71717A), letterSpacing: 0.8)),
     );
   }
 }
@@ -563,22 +425,10 @@ class _SectionTitle extends StatelessWidget {
 class _ShadcnGroup extends StatelessWidget {
   final List<Widget> children;
   const _ShadcnGroup({required this.children});
-
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)), // Zinc-200
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          )
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE4E4E7))),
       child: Column(children: children),
     );
   }
@@ -591,19 +441,7 @@ class _SettingsTile extends StatelessWidget {
   final String? value;
   final Widget? trailing;
   final VoidCallback? onTap;
-  final Color? iconColor;
-  final bool isWarning;
-
-  const _SettingsTile({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.value,
-    this.trailing,
-    this.onTap,
-    this.iconColor,
-    this.isWarning = false,
-  });
+  const _SettingsTile({required this.icon, required this.title, this.subtitle, this.value, this.trailing, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -616,38 +454,20 @@ class _SettingsTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: iconColor ?? const Color(0xFF09090B)),
+              Icon(icon, size: 20, color: const Color(0xFF09090B)),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF09090B)),
-                    ),
-                    if (subtitle != null)
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF71717A)),
-                      ),
+                    Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    if (subtitle != null) Text(subtitle!, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
                   ],
                 ),
               ),
-              if (value != null)
-                Text(
-                  value!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isWarning ? const Color(0xFFA1A1AA) : const Color(0xFF52525B),
-                  ),
-                ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing!,
-              ] else if (onTap != null && value == null)
-                const Icon(Icons.chevron_right, size: 18, color: Color(0xFFA1A1AA)),
+              if (value != null) Text(value!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF52525B))),
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!]
+              else if (onTap != null && value == null) const Icon(Icons.chevron_right, size: 18, color: Color(0xFFA1A1AA)),
             ],
           ),
         ),
@@ -659,36 +479,19 @@ class _SettingsTile extends StatelessWidget {
 class _Divider extends StatelessWidget {
   const _Divider();
   @override
-  Widget build(BuildContext context) {
-    return const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5), indent: 16, endIndent: 16);
-  }
+  Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5), indent: 16, endIndent: 16);
 }
 
 class _ShadcnBadge extends StatelessWidget {
   final String label;
   final Color color;
-
   const _ShadcnBadge({required this.label, required this.color});
-
   @override
   Widget build(BuildContext context) {
-    final bgCol = color.withOpacity(0.1);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgCol,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
+      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.3))),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }

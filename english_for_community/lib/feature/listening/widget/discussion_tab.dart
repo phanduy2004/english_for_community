@@ -3,25 +3,15 @@ import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import '../../../core/entity/comment_entity.dart';
 
-// Controller tùy chỉnh để tô màu User Tag
 class MentionTextEditingController extends TextEditingController {
   @override
-  TextSpan buildTextSpan({
-    required BuildContext context,
-    TextStyle? style,
-    required bool withComposing,
-  }) {
+  TextSpan buildTextSpan({required BuildContext context, TextStyle? style, required bool withComposing}) {
     final text = value.text;
     final List<InlineSpan> children = [];
-
-    // Regex tìm chuỗi bắt đầu bằng @ và kết thúc bằng ký tự tàng hình \u200B
     text.splitMapJoin(
       RegExp(r'(@.+?\u200B)', unicode: true),
       onMatch: (Match match) {
-        children.add(TextSpan(
-          text: match[0],
-          style: style?.copyWith(color: Colors.blue, fontWeight: FontWeight.bold),
-        ));
+        children.add(TextSpan(text: match[0], style: style?.copyWith(color: Colors.blue, fontWeight: FontWeight.bold)));
         return '';
       },
       onNonMatch: (String nonMatch) {
@@ -29,7 +19,6 @@ class MentionTextEditingController extends TextEditingController {
         return '';
       },
     );
-
     return TextSpan(style: style, children: children);
   }
 }
@@ -41,6 +30,9 @@ class DiscussionTab extends StatefulWidget {
   final Function(String content, String? parentId) onSend;
   final Function(String commentId, ReactionType type) onReact;
 
+  // 🔥 THÊM THAM SỐ TARGET
+  final String? targetCommentId;
+
   const DiscussionTab({
     super.key,
     required this.comments,
@@ -48,6 +40,7 @@ class DiscussionTab extends StatefulWidget {
     required this.currentUserId,
     required this.onSend,
     required this.onReact,
+    this.targetCommentId,
   });
 
   @override
@@ -82,14 +75,9 @@ class _DiscussionTabState extends State<DiscussionTab> {
   void _handleSend() {
     final content = _commentCtrl.text.trim();
     if (content.isEmpty) return;
-
     String? finalParentId;
-    if (_replyingTo != null) {
-      finalParentId = _replyingTo!.parentId ?? _replyingTo!.id;
-    }
-
+    if (_replyingTo != null) finalParentId = _replyingTo!.parentId ?? _replyingTo!.id;
     widget.onSend(content, finalParentId);
-
     _commentCtrl.clear();
     setState(() => _replyingTo = null);
     FocusScope.of(context).unfocus();
@@ -99,12 +87,9 @@ class _DiscussionTabState extends State<DiscussionTab> {
   void _handleReplyRequest(CommentEntity comment) {
     setState(() {
       _replyingTo = comment;
-      if (comment.userId == widget.currentUserId) {
-      } else {
+      if (comment.userId != widget.currentUserId) {
         _commentCtrl.text = "@${comment.userName}\u200B ";
-        _commentCtrl.selection = TextSelection.fromPosition(
-          TextPosition(offset: _commentCtrl.text.length),
-        );
+        _commentCtrl.selection = TextSelection.fromPosition(TextPosition(offset: _commentCtrl.text.length));
       }
     });
   }
@@ -112,13 +97,11 @@ class _DiscussionTabState extends State<DiscussionTab> {
   List<CommentEntity> _organizeComments(List<CommentEntity> flatList) {
     final roots = flatList.where((c) => c.parentId == null).toList();
     final replies = flatList.where((c) => c.parentId != null).toList();
-
     final organized = roots.map((root) {
       final children = replies.where((r) => r.parentId == root.id).toList();
       children.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       return root.copyWith(replies: children);
     }).toList();
-
     organized.sort((a, b) => a.createdAt.compareTo(b.createdAt));
     return organized;
   }
@@ -129,33 +112,50 @@ class _DiscussionTabState extends State<DiscussionTab> {
 
     final organized = _organizeComments(widget.comments);
 
-    // Logic cuộn xuống dưới cùng khi mới mở tab
-    if (organized.isNotEmpty && _scrollController.hasClients == false) {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if(_scrollController.hasClients) {
-          _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
-        }
-      });
-    }
-
     return Column(
       children: [
         Expanded(
           child: organized.isEmpty
-              ? Center(child: Text("No discussions yet", style: TextStyle(color: Colors.grey)))
+              ? const Center(child: Text("No discussions yet", style: TextStyle(color: Colors.grey)))
               : ListView.builder(
             controller: _scrollController,
             padding: const EdgeInsets.all(16),
             itemCount: organized.length,
-            itemBuilder: (_, i) => CommentItem(
-              comment: organized[i],
-              currentUserId: widget.currentUserId,
-              onReply: _handleReplyRequest,
-              onReact: widget.onReact,
-            ),
+            itemBuilder: (_, i) {
+              final item = organized[i];
+
+              // 🔥 LOGIC HIGHLIGHT
+              // Kiểm tra xem comment cha này hoặc các con của nó có phải là target không
+              bool isTarget = item.id == widget.targetCommentId;
+              bool hasTargetChild = item.replies.any((r) => r.id == widget.targetCommentId);
+              bool shouldHighlight = isTarget || hasTargetChild;
+
+              return Container(
+                // Tô màu nền nhẹ nếu là comment đang tìm kiếm
+                decoration: shouldHighlight
+                    ? BoxDecoration(
+                    color: Colors.yellow.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3))
+                )
+                    : null,
+                padding: shouldHighlight ? const EdgeInsets.all(8) : EdgeInsets.zero,
+                margin: shouldHighlight ? const EdgeInsets.only(bottom: 16) : EdgeInsets.zero,
+
+                child: CommentItem(
+                  comment: item,
+                  currentUserId: widget.currentUserId,
+                  onReply: _handleReplyRequest,
+                  onReact: widget.onReact,
+                  // Truyền ID target xuống để highlight cụ thể item con (nếu muốn làm kỹ hơn)
+                  targetId: widget.targetCommentId,
+                ),
+              );
+            },
           ),
         ),
 
+        // INPUT AREA (Giữ nguyên)
         Container(
           padding: const EdgeInsets.all(10),
           decoration: const BoxDecoration(
@@ -169,38 +169,10 @@ class _DiscussionTabState extends State<DiscussionTab> {
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3)),
-                  ),
-                  child: Row(children: [
-                    Text("Replying to ", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                    Text(_replyingTo!.userName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    const Spacer(),
-                    InkWell(
-                      onTap: () => setState(() => _replyingTo = null),
-                      child: const Icon(Icons.close, size: 16, color: Colors.grey),
-                    )
-                  ]),
+                  decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8), border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3))),
+                  child: Row(children: [Text("Replying to ", style: TextStyle(fontSize: 12, color: Colors.grey[600])), Text(_replyingTo!.userName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)), const Spacer(), InkWell(onTap: () => setState(() => _replyingTo = null), child: const Icon(Icons.close, size: 16, color: Colors.grey))]),
                 ),
-
-              Row(children: [
-                Expanded(child: TextField(
-                  controller: _commentCtrl,
-                  decoration: InputDecoration(
-                    hintText: _replyingTo != null ? 'Write a reply...' : 'Ask a question...',
-                    isDense: true, filled: true, fillColor: const Color(0xFFF9FAFB),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                  ),
-                )),
-                const SizedBox(width: 8),
-                CircleAvatar(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)),
-                ),
-              ]),
+              Row(children: [Expanded(child: TextField(controller: _commentCtrl, decoration: InputDecoration(hintText: _replyingTo != null ? 'Write a reply...' : 'Ask a question...', isDense: true, filled: true, fillColor: const Color(0xFFF9FAFB), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)))), const SizedBox(width: 8), CircleAvatar(backgroundColor: Theme.of(context).primaryColor, child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)))]),
             ],
           ),
         ),
@@ -214,42 +186,21 @@ class CommentItem extends StatelessWidget {
   final String currentUserId;
   final Function(CommentEntity) onReply;
   final Function(String, ReactionType) onReact;
+  final String? targetId; // 🔥 Để highlight chính xác item con
 
-  const CommentItem({
-    super.key,
-    required this.comment,
-    required this.currentUserId,
-    required this.onReply,
-    required this.onReact,
-  });
+  const CommentItem({super.key, required this.comment, required this.currentUserId, required this.onReply, required this.onReact, this.targetId});
 
   @override
   Widget build(BuildContext context) {
     ReactionType? myReaction;
-    try {
-      myReaction = comment.reactions.firstWhere((r) => r.userId == currentUserId).type;
-    } catch (_) {}
-
+    try { myReaction = comment.reactions.firstWhere((r) => r.userId == currentUserId).type; } catch (_) {}
     final reactionCounts = <ReactionType, int>{};
-    for (var r in comment.reactions) {
-      reactionCounts[r.type] = (reactionCounts[r.type] ?? 0) + 1;
-    }
-
-    final topReactions = reactionCounts.keys.toList()
-      ..sort((a, b) => reactionCounts[b]!.compareTo(reactionCounts[a]!));
-    final displayReactions = topReactions.take(3).toList();
+    for (var r in comment.reactions) reactionCounts[r.type] = (reactionCounts[r.type] ?? 0) + 1;
+    final displayReactions = (reactionCounts.keys.toList()..sort((a, b) => reactionCounts[b]!.compareTo(reactionCounts[a]!))).take(3).toList();
 
     return Column(
       children: [
-        _buildBubble(
-          context,
-          comment,
-          isRoot: true,
-          myReaction: myReaction,
-          displayReactions: displayReactions,
-          totalReactions: comment.reactions.length,
-        ),
-
+        _buildBubble(context, comment, isRoot: true, myReaction: myReaction, displayReactions: displayReactions, totalReactions: comment.reactions.length, isHighlighted: comment.id == targetId),
         if (comment.replies.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(left: 48, top: 8),
@@ -257,20 +208,13 @@ class CommentItem extends StatelessWidget {
               children: comment.replies.map((r) {
                 ReactionType? subReaction;
                 try { subReaction = r.reactions.firstWhere((re) => re.userId == currentUserId).type; } catch (_) {}
-
                 final subCounts = <ReactionType, int>{};
                 for (var re in r.reactions) subCounts[re.type] = (subCounts[re.type] ?? 0) + 1;
-                final subTop = subCounts.keys.toList()..sort((a, b) => subCounts[b]!.compareTo(subCounts[a]!));
+                final subTop = (subCounts.keys.toList()..sort((a, b) => subCounts[b]!.compareTo(subCounts[a]!))).take(3).toList();
 
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 8),
-                  child: _buildBubble(
-                      context, r,
-                      isRoot: false,
-                      myReaction: subReaction,
-                      displayReactions: subTop.take(3).toList(),
-                      totalReactions: r.reactions.length
-                  ),
+                  child: _buildBubble(context, r, isRoot: false, myReaction: subReaction, displayReactions: subTop, totalReactions: r.reactions.length, isHighlighted: r.id == targetId),
                 );
               }).toList(),
             ),
@@ -280,170 +224,53 @@ class CommentItem extends StatelessWidget {
     );
   }
 
-  Widget _buildBubble(BuildContext context, CommentEntity c, {
-    required bool isRoot,
-    ReactionType? myReaction,
-    List<ReactionType>? displayReactions,
-    int totalReactions = 0
-  }) {
-    final localTime = c.createdAt.toLocal();
-    final timeStr = DateFormat('HH:mm').format(localTime);
-
+  Widget _buildBubble(BuildContext context, CommentEntity c, {required bool isRoot, ReactionType? myReaction, List<ReactionType>? displayReactions, int totalReactions = 0, bool isHighlighted = false}) {
+    final timeStr = DateFormat('HH:mm').format(c.createdAt.toLocal());
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      CircleAvatar(
-        radius: isRoot ? 16 : 12,
-        backgroundImage: NetworkImage(c.userAvatar ?? 'https://ui-avatars.com/api/?name=${c.userName}'),
-      ),
+      CircleAvatar(radius: isRoot ? 16 : 12, backgroundImage: NetworkImage(c.userAvatar ?? 'https://ui-avatars.com/api/?name=${c.userName}')),
       const SizedBox(width: 10),
-
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                    const SizedBox(width: 8),
-                    Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                  ]),
-                  const SizedBox(height: 4),
-
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(fontSize: 14, fontFamily: 'Roboto', height: 1.4, color: Colors.black),
-                      children: _parseContentStyle(c.content),
-                    ),
-                  ),
-                ]),
-              ),
-
-              if (totalReactions > 0)
-                Positioned(
-                  bottom: -10,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ...(displayReactions ?? []).map((t) => Padding(
-                          padding: const EdgeInsets.only(right: 2),
-                          child: _buildReactionIconWidget(t, size: 12),
-                        )),
-                        Text("$totalReactions", style: const TextStyle(fontSize: 10, color: Colors.black54)),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(left: 8, top: 6),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => onReply(c),
-                  child: const Text("Reply", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
-                ),
-
-                const SizedBox(width: 16),
-
-                Theme(
-                  data: Theme.of(context).copyWith(
-                    popupMenuTheme: const PopupMenuThemeData(color: Colors.white),
-                  ),
-                  child: PopupMenuButton<ReactionType>(
-                    tooltip: 'React',
-                    offset: const Offset(0, -45),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                    elevation: 4,
-                    child: Row(
-                      children: [
-                        myReaction != null
-                            ? _buildReactionIconWidget(myReaction, size: 14)
-                            : const Icon(Icons.favorite_border, size: 14, color: Colors.grey),
-
-                        const SizedBox(width: 4),
-
-                        Text(
-                          myReaction != null ? _getReactionLabel(myReaction) : "Like",
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: myReaction != null ? _getReactionColor(myReaction) : Colors.grey
-                          ),
-                        ),
-                      ],
-                    ),
-                    itemBuilder: (context) => ReactionType.values.map((type) => PopupMenuItem(
-                      value: type,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      height: 40,
-                      child: Center(child: _buildReactionIconWidget(type, size: 24)),
-                    )).toList(),
-                    onSelected: (type) => onReact(c.id, type),
-                  ),
-                ),
-              ],
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Stack(clipBehavior: Clip.none, children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              // 🔥 Đổi màu nền đậm hơn xíu nếu là target
+              color: isHighlighted ? Colors.yellow.shade100 : const Color(0xFFF3F4F6),
+              border: isHighlighted ? Border.all(color: Colors.orange.withOpacity(0.5)) : null,
+              borderRadius: BorderRadius.circular(16),
             ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), const SizedBox(width: 8), Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey))]),
+              const SizedBox(height: 4),
+              RichText(text: TextSpan(style: const TextStyle(fontSize: 14, fontFamily: 'Roboto', height: 1.4, color: Colors.black), children: _parseContentStyle(c.content))),
+            ]),
           ),
+          if (totalReactions > 0) Positioned(bottom: -10, right: 0, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))]), child: Row(mainAxisSize: MainAxisSize.min, children: [...(displayReactions ?? []).map((t) => Padding(padding: const EdgeInsets.only(right: 2), child: _buildReactionIconWidget(t, size: 12))), Text("$totalReactions", style: const TextStyle(fontSize: 10, color: Colors.black54))]))),
         ]),
-      ),
+        Padding(padding: const EdgeInsets.only(left: 8, top: 6), child: Row(children: [GestureDetector(onTap: () => onReply(c), child: const Text("Reply", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey))), const SizedBox(width: 16), Theme(data: Theme.of(context).copyWith(popupMenuTheme: const PopupMenuThemeData(color: Colors.white)), child: PopupMenuButton<ReactionType>(tooltip: 'React', offset: const Offset(0, -45), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), elevation: 4, child: Row(children: [myReaction != null ? _buildReactionIconWidget(myReaction, size: 14) : const Icon(Icons.favorite_border, size: 14, color: Colors.grey), const SizedBox(width: 4), Text(myReaction != null ? _getReactionLabel(myReaction) : "Like", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: myReaction != null ? _getReactionColor(myReaction) : Colors.grey))]), itemBuilder: (context) => ReactionType.values.map((type) => PopupMenuItem(value: type, padding: const EdgeInsets.symmetric(horizontal: 8), height: 40, child: Center(child: _buildReactionIconWidget(type, size: 24)))).toList(), onSelected: (type) => onReact(c.id, type)))])),
+      ])),
     ]);
   }
 
   List<TextSpan> _parseContentStyle(String content) {
     final List<TextSpan> spans = [];
-    // Regex tìm nhóm 1: @...tới...\u200B (Tên người dùng)
-    // Nhóm 2: Các ký tự còn lại
     final regex = RegExp(r'(@.+?\u200B)|([^@]+)', unicode: true);
-    final matches = regex.allMatches(content);
-
-    for (final match in matches) {
-      final String text = match.group(0)!;
-      // Kiểm tra xem có phải là tag (có chứa ký tự tàng hình) không
-      if (text.startsWith('@') && text.contains('\u200B')) {
-        spans.add(TextSpan(
-          text: text,
-          style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-        ));
-      } else {
-        spans.add(TextSpan(
-          text: text,
-          style: const TextStyle(color: Color(0xFF1F2937)),
-        ));
-      }
+    for (final match in regex.allMatches(content)) {
+      final text = match.group(0)!;
+      if (text.startsWith('@') && text.contains('\u200B')) spans.add(TextSpan(text: text, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)));
+      else spans.add(TextSpan(text: text, style: const TextStyle(color: Color(0xFF1F2937))));
     }
     return spans;
   }
 
   Widget _buildReactionIconWidget(ReactionType type, {double size = 16}) {
     switch (type) {
-      case ReactionType.LIKE:
-        return Icon(Icons.thumb_up, color: Colors.blue, size: size);
-      case ReactionType.LOVE:
-        return Text("❤️", style: TextStyle(fontSize: size));
-      case ReactionType.HAHA:
-        return Text("😂", style: TextStyle(fontSize: size));
-      case ReactionType.WOW:
-        return Text("😮", style: TextStyle(fontSize: size));
-      case ReactionType.SAD:
-        return Text("😢", style: TextStyle(fontSize: size));
-      case ReactionType.ANGRY:
-        return Text("😡", style: TextStyle(fontSize: size));
+      case ReactionType.LIKE: return Icon(Icons.thumb_up, color: Colors.blue, size: size);
+      case ReactionType.LOVE: return Text("❤️", style: TextStyle(fontSize: size));
+      case ReactionType.HAHA: return Text("😂", style: TextStyle(fontSize: size));
+      case ReactionType.WOW: return Text("😮", style: TextStyle(fontSize: size));
+      case ReactionType.SAD: return Text("😢", style: TextStyle(fontSize: size));
+      case ReactionType.ANGRY: return Text("😡", style: TextStyle(fontSize: size));
     }
   }
 

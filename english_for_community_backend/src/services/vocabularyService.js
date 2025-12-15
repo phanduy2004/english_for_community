@@ -172,17 +172,17 @@ const getRecentWords = async (userId) => {
 };
 
 const getDailyReminderWords = async (userId) => {
-  // 1. Lấy 3 từ đang học, ưu tiên từ chưa bao giờ nhắc hoặc nhắc lâu nhất
+  // 🔥 SỬA: Lấy từ có status là 'recent'
+  // Sort theo 'updatedAt' giảm dần để lấy những từ vừa tra gần đây nhất
   const words = await Word.find({
     user: userId,
-    status: 'learning'
+    status: 'recent'
   })
-    .sort({ lastRemindedDate: 1 }) // Null trước, ngày cũ trước
-    .limit(3);
+    .sort({ updatedAt: -1 }) // Mới nhất lên đầu
+    .limit(3); // Chỉ lấy 3 từ
 
+  // (Tùy chọn) Nếu muốn cập nhật lastRemindedDate để lần sau không nhắc lại ngay
   if (words.length > 0) {
-    // 2. Cập nhật lastRemindedDate cho đám này thành hôm nay
-    // Để ngày mai query sẽ ra 3 từ khác
     const wordIds = words.map(w => w._id);
     await Word.updateMany(
       { _id: { $in: wordIds } },

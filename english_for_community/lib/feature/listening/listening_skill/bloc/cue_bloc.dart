@@ -70,7 +70,11 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
   // 2️⃣ Xử lý khi Socket trả về dữ liệu chuẩn từ Server
   void _onIncomingSocketReaction(IncomingSocketReaction event, Emitter<CueState> emit) {
-    // Đồng bộ lại dữ liệu chuẩn từ Server trả về qua Socket
+    // 🛡️ LỌC: Nếu Reaction này không thuộc Cue đang xem -> Bỏ qua
+    if (state.currentCue == null || event.cueId != state.currentCue!.id) {
+      return;
+    }
+
     final updatedComments = state.comments.map((c) {
       if (c.id == event.commentId) {
         return c.copyWith(reactions: event.reactions);
@@ -81,13 +85,15 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     emit(state.copyWith(comments: updatedComments));
   }
   void _onIncomingSocketComment(IncomingSocketComment event, Emitter<CueState> emit) {
-    // Vì Backend trả sort createdAt: -1 (Mới -> Cũ)
-    // Nên tin nhắn mới nhất phải chèn vào ĐẦU danh sách (index 0)
-    final currentList = List<CommentEntity>.from(state.comments);
+    // 🛡️ LỌC: Nếu Comment này không thuộc Cue đang xem -> Bỏ qua
+    if (state.currentCue == null || event.cueId != state.currentCue!.id) {
+      return;
+    }
 
-    // Check duplicate
+    final currentList = List<CommentEntity>.from(state.comments);
+    // Tránh duplicate (do mạng lag có thể nhận 2 lần)
     if (!currentList.any((c) => c.id == event.comment.id)) {
-      currentList.insert(0, event.comment); // 🔥 Chèn lên đầu
+      currentList.insert(0, event.comment); // Chèn lên đầu
       emit(state.copyWith(comments: currentList));
     }
   }
@@ -116,8 +122,8 @@ class CueBloc extends Bloc<CueEvent, CueState> {
       cues.sort((a, b) => (a.startMs ?? 0).compareTo(b.startMs ?? 0));
 
       final attempts = attemptsResult.fold(
-        (l) => <DictationAttemptEntity>[],
-        (r) => r as List<DictationAttemptEntity>,
+            (l) => <DictationAttemptEntity>[],
+            (r) => r as List<DictationAttemptEntity>,
       );
 
       final latest = <int, DictationAttemptEntity>{};
@@ -128,41 +134,61 @@ class CueBloc extends Bloc<CueEvent, CueState> {
           int idx = a.cueIdx!;
           if (idx >= 0 && idx < cues.length) {
             latest[idx] = a;
-            final isPassed =
-                (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
+            final isPassed = (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
             if (isPassed) completedSet.add(idx);
           }
         }
       }
 
-      int firstIncomplete = 0;
-      for (int i = 0; i < cues.length; i++) {
-        if (!completedSet.contains(i)) {
-          firstIncomplete = i;
-          break;
+      // 🔥 LOGIC CHỌN CUE BAN ĐẦU 🔥
+      int selectedIndex = 0;
+
+      // 1. Nếu có ID từ thông báo -> Ưu tiên tìm ID đó
+      if (e.initialCueId != null && e.initialCueId!.isNotEmpty) {
+        // Log toàn bộ ID trong danh sách để so sánh
+        print("📋 [CueBloc] List of Cues IDs:");
+        for(var c in cues) {
+          print("   - ${c.id} (Match: ${c.id == e.initialCueId})");
+        }
+
+        final foundIndex = cues.indexWhere((c) => c.id == e.initialCueId);
+
+        if (foundIndex != -1) {
+          print("✅ [CueBloc] Found Match at Index: $foundIndex");
+          selectedIndex = foundIndex;
+        } else {
+          print("⚠️ [CueBloc] NO MATCH FOUND!");
         }
       }
-      if (completedSet.length == cues.length && cues.isNotEmpty) {
-        firstIncomplete = cues.length - 1;
+      // 2. Nếu không -> Tìm câu chưa làm đầu tiên
+      else {
+        for (int i = 0; i < cues.length; i++) {
+          if (!completedSet.contains(i)) {
+            selectedIndex = i;
+            break;
+          }
+        }
+        if (completedSet.length == cues.length && cues.isNotEmpty) {
+          selectedIndex = cues.length - 1;
+        }
       }
 
-      final initialText = latest[firstIncomplete]?.userText ?? '';
+      final initialText = latest[selectedIndex]?.userText ?? '';
 
       emit(state.copyWith(
         status: CueStatus.success,
         listeningId: e.listeningId,
-        // 🔥 QUAN TRỌNG: Gán ID vào state
         cues: cues,
-        selectedIndex: firstIncomplete,
+        selectedIndex: selectedIndex, // Index đã được tính toán ở trên
         userAnswer: initialText,
         latestAttempts: latest,
         completedIdx: completedSet,
         justCompletedAll: completedSet.length >= cues.length,
       ));
 
-      // Load comment an toàn
+      // Load comment cho Cue được chọn
       if (cues.isNotEmpty) {
-        add(LoadCommentsEvent(cues[firstIncomplete].id));
+        add(LoadCommentsEvent(cues[selectedIndex].id));
       }
     } catch (err) {
       emit(state.copyWith(status: CueStatus.error, errorMessage: '$err'));

@@ -7,7 +7,12 @@ class UserRemoteDatasource {
   final Dio dio;
 
   UserRemoteDatasource({required this.dio});
-
+  Future<void> triggerTestNotification() async {
+    await dio.post('/users/test-notification');
+  }
+  Future<void> updateFcmToken(String token) async {
+    await dio.post('/users/fcm-token', data: {'token': token});
+  }
   Future<UserEntity> getProfile() async {
     final response = await dio.get('users/profile');
     return UserEntity.fromJson(response.data);
@@ -35,6 +40,7 @@ class UserRemoteDatasource {
     String? cefr,
     int? dailyMinutes,
     Map<String, int>? reminder,
+    int? dailyLessonGoal, // 🔥 THÊM THAM SỐ
     bool? strictCorrection,
     String? language,
     String? timezone,
@@ -55,12 +61,13 @@ class UserRemoteDatasource {
       if (language != null) 'language': language,
       if (timezone != null) 'timezone': timezone,
       if (gender != null) 'gender': gender,
-
       // 🔥 SỬA LỖI Ở ĐÂY:
       // Luôn luôn gửi field 'reminder'.
       // - Nếu có dữ liệu -> Gửi JSON String
       // - Nếu là null -> Gửi chuỗi "null" để Backend biết mà xóa
       'reminder': reminder != null ? jsonEncode(reminder) : 'null',
+      if (dailyLessonGoal != null) 'dailyLessonGoal': dailyLessonGoal, // 🔥 THÊM DỮ LIỆU
+
     };
 
     // 2. Tạo FormData từ Map

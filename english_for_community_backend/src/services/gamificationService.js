@@ -23,32 +23,40 @@ export const updateGamificationStats = async (userId, activityType, activityData
       return getDateString(d, userTimezone);
     })();
 
-    // 🔥 FIX: Lấy mốc ngày tính streak dựa trên dailyProgressDate (ngày học cuối cùng)
-    // Nếu chưa có dailyProgressDate (user mới), fallback về null
+    // Ngày học cuối cùng đã ghi nhận
     const lastStreakDateStr = user.dailyProgressDate || null;
 
-    // === 1. LOGIC TÍNH STREAK (SỬA LẠI) ===
+    // === 1. LOGIC TÍNH STREAK (ĐÃ SỬA) ===
 
-    // Chỉ xử lý nếu hôm nay chưa ghi nhận streak (Ngày học cuối khác ngày hôm nay)
+    // 🔥 QUAN TRỌNG: Chỉ tính lại streak nếu HÔM NAY CHƯA ĐƯỢC TÍNH
     if (lastStreakDateStr !== todayStr) {
 
-      // Nếu ngày học cuối cùng là hôm qua -> Tăng Streak
+      console.log(`🔄 Checking Streak: Last=${lastStreakDateStr}, Yesterday=${yesterdayStr}, Today=${todayStr}`);
+
+      // Trường hợp 1: Học liên tục (Ngày cuối cùng là hôm qua)
       if (lastStreakDateStr === yesterdayStr) {
         user.currentStreak = (user.currentStreak || 0) + 1;
+        console.log(`🔥 Streak increased to ${user.currentStreak}`);
       }
-      // Nếu không phải hôm qua (bỏ cách ngày hoặc user mới) -> Reset về 1
+        // Trường hợp 2: Bị ngắt quãng (Ngày cuối cùng trước hôm qua) HOẶC user mới
+      // Lưu ý: Nếu user.currentStreak đang là 0 thì lên 1 luôn.
       else {
         user.currentStreak = 1;
+        console.log(`⚠️ Streak reset/started at 1`);
       }
 
-      // Cập nhật ngày đã tính streak là hôm nay
+      // Cập nhật ngày đã tính streak là hôm nay để không tính lại nữa
       user.dailyProgressDate = todayStr;
 
       // Reset tiến độ trong ngày về 0 vì đây là ngày mới
       user.dailyActivityProgress = 0;
     }
+    else {
+      console.log(`ℹ️ Streak already updated for today (${todayStr}). Keeping: ${user.currentStreak}`);
+    }
 
     // === 2. CẬP NHẬT DAILY GOAL TIẾN ĐỘ ===
+    // (Logic này chạy mỗi lần học, bất kể streak đã tính hay chưa)
     let isCompletion = false;
     if (activityType === 'reading' || activityType === 'writing') {
       isCompletion = true;
@@ -57,7 +65,7 @@ export const updateGamificationStats = async (userId, activityType, activityData
     }
 
     if (isCompletion) {
-      user.dailyActivityProgress += 1;
+      user.dailyActivityProgress = (user.dailyActivityProgress || 0) + 1;
     }
 
     // === 3. CẬP NHẬT ĐIỂM VÀ LEVEL ===
@@ -74,7 +82,7 @@ export const updateGamificationStats = async (userId, activityType, activityData
     user.lastActivityDate = new Date();
 
     await user.save();
-    console.log(`✅ Updated Streak: ${user.currentStreak}, Date: ${todayStr}`);
+    console.log(`✅ Gamification Saved. Points: ${user.totalPoints}, DailyProgress: ${user.dailyActivityProgress}`);
 
   } catch (error) {
     console.error(`Lỗi cập nhật gamification:`, error);

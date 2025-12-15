@@ -19,6 +19,8 @@ import '../../feature/auth/forgot_password_page.dart';
 import '../../feature/auth/otp_verification_page.dart';
 import '../../feature/auth/register_page.dart';
 import '../../feature/auth/reset_password_page.dart';
+import '../../feature/listening/listening_skill/bloc/cue_bloc.dart';
+import '../../feature/listening/listening_skill/bloc/cue_event.dart';
 import '../get_it/get_it.dart';
 import '../utils/global_keys.dart';
 import '../sqflite/dict_db.dart';
@@ -324,15 +326,37 @@ class AppRouter {
         path: '/listening-skills/:listeningId',
         name: 'ListeningSkillsPage',
         builder: (context, state) {
+          // 1. Lấy ID từ URL (bắt buộc)
           final listeningId = state.pathParameters['listeningId'] ?? '';
-          final audioUrl = state.uri.queryParameters['audioUrl'] ?? '';
-          final title = state.uri.queryParameters['title'];
-          final levelText = state.uri.queryParameters['levelText'];
-          return ListeningSkillsPage(
-            listeningId: listeningId,
-            audioUrl: audioUrl,
-            title: title,
-            levelText: levelText,
+
+          // 2. Lấy Object 'extra' (Dùng cho Notification hoặc điều hướng nội bộ phức tạp)
+          final extra = state.extra as Map<String, dynamic>?;
+
+          // 3. Lấy Query Params (Dùng cho điều hướng web/link chia sẻ)
+          final queryParams = state.uri.queryParameters;
+
+          // 4. Ưu tiên lấy dữ liệu từ 'extra' trước, nếu không có thì lấy từ 'queryParams'
+          // (NotificationService sẽ gửi data qua 'extra')
+          final audioUrl = extra?['audioUrl'] ?? queryParams['audioUrl'] ?? '';
+          final title = extra?['title'] ?? queryParams['title'];
+          final levelText = extra?['levelText'] ?? queryParams['levelText'];
+
+          // 5. Các tham số xử lý Deep Link (Mở tab Discussion & Scroll)
+          final targetCommentId = extra?['targetCommentId'];
+          final openDiscussion = extra?['openDiscussion'] == true;
+          final targetCueId = extra?['cueId'];
+          return BlocProvider<CueBloc>(
+            create: (context) => getIt<CueBloc>()
+              ..add(LoadCuesAndAttempts(listeningId: listeningId,
+                initialCueId: targetCueId)), // Load dữ liệu ngay khi vào trang
+            child: ListeningSkillsPage(
+              listeningId: listeningId,
+              audioUrl: audioUrl,
+              title: title,
+              levelText: levelText,
+              initialTab: openDiscussion ? 1 : 0,
+              targetCommentId: targetCommentId,
+            ),
           );
         },
       ),
@@ -358,7 +382,18 @@ class AppRouter {
       GoRoute(
         path: '/vocabulary',
         name: 'VocabularyPage',
-        builder: (context, state) => const VocabularyHomePage(),
+        builder: (context, state) {
+          // Lấy extra data
+          int? initialIndex;
+          if (state.extra != null && state.extra is Map) {
+            final map = state.extra as Map;
+            if (map.containsKey('initialTabIndex')) {
+              initialIndex = map['initialTabIndex'] as int;
+            }
+          }
+
+          return VocabularyHomePage(initialIndex: initialIndex);
+        },
       ),
       GoRoute(
         path: '/dictionary-search',

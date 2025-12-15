@@ -58,6 +58,7 @@ class UserEntity extends Equatable {
   final String? goal;
   final String? cefr;
   final int? dailyMinutes;
+  final int? dailyLessonGoal;
   final TimeOfDay? reminder;
   final bool? strictCorrection;
   final String? language;
@@ -101,6 +102,7 @@ class UserEntity extends Equatable {
     this.goal,
     this.cefr,
     this.dailyMinutes,
+    this.dailyLessonGoal,
     this.reminder,
     this.strictCorrection,
     this.language,
@@ -129,6 +131,7 @@ class UserEntity extends Equatable {
     String? goal,
     String? cefr,
     int? dailyMinutes,
+    int? dailyLessonGoal,
 
     // 🔥 THÊM: Copy gender và isVerified
     String? gender,
@@ -137,7 +140,6 @@ class UserEntity extends Equatable {
     // Logic for Reminder
     TimeOfDay? reminder,
     bool clearReminder = false, // ✅ Flag to force clear reminder
-
     bool? strictCorrection,
     String? language,
     String? timezone,
@@ -164,7 +166,7 @@ class UserEntity extends Equatable {
       goal: goal ?? this.goal,
       cefr: cefr ?? this.cefr,
       dailyMinutes: dailyMinutes ?? this.dailyMinutes,
-
+      dailyLessonGoal: dailyLessonGoal ?? this.dailyLessonGoal,
       // ✅ Logic: If clearReminder is true -> set null. Otherwise use new value or keep old.
       reminder: clearReminder ? null : (reminder ?? this.reminder),
 
@@ -233,6 +235,8 @@ class UserEntity extends Equatable {
       cefr: json['cefr'] as String?,
       dailyMinutes: (json['dailyMinutes'] as num?)?.toInt(),
       reminder: conv.fromJson(json['reminder']),
+      dailyLessonGoal: (json['dailyLessonGoal'] as num?)?.toInt() ?? 5,
+
       strictCorrection: _parseBool(json['strictCorrection']),
       language: json['language'] as String?,
       timezone: json['timezone'] as String?,
@@ -277,6 +281,7 @@ class UserEntity extends Equatable {
       'cefr': cefr,
       'dailyMinutes': dailyMinutes,
       'reminder': conv.toJson(reminder),
+      'dailyLessonGoal' : dailyLessonGoal,
       'strictCorrection': strictCorrection,
       'language': language,
       'timezone': timezone,
@@ -309,7 +314,7 @@ class UserEntity extends Equatable {
     id, fullName, email, username, avatarUrl, phone,
     role, isBanned, banReason, banExpiresAt,
     dailyActivityGoal, dailyActivityProgress, totalPoints, level, currentStreak,
-    reminder, timezone,
+    reminder,dailyLessonGoal, timezone,
     isOnline, lastActivityDate,
 
     // 🔥 THÊM: Props cho gender và isVerified

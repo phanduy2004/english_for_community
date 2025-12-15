@@ -31,6 +31,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     on<ChangePasswordEvent>(_onChangePasswordEvent);
     on<LoginWithGoogleEvent>(_onLoginWithGoogleEvent);
   }
+
   Future<void> _onLoginWithGoogleEvent(
       LoginWithGoogleEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
@@ -47,7 +48,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       }
 
       // 2. Lấy Auth Credential
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -55,7 +57,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
       // 3. Sign in Firebase để lấy ID Token chuẩn
       final UserCredential userCredential =
-      await FirebaseAuth.instance.signInWithCredential(credential);
+          await FirebaseAuth.instance.signInWithCredential(credential);
 
       final String? idToken = await userCredential.user?.getIdToken();
 
@@ -67,14 +69,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       final result = await authRepository.loginWithGoogle(idToken);
 
       result.fold(
-            (failure) {
+        (failure) {
           emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.error,
             errorMessage: failure.message,
           ));
         },
-            (userEntity) {
+        (userEntity) {
           emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.success,
@@ -90,20 +92,24 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       ));
     }
   }
-  Future<void> _onChangePasswordEvent(ChangePasswordEvent event, Emitter<UserState> emit) async {
+
+  Future<void> _onChangePasswordEvent(
+      ChangePasswordEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
-    final result = await userRepository.changePassword(event.currentPassword, event.newPassword);
+    final result = await userRepository.changePassword(
+        event.currentPassword, event.newPassword);
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
-          status: UserStatus.error, // Hoặc giữ nguyên status hiện tại, chỉ bắn lỗi
+          status: UserStatus.error,
+          // Hoặc giữ nguyên status hiện tại, chỉ bắn lỗi
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         emit(state.copyWith(
           isFormLoading: false,
           // Dùng success message tạm thời qua biến errorMessage hoặc cơ chế khác
@@ -112,20 +118,22 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       },
     );
   }
-  Future<void> onRequestForgotPasswordEvent(RequestForgotPasswordEvent event, Emitter<UserState> emit) async {
+
+  Future<void> onRequestForgotPasswordEvent(
+      RequestForgotPasswordEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     final result = await authRepository.requestPasswordReset(event.email);
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         // Thành công: Chuyển sang trạng thái OTP_REQUIRED tương tự signup
         emit(state.copyWith(
           isFormLoading: false,
@@ -137,7 +145,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   // 🔥 THÊM: Xử lý Reset Password (kết hợp verify OTP)
-  Future<void> onResetPasswordEvent(ResetPasswordEvent event, Emitter<UserState> emit) async {
+  Future<void> onResetPasswordEvent(
+      ResetPasswordEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     final result = await authRepository.resetPassword(
@@ -147,39 +156,41 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     );
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         // Thành công: Đẩy về trạng thái unauthenticated với message
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.unauthenticated,
-          errorMessage: "Mật khẩu đã được đặt lại thành công! Vui lòng đăng nhập.",
+          errorMessage:
+              "Mật khẩu đã được đặt lại thành công! Vui lòng đăng nhập.",
         ));
       },
     );
   }
 
   // 🔥 THÊM: Xử lý Refresh Token (nếu gọi thủ công)
-  Future<void> onRefreshTokenEvent(RefreshTokenEvent event, Emitter<UserState> emit) async {
+  Future<void> onRefreshTokenEvent(
+      RefreshTokenEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     final result = await authRepository.refreshToken(event.refreshToken);
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (newAccessToken) {
+      (newAccessToken) {
         // Thành công: Có thể cập nhật state nếu cần, ví dụ giữ authenticated
         emit(state.copyWith(
           isFormLoading: false,
@@ -189,6 +200,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       },
     );
   }
+
   Future<void> onSignUpEvent(SignUpEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
@@ -202,14 +214,14 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     );
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         // Thành công: Chuyển sang trạng thái OTP_REQUIRED và lưu email tạm thời vào errorMessage
         // (Đây là một cách để truyền data giữa các state khi không dùng field riêng)
         emit(state.copyWith(
@@ -222,7 +234,8 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   // 🔥 HÀM MỚI: Xử lý Xác thực OTP (Verify)
-  Future<void> onVerifyOtpEvent(VerifyOtpEvent event, Emitter<UserState> emit) async {
+  Future<void> onVerifyOtpEvent(
+      VerifyOtpEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     final result = await authRepository.verifyOtp(
@@ -232,37 +245,37 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     );
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           isFormLoading: false,
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         // Xác thực thành công: Đẩy về trạng thái Unauthenticated để GoRouter chuyển về Login
         emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.unauthenticated,
-            errorMessage: "Xác thực email thành công! Vui lòng đăng nhập."
-        ));
+            errorMessage: "Xác thực email thành công! Vui lòng đăng nhập."));
       },
     );
   }
 
   // 🔥 HÀM MỚI: Xử lý Gửi lại OTP (Resend)
-  Future<void> onResendOtpEvent(ResendOtpEvent event, Emitter<UserState> emit) async {
+  Future<void> onResendOtpEvent(
+      ResendOtpEvent event, Emitter<UserState> emit) async {
     // Không cần bật loading vì nó là action nhanh
     final result = await authRepository.resendOtp(event.email);
 
     result.fold(
-          (failure) {
+      (failure) {
         emit(state.copyWith(
           status: UserStatus.error,
           errorMessage: failure.message,
         ));
       },
-          (_) {
+      (_) {
         // Gửi lại thành công (Có thể show SnackBar ở UI)
         // Không cần đổi trạng thái, chỉ reset lỗi
         emit(state.copyWith(
@@ -271,7 +284,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       },
     );
   }
-  Future<void> _onForceLogoutEvent(ForceLogoutEvent event, Emitter<UserState> emit) async {
+
+  Future<void> _onForceLogoutEvent(
+      ForceLogoutEvent event, Emitter<UserState> emit) async {
     await TokenStorage.clearAllTokens(); // Xóa token ngay
     emit(state.copyWith(
       status: UserStatus.unauthenticated,
@@ -279,7 +294,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       userEntity: null,
     ));
   }
-  Future<void> _onClearUserDataEvent(ClearUserDataEvent event, Emitter<UserState> emit) async {
+
+  Future<void> _onClearUserDataEvent(
+      ClearUserDataEvent event, Emitter<UserState> emit) async {
     print("🧹 [UserBloc] Clearing tokens immediately due to Ban.");
     await TokenStorage.clearAllTokens();
 
@@ -287,6 +304,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     // Không gọi emit(unauthenticated) ở đây.
     // Vì nếu emit, GoRouter sẽ chuyển trang ngay lập tức làm mất Dialog.
   }
+
   Future<void> onCheckAuthStatusEvent(
       CheckAuthStatusEvent event, Emitter<UserState> emit) async {
     emit(state.copyWith(status: UserStatus.loading));
@@ -311,12 +329,10 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     await TokenStorage.clearAllTokens();
     try {
       await authRepository.logout();
-    } catch (_) {
-    }
+    } catch (_) {}
     try {
       await FirebaseAuth.instance.signOut();
       await GoogleSignIn().signOut();
-
     } catch (e) {
       print("Lỗi khi đăng xuất Google: $e");
     }
@@ -339,21 +355,22 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(state.copyWith(status: UserStatus.loading));
 
     var result = await userRepository.updateProfile(
-      fullName: event.fullName,
-      username: event.username,
-      phone: event.phone,
-      dateOfBirth: event.dateOfBirth,
-      bio: event.bio,
-      avatarFile: event.avatarFile, // Truyền File từ Event
-      timezone: event.timezone,
-      language: event.language,
-      strictCorrection: event.strictCorrection,
-      reminder: event.reminder,
-      dailyMinutes: event.dailyMinutes,
-      cefr: event.cefr,
-      goal: event.goal,
-      gender: event.gender
-    );
+        fullName: event.fullName,
+        username: event.username,
+        phone: event.phone,
+        dateOfBirth: event.dateOfBirth,
+        bio: event.bio,
+        avatarFile: event.avatarFile,
+        // Truyền File từ Event
+        timezone: event.timezone,
+        language: event.language,
+        strictCorrection: event.strictCorrection,
+        reminder: event.reminder,
+        dailyLessonGoal: event.dailyLessonGoal,
+        dailyMinutes: event.dailyMinutes,
+        cefr: event.cefr,
+        goal: event.goal,
+        gender: event.gender);
 
     result.fold((l) {
       emit(state.copyWith(status: UserStatus.error, errorMessage: l.message));
@@ -375,32 +392,26 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   Future<void> onLoginEvent(LoginEvent event, Emitter<UserState> emit) async {
     // 1. Loading
-    emit(state.copyWith(
-        isFormLoading: true,
-        errorMessage: null
-    ));
+    emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     // 2. Gọi Repository
     final result = await authRepository.login(event.email, event.password);
 
     // 3. Xử lý kết quả
     result.fold(
-          (failure) {
+      (failure) {
         // Thất bại
         emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.error,
-            errorMessage: failure.message
-        ));
+            errorMessage: failure.message));
       },
-          (userEntity) {
+      (userEntity) {
         emit(state.copyWith(
             isFormLoading: false,
             status: UserStatus.success,
-            userEntity: userEntity
-        ));
+            userEntity: userEntity));
       },
     );
   }
-
 }

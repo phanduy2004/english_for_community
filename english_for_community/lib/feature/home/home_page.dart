@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // --- Import Core & Shared ---
 import '../../core/notification/local_notification_service.dart';
+import '../../core/repository/user_repository.dart';
 import '../../core/repository/user_vocab_repository.dart';
 import '../../core/socket/socket_service.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
@@ -65,66 +67,163 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<UserBloc>().add(GetProfileEvent());
       _initializeLocalNotifications();
-      // Check user state to connect socket immediately (in case of hot restart)
+
       final userState = context.read<UserBloc>().state;
       if (userState.status == UserStatus.success && userState.userEntity != null) {
         _setupSocketConnection(userState.userEntity!.id);
       }
+      _setupPushNotifications();
+      _setupInteractedMessage();
     });
+  }
+
+  Future<void> _setupInteractedMessage() async {
+    // 1. App đang tắt (Terminated)
+    RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      print("🚀 App launched from Terminated via Notification");
+      _handleMessageNavigation(initialMessage.data);
+    }
+
+    // 2. App đang chạy ngầm (Background)
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      print("🚀 App opened from Background via Notification");
+      _handleMessageNavigation(message.data);
+    });
+  }
+
+  // 🔥 HÀM XỬ LÝ ĐIỀU HƯỚNG QUAN TRỌNG
+  void _handleMessageNavigation(Map<String, dynamic> data) {
+    if (data.isEmpty) return;
+
+    try {
+      final String? type = data['type'];
+
+      // --- 1. LISTENING (Comment/Reply) ---
+      if (data.containsKey('listeningId')) {
+        final String listeningId = data['listeningId'].toString();
+        final String? commentId = data['commentId']?.toString();
+        final String audioUrl = data['audioUrl']?.toString() ?? '';
+        final String? cueId = data['cueId']?.toString();
+        final bool openDiscussion = data['openDiscussion'] == 'true' || data['openDiscussion'] == true;
+
+        context.pushNamed(
+          'ListeningSkillsPage',
+          pathParameters: {'listeningId': listeningId},
+          extra: {
+            'listeningId': listeningId,
+            'audioUrl': audioUrl,
+            'targetCommentId': commentId,
+            'cueId': cueId,
+            'openDiscussion': true,
+          },
+        );
+      }
+
+      // --- 2. DAILY VOCAB (Nhắc học từ) ---
+      else if (data.containsKey('wordId') || type == 'DAILY_VOCAB') {
+        print("🚀 Navigating to Vocabulary Recent Tab...");
+        context.pushNamed(
+            'VocabularyPage',
+            extra: {'initialTabIndex': 0} // 🔥 Tab 0 = Recent
+        );      }
+
+      // --- 3. REVIEW REMINDER (Nhắc ôn tập) ---
+      else if (type == 'REVIEW_REMINDER') {
+        print("🚀 Navigating to Vocabulary Learning Tab...");
+        context.pushNamed(
+            'VocabularyPage',
+            extra: {'initialTabIndex': 1} // 🔥 Tab 1 = Learning
+        );
+      }
+
+      // --- 4. 🔥 PROGRESS NUDGE (Nhắc tiến độ) ---
+      else if (type == 'PROGRESS_NUDGE') {
+        print("🚀 Navigating to Progress Report...");
+        // Chuyển sang Tab 1 (ProgressReportPage)
+        setState(() {
+          _tab = 1;
+        });
+      }
+
+      // --- 5. 🔥 STREAK RESCUE (Cứu chuỗi) ---
+      else if (type == 'STREAK_RESCUE') {
+        print("🚀 Streak Rescue -> Open Speaking Mode");
+        // Mở ngay dialog Speaking để học nhanh
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) showSpeakingModeDialog(context);
+        });
+      }
+
+    } catch (e) {
+      print("❌ Error navigating from push notification: $e");
+    }
+  }
+
+  Future<void> _setupPushNotifications() async {
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission(
+      alert: true, badge: true, sound: true,
+    );
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      String? token = await messaging.getToken();
+      if (token != null) {
+        GetIt.I<UserRepository>().updateFcmToken(token);
+      }
+
+      messaging.onTokenRefresh.listen((newToken) {
+        GetIt.I<UserRepository>().updateFcmToken(newToken);
+      });
+
+      // 🔥 SỬA LẠI ĐOẠN NÀY:
+      // Khi App đang mở (Foreground), chỉ in log chơi thôi.
+      // TUYỆT ĐỐI KHÔNG gọi LocalNotificationService ở đây nữa.
+      // Vì SocketService đã lo việc hiển thị thông báo rồi.
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        print('📩 [FCM Foreground] Data received but suppressed (Let Socket handle it)');
+        print('   - Type: ${message.data['type']}');
+
+        // Nếu bạn muốn chắc chắn cập nhật badge kể cả khi socket lỡ miss (hiếm khi),
+        // thì chỉ gọi load lại badge thôi, KHÔNG hiện popup.
+        _notificationBloc.add(const NotificationLoadStarted(isRefresh: true));
+      });
+    }
   }
 
   void _setupSocketConnection(String userId) {
     if (_isSocketSetup) return;
-
     final socketService = GetIt.I<SocketService>();
-    debugPrint("🔌 [HomePage] Setting up Socket for User: $userId");
-
     socketService.userLogin(userId);
 
     socketService.listenToNotifications((data) {
       try {
-        debugPrint("🔔 [HomePage] Received Notification Data: $data");
-
-        // 1. Update Badge (Red dot) in App
         final noti = NotificationEntity.fromJson(data);
         _notificationBloc.add(NotificationIncomingReceived(noti));
 
-        // 2. Process data to show push notification
-        // Get sender name from senderId object
         String senderName = '';
         if (data['senderId'] != null && data['senderId'] is Map) {
           senderName = data['senderId']['fullName'] ?? 'Unknown User';
         }
-
-        // Get message content
         String serverMessage = data['message'] ?? '';
-
-        // Combine: "John Doe replied..."
         String displayBody = "$senderName $serverMessage".trim();
-
-        // Get Title (default if server sends null)
         String title = data['title'] ?? 'New Notification';
 
-        // Create Payload for navigation when tapped
-        // Backend sends: data: { listeningId: "..." }
         String? payload;
         if (data['data'] != null) {
           payload = jsonEncode(data['data']);
         }
 
-        // 3. Trigger Local Notification
         LocalNotificationService().showInstantNotification(
           id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
           title: title,
           body: displayBody,
           payload: payload,
         );
-
       } catch (e) {
         debugPrint("❌ Error processing notification: $e");
       }
     });
-
     _isSocketSetup = true;
   }
 
@@ -155,8 +254,7 @@ class _HomePageState extends State<HomePage> {
         if (cachedJson != null) {
           final List<dynamic> decoded = jsonDecode(cachedJson);
           await LocalNotificationService().scheduleDailyWordSequence(
-            words: decoded,
-            time: user.reminder!,
+            words: decoded, time: user.reminder!,
           );
         }
       },
@@ -168,8 +266,7 @@ class _HomePageState extends State<HomePage> {
           }).toList();
           await prefs.setString('CACHED_DAILY_WORDS', jsonEncode(wordsMapList));
           await LocalNotificationService().scheduleDailyWordSequence(
-            words: wordsMapList,
-            time: user.reminder!,
+            words: wordsMapList, time: user.reminder!,
           );
         }
       },
@@ -229,10 +326,7 @@ class _HomePageState extends State<HomePage> {
           body: SafeArea(
             child: IndexedStack(index: _tab, children: _pages),
           ),
-
-          // 🔥 COMPACT ACTION BUTTONS
           floatingActionButton: _tab == 0 ? _buildHomeFABs() : null,
-
           bottomNavigationBar: AppNavigationBar.main(
             currentIndex: _tab,
             onIndexSelected: (i) {
@@ -246,9 +340,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // 🔥 CUSTOM FAB GROUP (Compact Size)
   Widget _buildHomeFABs() {
-    // 🔽 Reduced size from 56.0 to 48.0
     const double buttonSize = 48.0;
     const double iconSize = 22.0;
 
@@ -256,12 +348,10 @@ class _HomePageState extends State<HomePage> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        // 1. Notification Button
         BlocBuilder<NotificationBloc, NotificationState>(
           builder: (context, state) {
             return SizedBox(
-              width: buttonSize,
-              height: buttonSize,
+              width: buttonSize, height: buttonSize,
               child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
@@ -277,12 +367,9 @@ class _HomePageState extends State<HomePage> {
                     ),
                     child: const Icon(Icons.notifications_outlined, color: Color(0xFF09090B), size: iconSize),
                   ),
-
-                  // Badge (Red dot)
                   if (state.unreadCount > 0)
                     Positioned(
-                      top: -2,
-                      right: -2,
+                      top: -2, right: -2,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                         constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
@@ -290,19 +377,12 @@ class _HomePageState extends State<HomePage> {
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 2, offset: const Offset(0, 1))
-                          ],
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 2, offset: const Offset(0, 1))],
                         ),
                         child: Center(
                           child: Text(
                             state.unreadCount > 99 ? '99+' : '${state.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              height: 1.0,
-                            ),
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700, height: 1.0),
                           ),
                         ),
                       ),
@@ -312,13 +392,9 @@ class _HomePageState extends State<HomePage> {
             );
           },
         ),
-
-        const SizedBox(height: 12), // Spacing
-
-        // 2. AI Assistant Button
+        const SizedBox(height: 12),
         SizedBox(
-          width: buttonSize,
-          height: buttonSize,
+          width: buttonSize, height: buttonSize,
           child: FloatingActionButton(
             heroTag: "btn_ai_assistant",
             onPressed: _openAiAssistant,
@@ -361,8 +437,10 @@ class _HomeContentView extends StatelessWidget {
 
         if (state.status == UserStatus.success && state.userEntity != null) {
           final user = state.userEntity!;
+
           final int dailyProgress = user.dailyActivityProgress ?? 0;
-          final int dailyGoal = user.dailyActivityGoal ?? 5;
+          // 🔥 Lấy goal từ user.dailyLessonGoal, mặc định là 5 nếu chưa set
+          final int dailyGoal = user.dailyLessonGoal ?? 5;
           final double progressValue = (dailyGoal > 0) ? (dailyProgress / dailyGoal).clamp(0.0, 1.0) : 0.0;
 
           return SingleChildScrollView(
@@ -371,7 +449,7 @@ class _HomeContentView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(user.fullName, user.avatarUrl),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
                 _buildDailyGoalCard(dailyProgress, dailyGoal, progressValue, textMain, textMuted, primaryColor),
                 const SizedBox(height: 16),
                 _buildStatsRow(user),
@@ -430,6 +508,7 @@ class _HomeContentView extends StatelessWidget {
                 children: [
                   Text('Daily Goal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textMain)),
                   const SizedBox(height: 4),
+                  // 🔥 Cập nhật text hiển thị số bài học
                   Text('$progress / $goal lessons completed', style: TextStyle(fontSize: 13, color: textMuted)),
                 ],
               ),
@@ -451,6 +530,7 @@ class _HomeContentView extends StatelessWidget {
     );
   }
 
+  // ... (Các phần _buildStatsRow, _buildLessonsSection, _ShadcnCard... giữ nguyên như cũ)
   Widget _buildStatsRow(dynamic user) {
     return Row(
       children: [
@@ -526,7 +606,6 @@ class _HomeContentView extends StatelessWidget {
   }
 }
 
-// ... Shared Widgets ...
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
