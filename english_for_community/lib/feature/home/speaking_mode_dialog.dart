@@ -8,15 +8,15 @@ Future<void> showSpeakingModeDialog(BuildContext context) {
     context: context,
     barrierDismissible: true,
     barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-    barrierColor: Colors.black.withOpacity(0.4),
-    transitionDuration: const Duration(milliseconds: 250),
+    barrierColor: Colors.black.withOpacity(0.5), // Slightly darker overlay
+    transitionDuration: const Duration(milliseconds: 200),
     pageBuilder: (context, animation, secondaryAnimation) {
       return Align(
         alignment: Alignment.topCenter,
         child: Padding(
-          padding: const EdgeInsets.only(top: 100, left: 20, right: 20),
+          padding: const EdgeInsets.only(top: 100, left: 16, right: 16),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 420),
             child: const _SpeakingModeDialogContent(),
           ),
         ),
@@ -26,8 +26,8 @@ Future<void> showSpeakingModeDialog(BuildContext context) {
       return FadeTransition(
         opacity: animation,
         child: SlideTransition(
-          position: Tween(begin: const Offset(0, -0.1), end: Offset.zero).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          position: Tween(begin: const Offset(0, -0.05), end: Offset.zero).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
           ),
           child: child,
         ),
@@ -42,22 +42,27 @@ class _SpeakingModeDialogContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const bgCard = Colors.white;
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    const borderCol = Color(0xFFE4E4E7); // Zinc-200
+    const textMain = Color(0xFF09090B); // Zinc-950
+    const textMuted = Color(0xFF71717A); // Zinc-500
+
+    // Filter available modes (Removed Shadowing and Pronunciation)
+    final availableModes = SpeakingMode.values.where((mode) {
+      return mode == SpeakingMode.readAloud || mode == SpeakingMode.freeSpeaking;
+    }).toList();
 
     return Material(
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
           color: bgCard,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderCol),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -66,32 +71,39 @@ class _SpeakingModeDialogContent extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- HEADER ---
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Chọn chế độ luyện tập',
+                  'Select Practice Mode',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                     color: textMain,
                     letterSpacing: -0.5,
                   ),
                 ),
-                GestureDetector(
+                InkWell(
                   onTap: () => Navigator.pop(context),
-                  child: const Icon(Icons.close, size: 20, color: textMuted),
+                  borderRadius: BorderRadius.circular(20),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4.0),
+                    child: Icon(Icons.close, size: 20, color: textMuted),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             const Text(
-              'Lựa chọn phương pháp phù hợp để bắt đầu bài học.',
-              style: TextStyle(fontSize: 14, color: textMuted),
+              'Choose a method to start your speaking journey.',
+              style: TextStyle(fontSize: 14, color: textMuted, height: 1.4),
             ),
             const SizedBox(height: 24),
+
+            // --- MODE LIST ---
             Column(
-              children: SpeakingMode.values.map((mode) => _ModeTile(mode: mode)).toList(),
+              children: availableModes.map((mode) => _ModeTile(mode: mode)).toList(),
             ),
           ],
         ),
@@ -107,10 +119,11 @@ class _ModeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    const borderCol = Color(0xFFE4E4E7); // Zinc-200
+    const textMain = Color(0xFF09090B); // Zinc-950
+    const textMuted = Color(0xFF71717A); // Zinc-500
+
+    final themeColor = _getModeColor(mode);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -118,103 +131,122 @@ class _ModeTile extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: borderCol),
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(_getModeIcon(mode), size: 20, color: primaryColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => _handlePress(context),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                Text(
-                  _getModeTitle(mode),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: textMain,
+                // 1. Icon Box
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: themeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: themeColor.withOpacity(0.2)),
+                  ),
+                  child: Icon(_getModeIcon(mode), size: 22, color: themeColor),
+                ),
+                const SizedBox(width: 16),
+
+                // 2. Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _getModeTitle(mode),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: textMain,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _getModeDescription(mode),
+                        style: const TextStyle(fontSize: 13, color: textMuted),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _getModeDescription(mode),
-                  style: const TextStyle(fontSize: 13, color: textMuted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+
+                // 3. Arrow
+                const SizedBox(width: 8),
+                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[300]),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          SizedBox(
-            height: 32,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: textMain,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                if (mode == SpeakingMode.freeSpeaking) {
-                  // Điều hướng đến trang Chat AI mới tạo
-                  context.pushNamed(FreeSpeakingPage.routeName);
-                } else {
-                  // Các mode khác vẫn dùng SpeakingHubPage
-                  context.pushNamed(
-                    SpeakingHubPage.routeName,
-                    pathParameters: {'modeName': mode.name},
-                  );
-                }
-              },
-              child: const Text(
-                'Bắt đầu',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  void _handlePress(BuildContext context) {
+    Navigator.pop(context);
+    if (mode == SpeakingMode.freeSpeaking) {
+      context.pushNamed(FreeSpeakingPage.routeName);
+    } else {
+      context.pushNamed(
+        SpeakingHubPage.routeName,
+        pathParameters: {'modeName': mode.name},
+      );
+    }
+  }
+
+  // --- DATA HELPERS ---
+
   String _getModeTitle(SpeakingMode mode) {
     switch (mode) {
       case SpeakingMode.readAloud: return 'Read Aloud';
+      case SpeakingMode.freeSpeaking: return 'Free Speaking';
+    // Temporarily disabled
       case SpeakingMode.shadowing: return 'Shadowing';
       case SpeakingMode.pronunciation: return 'Pronunciation';
-      case SpeakingMode.freeSpeaking: return 'Free Speaking';
     }
   }
 
   String _getModeDescription(SpeakingMode mode) {
     switch (mode) {
-      case SpeakingMode.readAloud: return 'Đọc to đoạn văn bản.';
-      case SpeakingMode.shadowing: return 'Nghe và lặp lại ngay lập tức.';
-      case SpeakingMode.pronunciation: return 'Luyện phát âm từng âm tiết.';
-      case SpeakingMode.freeSpeaking: return 'Nói tự do theo chủ đề.';
+      case SpeakingMode.readAloud: return 'Read text passages clearly.';
+      case SpeakingMode.freeSpeaking: return 'Chat freely about any topic.';
+    // Temporarily disabled
+      case SpeakingMode.shadowing: return 'Listen and repeat instantly.';
+      case SpeakingMode.pronunciation: return 'Practice syllable precision.';
     }
   }
 
   IconData _getModeIcon(SpeakingMode mode) {
     switch (mode) {
       case SpeakingMode.readAloud: return Icons.chrome_reader_mode_outlined;
-      case SpeakingMode.shadowing: return Icons.hearing_outlined;
+      case SpeakingMode.freeSpeaking: return Icons.forum_outlined;
+    // Temporarily disabled
+      case SpeakingMode.shadowing: return Icons.headphones_outlined;
       case SpeakingMode.pronunciation: return Icons.mic_none_outlined;
-      case SpeakingMode.freeSpeaking: return Icons.chat_bubble_outline_rounded;
+    }
+  }
+
+  Color _getModeColor(SpeakingMode mode) {
+    switch (mode) {
+      case SpeakingMode.readAloud: return const Color(0xFF3B82F6); // Blue
+      case SpeakingMode.freeSpeaking: return const Color(0xFF10B981); // Emerald
+    // Temporarily disabled
+      case SpeakingMode.shadowing: return const Color(0xFFA855F7); // Purple
+      case SpeakingMode.pronunciation: return const Color(0xFFF97316); // Orange
     }
   }
 }

@@ -15,35 +15,57 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   final List<Map<String, dynamic>> _steps = [
     {
       "title": "Welcome to Vocabulary",
-      "desc": "Xây dựng vốn từ vựng vững chắc với phương pháp Lặp lại ngắt quãng (Spaced Repetition).",
-      "icon": Icons.auto_stories,
-      "color": Colors.blue
+      "desc": [
+        const TextSpan(text: "Xây dựng vốn từ vựng vững chắc với phương pháp "),
+        const TextSpan(text: "Lặp lại ngắt quãng", style: TextStyle(fontWeight: FontWeight.bold)),
+        const TextSpan(text: " (Spaced Repetition)."),
+      ],
+      "icon": Icons.auto_stories_rounded,
+      "color": const Color(0xFF3B82F6) // Blue 500
     },
     {
       "title": "Tra cứu & Lưu trữ",
-      "desc": "Tra từ nhanh chóng. Nhấn biểu tượng 'Bookmark' 🔖 để lưu từ, hoặc 'Mũ cử nhân' 🎓 để bắt đầu học ngay.",
-      "icon": Icons.search,
-      "color": Colors.orange
+      "desc": [
+        const TextSpan(text: "Tra từ nhanh chóng. Nhấn "),
+        WidgetSpan(child: Icon(Icons.bookmark, size: 16, color: Colors.amber[700])),
+        TextSpan(text: " Save", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber[700])),
+        const TextSpan(text: " để lưu lại, hoặc nhấn "),
+        const WidgetSpan(child: Icon(Icons.school, size: 16, color: Color(0xFF10B981))),
+        const TextSpan(text: " Learn", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+        const TextSpan(text: " để học ngay."),
+      ],
+      "icon": Icons.search_rounded,
+      "color": const Color(0xFFF59E0B) // Amber 500
     },
     {
-      "title": "Lộ trình học thông minh",
-      "desc": "Các từ đang học (Learning) sẽ được tự động tính toán thời gian ôn tập dựa trên thuật toán Ebbinghaus.",
-      "icon": Icons.school,
-      "color": Colors.green
+      "title": "Thuật toán thông minh",
+      "desc": [
+        const TextSpan(text: "Dựa trên lịch sử học của bạn, "),
+        const TextSpan(text: "Hệ thống Server", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
+        const TextSpan(text: " sẽ tự động tính toán "),
+        const TextSpan(text: "điểm rơi trí nhớ", style: TextStyle(fontWeight: FontWeight.bold)),
+        const TextSpan(text: " để nhắc nhở ngay trước khi bạn sắp quên từ đó."),
+      ],
+      "icon": Icons.psychology_rounded, // Đổi icon thành bộ não/xử lý
+      "color": const Color(0xFF10B981) // Emerald 500
     },
     {
       "title": "Ôn tập mỗi ngày",
-      "desc": "Khi đến hạn, hãy nhấn 'Review Now'. Đánh giá mức độ nhớ (Hard/Good/Easy) để hệ thống sắp xếp lịch học tối ưu nhất.",
-      "icon": Icons.history_edu,
-      "color": Colors.purple
+      "desc": [
+        const TextSpan(text: "Khi đến hạn, nhấn "),
+        const TextSpan(text: "Review Now", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
+        const TextSpan(text: ". Đánh giá mức độ nhớ (Hard/Good/Easy) để tối ưu lịch học."),
+      ],
+      "icon": Icons.history_edu_rounded,
+      "color": const Color(0xFFA855F7) // Purple 500
     },
   ];
 
   void _nextPage() {
     if (_currentIndex < _steps.length - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.fastOutSlowIn,
       );
     } else {
       Navigator.of(context).pop();
@@ -54,63 +76,107 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   Widget build(BuildContext context) {
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    // Lấy màu hiện tại
+    final currentColor = _steps[_currentIndex]['color'] as Color;
 
     return Dialog(
       backgroundColor: Colors.white,
-      surfaceTintColor: Colors.transparent, // Loại bỏ tint mặc định của M3
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFE4E4E7), width: 1), // Viền Shadcn
-      ),
+      surfaceTintColor: Colors.transparent,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 420),
+        constraints: const BoxConstraints(maxWidth: 360, maxHeight: 480),
         child: Column(
           children: [
-            // 1. PAGE VIEW CONTENT
+            // 1. HEADER (ANIMATED BACKGROUND + ICON)
             Expanded(
+              flex: 5,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Background Gradient Animation
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          currentColor.withOpacity(0.15),
+                          currentColor.withOpacity(0.02),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Floating Icon
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                    child: Container(
+                      key: ValueKey<int>(_currentIndex), // Key để trigger animation
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: currentColor.withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _steps[_currentIndex]['icon'],
+                        size: 64,
+                        color: currentColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. TEXT CONTENT
+            Expanded(
+              flex: 4,
               child: PageView.builder(
                 controller: _pageController,
+                physics: const BouncingScrollPhysics(),
                 onPageChanged: (index) => setState(() => _currentIndex = index),
                 itemCount: _steps.length,
                 itemBuilder: (context, index) {
                   final step = _steps[index];
                   return Padding(
-                    padding: const EdgeInsets.all(32.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: (step['color'] as Color).withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            step['icon'],
-                            size: 48,
-                            color: step['color'],
-                          ),
-                        ),
                         const SizedBox(height: 24),
                         Text(
                           step['title'],
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
                             color: textMain,
-                            letterSpacing: -0.5,
+                            height: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Text(
-                          step['desc'],
+                        const SizedBox(height: 16),
+                        RichText(
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            color: textMuted,
-                            height: 1.5,
+                          text: TextSpan(
+                            style: const TextStyle(
+                              fontSize: 15,
+                              color: textMuted,
+                              height: 1.6,
+                              fontFamily: 'Inter', // Hoặc font mặc định của bạn
+                            ),
+                            children: step['desc'],
                           ),
                         ),
                       ],
@@ -120,8 +186,8 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
               ),
             ),
 
-            // 2. INDICATOR & BUTTONS
-            Container(
+            // 3. FOOTER (DOTS + BUTTON)
+            Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -132,33 +198,44 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.only(right: 6),
-                        height: 8,
-                        width: _currentIndex == index ? 24 : 8,
+                        height: 6,
+                        width: _currentIndex == index ? 24 : 6,
                         decoration: BoxDecoration(
                           color: _currentIndex == index
-                              ? textMain // Active dot màu đen/đậm
-                              : const Color(0xFFE4E4E7), // Inactive dot màu xám nhạt
-                          borderRadius: BorderRadius.circular(4),
+                              ? currentColor // Dot active theo màu chủ đạo
+                              : const Color(0xFFE4E4E7),
+                          borderRadius: BorderRadius.circular(3),
                         ),
                       );
                     }),
                   ),
 
                   // Next Button
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: textMain, // Nền đen theo style Shadcn
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    child: ElevatedButton(
+                      onPressed: _nextPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: textMain,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30), // Bo tròn nhiều hơn
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      _currentIndex == _steps.length - 1 ? "Get Started" : "Next",
-                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      child: Row(
+                        children: [
+                          Text(
+                            _currentIndex == _steps.length - 1 ? "Let's go" : "Next",
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          if (_currentIndex != _steps.length - 1) ...[
+                            const SizedBox(width: 8),
+                            const Icon(Icons.arrow_forward_rounded, size: 16),
+                          ]
+                        ],
+                      ),
                     ),
                   ),
                 ],

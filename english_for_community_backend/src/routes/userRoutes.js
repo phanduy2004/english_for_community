@@ -5,7 +5,7 @@ import {
   updateProfile,
   deleteAccount,
   getPublicProfile,
-  getUserDetailsForAdmin, changePassword
+  getUserDetailsForAdmin, changePassword, updateFcmToken
 } from '../controllers/userController.js';
 import { authenticate } from '../middleware/auth.js';
 import uploadCloud from "../config/cloudinary.js";
@@ -18,5 +18,5 @@ router.delete('/profile', deleteAccount);
 router.get('/:id/public', getPublicProfile);
 router.get('/:id/admin-details', getUserDetailsForAdmin);
 router.post('/change-password', changePassword);
-
+router.post('/fcm-token', updateFcmToken);
 export default router;

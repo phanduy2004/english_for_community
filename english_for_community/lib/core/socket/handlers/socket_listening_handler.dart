@@ -39,17 +39,15 @@ extension SocketListeningHandler on SocketService {
     });
   }
 
-  void listenToReactionUpdates(Function(String commentId, List<dynamic> reactionsJson) onUpdate) {
+  void listenToReactionUpdates(Function(dynamic) onUpdate) {
     if (!_isInitialized) init();
 
     _socket.off('comment_reaction_updated');
 
     _socket.on('comment_reaction_updated', (data) {
-      final String commentId = data['commentId'];
-      final List<dynamic> reactions = data['reactions'];
+      print('❤️ [Socket] Reaction Updated: $data');
 
-      print('❤️ [Socket] Reaction Updated: $commentId - Count: ${reactions.length}');
-      onUpdate(commentId, reactions);
+      onUpdate(data);
     });
   }
 }

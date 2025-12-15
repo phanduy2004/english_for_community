@@ -19,9 +19,10 @@ const notificationSchema = new mongoose.Schema({
 
   // Dữ liệu payload để Client biết đường navigate
   data: {
-    listeningId: String,  // Để mở bài nghe
-    commentId: String,    // Để scroll tới comment (nếu làm xịn)
-    url: String           // Nếu là System thông báo kèm link
+    listeningId: String,
+    cueId: String,        // 🔥 THÊM DÒNG NÀY VÀO ĐÂY
+    commentId: String,
+    url: String
   },
 
   isRead: { type: Boolean, default: false },

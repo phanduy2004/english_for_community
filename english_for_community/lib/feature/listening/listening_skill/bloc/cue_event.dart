@@ -44,8 +44,15 @@ class UpdateUserAnswer extends CueEvent {
 }
 class LoadCuesAndAttempts extends CueEvent {
   final String listeningId;
+  final String? initialCueId; // 🔥 Thêm cái này để biết cần jump đến cue nào
 
-  LoadCuesAndAttempts({required this.listeningId});
+  const LoadCuesAndAttempts({
+    required this.listeningId,
+    this.initialCueId
+  });
+
+  @override
+  List<Object?> get props => [listeningId, initialCueId];
 }
 // 🔥 EVENT MỚI: Load danh sách comment của câu hiện tại
 class LoadCommentsEvent extends CueEvent {
@@ -67,8 +74,18 @@ class PostCommentEvent extends CueEvent {
   @override
   List<Object?> get props => [content, parentId];
 }
-class IncomingSocketComment extends CueEvent { final CommentEntity comment; const IncomingSocketComment(this.comment); }
+class IncomingSocketComment extends CueEvent {
+  final String cueId; // 🔥 Thêm trường này
+  final CommentEntity comment;
 
+  const IncomingSocketComment({
+    required this.cueId,
+    required this.comment
+  });
+
+  @override
+  List<Object?> get props => [cueId, comment];
+}
 class ReactToCommentEvent extends CueEvent {
   final String commentId;
   final ReactionType type;
@@ -83,12 +100,17 @@ class ReactToCommentEvent extends CueEvent {
   @override
   List<Object?> get props => [commentId, type, userId];
 }
-
-// 🔥 Socket trả về danh sách reaction mới nhất
 class IncomingSocketReaction extends CueEvent {
+  final String cueId; // 🔥 Thêm trường này
   final String commentId;
   final List<ReactionEntity> reactions;
-  const IncomingSocketReaction({required this.commentId, required this.reactions});
+
+  const IncomingSocketReaction({
+    required this.cueId,
+    required this.commentId,
+    required this.reactions
+  });
+
   @override
-  List<Object?> get props => [commentId, reactions];
+  List<Object?> get props => [cueId, commentId, reactions];
 }

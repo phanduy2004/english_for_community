@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 // Import Bloc & Entity
@@ -23,8 +25,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
     super.initState();
     _scrollController.addListener(_onScroll);
 
-    // 🔥 Gọi event load data (Reload lại list để cập nhật mới nhất)
-    // Dùng context.read vì Bloc đã được cung cấp bởi HomePage qua BlocProvider.value
+    // Call event to load data
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationBloc>().add(const NotificationLoadStarted(isRefresh: true));
     });
@@ -33,8 +34,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
   @override
   void dispose() {
     _scrollController.dispose();
-    // ❌ QUAN TRỌNG: KHÔNG ĐƯỢC GỌI bloc.close() Ở ĐÂY
-    // Vì Bloc này thuộc về HomePage, nếu đóng ở đây thì HomePage sẽ bị lỗi.
     super.dispose();
   }
 
@@ -51,6 +50,67 @@ class _NotificationDialogState extends State<NotificationDialog> {
     return currentScroll >= (maxScroll * 0.9);
   }
 
+  // 🔥 HANDLES NAVIGATION WHEN TAPPING AN ITEM
+  void _handleNavigation(BuildContext context, NotificationEntity item) {
+    // 1. Close Dialog first
+    Navigator.of(context).pop();
+
+    try {
+      final Map<String, dynamic> data = item.data ?? {};
+      // Get type from Entity or from data map
+      final String type = item.type ?? data['type'] ?? '';
+
+      print("🚀 Notification Tap: Type=$type, Data=$data");
+
+      // --- CASE 1: LISTENING (Reply/Reaction) ---
+      if (data.containsKey('listeningId')) {
+        final String listeningId = data['listeningId'];
+        final String? commentId = data['commentId'];
+        final String? cueId = data['cueId'];
+        final String audioUrl = data['audioUrl'] ?? '';
+
+        context.pushNamed(
+          'ListeningSkillsPage',
+          pathParameters: {'listeningId': listeningId},
+          extra: {
+            'listeningId': listeningId,
+            'audioUrl': audioUrl,
+            'targetCommentId': commentId, // Highlight comment
+            'cueId': cueId,               // Open correct Cue
+            'openDiscussion': true,       // Open Discussion tab
+          },
+        );
+      }
+
+      // --- CASE 2: REVIEW REMINDER -> Tab LEARNING (Index 1) ---
+      else if (type == 'REVIEW_REMINDER') {
+        print("👉 Navigating to Vocabulary -> Learning Tab");
+        context.pushNamed(
+            'VocabularyPage',
+            extra: {'initialTabIndex': 1} // 🔥 Tab 1: Learning
+        );
+      }
+
+      // --- CASE 3: DAILY VOCAB -> Tab RECENT (Index 0) ---
+      else if (type == 'DAILY_VOCAB' || type == 'DAILY_REMINDER' || data.containsKey('wordId')) {
+        print("👉 Navigating to Vocabulary -> Recent Tab");
+        context.pushNamed(
+            'VocabularyPage',
+            extra: {'initialTabIndex': 0} // 🔥 Tab 0: Recent
+        );
+      }
+
+      // --- CASE 4: PROGRESS NUDGE ---
+      else if (type == 'PROGRESS_NUDGE') {
+        // Option: Navigate to Home or Progress Page
+        // context.goNamed('HomePage');
+      }
+
+    } catch (e) {
+      print("❌ Error navigating from notification: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const borderColor = Color(0xFFE4E4E7);
@@ -58,7 +118,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
     const mutedText = Color(0xFF71717A);
     const bgHover = Color(0xFFF4F4F5);
 
-    // Không cần BlocProvider ở đây nữa vì đã wrap ở HomePage rồi
     return Dialog(
       backgroundColor: Colors.white,
       elevation: 8,
@@ -80,7 +139,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Thông báo",
+                  "Notifications", // Translated
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
@@ -96,7 +155,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
-                      "Đánh dấu đã đọc",
+                      "Mark all as read", // Translated
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -115,7 +174,6 @@ class _NotificationDialogState extends State<NotificationDialog> {
               constraints: const BoxConstraints(maxHeight: 500),
               child: BlocBuilder<NotificationBloc, NotificationState>(
                 builder: (context, state) {
-                  // Chỉ hiện loading nếu danh sách rỗng (load lần đầu)
                   if (state.status == NotificationStatus.loading && state.notifications.isEmpty) {
                     return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                   }
@@ -151,12 +209,11 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         mutedText: mutedText,
                         bgHover: bgHover,
                         onTap: () {
-                          // Đánh dấu đã đọc
+                          // 1. Mark as read
                           context.read<NotificationBloc>().add(NotificationMarkRead(item.id));
 
-                          // TODO: Xử lý điều hướng
-                          // Navigator.pop(context); // Nếu muốn đóng dialog
-                          // context.push(...)
+                          // 2. Navigate
+                          _handleNavigation(context, item);
                         },
                       );
                     },
@@ -180,7 +237,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text("Đóng", style: TextStyle(fontWeight: FontWeight.w500)),
+              child: const Text("Close", style: TextStyle(fontWeight: FontWeight.w500)), // Translated
             ),
           ),
         ],
@@ -189,7 +246,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
   }
 }
 
-// ... (Giữ nguyên class _NotificationItem, _EmptyState như cũ)
+// ... (Sub-widgets)
 class _NotificationItem extends StatelessWidget {
   final NotificationEntity item;
   final Color primaryText;
@@ -208,7 +265,7 @@ class _NotificationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = item.isRead ? Colors.white : const Color(0xFFF8FAFC);
-
+    final bool isSystem = item.senderAvatar == null || item.senderAvatar!.isEmpty;
     return Material(
       color: bgColor,
       child: InkWell(
@@ -226,14 +283,20 @@ class _NotificationItem extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: const Color(0xFFE4E4E7)),
-                      image: item.senderAvatar != null && item.senderAvatar!.isNotEmpty
+                      // Show avatar if available
+                      image: !isSystem
                           ? DecorationImage(image: NetworkImage(item.senderAvatar!), fit: BoxFit.cover)
                           : null,
+                      // If System -> Show different bg color
+                      color: isSystem ? Colors.blue.withOpacity(0.1) : Colors.white,
                     ),
-                    child: item.senderAvatar == null || item.senderAvatar!.isEmpty
-                        ? Icon(Icons.person, size: 20, color: mutedText)
+                    child: isSystem
+                    // 🔥 SYSTEM ICON
+                        ? Icon(Icons.notifications_active, size: 20, color: Theme.of(context).primaryColor)
                         : null,
                   ),
+
+                  // Notification Type Icon (Small)
                   Positioned(
                     bottom: -2,
                     right: -2,
@@ -243,9 +306,6 @@ class _NotificationItem extends StatelessWidget {
                         color: Colors.white,
                         shape: BoxShape.circle,
                         border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))
-                        ],
                       ),
                       child: _getTypeIcon(item.type),
                     ),
@@ -304,6 +364,8 @@ class _NotificationItem extends StatelessWidget {
       case 'COMMENT_REACTION':
         return const Icon(Icons.favorite_rounded, size: 12, color: Colors.redAccent);
       case 'SYSTEM_ANNOUNCEMENT':
+      case 'DAILY_VOCAB':
+      case 'REVIEW_REMINDER':
         return const Icon(Icons.campaign_rounded, size: 12, color: Colors.amber);
       default:
         return const Icon(Icons.notifications_rounded, size: 12, color: Colors.grey);
@@ -313,9 +375,9 @@ class _NotificationItem extends StatelessWidget {
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
-    if (diff.inMinutes < 1) return 'Vừa xong';
-    if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
-    if (diff.inHours < 24) return '${diff.inHours} giờ trước';
+    if (diff.inMinutes < 1) return 'Just now'; // Translated
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago'; // Translated
+    if (diff.inHours < 24) return '${diff.inHours}h ago'; // Translated
     return DateFormat('dd/MM HH:mm').format(time);
   }
 }
@@ -336,9 +398,9 @@ class _EmptyState extends StatelessWidget {
             child: Icon(Icons.notifications_off_outlined, size: 32, color: mutedText),
           ),
           const SizedBox(height: 16),
-          Text("Chưa có thông báo nào", style: TextStyle(color: primaryText, fontWeight: FontWeight.w600)),
+          Text("No notifications yet", style: TextStyle(color: primaryText, fontWeight: FontWeight.w600)), // Translated
           const SizedBox(height: 4),
-          Text("Bạn sẽ nhận được thông báo tại đây.", style: TextStyle(color: mutedText, fontSize: 13)),
+          Text("You will receive notifications here.", style: TextStyle(color: mutedText, fontSize: 13)), // Translated
         ],
       ),
     );

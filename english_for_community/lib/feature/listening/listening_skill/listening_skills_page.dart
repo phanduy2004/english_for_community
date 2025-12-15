@@ -12,7 +12,7 @@ import '../../../core/socket/socket_service.dart';
 
 import '../widget/discussion_tab.dart';
 import '../widget/listening_common_widgets.dart';
-import '../widget/practice_tab.dart'; // Import gốc của bạn
+import '../widget/practice_tab.dart';
 import 'bloc/cue_bloc.dart';
 import 'bloc/cue_event.dart';
 import 'bloc/cue_state.dart';
@@ -23,12 +23,18 @@ class ListeningSkillsPage extends StatefulWidget {
   final String? title;
   final String? levelText;
 
+  // 🔥 THÊM 2 THAM SỐ MỚI
+  final int initialTab; // 0: Practice, 1: Discussion
+  final String? targetCommentId; // ID comment cần highlight
+
   const ListeningSkillsPage({
     super.key,
     required this.listeningId,
     required this.audioUrl,
     this.title,
     this.levelText,
+    this.initialTab = 0, // Mặc định là Practice
+    this.targetCommentId,
   });
 
   @override
@@ -42,30 +48,27 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
   final Stopwatch _cueStopwatch = Stopwatch();
 
   bool _audioReady = false;
-
-  // Mặc định là true để khi Next/Prev thì tự chạy.
-  // Nhưng lần đầu vào (Cue 1) sẽ được xử lý riêng để KHÔNG tự chạy.
   bool _autoPlayAfterClip = true;
-
   String? _lastHint;
   bool _showHint = false;
-
-  // 🔥 Biến mới: Theo dõi index hiện tại để tránh xung đột khi gõ phím
   int _currentIndex = -1;
-
   StreamSubscription<ja.PlayerState>? _psSub;
 
   @override
   void initState() {
     super.initState();
     _player = ja.AudioPlayer();
-    _tabController = TabController(length: 2, vsync: this);
 
-    // Khởi tạo Audio và Socket
+    // 🔥 SỬ DỤNG initialTab ĐỂ KHỞI TẠO TAB CONTROLLER
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab,
+    );
+
     _initAudio();
     _initSocketListeners();
 
-    // Logic: Khi chạy hết clip (Cue) thì pause và tua về đầu Cue đó
     _psSub = _player.playerStateStream.listen((st) async {
       if (st.processingState == ja.ProcessingState.completed) {
         await _player.pause();
@@ -80,20 +83,35 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     final socketService = GetIt.I<SocketService>();
     socketService.joinListeningRoom(widget.listeningId);
 
-    socketService.listenToReactionUpdates((commentId, reactionsJson) {
+    socketService.listenToReactionUpdates((data) {
+      // Parse data từ Socket (JSON object)
+      final String commentId = data['commentId'];
+      final String cueId = data['cueId'] ?? "";
+      final List<dynamic> reactionsJson = data['reactions'];
+
       final reactions = reactionsJson.map((e) => ReactionEntity.fromJson(e)).toList();
+
       if (mounted) {
-        context.read<CueBloc>().add(IncomingSocketReaction(commentId: commentId, reactions: reactions));
+        context.read<CueBloc>().add(IncomingSocketReaction(
+            commentId: commentId,
+            cueId: cueId,
+            reactions: reactions
+        ));
       }
     });
 
     socketService.listenToNewComments((data) {
       try {
+        final String cueId = data['cueId'] ?? "";
         final newCommentJson = data['comment'];
+
         if (newCommentJson != null) {
           final newComment = CommentEntity.fromJson(newCommentJson);
           if (mounted) {
-            context.read<CueBloc>().add(IncomingSocketComment(newComment));
+            context.read<CueBloc>().add(IncomingSocketComment(
+                cueId: cueId,
+                comment: newComment
+            ));
           }
         }
       } catch (_) {}
@@ -111,8 +129,8 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     super.dispose();
   }
 
-  // 🔥 FIX 1: Load Audio và chuẩn bị sẵn Cue 1 (nhưng không phát)
   Future<void> _initAudio() async {
+    if (widget.audioUrl.isEmpty) return; // Tránh lỗi nếu audio rỗng
     try {
       final url = widget.audioUrl.startsWith('http')
           ? widget.audioUrl
@@ -122,34 +140,26 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
 
       if (mounted) {
         setState(() => _audioReady = true);
-
-        // Lấy state hiện tại (thường là Cue 0)
         final state = context.read<CueBloc>().state;
         if (state.currentCue != null) {
-          // Cập nhật index để đồng bộ
           _currentIndex = state.selectedIndex;
-          // Cắt audio cho Cue 1, nhưng ép PAUSE (forcePause: true)
-          await _applyCueClip(state.currentCue!, forcePause: true);
+          // Nếu đang ở Tab Discussion thì đừng auto play
+          bool shouldPause = widget.initialTab == 1 ? true : true;
+          await _applyCueClip(state.currentCue!, forcePause: shouldPause);
         }
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Audio Error: $e')));
+      // Ignore error
     }
   }
 
-  // Hàm xử lý cắt clip audio
   Future<void> _applyCueClip(CueEntity cue, {bool forcePause = false}) async {
     if (!_audioReady) return;
     try {
       final start = Duration(milliseconds: cue.startMs ?? 0);
       final end = cue.endMs != null ? Duration(milliseconds: cue.endMs!) : null;
-
-      // Cắt vùng nghe
       await _player.setClip(start: start, end: end);
-      // Đưa con trỏ về đầu clip
       await _player.seek(Duration.zero);
-
-      // Nếu là lần đầu (forcePause) hoặc người dùng tắt autoPlay -> Pause
       if (forcePause || !_autoPlayAfterClip) {
         await _player.pause();
       } else {
@@ -178,11 +188,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     final st = bloc.state;
     final text = _dictationCtrl.text.trim();
     final cue = st.currentCue;
-
     if (cue?.text != null && cue!.text!.isNotEmpty) {
       setState(() => _lastHint = _buildMaskedHint(cue.text!, text));
     }
-
     final result = await bloc.submitCue(
       listeningId: widget.listeningId,
       cueIdx: st.selectedIndex,
@@ -190,10 +198,8 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
       playedMs: _player.position.inMilliseconds,
       durationInSeconds: _cueStopwatch.elapsed.inSeconds,
     );
-
     setState(() => _showHint = !result.passed);
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(result.passed ? '✅ Correct!' : '⚠️ Try again'),
       duration: const Duration(milliseconds: 1000),
@@ -219,23 +225,16 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
         child: BlocConsumer<CueBloc, CueState>(
           listenWhen: (p, c) => p.selectedIndex != c.selectedIndex || p.userAnswer != c.userAnswer,
           listener: (context, state) {
-            // 1. Đồng bộ Text hiển thị (nếu cần)
             if (_dictationCtrl.text != state.userAnswer) {
               _dictationCtrl.text = state.userAnswer;
               _dictationCtrl.selection = TextSelection.collapsed(offset: state.userAnswer.length);
             }
-
-            // 🔥 FIX 2: Chỉ reset Audio khi CHUYỂN CÂU (Index thay đổi)
-            // Không chạy khi người dùng đang gõ phím
             if (state.currentCue != null && state.selectedIndex != _currentIndex) {
-              _currentIndex = state.selectedIndex; // Cập nhật index mới
-
+              _currentIndex = state.selectedIndex;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _cueStopwatch.reset();
                 _cueStopwatch.start();
                 setState(() { _lastHint = null; _showHint = false; });
-
-                // Audio đã sẵn sàng thì cắt và tự play (theo biến _autoPlayAfterClip)
                 if (_audioReady) {
                   _applyCueClip(state.currentCue!);
                 }
@@ -259,7 +258,6 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                   const SizedBox(height: 24),
                   ListeningPlayer(
                     player: _player,
-                    // Nút Play/Pause ở Player chính
                     onTogglePlay: () => _player.playing ? _player.pause() : _player.play(),
                     onSeek: (d) => _player.seek(d),
                   ),
@@ -298,10 +296,8 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                               PracticeTab(
                                 state: state,
                                 controller: _dictationCtrl,
-                                // Khi gõ, chỉ gửi event update text, KHÔNG ảnh hưởng audio
                                 onTextChange: (v) => context.read<CueBloc>().add(UpdateUserAnswer(v)),
                                 onSubmit: () => _submitAndScore(context),
-                                // Nút Replay: Tua về đầu Clip và Play
                                 onReplay: () async {
                                   await _player.seek(Duration.zero);
                                   _player.play();
@@ -317,6 +313,8 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                                 comments: state.comments,
                                 isLoading: state.isCommentsLoading,
                                 currentUserId: myUserId,
+                                // 🔥 TRUYỀN ID ĐỂ HIGHLIGHT
+                                targetCommentId: widget.targetCommentId,
                                 onSend: (content, parentId) {
                                   if (myUserId.isEmpty) return;
                                   context.read<CueBloc>().add(PostCommentEvent(content: content, parentId: parentId));

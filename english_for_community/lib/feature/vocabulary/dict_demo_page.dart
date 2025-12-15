@@ -101,31 +101,25 @@ class _DictDemoPageState extends State<DictDemoPage> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E4E7), width: 1.5),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: TextField(
         controller: _controller,
         autofocus: true,
-        style: const TextStyle(fontSize: 16, color: Color(0xFF09090B)),
+        style: const TextStyle(fontSize: 16, color: Color(0xFF09090B), fontWeight: FontWeight.w500),
         decoration: InputDecoration(
-          hintText: 'Type a word (e.g., hello)...',
+          hintText: 'Search words (e.g., serendipity)...',
           hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 15),
-          prefixIcon: const Icon(Icons.search, size: 20, color: Color(0xFF71717A)),
+          prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF09090B)), // Icon đen đậm
           suffixIcon: _isLoading
               ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
               : (_controller.text.isNotEmpty
-              ? IconButton(icon: const Icon(Icons.close, size: 18, color: Color(0xFF71717A)), onPressed: () { _controller.clear(); _search(''); })
+              ? IconButton(icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF71717A)), onPressed: () { _controller.clear(); _search(''); })
               : null),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          // Khi focus, viền sẽ đậm hơn (giả lập Shadcn Input)
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.5), // Zinc 900
-          ),
-          enabledBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
         ),
       ),
     );
@@ -174,6 +168,7 @@ class _ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstDef = entry.senses.isNotEmpty ? entry.senses.first.def : 'No definition available';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -193,20 +188,46 @@ class _ResultCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Text(entry.headword, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF09090B))),
-                          if (entry.ipa != null && entry.ipa!.isNotEmpty) ...[
-                            const SizedBox(width: 8),
-                            Text('/${entry.ipa}/', style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontFamily: 'NotoSans', fontStyle: FontStyle.italic)),
+                      // 🔥 SỬA LỖI OVERFLOW TẠI ĐÂY: Thay Row bằng RichText
+                      RichText(
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis, // Tự động thêm ... nếu dài quá
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: entry.headword,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: Color(0xFF09090B),
+                                fontFamily: 'Inter', // Hoặc font mặc định
+                              ),
+                            ),
+                            if (entry.ipa != null && entry.ipa!.isNotEmpty)
+                              TextSpan(
+                                text: ' /${entry.ipa}/', // Thêm khoảng trắng phía trước
+                                style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF71717A),
+                                    fontFamily: 'NotoSans',
+                                    fontStyle: FontStyle.italic
+                                ),
+                              ),
                           ],
-                        ],
+                        ),
                       ),
+
                       const SizedBox(height: 4),
-                      Text(firstDef, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
+                      Text(
+                          firstDef,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))
+                      ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 8), // Khoảng cách an toàn với icon
                 const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA), size: 20),
               ],
             ),

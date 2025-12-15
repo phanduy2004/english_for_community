@@ -1,43 +1,106 @@
 import Notification from '../models/Notification.js';
 import { getIO } from '../socket/socketManager.js';
+import User from "../models/User.js";
+import { messaging } from '../config/firebase.js';
 
-const createNotification = async ({ recipientId, senderId, type, title, message, data }) => {
+const createNotification = async ({
+                                    recipientId,
+                                    senderId,
+                                    type,
+                                    title,
+                                    message,
+                                    data,
+                                    skipSocket = false, // 🔥 Nhận tham số skipSocket
+                                    skipFCM = false     // 🔥 THÊM THAM SỐ skipFCM (Để tránh gửi trùng từ Job)
+                                  }) => {
   try {
-    // 🛡️ LỚP BẢO VỆ: Đảm bảo 100% ID là chuỗi (Dù Controller đã làm rồi nhưng cẩn tắc vô áy náy)
-    const rId = (typeof recipientId === 'object' && recipientId._id) ? recipientId._id.toString() : recipientId.toString();
-    const sId = (typeof senderId === 'object' && senderId._id) ? senderId._id.toString() : senderId.toString();
+    const rId = (recipientId && typeof recipientId === 'object' && recipientId._id)
+      ? recipientId._id.toString()
+      : recipientId.toString();
 
-    // 1. Chặn Self-Notification
-    if (rId === sId) return null;
+    let sId = null;
+    if (senderId) {
+      sId = (typeof senderId === 'object' && senderId._id)
+        ? senderId._id.toString()
+        : senderId.toString();
+    }
 
-    // 2. Tạo Notification
+    if (sId && rId === sId) return null;
+
+    // 1. Lưu Notification vào DB
     const notification = await Notification.create({
       recipientId: rId,
       senderId: sId,
       type,
       title,
       message,
-      data
+      data,
+      isRead: false
     });
 
-    // 3. Populate
-    await notification.populate('senderId', 'fullName avatarUrl');
-
-    // 4. Bắn Socket
-    try {
-      const io = getIO();
-      console.log(`🚀 [Noti Service] Sending to Room: ${rId}`);
-
-      const sockets = await io.in(rId).allSockets();
-      if (sockets.size === 0) {
-        console.log(`   ⚠️ User ${rId} seems OFFLINE.`);
-      } else {
-        console.log(`   ✅ Sockets found: ${sockets.size}`);
+    let senderName = 'Hệ thống';
+    if (sId) {
+      await notification.populate('senderId', 'fullName avatarUrl');
+      if (notification.senderId && notification.senderId.fullName) {
+        senderName = notification.senderId.fullName;
       }
+    } else {
+      notification.senderId = { fullName: 'Hệ thống', avatarUrl: '' };
+    }
 
-      io.to(rId).emit('new_notification', notification);
-    } catch (e) {
-      console.error('Socket error:', e.message);
+    // 2. 🔥 KIỂM TRA skipSocket
+    if (!skipSocket) {
+      try {
+        const io = getIO();
+        io.to(rId).emit('new_notification', notification);
+        // console.log('⚡ Socket event emitted');
+      } catch (e) {
+        console.error('Socket error:', e.message);
+      }
+    }
+
+    // 3. 🔥 KIỂM TRA skipFCM
+    // Nếu Job đã gửi FCM rồi thì truyền skipFCM: true vào đây để không gửi lại
+    if (!skipFCM) {
+      try {
+        const recipient = await User.findById(rId).select('fcmTokens');
+        if (recipient && recipient.fcmTokens && recipient.fcmTokens.length > 0) {
+
+          const messagePayload = {
+            notification: {
+              title: title,
+              body: `${senderName}: ${message}`,
+            },
+            data: {
+              type: type,
+              ...Object.keys(data || {}).reduce((acc, key) => {
+                acc[key] = String(data[key]);
+                return acc;
+              }, {}),
+              click_action: 'FLUTTER_NOTIFICATION_CLICK'
+            },
+            tokens: recipient.fcmTokens
+          };
+
+          if (messaging) {
+            const response = await messaging.sendEachForMulticast(messagePayload);
+            // console.log(`📲 FCM Auto-Send: ${response.successCount} success`);
+
+            // Dọn dẹp token lỗi
+            if (response.failureCount > 0) {
+              const failedTokens = [];
+              response.responses.forEach((resp, idx) => {
+                if (!resp.success) failedTokens.push(recipient.fcmTokens[idx]);
+              });
+              if (failedTokens.length > 0) {
+                await User.findByIdAndUpdate(rId, { $pull: { fcmTokens: { $in: failedTokens } } });
+              }
+            }
+          }
+        }
+      } catch (fcmError) {
+        console.error('❌ FCM Error:', fcmError.message);
+      }
     }
 
     return notification;
