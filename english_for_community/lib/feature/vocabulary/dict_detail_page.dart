@@ -6,20 +6,31 @@ import '../../core/sqflite/dict_db.dart';
 
 class DictDetailPage extends StatefulWidget {
   final Entry entry;
-  const DictDetailPage({super.key, required this.entry});
+  final bool isGuest; // 🔥 Thêm tham số isGuest
+
+  const DictDetailPage({
+    super.key,
+    required this.entry,
+    this.isGuest = false, // Mặc định là false
+  });
 
   @override
   State<DictDetailPage> createState() => _DictDetailPageState();
 }
 
 class _DictDetailPageState extends State<DictDetailPage> {
-  final UserVocabRepository _userVocabRepository = getIt<UserVocabRepository>();
+  // Repo có thể null hoặc không dùng đến nếu là Guest
+  UserVocabRepository? _userVocabRepository;
   late FlutterTts flutterTts;
 
   @override
   void initState() {
     super.initState();
     _initTts();
+    // Chỉ init repo nếu không phải guest
+    if (!widget.isGuest) {
+      _userVocabRepository = getIt<UserVocabRepository>();
+    }
   }
 
   void _initTts() {
@@ -57,15 +68,13 @@ class _DictDetailPageState extends State<DictDetailPage> {
           icon: const Icon(Icons.arrow_back, color: textMain),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          // 1. Nút Learn (Mới - Chuyển lên đây)
+        // 🔥 Nếu là Guest thì không hiện actions (Nút Save/Learn)
+        actions: widget.isGuest ? [] : [
           IconButton(
-            icon: const Icon(Icons.school_rounded, color: Color(0xFF10B981)), // Emerald Green
+            icon: const Icon(Icons.school_rounded, color: Color(0xFF10B981)),
             tooltip: 'Start Learning',
             onPressed: () => _startLearning(context),
           ),
-
-          // 2. Nút Save
           IconButton(
             icon: Icon(Icons.bookmark_border_rounded, color: Colors.amber[700]),
             tooltip: 'Save word',
@@ -78,7 +87,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // HERO HEADER (GRADIENT)
+            // HERO HEADER
             Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
@@ -93,50 +102,32 @@ class _DictDetailPageState extends State<DictDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Headword
                   Text(
                     widget.entry.headword,
                     style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w800, color: textMain, letterSpacing: -1),
                   ),
                   const SizedBox(height: 12),
-
-                  // IPA & Audio Row
                   Row(
                     children: [
-                      // Nút Loa
                       InkWell(
                         onTap: _speak,
                         borderRadius: BorderRadius.circular(30),
                         child: Container(
                           padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), shape: BoxShape.circle),
                           child: const Icon(Icons.volume_up_rounded, color: Color(0xFF3B82F6), size: 24),
                         ),
                       ),
                       const SizedBox(width: 12),
-
-                      // IPA Box
                       if (widget.entry.ipa != null && widget.entry.ipa!.isNotEmpty)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFE4E4E7)),
-                          ),
-                          child: Text(
-                            '/${widget.entry.ipa}/',
-                            style: const TextStyle(fontSize: 16, fontFamily: 'NotoSans', color: textMuted),
-                          ),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE4E4E7))),
+                          child: Text('/${widget.entry.ipa}/', style: const TextStyle(fontSize: 16, fontFamily: 'NotoSans', color: textMuted)),
                         ),
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  // Tags & POS
                   Wrap(
                     spacing: 8, runSpacing: 8,
                     children: [
@@ -144,13 +135,11 @@ class _DictDetailPageState extends State<DictDetailPage> {
                       ...widget.entry.tags.map((t) => _buildTag(t, Colors.grey)),
                     ],
                   ),
-
-                  // ❌ ĐÃ XÓA NÚT "START LEARNING" LỚN Ở ĐÂY
                 ],
               ),
             ),
 
-            // MEANINGS (Giữ nguyên)
+            // MEANINGS
             Padding(
               padding: const EdgeInsets.all(24.0),
               child: Column(
@@ -186,20 +175,11 @@ class _DictDetailPageState extends State<DictDetailPage> {
     );
   }
 
-  // ... (Giữ nguyên các hàm _buildTag, _buildSenseItem, _saveWord, _startLearning)
-
   Widget _buildTag(String text, MaterialColor color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.2)),
-      ),
-      child: Text(
-          text.toUpperCase(),
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color[700])
-      ),
+      decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.2))),
+      child: Text(text.toUpperCase(), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color[700])),
     );
   }
 
@@ -210,8 +190,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 24, height: 24,
-            alignment: Alignment.center,
+            width: 24, height: 24, alignment: Alignment.center,
             decoration: const BoxDecoration(color: Color(0xFFF4F4F5), shape: BoxShape.circle),
             child: Text("$index", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF71717A))),
           ),
@@ -244,7 +223,8 @@ class _DictDetailPageState extends State<DictDetailPage> {
   }
 
   Future<void> _saveWord(BuildContext context) async {
-    final result = await _userVocabRepository.saveWord(widget.entry);
+    if (_userVocabRepository == null) return;
+    final result = await _userVocabRepository!.saveWord(widget.entry);
     if (context.mounted) {
       result.fold(
             (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.message))),
@@ -254,7 +234,8 @@ class _DictDetailPageState extends State<DictDetailPage> {
   }
 
   Future<void> _startLearning(BuildContext context) async {
-    final result = await _userVocabRepository.startLearningWord(widget.entry);
+    if (_userVocabRepository == null) return;
+    final result = await _userVocabRepository!.startLearningWord(widget.entry);
     if (context.mounted) {
       result.fold(
             (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.message))),

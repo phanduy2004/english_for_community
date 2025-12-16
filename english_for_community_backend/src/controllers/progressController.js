@@ -29,8 +29,8 @@ const _getStartDateInUserTz = (date, timezone) => {
 }
 
 /**
- * 🔥 SỬA: Tính toán StartDate và EndDate cho Query Mongoose (Dùng cho getStatDetail)
- * EndDate sẽ là cuối ngày hôm nay (23:59:59.999) theo múi giờ của user.
+ * Tính toán StartDate và EndDate cho Query Mongoose (Dùng cho getStatDetail)
+ * (Giữ nguyên code của bạn)
  */
 const _calculateDateRange = (range, timezone) => {
   const now = new Date();
@@ -48,6 +48,9 @@ const _calculateDateRange = (range, timezone) => {
   } else if (range === 'month') {
     const dayOfMonth = userTodayStart.getDate();
     startDate = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
+  } else {
+    // Logic cho Day (nếu cần dùng hàm này cho day): Giữ nguyên fallback là hôm nay hoặc logic cũ
+    // Trong code bạn gửi không có else cho 'day' ở đây, tôi giữ nguyên logic if/else if
   }
 
   // 2. Xác định EndDate (Cuối ngày hôm nay 23:59:59.999)
@@ -59,6 +62,9 @@ const _calculateDateRange = (range, timezone) => {
 
 /**
  * 🔥 SỬA CHỮA: Cấu hình dải ngày cho biểu đồ (getProgessSummary)
+ * - Day: 7 ngày gần nhất (Giữ nguyên).
+ * - Week: Từ Thứ 2 -> Hôm nay (Số cột thay đổi theo ngày).
+ * - Month: Từ mùng 1 -> Hôm nay (Giữ nguyên).
  */
 const _getDateRangeConfig = (range, timezone) => {
   const now = new Date();
@@ -85,15 +91,24 @@ const _getDateRangeConfig = (range, timezone) => {
     startDate = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
     dayCount = dayOfMonth; // Biểu đồ chỉ hiển thị từ ngày 1 đến ngày hôm nay
   } else if (range === 'day') {
-    // Biểu đồ vẫn hiện 7 ngày gần nhất (từ 6 ngày trước đến hôm nay)
+    // ⚠️ GIỮ NGUYÊN: Biểu đồ hiện 7 ngày gần nhất (từ 6 ngày trước đến hôm nay)
     startDate = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
     dayCount = 7;
   } else {
-    // Mặc định: Tuần (Từ thứ 2 hoặc CN tùy logic)
+    // 🔥 RANGE = WEEK (SỬA LẠI ĐỂ CHẮC CHẮN ĐÚNG LOGIC TỪNG NGÀY)
     const dayOfWeek = userTodayStart.getDay();
-    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1; // 0=CN -> 6 ngày trước, 1=T2 -> 0 ngày trước
+    // Tính offset từ thứ 2 (0=T2, ..., 6=CN)
+    // Lưu ý: getDay() trả về 0=CN, 1=T2.
+    // Nếu CN (0) -> offset = 6. Nếu T2 (1) -> offset = 0.
+    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+
+    // Ngày bắt đầu là Thứ 2
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
-    dayCount = offset + 1; // Từ ngày bắt đầu tuần đến hôm nay
+
+    // 🔥 QUAN TRỌNG: Chỉ hiển thị đến ngày hiện tại
+    // Nếu hôm nay là T2 (offset 0) -> dayCount = 1 (1 cột T2)
+    // Nếu hôm nay là T3 (offset 1) -> dayCount = 2 (2 cột T2, T3)
+    dayCount = offset + 1;
   }
 
   // --- Tạo nhãn và key cho biểu đồ ---
@@ -151,7 +166,11 @@ const getProgressSummary = async (req, res) => {
     const todayString = userTodayStart.toLocaleDateString('en-CA', { timeZone: userTimezone }); // Ngày hôm nay theo format DB
 
     // 3. Query dữ liệu từ bảng UserDailyProgress
-    let minQueryDate = queryDateKeys[0]; // Ngày sớm nhất cần cho chart
+    // 🔥 LƯU Ý: Ở đây ta cần lấy dữ liệu bao phủ cả CHART (có thể xa hơn Stats) và STATS
+    // Với logic hiện tại:
+    // - Day: Chart lấy 7 ngày trước, Stats lấy hôm nay. -> queryDateKeys[0] là ngày xa nhất.
+    // - Week: Chart lấy từ T2 -> Hôm nay. Stats lấy T2 -> Hôm nay. -> Khớp nhau.
+    let minQueryDate = queryDateKeys[0];
 
     const records = await UserDailyProgress.find({
       userId: userId,

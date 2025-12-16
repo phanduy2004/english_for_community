@@ -10,7 +10,8 @@ import DictationAttempt from '../models/DictationAttempt.js';
 import ReadingProgress from '../models/ReadingProgress.js';
 import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
 import Enrollment from '../models/Enrollment.js';
-import {getIO} from "../socket/socketManager.js"; // Listening Enrollment
+import {getIO} from "../socket/socketManager.js";
+import historyService from "../services/historyService.js"; // Listening Enrollment
 
 const AI_PRICING = {
   PER_WORD_WRITING: 0.0005 / 1000,
@@ -375,11 +376,52 @@ const deleteUser = async (req, res) => {
     res.status(500).json({ message: 'Error', error: error.message });
   }
 };
+// 🔥 SỬA HÀM NÀY:
+const getActivities = async (req, res) => {
+  try {
+    const { startDate, endDate, type, userId } = req.query;
+
+    const data = await historyService.getHistory(userId, startDate, endDate, type);
+
+    res.status(200).json({
+      success: true,
+      count: data.length,
+      data: data
+    });
+  } catch (error) {
+    console.error('Admin Activity List Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 2. GET DETAIL
+const getActivityDetail = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { type } = req.query; // ?type=writing, reading...
+
+    if (!type) {
+      return res.status(400).json({ message: "Missing 'type' parameter" });
+    }
+
+    const data = await historyService.getActivityDetail(id, type);
+
+    res.status(200).json({
+      success: true,
+      data: data
+    });
+  } catch (error) {
+    console.error('Admin Activity Detail Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
 export default {
   getDashboardStats,
   getAllUsers,
   getReports,
   updateReportStatus,
   banUser,
-  deleteUser
+  deleteUser,
+  getActivities,
+  getActivityDetail
 };

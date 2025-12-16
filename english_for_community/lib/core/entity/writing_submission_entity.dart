@@ -82,14 +82,16 @@ class WritingSubmissionEntity extends Equatable {
     }
     return WritingSubmissionEntity(
       id: _id,
-      userId: (json['userId'] ?? '') as String,
-      topicId: (json['topicId'] ?? '') as String,
+      // 🔥 SỬA: Dùng hàm _parseId để lấy ID dù backend trả về Object hay String
+      userId: _parseId(json['userId']),
+      topicId: _parseId(json['topicId']),
+
       generatedPrompt: json['generatedPrompt'] != null
           ? GeneratedPrompt.fromJson(json['generatedPrompt'] as Map<String, dynamic>)
           : null,
       content: (json['content'] ?? '') as String,
       wordCount: (json['wordCount'] as num?)?.toInt(),
-      durationInSeconds: (json['durationInSeconds'] as num?)?.toInt(), // <-- ĐÃ THÊM
+      durationInSeconds: (json['durationInSeconds'] as num?)?.toInt(),
       status: (json['status'] ?? 'draft') as String,
       startedAt: _parseDate(json['startedAt']),
       submittedAt: _parseDate(json['submittedAt']),
@@ -101,6 +103,14 @@ class WritingSubmissionEntity extends Equatable {
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
     );
+  }
+
+  // 🔥 HÀM HELPER QUAN TRỌNG
+  static String _parseId(dynamic value) {
+    if (value == null) return '';
+    if (value is String) return value; // Nếu là String ID -> lấy luôn
+    if (value is Map) return value['_id']?.toString() ?? value['id']?.toString() ?? ''; // Nếu là Object -> lấy _id
+    return value.toString();
   }
 
   Map<String, dynamic> toJson() => {

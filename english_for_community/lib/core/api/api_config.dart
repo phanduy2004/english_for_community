@@ -10,7 +10,7 @@ class ApiConfig {
   static const String _renderUrl = "https://english-for-community.onrender.com";
 
   // 🏠 Server Local (Máy tính của bạn) - Thay đổi IP này theo máy bạn
-  static const String _localLanIp = "192.168.1.244";
+  static const String _localLanIp = "192.168.1.12";
   static const int _localPort = 3000;
 
   // ============================================================

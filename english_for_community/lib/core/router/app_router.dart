@@ -15,6 +15,7 @@ import '../../feature/admin/content_management/speaking/speaking_editor_page.dar
 import '../../feature/admin/content_management/writing/admin_writing_list_view.dart';
 import '../../feature/admin/content_management/writing/writing_topic_editor_page.dart';
 import '../../feature/admin/report_management/report_management_page.dart';
+import '../../feature/admin/submission_managerment/activity_history_page.dart';
 import '../../feature/auth/forgot_password_page.dart';
 import '../../feature/auth/otp_verification_page.dart';
 import '../../feature/auth/register_page.dart';
@@ -114,7 +115,8 @@ class AppRouter {
         OnboardingPage.routePath,
         ForgotPasswordPage.routePath, // 🔥 NEW: Add Forgot Password to public routes
         ResetPasswordPage.routePath,
-
+        '/dictionary-search',
+        '/dictionary-detail',
       ];
 
       // 1. Đang load thông tin user -> Splash
@@ -181,6 +183,11 @@ class AppRouter {
           if (filterParam == 'online') initialFilter = UserFilter.online;
           return UserManagementPage(initialFilter: initialFilter);
         },
+      ),
+      GoRoute(
+        path: ActivityHistoryPage.routePath, // '/activity-history'
+        name: ActivityHistoryPage.routeName,
+        builder: (context, state) => const ActivityHistoryPage(),
       ),
       GoRoute(
         path: '/admin/reports', // Khớp với routePath bạn đã đặt trong file Page
@@ -397,16 +404,26 @@ class AppRouter {
       ),
       GoRoute(
         path: '/dictionary-search',
-        name: kDictDemoRouteName,
-        builder: (context, state) => const DictDemoPage(),
+        name: kDictDemoRouteName, // Giá trị là 'dict-demo'
+        builder: (context, state) {
+          // Lấy tham số isGuest từ extra map
+          final extra = state.extra as Map<String, dynamic>?;
+          final isGuest = extra?['isGuest'] as bool? ?? false;
+
+          return DictDemoPage(isGuest: isGuest);
+        },
       ),
       GoRoute(
         path: '/dictionary-detail',
-        name: kDictDetailRouteName,
+        name: kDictDetailRouteName, // Giá trị là 'dict-detail'
         builder: (context, state) {
-          final entry = state.extra as Entry?;
+          // Lấy entry và isGuest từ extra
+          final extra = state.extra as Map<String, dynamic>?;
+          final entry = extra?['entry'] as Entry?;
+          final isGuest = extra?['isGuest'] as bool? ?? false;
+
           if (entry == null) return const DictDemoPage();
-          return DictDetailPage(entry: entry);
+          return DictDetailPage(entry: entry, isGuest: isGuest);
         },
       ),
       GoRoute(

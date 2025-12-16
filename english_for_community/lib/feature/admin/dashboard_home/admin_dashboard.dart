@@ -11,6 +11,7 @@ import '../../auth/bloc/user_bloc.dart';
 import '../../auth/bloc/user_event.dart';
 import '../content_management/content_dashboard_page.dart';
 import '../report_management/report_management_page.dart';
+import '../submission_managerment/activity_history_page.dart';
 import '../user_management/user_management_page.dart';
 import 'bloc/admin_bloc.dart';
 import 'bloc/admin_event.dart';
@@ -108,7 +109,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
               child: OutlinedButton.icon(
                 onPressed: () => context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name)),
                 icon: const Icon(Icons.refresh),
-                label: const Text("Retry"), // Changed to English
+                label: const Text("Retry"),
               ),
             );
           }
@@ -116,234 +117,291 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           final metrics = state.stats!.metrics;
           final chartData = state.stats!.chart;
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name));
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // --- HEADER & FILTER ---
-                  Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8.0,
-                    runSpacing: 12.0,
-                    children: [
-                      Column(
+          // --- RESPONSIVE LAYOUT BUILDER ---
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              // Xác định breakpoint (ví dụ: > 900px là màn hình to)
+              final bool isWideScreen = constraints.maxWidth > 900;
+              final double contentWidth = constraints.maxWidth;
+
+              // Grid Metrics: 4 cột trên Web, 2 cột trên Mobile
+              final int crossAxisCount = isWideScreen ? 4 : 2;
+              // Tỉ lệ khung hình thẻ metric để trông đẹp hơn trên web
+              final double childAspectRatio = isWideScreen ? 1.8 : 1.5;
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name));
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: Container(
+                      // Giới hạn chiều rộng tối đa trên Web để không bị kéo quá dài
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            DateFormat('EEEE, d MMMM').format(DateTime.now()),
-                            style: TextStyle(color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+                          // --- HEADER & FILTER ---
+                          _buildHeaderSection(),
+                          const SizedBox(height: 20),
+
+                          // --- METRICS GRID (Responsive) ---
+                          GridView.count(
+                            crossAxisCount: crossAxisCount,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: childAspectRatio,
+                            children: [
+                              _MetricCard(
+                                title: 'Submissions',
+                                value: '${metrics.submissions.value}',
+                                trend: metrics.submissions.trend ?? '',
+                                subLabel: metrics.submissions.trendLabel ?? '',
+                                icon: Icons.layers_outlined,
+                                accentColor: colSpeaking,
+                                onTap: () => context.pushNamed(ActivityHistoryPage.routeName),
+                              ),
+                              _MetricCard(
+                                title: 'AI Cost (Est)',
+                                value: '${metrics.aiCost.value}',
+                                trend: 'Usage',
+                                subLabel: metrics.aiCost.subLabel ?? '',
+                                icon: Icons.token_outlined,
+                                accentColor: colDictation,
+                              ),
+                              _MetricCard(
+                                title: 'Reports',
+                                value: '${metrics.reports.value}',
+                                trend: metrics.reports.status ?? '',
+                                subLabel: "Pending",
+                                icon: Icons.flag_outlined,
+                                accentColor: const Color(0xFFF43F5E),
+                                onTap: () => context.pushNamed(ReportManagementPage.routeName),
+                              ),
+                              _MetricCard(
+                                title: 'Active Users',
+                                value: '${metrics.activeUsers.value}',
+                                trend: 'Online',
+                                subLabel: "Today",
+                                icon: Icons.group_outlined,
+                                accentColor: const Color(0xFF10B981),
+                                onTap: () => context.pushNamed(
+                                    UserManagementPage.routeName,
+                                    queryParameters: {'filter': 'today'}
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Overview', // Changed to English
-                            style: TextStyle(color: textMain, fontSize: 24, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: borderCol),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Labels changed to English
-                            _FilterTab(label: 'Day', selected: _selectedRange == _AdminRange.day, onTap: () => _onRangeChanged(_AdminRange.day)),
-                            _FilterTab(label: 'Week', selected: _selectedRange == _AdminRange.week, onTap: () => _onRangeChanged(_AdminRange.week)),
-                            _FilterTab(label: 'Month', selected: _selectedRange == _AdminRange.month, onTap: () => _onRangeChanged(_AdminRange.month)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
 
-                  // --- METRICS GRID ---
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 1.6,
-                    children: [
-                      _MetricCard(
-                        title: 'Submissions', // Changed to English
-                        value: '${metrics.submissions.value}',
-                        trend: metrics.submissions.trend ?? '',
-                        subLabel: metrics.submissions.trendLabel ?? '',
-                        icon: Icons.layers_outlined,
-                        accentColor: colSpeaking,
-                      ),
-                      _MetricCard(
-                        title: 'AI Cost (Est)',
-                        value: '${metrics.aiCost.value}',
-                        trend: 'Usage',
-                        subLabel: metrics.aiCost.subLabel ?? '',
-                        icon: Icons.token_outlined,
-                        accentColor: colDictation,
-                      ),
-                      _MetricCard(
-                        title: 'Reports', // Changed to English
-                        value: '${metrics.reports.value}',
-                        trend: metrics.reports.status ?? '',
-                        subLabel: "Pending", // Changed to English
-                        icon: Icons.flag_outlined,
-                        accentColor: const Color(0xFFF43F5E),
-                        onTap: (){
-                          context.pushNamed(ReportManagementPage.routeName);
-                        },
-                      ),
-                      _MetricCard(
-                        title: 'Active Users', // Changed to English
-                        value: '${metrics.activeUsers.value}',
-                        trend: 'Online',
-                        subLabel: "Today", // Changed to English
-                        icon: Icons.group_outlined,
-                        accentColor: const Color(0xFF10B981),
-                        onTap: () {
-                          context.pushNamed(
-                              UserManagementPage.routeName,
-                              queryParameters: {'filter': 'today'}
-                          );
-                        },
-                      ),
-                    ],
-                  ),
+                          const SizedBox(height: 24),
 
-                  const SizedBox(height: 24),
+                          // --- CHART SECTION ---
+                          // Truyền constraints vào để chart tính toán độ rộng
+                          _buildChartSection(chartData, constraints.maxWidth),
 
-                  // --- CHART SECTION ---
-                  _ShadcnCard(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(height: 24),
+
+                          // --- MANAGEMENT LINKS (Responsive) ---
+                          Text('Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                          const SizedBox(height: 12),
+
+                          // Trên Web: Hiển thị 1 hàng ngang 3 mục. Mobile: Dọc
+                          if (isWideScreen)
+                            Row(
                               children: [
-                                Text('Activity Chart', // Changed to English
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
-                                const SizedBox(height: 4),
-                                Text(
-                                  _getChartSubtitle(),
-                                  style: TextStyle(fontSize: 12, color: textMuted),
+                                Expanded(child: _buildContentManagerLink()),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildReportLink()),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildUsersLink()),
+                              ],
+                            )
+                          else
+                            Column(
+                              children: [
+                                _buildContentManagerLink(),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(child: _buildReportLink()),
+                                    const SizedBox(width: 12),
+                                    Expanded(child: _buildUsersLink()),
+                                  ],
                                 ),
                               ],
                             ),
-                            if (_selectedRange != _AdminRange.week)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                                child: Text("Swipe to view", style: TextStyle(fontSize: 10, color: textMuted)), // Changed to English
-                              )
-                          ],
-                        ),
-                        const SizedBox(height: 16),
 
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _LegendItem(color: colWriting, label: "Writing"), const SizedBox(width: 16),
-                              _LegendItem(color: colSpeaking, label: "Speaking"), const SizedBox(width: 16),
-                              _LegendItem(color: colReading, label: "Reading"), const SizedBox(width: 16),
-                              _LegendItem(color: colDictation, label: "Dictation"),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final int dataCount = chartData.labels.length;
-                            double itemWidth = 60.0;
-                            if (_selectedRange == _AdminRange.week) itemWidth = constraints.maxWidth / 7;
-
-                            final double chartWidth = (dataCount * itemWidth).clamp(constraints.maxWidth, 5000.0);
-
-                            return SingleChildScrollView(
-                              controller: _scrollController,
-                              scrollDirection: Axis.horizontal,
-                              child: SizedBox(
-                                width: chartWidth,
-                                height: 240,
-                                child: Padding(
-                                  padding: const EdgeInsets.only(right: 20),
-                                  child: _buildBarChart(chartData),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                          const SizedBox(height: 40),
+                        ],
+                      ),
                     ),
                   ),
-
-                  const SizedBox(height: 24),
-
-                  // --- MANAGEMENT LINKS ---
-                  Text('Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)), // Changed to English
-                  const SizedBox(height: 12),
-                  _ManagementTile(
-                    icon: Icons.library_books_outlined,
-                    title: 'Content Manager', // Changed to English
-                    subtitle: 'Tasks, Reading & Listening editor', // Changed to English
-                    color: textMain,
-                    onTap: () {
-                      context.pushNamed(ContentDashboardPage.routeName);
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ManagementTile(
-                          icon: Icons.bug_report_outlined,
-                          title: 'Reports', // Changed to English
-                          subtitle: 'Issue feedback', // Changed to English
-                          color: const Color(0xFFF59E0B),
-                          onTap: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _ManagementTile(
-                          icon: Icons.people_alt_outlined,
-                          title: 'Users', // Changed to English
-                          subtitle: 'User list', // Changed to English
-                          color: const Color(0xFF10B981),
-                          onTap: () {
-                            context.pushNamed(UserManagementPage.routeName);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
 
-  // Text phụ đề cho biểu đồ (Translated)
+  // --- COMPONENT BUILDERS (Tách nhỏ để code gọn hơn trong LayoutBuilder) ---
+
+  Widget _buildHeaderSection() {
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8.0,
+      runSpacing: 12.0,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat('EEEE, d MMMM').format(DateTime.now()),
+              style: TextStyle(color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Overview',
+              style: TextStyle(color: textMain, fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderCol),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _FilterTab(label: 'Day', selected: _selectedRange == _AdminRange.day, onTap: () => _onRangeChanged(_AdminRange.day)),
+              _FilterTab(label: 'Week', selected: _selectedRange == _AdminRange.week, onTap: () => _onRangeChanged(_AdminRange.week)),
+              _FilterTab(label: 'Month', selected: _selectedRange == _AdminRange.month, onTap: () => _onRangeChanged(_AdminRange.month)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChartSection(ChartData chartData, double availableWidth) {
+    return _ShadcnCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Activity Chart',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+                  const SizedBox(height: 4),
+                  Text(
+                    _getChartSubtitle(),
+                    style: TextStyle(fontSize: 12, color: textMuted),
+                  ),
+                ],
+              ),
+              if (_selectedRange != _AdminRange.week)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
+                  child: Text("Swipe to view", style: TextStyle(fontSize: 10, color: textMuted)),
+                )
+            ],
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _LegendItem(color: colWriting, label: "Writing"), const SizedBox(width: 16),
+                _LegendItem(color: colSpeaking, label: "Speaking"), const SizedBox(width: 16),
+                _LegendItem(color: colReading, label: "Reading"), const SizedBox(width: 16),
+                _LegendItem(color: colDictation, label: "Dictation"),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Chart Layout Logic
+          LayoutBuilder(
+            builder: (context, boxConstraints) {
+              final int dataCount = chartData.labels.length;
+
+              // Nếu ở Web, cố gắng fit chart vào màn hình nếu ít cột
+              double itemWidth = 60.0;
+              if (_selectedRange == _AdminRange.week) {
+                // Chia đều chiều rộng cho 7 ngày
+                itemWidth = boxConstraints.maxWidth / 7;
+              }
+
+              // Tính chiều rộng tổng của chart
+              final double chartWidth = (dataCount * itemWidth).clamp(boxConstraints.maxWidth, 5000.0);
+
+              return SingleChildScrollView(
+                controller: _scrollController,
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: chartWidth,
+                  height: 240,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: _buildBarChart(chartData),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper widgets for Management section
+  Widget _buildContentManagerLink() {
+    return _ManagementTile(
+      icon: Icons.library_books_outlined,
+      title: 'Content Manager',
+      subtitle: 'Tasks, Reading & Listening editor',
+      color: textMain,
+      onTap: () => context.pushNamed(ContentDashboardPage.routeName),
+    );
+  }
+
+  Widget _buildReportLink() {
+    return _ManagementTile(
+      icon: Icons.bug_report_outlined,
+      title: 'Reports',
+      subtitle: 'Issue feedback',
+      color: const Color(0xFFF59E0B),
+      onTap: () {},
+    );
+  }
+
+  Widget _buildUsersLink() {
+    return _ManagementTile(
+      icon: Icons.people_alt_outlined,
+      title: 'Users',
+      subtitle: 'User list',
+      color: const Color(0xFF10B981),
+      onTap: () => context.pushNamed(UserManagementPage.routeName),
+    );
+  }
+
+  // ... (Giữ nguyên các hàm logic chart cũ: _getChartSubtitle, _buildBarChart, _calculateMaxY, _calculateInterval, _makeRod, _buildAppBar) ...
+
   String _getChartSubtitle() {
     switch (_selectedRange) {
       case _AdminRange.day: return 'Today (Hourly: 0h - 23h)';
@@ -352,11 +410,10 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
     }
   }
 
-  // Logic vẽ biểu đồ
   Widget _buildBarChart(ChartData chartData) {
+    // ... (Giữ nguyên logic cũ của bạn) ...
     final List<BarChartGroupData> barGroups = [];
     final int dataLength = chartData.labels.length;
-
     final double maxY = _calculateMaxY(chartData);
 
     for (int i = 0; i < dataLength; i++) {
@@ -408,7 +465,6 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                 if (value.toInt() >= 0 && value.toInt() < chartData.labels.length) {
                   final label = chartData.labels[value.toInt()];
                   String displayLabel = label;
-
                   try {
                     if (_selectedRange == _AdminRange.day) {
                       if (label.contains(':')) displayLabel = "${int.parse(label.split(':')[0])}h";
@@ -417,7 +473,6 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                       displayLabel = DateFormat('dd/MM').format(date);
                     }
                   } catch (_) {}
-
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(displayLabel, style: TextStyle(color: textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
@@ -431,17 +486,17 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         borderData: FlBorderData(show: false),
         barGroups: barGroups,
         barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (group) => const Color(0xFF1E293B),
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              String skill = '';
-              switch (rodIndex) { case 0: skill = 'Write'; break; case 1: skill = 'Speak'; break; case 2: skill = 'Read'; break; case 3: skill = 'Dict'; break; }
-              return BarTooltipItem(
-                  '$skill: ${(rod.toY).toInt()}',
-                  const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)
-              );
-            },
-          ),
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (group) => const Color(0xFF1E293B),
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                String skill = '';
+                switch (rodIndex) { case 0: skill = 'Write'; break; case 1: skill = 'Speak'; break; case 2: skill = 'Read'; break; case 3: skill = 'Dict'; break; }
+                return BarTooltipItem(
+                    '$skill: ${(rod.toY).toInt()}',
+                    const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)
+                );
+              },
+            )
         ),
       ),
     );
@@ -511,7 +566,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
   }
 }
 
-// --- WIDGETS ---
+// --- WIDGETS GIỮ NGUYÊN ---
 
 class _FilterTab extends StatelessWidget {
   final String label;

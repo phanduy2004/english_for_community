@@ -7,6 +7,7 @@ import '../../feature/admin/content_management/reading/bloc/admin_reading_bloc.d
 import '../../feature/admin/content_management/speaking/bloc/admin_speaking_bloc.dart';
 import '../../feature/admin/content_management/writing/bloc/admin_writing_bloc.dart';
 import '../../feature/admin/dashboard_home/bloc/admin_bloc.dart';
+import '../../feature/admin/submission_managerment/bloc/history_bloc.dart';
 import '../../feature/home/bloc_ai/ai_chat_bloc.dart';
 import '../../feature/home/bloc_noti/notification_bloc.dart';
 import '../../feature/listening/listening_skill/bloc/cue_bloc.dart';
@@ -21,6 +22,7 @@ import '../api/api_client.dart';
 import '../datasource/admin_remote_datasource.dart';
 import '../datasource/ai_chat_remote_datasource.dart';
 import '../datasource/dictionary_local_datasource.dart';
+import '../datasource/history_remote_datasource.dart';
 import '../datasource/listening_remote_datasource.dart';
 import '../datasource/notification_remote_datasource.dart';
 import '../datasource/progress_remote_datasource.dart';
@@ -35,6 +37,7 @@ import '../repository/admin_repository.dart';
 import '../repository/ai_chat_repository.dart';
 import '../repository/auth_repository.dart';
 import '../repository/dictionary_repository.dart';
+import '../repository/history_repository.dart';
 import '../repository/listening_repository.dart';
 import '../repository/notification_repository.dart';
 import '../repository/progress_repository.dart';
@@ -47,6 +50,7 @@ import '../repository_impl/admin_repository_impl.dart';
 import '../repository_impl/ai_chat_repository_impl.dart';
 import '../repository_impl/auth_repository_impl.dart';
 import '../repository_impl/dictionary_repository_impl.dart';
+import '../repository_impl/history_repository_impl.dart';
 import '../repository_impl/listening_repository_impl.dart';
 import '../repository_impl/notification_repository_impl.dart';
 import '../repository_impl/progress_repository_impl.dart';
@@ -124,6 +128,8 @@ void registerDataSource() {
  getIt.registerSingleton<NotificationRemoteDataSource>(
   NotificationRemoteDataSource(dio: dioAuth),
  );
+ getIt.registerLazySingleton<HistoryRemoteDatasource>(
+         () => HistoryRemoteDatasource(dio: dioAuth));
 }
 
 void registerRepositories() {
@@ -167,6 +173,8 @@ void registerRepositories() {
  getIt.registerSingleton<NotificationRepository>(
   NotificationRepositoryImpl(dataSource: getIt()),
  );
+ getIt.registerLazySingleton<HistoryRepository>(
+         () => HistoryRepositoryImpl(historyRemoteDatasource: getIt()));
 }
 
 void registerBloc() {
@@ -203,4 +211,5 @@ void registerBloc() {
  getIt.registerLazySingleton<NotificationBloc>(
       () => NotificationBloc(repository: getIt()),
  );
+ getIt.registerFactory(() => HistoryBloc(historyRepository: getIt()));
 }

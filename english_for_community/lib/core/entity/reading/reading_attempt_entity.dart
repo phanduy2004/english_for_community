@@ -1,3 +1,4 @@
+import 'package:english_for_community/core/entity/reading/reading_entity.dart';
 import 'package:equatable/equatable.dart';
 
 DateTime? _parseDate(Object? v) {
@@ -13,7 +14,7 @@ class ReadingAttemptEntity extends Equatable {
   final String id;
   final String userId;
   final String readingId;
-
+  final ReadingEntity? readingDetail;
   final List<AnswerDetailEntity> answers;
 
   final double score;
@@ -34,6 +35,7 @@ class ReadingAttemptEntity extends Equatable {
     this.durationInSeconds, // <-- ĐÃ THÊM
     this.createdAt,
     this.updatedAt,
+    this.readingDetail,
   });
 
   factory ReadingAttemptEntity.fromJson(Map<String, dynamic> json) {
@@ -41,11 +43,17 @@ class ReadingAttemptEntity extends Equatable {
     if (id == null) {
       throw ArgumentError('ReadingAttemptEntity.fromJson: missing id/_id');
     }
-
+    ReadingEntity? detail;
+    if (json['readingId'] is Map<String, dynamic>) {
+      detail = ReadingEntity.fromJson(json['readingId']);
+    }
     return ReadingAttemptEntity(
       id: id,
       userId: (json['userId'] ?? '').toString(),
-      readingId: (json['readingId'] ?? '').toString(),
+      readingId: (json['readingId'] is String)
+          ? json['readingId']
+          : (json['readingId']?['_id'] ?? ''), // Fallback nếu là object
+      readingDetail: detail,
 
       answers: (json['answers'] as List<dynamic>? ?? [])
           .map((a) => AnswerDetailEntity.fromJson(a as Map<String, dynamic>))

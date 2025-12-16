@@ -1,7 +1,14 @@
 import { speakingService } from "../services/speakingService.js";
 import {trackUserProgress} from "../untils/progressTracker.js";
 import mongoose from "mongoose";
-
+const sanitizeSentences = (sentences) => {
+  if (!Array.isArray(sentences)) return [];
+  return sentences.map(s => ({
+    ...s,
+    // Nếu không có id hoặc id là chuỗi rỗng, tạo ObjectId mới
+    id: (s.id && s.id.trim() !== "") ? s.id : new mongoose.Types.ObjectId().toString()
+  }));
+};
 const getSpeakingSetsWithProgress = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -100,6 +107,12 @@ const adminGetDetail = async (req, res) => {
 
 const adminCreate = async (req, res) => {
   try {
+    // --- BỔ SUNG ĐOẠN NÀY ---
+    if (req.body.sentences) {
+      req.body.sentences = sanitizeSentences(req.body.sentences);
+    }
+    // ------------------------
+
     const result = await speakingService.createSpeakingSet(req.body);
     res.status(201).json({ message: 'Created', data: result });
   } catch (error) {
@@ -112,6 +125,12 @@ const adminUpdate = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
 
+    // --- BỔ SUNG ĐOẠN NÀY ---
+    if (req.body.sentences) {
+      req.body.sentences = sanitizeSentences(req.body.sentences);
+    }
+    // ------------------------
+
     const result = await speakingService.updateSpeakingSet(id, req.body);
     if (!result) return res.status(404).json({ message: 'Not found' });
 
@@ -120,7 +139,6 @@ const adminUpdate = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
 const adminDelete = async (req, res) => {
   try {
     const { id } = req.params;

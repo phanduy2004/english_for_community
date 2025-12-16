@@ -8,7 +8,9 @@ import '../../core/router/app_router.dart';
 import '../../core/sqflite/dict_db.dart';
 
 class DictDemoPage extends StatefulWidget {
-  const DictDemoPage({super.key});
+  // 🔥 Thêm cờ nhận diện chế độ khách
+  final bool isGuest;
+  const DictDemoPage({super.key, this.isGuest = false});
 
   @override
   State<DictDemoPage> createState() => _DictDemoPageState();
@@ -29,7 +31,11 @@ class _DictDemoPageState extends State<DictDemoPage> {
     super.initState();
     _controller.addListener(_onSearchChanged);
     _dictionaryRepository = getIt<DictionaryRepository>();
-    _userVocabRepository = getIt<UserVocabRepository>();
+
+    // Chỉ cần lấy user repo nếu không phải là guest (để tránh lỗi nếu repo yêu cầu auth ngay lúc init)
+    if (!widget.isGuest) {
+      _userVocabRepository = getIt<UserVocabRepository>();
+    }
   }
 
   @override
@@ -83,7 +89,11 @@ class _DictDemoPageState extends State<DictDemoPage> {
           icon: const Icon(Icons.arrow_back, color: textMain),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Dictionary Lookup', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 18)),
+        // Hiển thị tiêu đề khác nếu là Guest
+        title: Text(
+            widget.isGuest ? 'Quick Search' : 'Dictionary',
+            style: const TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 18)
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),
           child: Container(
@@ -112,7 +122,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
         decoration: InputDecoration(
           hintText: 'Search words (e.g., serendipity)...',
           hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 15),
-          prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF09090B)), // Icon đen đậm
+          prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF09090B)),
           suffixIcon: _isLoading
               ? const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
               : (_controller.text.isNotEmpty
@@ -155,8 +165,18 @@ class _DictDemoPageState extends State<DictDemoPage> {
 
   void _handleEntryTap(Entry entry) {
     FocusScope.of(context).unfocus();
-    _userVocabRepository.logRecentWord(entry).ignore(); // Fire & Forget
-    context.pushNamed(kDictDetailRouteName, extra: entry);
+
+    // 🔥 Chỉ lưu history nếu KHÔNG phải là Guest
+    if (!widget.isGuest) {
+      _userVocabRepository.logRecentWord(entry).ignore();
+    }
+
+    // 🔥 Truyền tiếp cờ isGuest sang trang Detail
+    // Lưu ý: Cần update router của bạn để nhận Map hoặc Object chứa cả entry và isGuest
+    context.pushNamed(
+      kDictDetailRouteName,
+      extra: {'entry': entry, 'isGuest': widget.isGuest},
+    );
   }
 }
 
@@ -188,46 +208,29 @@ class _ResultCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // 🔥 SỬA LỖI OVERFLOW TẠI ĐÂY: Thay Row bằng RichText
                       RichText(
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis, // Tự động thêm ... nếu dài quá
+                        overflow: TextOverflow.ellipsis,
                         text: TextSpan(
                           children: [
                             TextSpan(
                               text: entry.headword,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: Color(0xFF09090B),
-                                fontFamily: 'Inter', // Hoặc font mặc định
-                              ),
+                              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF09090B), fontFamily: 'Inter'),
                             ),
                             if (entry.ipa != null && entry.ipa!.isNotEmpty)
                               TextSpan(
-                                text: ' /${entry.ipa}/', // Thêm khoảng trắng phía trước
-                                style: const TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF71717A),
-                                    fontFamily: 'NotoSans',
-                                    fontStyle: FontStyle.italic
-                                ),
+                                text: ' /${entry.ipa}/',
+                                style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontFamily: 'NotoSans', fontStyle: FontStyle.italic),
                               ),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 4),
-                      Text(
-                          firstDef,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))
-                      ),
+                      Text(firstDef, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
                     ],
                   ),
                 ),
-                const SizedBox(width: 8), // Khoảng cách an toàn với icon
+                const SizedBox(width: 8),
                 const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA), size: 20),
               ],
             ),
