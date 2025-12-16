@@ -31,7 +31,17 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
   @override
   void initState() {
     super.initState();
+    _initTtsSettings(); // Gọi hàm cấu hình TTS
     _fetchWordDetails();
+  }
+
+  // Phương thức mới để cấu hình FlutterTts theo kiểu Anh-Mỹ
+  void _initTtsSettings() {
+    // Sử dụng await hoặc .then để đảm bảo các thiết lập được áp dụng
+    widget.tts.setLanguage("en-US").then((_) => debugPrint("TTS Language set to en-US."));
+    widget.tts.setSpeechRate(0.5);
+    widget.tts.setVolume(1.0);
+    widget.tts.setPitch(1.0);
   }
 
   @override
@@ -39,6 +49,8 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
     _audioPlayer.dispose();
     super.dispose();
   }
+
+  // ... (Phần _fetchWordDetails, _fetchDictionaryData, _fetchTranslation giữ nguyên)
 
   Future<void> _fetchWordDetails() async {
     try {
@@ -52,7 +64,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
       _apiResult = results[0] as ApiWordResult?;
       _vietnameseMeaning = results[1] as String;
 
-      if (_apiResult == null && _vietnameseMeaning == 'Không thể dịch.') {
+      if (_apiResult == null && _vietnameseMeaning == 'Cannot translate.') {
         throw Exception("Cannot find word details.");
       }
 
@@ -147,6 +159,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
     if (_apiResult?.audioUrl.isNotEmpty ?? false) {
       _audioPlayer.play(UrlSource(_apiResult!.audioUrl));
     } else {
+      // Gọi speak, lúc này tts đã được cấu hình en-US trong _initTtsSettings
       widget.tts.speak(widget.word);
     }
   }
