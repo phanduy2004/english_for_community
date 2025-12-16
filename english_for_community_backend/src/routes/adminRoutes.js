@@ -20,5 +20,8 @@ router.patch('/users/:id/ban', adminController.banUser);
 
 // Xóa User
 router.delete('/users/:id', adminController.deleteUser);
+router.get('/activities', adminController.getActivities);
+router.get('/activities/:id', adminController.getActivityDetail);
+
 // -----------------------------
 export default router;

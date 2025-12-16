@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-// Colors Palette (Shadcn / Slate Theme)
-const kBgPage = Color(0xFFF8FAFC); // Slate-50
+// --- COLORS PALETTE (Shadcn / Slate Theme) ---
+const kBgPage = Color(0xFFF8FAFC);      // Slate-50
 const kWhite = Colors.white;
-const kTextMain = Color(0xFF0F172A); // Slate-900
-const kTextMuted = Color(0xFF64748B); // Slate-500
-const kBorder = Color(0xFFE2E8F0); // Slate-200
-const kPrimary = Color(0xFF0F172A); // Slate-900 (Primary Action)
+const kTextMain = Color(0xFF0F172A);    // Slate-900
+const kTextMuted = Color(0xFF64748B);   // Slate-500
+const kBorder = Color(0xFFE2E8F0);      // Slate-200
+const kPrimary = Color(0xFF0F172A);     // Slate-900 (Primary Action)
 
 // 1. Basic Card (Container trắng, bo góc, có bóng nhẹ)
 class ShadcnCard extends StatelessWidget {
@@ -45,7 +45,7 @@ class ShadcnCard extends StatelessWidget {
   }
 }
 
-// 2. Standard Input (Đã nâng cấp thêm onChanged)
+// 2. Standard Input (Form Input chuẩn)
 class ShadcnInput extends StatelessWidget {
   final String label;
   final String hint;
@@ -107,7 +107,7 @@ class ShadcnInput extends StatelessWidget {
   }
 }
 
-// 3. Section Header (ĐÃ SỬA LỖI OVERFLOW Ở ĐÂY)
+// 3. Section Header (Tiêu đề phần)
 class SectionHeader extends StatelessWidget {
   final String title;
   final Widget? action;
@@ -121,17 +121,15 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 👇 Thay Text thường bằng Expanded để tránh tràn lề
           Expanded(
             child: Text(
               title,
               style: const TextStyle(
                   fontSize: 16, fontWeight: FontWeight.bold, color: kTextMain),
-              overflow: TextOverflow.ellipsis, // Thêm dấu ... nếu quá dài
+              overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
           ),
-          // 👇 Thêm khoảng cách an toàn nếu có nút Action
           if (action != null) ...[
             const SizedBox(width: 8),
             action!,
@@ -142,7 +140,7 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-// 4. Status Badge
+// 4. Status Badge (Nhãn trạng thái)
 class StatusBadge extends StatelessWidget {
   final String text;
   final Color color;

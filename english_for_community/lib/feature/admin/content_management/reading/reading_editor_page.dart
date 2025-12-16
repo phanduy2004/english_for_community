@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-// Import các entity và bloc của dự án
+// Import Entities & BloC
 import '../../../../../core/entity/reading/reading_entity.dart';
 import '../../../../../core/entity/reading/reading_feedback_entity.dart';
 import '../../../../../core/entity/reading/translation_entity.dart';
 import '../../../../../core/get_it/get_it.dart';
-import '../content_widgets.dart'; // Chứa ShadcnCard, ShadcnInput, v.v.
+import '../content_widgets.dart'; // Contains ShadcnCard, ShadcnInput, etc.
 import 'bloc/admin_reading_bloc.dart';
 import 'bloc/admin_reading_event.dart';
 import 'bloc/admin_reading_state.dart';
@@ -18,7 +18,6 @@ class ReadingEditorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Cung cấp Bloc cho màn hình này
     return BlocProvider.value(
       value: getIt<AdminReadingBloc>(),
       child: _ReadingEditorView(id: id),
@@ -35,23 +34,22 @@ class _ReadingEditorView extends StatefulWidget {
 }
 
 class _ReadingEditorViewState extends State<_ReadingEditorView> {
-  // Biến kiểm tra xem có phải đang chỉnh sửa không (để hiện nút Edit/Save nếu cần)
   bool _isEditingMode = true;
 
   // --- CONTROLLERS ---
-  // Phần thông tin chung
+  // General Info
   final _titleCtrl = TextEditingController();
   final _summaryCtrl = TextEditingController();
   final _imageUrlCtrl = TextEditingController();
   final _minutesCtrl = TextEditingController();
   String _difficulty = 'medium';
 
-  // Phần nội dung & Dịch
+  // Content & Translation
   final _contentCtrl = TextEditingController();
   final _transTitleCtrl = TextEditingController();
   final _transContentCtrl = TextEditingController();
 
-  // Dữ liệu câu hỏi (Lưu dạng List Map để dễ thao tác trên UI)
+  // Questions Data
   List<Map<String, dynamic>> questions = [];
 
   @override
@@ -59,22 +57,20 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     super.initState();
 
     if (widget.id != null) {
-      // 🟢 TRƯỜNG HỢP EDIT: Gọi API lấy chi tiết bài đọc
+      // EDIT MODE: Fetch details
       context.read<AdminReadingBloc>().add(GetReadingDetailEvent(widget.id!));
-      _isEditingMode = false; // Mặc định vào xem trước, bấm Edit mới sửa (tùy logic UX của bạn)
+      _isEditingMode = false; // View mode by default
     } else {
-      // 🟢 TRƯỜNG HỢP CREATE: Tạo mới
+      // CREATE MODE
       _isEditingMode = true;
-      _addNewQuestion(); // Thêm sẵn 1 câu hỏi rỗng
+      _addNewQuestion(); // Add empty question
     }
   }
 
   @override
   void dispose() {
-    // 🟢 DỌN DẸP: Reset state selectedReading để lần sau vào không hiện bài cũ
     getIt<AdminReadingBloc>().add(ClearSelectedReadingEvent());
 
-    // Dispose controllers
     _titleCtrl.dispose();
     _summaryCtrl.dispose();
     _imageUrlCtrl.dispose();
@@ -85,7 +81,6 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     super.dispose();
   }
 
-  /// Hàm đổ dữ liệu từ Entity vào UI (Controllers)
   void _populateData(ReadingEntity reading) {
     _titleCtrl.text = reading.title;
     _summaryCtrl.text = reading.summary ?? '';
@@ -97,12 +92,11 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     _transTitleCtrl.text = reading.translation?.title ?? '';
     _transContentCtrl.text = reading.translation?.content ?? '';
 
-    // Map danh sách câu hỏi từ Entity sang cấu trúc Map của UI
     setState(() {
       questions = reading.questions.map((q) {
         return {
           "questionText": q.questionText,
-          "options": List<String>.from(q.options), // Copy list để tránh tham chiếu
+          "options": List<String>.from(q.options),
           "correctAnswerIndex": q.correctAnswerIndex,
           "feedback": {
             "reasoning": q.feedback?.reasoning ?? "",
@@ -118,12 +112,10 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         };
       }).toList();
 
-      // Nếu vào chế độ xem, cho phép sửa luôn (hoặc bạn có thể set = false tùy ý)
       _isEditingMode = true;
     });
   }
 
-  /// Helper chuyển đổi string sang Enum Difficulty
   ReadingDifficulty _parseDifficulty(String value) {
     switch (value) {
       case 'easy': return ReadingDifficulty.easy;
@@ -132,36 +124,31 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     }
   }
 
-  /// Xử lý sự kiện Lưu (Submit)
   void _onSubmit() {
-    FocusManager.instance.primaryFocus?.unfocus(); // Ẩn bàn phím
+    FocusManager.instance.primaryFocus?.unfocus();
 
-    // Validate cơ bản
     if (_titleCtrl.text.isEmpty || _contentCtrl.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập tiêu đề và nội dung chính"), backgroundColor: Colors.orange),
+        const SnackBar(content: Text("Please enter title and content"), backgroundColor: Colors.orange),
       );
       return;
     }
 
-    // Convert UI Questions -> Entity Questions
     List<ReadingQuestionEntity> questionEntities = [];
     try {
       for (var q in questions) {
         final qText = q['questionText']?.toString().trim() ?? '';
-        if (qText.isEmpty) continue; // Bỏ qua câu hỏi rỗng
+        if (qText.isEmpty) continue;
 
         final fbMap = q['feedback'] as Map<String, dynamic>? ?? {};
         final transMap = q['translation'] as Map<String, dynamic>? ?? {};
 
-        // Xử lý Options (English)
         List<String> options = [];
         if (q['options'] is List) {
           options = (q['options'] as List).map((e) => e.toString()).toList();
         }
-        while (options.length < 4) options.add(""); // Đảm bảo đủ 4 đáp án
+        while (options.length < 4) options.add("");
 
-        // Xử lý Options (Vietnamese)
         List<String> transOptions = [];
         if (transMap['options'] is List) {
           transOptions = (transMap['options'] as List).map((e) => e.toString()).toList();
@@ -169,7 +156,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         while (transOptions.length < 4) transOptions.add("");
 
         questionEntities.add(ReadingQuestionEntity(
-          id: '', // Backend tự sinh ID
+          id: '',
           questionText: qText,
           options: options,
           correctAnswerIndex: (q['correctAnswerIndex'] as int?) ?? 0,
@@ -185,9 +172,8 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         ));
       }
 
-      // Tạo object ReadingEntity
       final newReading = ReadingEntity(
-        id: widget.id ?? '', // Nếu có ID là update, không có là create
+        id: widget.id ?? '',
         title: _titleCtrl.text,
         summary: _summaryCtrl.text,
         content: _contentCtrl.text,
@@ -201,15 +187,13 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         ),
       );
 
-      // Gửi event lên Bloc
       context.read<AdminReadingBloc>().add(CreateReadingEvent(newReading));
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi xử lý dữ liệu: $e"), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error processing data: $e"), backgroundColor: Colors.red));
     }
   }
 
-  // Thêm câu hỏi mới vào UI
   void _addNewQuestion() {
     setState(() {
       questions.add({
@@ -222,7 +206,6 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     });
   }
 
-  // Xóa câu hỏi
   void _deleteQuestion(int index) {
     setState(() {
       questions.removeAt(index);
@@ -233,32 +216,24 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
   Widget build(BuildContext context) {
     return BlocListener<AdminReadingBloc, AdminReadingState>(
       listener: (context, state) {
-        // 1. Xử lý Lỗi
         if (state.status == AdminReadingStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Lỗi: ${state.errorMessage}"), backgroundColor: Colors.red),
+            SnackBar(content: Text("Error: ${state.errorMessage}"), backgroundColor: Colors.red),
           );
         }
 
-        // 2. Xử lý khi Load chi tiết thành công
         if (state.selectedReading != null && widget.id != null) {
-          // Chỉ populate nếu ID khớp
           if (state.selectedReading!.id == widget.id) {
             _populateData(state.selectedReading!);
-            // Clear ngay lập tức để tránh loop
             context.read<AdminReadingBloc>().add(ClearSelectedReadingEvent());
           }
         }
 
-        // 3. Xử lý khi Save thành công (Tạm thời check status success chung)
-        // Lưu ý: Logic này nên được cải thiện bằng cách tách state SaveSuccess riêng
-        // Hiện tại: Nếu không phải loading, không lỗi, và không có selectedReading (tức là action save) -> Pop
-        // (Đây là logic tạm, bạn nên điều chỉnh tùy theo luồng Bloc của bạn)
         if (state.status == AdminReadingStatus.saved) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Lưu thành công!"), backgroundColor: Colors.green),
+            const SnackBar(content: Text("Saved successfully!"), backgroundColor: Colors.green),
           );
-          context.pop(); // Chỉ thoát khi đã lưu xong
+          context.pop();
         }
       },
       child: Scaffold(
@@ -272,7 +247,6 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
           title: Text(widget.id == null ? 'New Reading' : 'Edit Reading',
               style: const TextStyle(color: kTextMain, fontWeight: FontWeight.w700, fontSize: 16)),
           actions: [
-            // Nút Save / Edit
             BlocBuilder<AdminReadingBloc, AdminReadingState>(
               builder: (context, state) {
                 if (state.status == AdminReadingStatus.loading) {
@@ -282,10 +256,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                   ));
                 }
                 return TextButton(
-                  onPressed: () {
-                    // Logic: Luôn cho save nếu đang edit mode
-                    _onSubmit();
-                  },
+                  onPressed: _onSubmit,
                   child: const Text('Save',
                       style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                 );
@@ -295,10 +266,8 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
           bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: kBorder, height: 1)),
         ),
 
-        // BlocBuilder bọc Body để hiện Loading khi fetch detail
         body: BlocBuilder<AdminReadingBloc, AdminReadingState>(
           builder: (context, state) {
-            // Đang loading VÀ form chưa có dữ liệu (lần đầu vào Edit)
             if (state.status == AdminReadingStatus.loading && widget.id != null && questions.isEmpty) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -314,7 +283,6 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                       children: [
                         const SectionHeader(title: "General Information"),
 
-                        // Image Preview Box
                         if (_imageUrlCtrl.text.isNotEmpty)
                           Container(
                             height: 160,
@@ -327,7 +295,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                                 image: DecorationImage(
                                   image: NetworkImage(_imageUrlCtrl.text),
                                   fit: BoxFit.cover,
-                                  onError: (_,__) => const SizedBox(), // Tránh crash nếu ảnh lỗi
+                                  onError: (_,__) => const SizedBox(),
                                 )
                             ),
                           ),
@@ -337,7 +305,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                           controller: _imageUrlCtrl,
                           isReadOnly: !_isEditingMode,
                           hint: "https://example.com/image.png",
-                          onChanged: (val) => setState((){}), // Refresh UI để hiện ảnh
+                          onChanged: (val) => setState((){}),
                         ),
                         const SizedBox(height: 16),
 
@@ -347,11 +315,9 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         ShadcnInput(label: "Summary", controller: _summaryCtrl, maxLines: 2, isReadOnly: !_isEditingMode),
                         const SizedBox(height: 16),
 
-                        // Row: Mins + Difficulty
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            // 1. Ô Time: Cho chiếm 2 phần (nhỏ hơn)
                             Expanded(
                               flex: 2,
                               child: ShadcnInput(
@@ -362,8 +328,6 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                               ),
                             ),
                             const SizedBox(width: 16),
-
-                            // 2. Ô Difficulty: Cho chiếm 3 phần (rộng hơn)
                             Expanded(
                               flex: 3,
                               child: Column(
@@ -386,20 +350,19 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                                           child: GestureDetector(
                                             onTap: _isEditingMode ? () => setState(() => _difficulty = level) : null,
                                             child: Container(
-                                              margin: const EdgeInsets.symmetric(horizontal: 2), // Tạo khe hở nhỏ giữa các nút
+                                              margin: const EdgeInsets.symmetric(horizontal: 2),
                                               decoration: BoxDecoration(
                                                 color: isSelected ? kTextMain : Colors.transparent,
                                                 borderRadius: BorderRadius.circular(6),
                                               ),
                                               alignment: Alignment.center,
-                                              // 👇 Dùng FittedBox để chữ tự co lại nếu vẫn thiếu chỗ
                                               child: FittedBox(
                                                 fit: BoxFit.scaleDown,
                                                 child: Text(
                                                   level.toUpperCase(),
-                                                  maxLines: 1, // Bắt buộc 1 dòng
+                                                  maxLines: 1,
                                                   style: TextStyle(
-                                                      fontSize: 11, // Tăng nhẹ size chữ cho dễ đọc
+                                                      fontSize: 11,
                                                       fontWeight: FontWeight.bold,
                                                       color: isSelected ? Colors.white : kTextMuted
                                                   ),
@@ -427,11 +390,10 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                     child: Column(
                       children: [
                         const SectionHeader(title: "Content & Translation"),
-                        // English Section
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF), // Blue-50
+                            color: const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: const Color(0xFFDBEAFE)),
                           ),
@@ -445,11 +407,10 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Vietnamese Section
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF7ED), // Orange-50
+                            color: const Color(0xFFFFF7ED),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: const Color(0xFFFFEDD5)),
                           ),
@@ -490,11 +451,10 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         ),
                         const SizedBox(height: 8),
 
-                        // Render Question List
                         if (questions.isEmpty)
                           const Padding(
                             padding: EdgeInsets.all(16.0),
-                            child: Text("Chưa có câu hỏi nào.", style: TextStyle(color: kTextMuted)),
+                            child: Text("No questions yet.", style: TextStyle(color: kTextMuted)),
                           )
                         else
                           ...questions.asMap().entries.map((entry) {
@@ -504,7 +464,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                     ),
                   ),
 
-                  const SizedBox(height: 60), // Bottom padding
+                  const SizedBox(height: 60),
                 ],
               ),
             );
@@ -514,15 +474,12 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     );
   }
 
-  // Widget render từng câu hỏi (Giữ nguyên style Shadcn của bạn)
   Widget _buildQuestionEditor(int index, Map<String, dynamic> q) {
-    // Helper lấy data an toàn
     final options = List<String>.from(q['options'] ?? []);
     final transMap = q['translation'] as Map<String, dynamic>? ?? {};
     final transOptions = List<String>.from(transMap['options'] ?? []);
     final feedback = q['feedback'] as Map<String, dynamic>? ?? {};
 
-    // Fill data if empty
     while (options.length < 4) options.add("");
     while (transOptions.length < 4) transOptions.add("");
 
@@ -536,7 +493,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          initiallyExpanded: index == 0, // Mở câu đầu tiên theo mặc định
+          initiallyExpanded: index == 0,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           backgroundColor: const Color(0xFFFAFAFA),
           collapsedBackgroundColor: kWhite,
@@ -570,12 +527,10 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Question Text
                   ShadcnInput(
                     label: "Question (English)",
                     controller: TextEditingController(text: q['questionText']),
                     isReadOnly: !_isEditingMode,
-                    // Cập nhật trực tiếp vào Map khi gõ (quan trọng)
                     onChanged: (val) => q['questionText'] = val,
                   ),
                   const SizedBox(height: 12),
@@ -640,7 +595,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDF4), // Green-50
+                        color: const Color(0xFFF0FDF4),
                         border: Border.all(color: const Color(0xFFBBF7D0)),
                         borderRadius: BorderRadius.circular(8)
                     ),
