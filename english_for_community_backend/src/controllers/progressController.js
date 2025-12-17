@@ -96,18 +96,16 @@ const _getDateRangeConfig = (range, timezone) => {
     dayCount = 7;
   } else {
     // 🔥 RANGE = WEEK (SỬA LẠI ĐỂ CHẮC CHẮN ĐÚNG LOGIC TỪNG NGÀY)
-    const dayOfWeek = userTodayStart.getDay();
-    // Tính offset từ thứ 2 (0=T2, ..., 6=CN)
-    // Lưu ý: getDay() trả về 0=CN, 1=T2.
+    const dayOfWeek = new Date(userTodayStart.toLocaleString('en-US', { timeZone: timezone })).getDay();
+
+    // Tính offset từ thứ 2 (0=CN, 1=T2, ..., 6=T7)
     // Nếu CN (0) -> offset = 6. Nếu T2 (1) -> offset = 0.
     const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
 
     // Ngày bắt đầu là Thứ 2
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
 
-    // 🔥 QUAN TRỌNG: Chỉ hiển thị đến ngày hiện tại
-    // Nếu hôm nay là T2 (offset 0) -> dayCount = 1 (1 cột T2)
-    // Nếu hôm nay là T3 (offset 1) -> dayCount = 2 (2 cột T2, T3)
+    // Hiển thị từ T2 đến hôm nay
     dayCount = offset + 1;
   }
 

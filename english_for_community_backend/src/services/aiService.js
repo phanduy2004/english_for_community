@@ -20,14 +20,33 @@ export const aiService = {
   // --- 1. LOGIC TẠO ĐỀ (Giữ nguyên) ---
   generateWritingPrompt: async (topicName, aiConfig, taskType) => {
     try {
-      const userContent = aiConfig?.generationTemplate ||
-        `Generate an IELTS Writing Task 2 prompt for the topic: "${topicName}". ` +
-        `Task type: ${taskType}. ` +
-        `Level: ${aiConfig?.level || "Intermediate"}. ` +
-        `Target word count: ${aiConfig?.targetWordCount || "250–320"}. ` +
-        `Respond in JSON format: {"title": "...", "text": "..."}`;
+      // System: Định nghĩa vai trò chặt chẽ hơn
+      const systemContent = `
+        You are an expert IELTS Writing Task 2 Question Generator (Exam Creator).
+        Your ONLY job is to create the exam prompt (the question).
+        
+        ⛔ CRITICAL RULES:
+        1. Do NOT write the essay.
+        2. Do NOT provide sample answers, outlines, or introductions.
+        3. Output valid JSON only.
+      `;
 
-      const systemContent = "You are an IELTS Writing content generator. You must output valid JSON only.";
+      // User: Hướng dẫn chi tiết cấu trúc JSON và nhắc lại lệnh cấm
+      const userContent = `
+        Generate a unique IELTS Writing Task 2 prompt.
+        
+        - Topic: "${topicName}"
+        - Task Type: ${taskType} (e.g., Agree/Disagree, Discuss both views, etc.)
+        - Difficulty Level: ${aiConfig?.level || "Intermediate"}
+        
+        REQUIRED JSON FORMAT:
+        {
+          "title": "Short topic title (e.g., Technology in Education)",
+          "text": "The full exam question statement. Include the background context and the specific question instructions."
+        }
+        
+        IMPORTANT: Just output the question JSON. Do not write the essay response.
+      `;
 
       const completion = await groq.chat.completions.create({
         messages: [
@@ -35,7 +54,7 @@ export const aiService = {
           { role: "user", content: userContent }
         ],
         model: MODEL_NAME,
-        temperature: 0.5,
+        temperature: 0.6, // Tăng nhẹ để đề bài sáng tạo hơn (nhưng vẫn tuân thủ format)
         response_format: { type: "json_object" }
       });
 

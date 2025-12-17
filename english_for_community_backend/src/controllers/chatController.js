@@ -22,7 +22,7 @@ const normalizeHistory = (historyItems) => {
     if (!content || content.trim() === "") content = " ";
     return { role, content };
   }).filter(item => item.content.trim() !== "");
-};
+}
 
 // --- HELPER: TRÍCH XUẤT JSON TỪ RESPONSE CỦA AI ---
 const extractToolCall = (text) => {
