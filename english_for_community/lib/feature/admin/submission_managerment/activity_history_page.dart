@@ -389,8 +389,12 @@ class _AdminHistoryCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(item.user!.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: kTextMain)),
-                          Text(DateFormat('MMM dd, HH:mm').format(item.date), style: const TextStyle(fontSize: 11, color: kTextMuted)),
-                        ],
+                          Text(
+                              DateFormat('dd/MM/yyyy HH:mm').format(
+                                  item.date.toUtc().add(const Duration(hours: 7))
+                              ),
+                              style: const TextStyle(fontSize: 11, color: kTextMuted)
+                          ),                        ],
                       ),
                       const Spacer(),
                       _buildStatusBadge(item.status),
