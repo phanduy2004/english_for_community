@@ -20,14 +20,31 @@ import '../models/Listening.js';
 
 const getHistory = async (targetUserId, startDate, endDate, filterType) => {
   try {
-    const start = startDate ? new Date(startDate) : new Date(new Date().setDate(new Date().getDate() - 30));
+    const start = startDate ? new Date(startDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date();
-    start.setHours(0, 0, 0, 0);
-    end.setHours(23, 59, 59, 999);
+
+    // Nếu không có startDate, mặc định lấy 30 ngày trước
+    if (!startDate) {
+      start.setDate(start.getDate() - 30);
+    }
+
+    // 2. Chuyển đổi Start Date: (00:00:00 VN -> UTC)
+    // Đặt về 00:00:00 theo UTC
+    start.setUTCHours(0, 0, 0, 0);
+    // Trừ đi 7 giờ để khớp với 00:00 sáng tại VN
+    start.setUTCHours(start.getUTCHours() - 7);
+
+    // 3. Chuyển đổi End Date: (23:59:59 VN -> UTC)
+    // Đặt về 23:59:59 theo UTC
+    end.setUTCHours(23, 59, 59, 999);
+    // Trừ đi 7 giờ để khớp với 23:59 đêm tại VN
+    end.setUTCHours(end.getUTCHours() - 7);
+
+    // Log kiểm tra (Bạn có thể xóa sau khi test)
+    // console.log(`Querying VN Time from: ${start.toISOString()} to ${end.toISOString()}`);
 
     const dateQuery = { $gte: start, $lte: end };
     const userFilter = targetUserId ? { userId: targetUserId } : {};
-
     let rawItems = [];
 
     // --- A. WRITING ---
