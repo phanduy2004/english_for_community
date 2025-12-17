@@ -1,15 +1,25 @@
-import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+// Đảm bảo import đúng các file entity/bloc của dự án bạn
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/repository/writing_repository.dart';
+import 'package:english_for_community/feature/writing/writing_task_bloc/writing_task_bloc.dart';
+import 'package:english_for_community/feature/writing/writing_task_bloc/writing_task_event.dart';
+import 'package:english_for_community/feature/writing/writing_task_bloc/writing_task_state.dart';
+import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
+import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 
-// Import các file Bloc/Event/State
-import 'writing_task_bloc/writing_task_bloc.dart';
-import 'writing_task_bloc/writing_task_event.dart';
-import 'writing_task_bloc/writing_task_state.dart';
-import 'writing_feedback_page.dart';
+// --- 1. ĐỊNH NGHĨA MÀU SẮC (Theme Local) ---
+class _Colors {
+  static const bgSubtle = Color(0xFFFAFAFA); // Nền xám rất nhạt
+  static const border = Color(0xFFE4E4E7);   // Viền xám
+  static const textMain = Color(0xFF09090B); // Chữ đen đậm
+  static const textMuted = Color(0xFF71717A);// Chữ xám ghi
+  static const primary = Color(0xFF18181B);  // Đen (Primary Button)
+  static const accent = Color(0xFFF4F4F5);   // Nền icon
+  static const error = Color(0xFFEF4444);    // Đỏ
+}
 
 class WritingTaskPage extends StatelessWidget {
   final WritingTopicEntity topic;
@@ -29,8 +39,7 @@ class WritingTaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Demo userId
-    const userId = "USER_ID_HIEN_TAI_CUA_BAN";
+    const userId = "USER_ID_HIEN_TAI_CUA_BAN"; // TODO: Thay bằng User ID thật
 
     return BlocProvider(
       create: (_) => WritingTaskBloc(
@@ -70,7 +79,9 @@ class WritingTaskView extends StatefulWidget {
 
 class _WritingTaskViewState extends State<WritingTaskView> {
   final _text = TextEditingController();
-  final ScrollController _scrollController = ScrollController(); // Thêm ScrollController để điều khiển cuộn
+  final ScrollController _scrollController = ScrollController();
+  final FocusNode _focusNode = FocusNode();
+
   String? _taskType;
   int _wordCount = 0;
   bool _isDirty = false;
@@ -96,9 +107,11 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   void dispose() {
     _text.dispose();
     _scrollController.dispose();
+    _focusNode.dispose();
     _writingStopwatch.stop();
     super.dispose();
   }
+
   void _showInstructionDialog() {
     if (_taskType == null) return;
     showDialog(
@@ -106,6 +119,22 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       builder: (context) => WritingTaskInstructionDialog(taskType: _taskType!),
     );
   }
+
+  void _submit(WritingTaskState s) {
+    if (s.submission == null || _taskType == null) return;
+    FocusScope.of(context).unfocus();
+    final durationInSeconds = _writingStopwatch.elapsed.inSeconds;
+    context.read<WritingTaskBloc>().add(
+      SubmitForFeedback(
+        submissionId: s.submission!.id,
+        essayContent: _text.text,
+        taskType: _taskType!,
+        durationInSeconds: durationInSeconds,
+      ),
+    );
+  }
+
+  // --- DIALOG THOÁT (Chuẩn Android) ---
   Future<void> _onWillPop(bool didPop) async {
     if (didPop) return;
     final state = context.read<WritingTaskBloc>().state;
@@ -117,25 +146,27 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Save Draft?'),
-        content: const Text('Do you want to save your work before leaving?'),
+        title: const Text('Save Draft?', style: TextStyle(fontWeight: FontWeight.w600)),
+        content: const Text(
+          'Do you want to save your changes?',
+          style: TextStyle(color: _Colors.textMuted),
+        ),
+        // Actions mặc định của AlertDialog sẽ xếp ngang (Row) trên Android
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Don\'t Save', style: TextStyle(color: Colors.red)),
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('Cancel', style: TextStyle(color: _Colors.textMuted)),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Discard', style: TextStyle(color: _Colors.error)),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Save & Exit'),
+            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
           ),
         ],
       ),
@@ -164,13 +195,13 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Draft Found'),
-        content: Text(
-          'You have an unfinished "$serverTaskType" essay.\n\n'
-              '• Resume: Continue your previous work.\n'
-              '• Start New: DELETE the old draft and start a new topic.',
-          style: const TextStyle(fontSize: 14, color: Color(0xFF52525B)),
+        title: const Text('Resume Writing?', style: TextStyle(fontWeight: FontWeight.w600)),
+        content: const Text(
+          'We found an unfinished draft. Do you want to continue where you left off?',
+          style: TextStyle(color: _Colors.textMuted),
         ),
         actions: [
           TextButton(
@@ -179,21 +210,19 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               final currentState = context.read<WritingTaskBloc>().state;
               if (currentState.topic != null) {
                 const userId = "USER_ID_HIEN_TAI_CUA_BAN";
-                context.read<WritingTaskBloc>().add(
-                    DiscardDraftAndStartNew(
-                      oldSubmissionId: submissionId,
-                      topic: currentState.topic!,
-                      userId: userId,
-                      taskType: _taskType ?? 'Discussion',
-                    )
-                );
+                context.read<WritingTaskBloc>().add(DiscardDraftAndStartNew(
+                  oldSubmissionId: submissionId,
+                  topic: currentState.topic!,
+                  userId: userId,
+                  taskType: _taskType ?? 'Discussion',
+                ));
                 _text.clear();
                 _isDirty = false;
               }
             },
-            child: const Text('Start New', style: TextStyle(color: Colors.red)),
+            child: const Text('Start New', style: TextStyle(color: _Colors.error)),
           ),
-          ElevatedButton(
+          TextButton(
             onPressed: () {
               Navigator.pop(ctx);
               setState(() {
@@ -202,26 +231,9 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                 _isDirty = false;
               });
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Resume Draft'),
+            child: const Text('Resume', style: TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _submit(WritingTaskState s) {
-    if (s.submission == null || _taskType == null) return;
-    final durationInSeconds = _writingStopwatch.elapsed.inSeconds;
-    context.read<WritingTaskBloc>().add(
-      SubmitForFeedback(
-        submissionId: s.submission!.id,
-        essayContent: _text.text,
-        taskType: _taskType!,
-        durationInSeconds: durationInSeconds,
       ),
     );
   }
@@ -232,49 +244,51 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       canPop: false,
       onPopInvoked: _onWillPop,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF9FAFB),
-        // resizeToAvoidBottomInset: true giúp body co lại khi bàn phím hiện
+        backgroundColor: _Colors.bgSubtle,
+        // Quan trọng: Co lại khi bàn phím hiện
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
+          scrolledUnderElevation: 0,
+          shape: const Border(bottom: BorderSide(color: _Colors.border)),
           leading: IconButton(
-            icon: const Icon(Icons.close, color: Color(0xFF09090B)),
+            icon: const Icon(Icons.close_rounded, color: _Colors.textMain),
             onPressed: () => _onWillPop(false),
           ),
-          title: Text(
-            context.watch<WritingTaskBloc>().state.topic?.name ?? 'Writing Task',
-            style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600, fontSize: 16),
+          title: Column(
+            children: [
+              Text(
+                context.watch<WritingTaskBloc>().state.topic?.name ?? 'Writing Task',
+                style: const TextStyle(color: _Colors.textMain, fontWeight: FontWeight.w600, fontSize: 16),
+              ),
+              if (_taskType != null)
+                Text(
+                  _taskType!,
+                  style: const TextStyle(color: _Colors.textMuted, fontSize: 11, fontWeight: FontWeight.w400),
+                ),
+            ],
           ),
           centerTitle: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.lightbulb_outline, color: Color(0xFF09090B)),
-              tooltip: 'How to write this task?',
-              onPressed: _showInstructionDialog, // Gọi hàm hiển thị dialog
+              icon: const Icon(Icons.lightbulb_outline, color: _Colors.textMain),
+              tooltip: 'Instructions',
+              onPressed: _showInstructionDialog,
             ),
           ],
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(color: const Color(0xFFE4E4E7), height: 1),
-          ),
         ),
         body: BlocConsumer<WritingTaskBloc, WritingTaskState>(
           listenWhen: (p, c) => p.status != c.status || p.submission != c.submission,
           listener: (context, state) {
-            // Logic xử lý status giữ nguyên như cũ
+            // ... Logic Listener giữ nguyên
             if (state.status == WritingTaskStatus.promptReady && state.submission != null) {
               final hasDraftContent = state.submission!.content.isNotEmpty;
               final isDraftStatus = state.submission!.status == 'draft';
               if (hasDraftContent && isDraftStatus && !_hasShownResumeDialog) {
                 Future.delayed(Duration.zero, () {
                   if (mounted) {
-                    _showResumeConflictDialog(
-                        context,
-                        state.submission!.generatedPrompt?.taskType ?? 'Essay',
-                        state.submission!.id,
-                        state.submission!.content
-                    );
+                    _showResumeConflictDialog(context, state.submission!.generatedPrompt?.taskType ?? 'Essay', state.submission!.id, state.submission!.content);
                   }
                 });
               } else if (!hasDraftContent && isDraftStatus) {
@@ -284,105 +298,80 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               }
             }
             if (state.status == WritingTaskStatus.savedSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Draft saved successfully!'), duration: Duration(seconds: 1)),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved successfully!')));
               Navigator.of(context).pop();
             }
             if (state.status == WritingTaskStatus.success && state.submission != null) {
               _writingStopwatch.stop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)),
-              );
+              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)));
             }
-            if (state.status == WritingTaskStatus.error && state.errorMessage != null) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            if (state.status == WritingTaskStatus.error) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Error')));
             }
           },
           builder: (context, state) {
             if (state.status == WritingTaskStatus.loading) {
-              return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+              return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: _Colors.primary));
             }
-
-            final canShowEditor = (state.status == WritingTaskStatus.promptReady ||
-                state.status == WritingTaskStatus.submitting ||
-                state.status == WritingTaskStatus.savedSuccess) &&
-                state.submission != null;
-
-            if (!canShowEditor) {
-              return const Center(child: Text('Initializing task...', style: TextStyle(color: Color(0xFF71717A))));
+            if (state.submission == null) {
+              return const Center(child: Text('Preparing task...', style: TextStyle(color: _Colors.textMuted)));
             }
-
-            final isSubmitting = state.status == WritingTaskStatus.submitting;
-
             if (_taskType == null) {
               _taskType = state.submission!.generatedPrompt?.taskType ?? widget.initialTaskType;
             }
 
-            // --- LAYOUT CHÍNH ĐÃ ĐƯỢC SỬA ---
-            return Stack(
-              children: [
-                Column(
-                  children: [
-                    // 1. Phần nội dung có thể cuộn (Đề bài + Editor)
-                    Expanded(
-                      child: GestureDetector(
-                        // Bấm ra ngoài để ẩn bàn phím
-                        onTap: () => FocusScope.of(context).unfocus(),
-                        child: SingleChildScrollView(
-                          controller: _scrollController,
-                          // physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // A. Prompt (Đề bài)
-                              widget.promptBuilder != null
-                                  ? widget.promptBuilder!(context, state, _taskType, (v) => setState(() => _taskType = v))
-                                  : _ShadcnPrompt(
-                                title: state.submission!.generatedPrompt?.title ?? 'Topic',
-                                text: state.submission!.generatedPrompt?.text ?? '',
-                                taskType: _taskType,
-                              ),
+            final isSubmitting = state.status == WritingTaskStatus.submitting;
 
-                              // B. Editor (Soạn thảo)
-                              // Không dùng Expanded ở đây nữa vì đã nằm trong SingleChildScrollView
-                              widget.editorBuilder != null
-                                  ? widget.editorBuilder!(context, _text, (_) {})
-                                  : _ShadcnEditor(
-                                controller: _text,
-                                readOnly: isSubmitting,
-                                // Truyền scroll controller vào nếu cần xử lý auto-scroll
-                              ),
+            return SafeArea(
+              child: Column(
+                children: [
+                  // 1. PHẦN CUỘN (Prompt + Editor)
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        if (!_focusNode.hasFocus) _focusNode.requestFocus();
+                      },
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // A. Prompt Card
+                            widget.promptBuilder != null
+                                ? widget.promptBuilder!(context, state, _taskType, (v) => setState(() => _taskType = v))
+                                : _PromptCard(
+                              title: state.submission!.generatedPrompt?.title ?? 'Topic',
+                              text: state.submission!.generatedPrompt?.text ?? '',
+                            ),
 
-                              // Khoảng trống đệm để người dùng có thể cuộn text lên cao hơn bàn phím
-                              SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 200 : 100),
-                            ],
-                          ),
+                            // B. Editor
+                            widget.editorBuilder != null
+                                ? widget.editorBuilder!(context, _text, (_) {})
+                                : _Editor(
+                              controller: _text,
+                              focusNode: _focusNode,
+                              readOnly: isSubmitting,
+                            ),
+
+                            // C. Spacer
+                            SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 300 : 100),
+                          ],
                         ),
                       ),
                     ),
-
-                    // 2. Bottom Bar (Luôn ghim ở dưới cùng)
-                    // Khi bàn phím hiện, cái này sẽ được đẩy lên trên bàn phím nhờ resizeToAvoidBottomInset: true
-                    widget.bottomBarBuilder != null
-                        ? widget.bottomBarBuilder!(context, _wordCount, isSubmitting, () => _submit(state))
-                        : _ShadcnBottomBar(
-                      wordCount: _wordCount,
-                      busy: isSubmitting,
-                      onSubmit: () => _submit(state),
-                    ),
-                  ],
-                ),
-                if (isSubmitting)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.white.withOpacity(0.5),
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
                   ),
-              ],
+
+                  // 2. BOTTOM BAR (Layout Cũ: Ngang)
+                  widget.bottomBarBuilder != null
+                      ? widget.bottomBarBuilder!(context, _wordCount, isSubmitting, () => _submit(state))
+                      : _ClassicBottomBar(
+                    wordCount: _wordCount,
+                    busy: isSubmitting,
+                    onSubmit: () => _submit(state),
+                  ),
+                ],
+              ),
             );
           },
         ),
@@ -391,162 +380,154 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   }
 }
 
-// --- CÁC WIDGET CON (ĐÃ ĐƯỢC CHỈNH SỬA) ---
+// --- CÁC WIDGET CON ---
 
-class _ShadcnPrompt extends StatelessWidget {
+// 1. Prompt Card (Có thể thu gọn)
+class _PromptCard extends StatefulWidget {
   final String title;
   final String text;
-  final String? taskType;
+  const _PromptCard({required this.title, required this.text});
 
-  const _ShadcnPrompt({
-    required this.title,
-    required this.text,
-    required this.taskType,
-  });
+  @override
+  State<_PromptCard> createState() => _PromptCardState();
+}
+
+class _PromptCardState extends State<_PromptCard> {
+  bool _isExpanded = true;
 
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    const borderCol = Color(0xFFE4E4E7);
-    const bgBadge = Color(0xFFF4F4F5);
-
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: borderCol)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _Colors.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain),
-                ),
-              ),
-              if (taskType != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: bgBadge,
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: borderCol),
+          InkWell(
+            onTap: () => setState(() => _isExpanded = !_isExpanded),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: _Colors.accent, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.article_outlined, size: 20, color: _Colors.textMain),
                   ),
-                  child: Text(
-                    taskType!.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: textMuted,
-                      letterSpacing: 0.5,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _Colors.textMain), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 2),
+                        Text(_isExpanded ? 'Tap to collapse' : 'Tap to expand prompt', style: const TextStyle(fontSize: 12, color: _Colors.textMuted)),
+                      ],
                     ),
                   ),
-                ),
-            ],
+                  Icon(_isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: _Colors.textMuted),
+                ],
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            text,
-            style: const TextStyle(fontSize: 15, color: textMain, height: 1.6),
-          ),
+          if (_isExpanded)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: _Colors.bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: _Colors.border.withOpacity(0.5))),
+                child: Text(widget.text, style: const TextStyle(fontSize: 14, height: 1.5, color: _Colors.textMain)),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _ShadcnEditor extends StatelessWidget {
+// 2. Editor (Clean UI)
+class _Editor extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool readOnly;
-  const _ShadcnEditor({required this.controller, this.readOnly = false});
+
+  const _Editor({required this.controller, required this.focusNode, this.readOnly = false});
 
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-
-    // Tính toán chiều cao tối thiểu để vùng nhập liệu trông rộng rãi
-    // Lấy chiều cao màn hình trừ đi các phần header (ước lượng)
-    final minHeight = MediaQuery.of(context).size.height * 0.5;
-
     return Container(
-      constraints: BoxConstraints(minHeight: minHeight),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      color: const Color(0xFFF9FAFB),
+      constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * 0.5),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: TextField(
         controller: controller,
-        // QUAN TRỌNG:
-        // 1. maxLines: null để ô text tự động cao lên khi gõ nhiều
-        // 2. Không dùng expands: true trong SingleChildScrollView
-        maxLines: null,
-        minLines: 10, // Mặc định hiển thị ít nhất 10 dòng
-        keyboardType: TextInputType.multiline,
+        focusNode: focusNode,
         readOnly: readOnly,
-        // scrollPadding giúp tự động đẩy màn hình lên sao cho con trỏ
-        // luôn nằm trên bàn phím một khoảng 80px
-        scrollPadding: const EdgeInsets.only(bottom: 80),
-        style: const TextStyle(fontSize: 16, height: 1.6, color: textMain),
+        maxLines: null,
+        minLines: 1,
+        keyboardType: TextInputType.multiline,
+        textCapitalization: TextCapitalization.sentences,
+        style: const TextStyle(fontSize: 16, height: 1.6, color: _Colors.textMain),
+        cursorColor: _Colors.primary,
         decoration: const InputDecoration(
           border: InputBorder.none,
           hintText: 'Start writing your essay here...',
-          hintStyle: TextStyle(color: textMuted),
+          hintStyle: TextStyle(color: Color(0xFFD4D4D8)),
         ),
       ),
     );
   }
 }
 
-class _ShadcnBottomBar extends StatelessWidget {
+// 3. Bottom Bar (Layout Cũ: Ngang + Nút Submit)
+class _ClassicBottomBar extends StatelessWidget {
   final int wordCount;
   final bool busy;
   final VoidCallback onSubmit;
 
-  const _ShadcnBottomBar({required this.wordCount, required this.busy, required this.onSubmit});
+  const _ClassicBottomBar({required this.wordCount, required this.busy, required this.onSubmit});
 
   @override
   Widget build(BuildContext context) {
-    const borderCol = Color(0xFFE4E4E7);
-    const textMuted = Color(0xFF71717A);
-    final primaryColor = Theme.of(context).colorScheme.primary;
-
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: borderCol)),
+        border: Border(top: BorderSide(color: _Colors.border)),
       ),
       child: SafeArea(
-        top: false,
         child: Row(
           children: [
+            // Bên trái: Số từ
             Text(
               '$wordCount words',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: wordCount < 150 ? Colors.orange : textMuted,
+                color: wordCount < 150 ? Colors.orange : _Colors.textMuted,
               ),
             ),
+
             const Spacer(),
+
+            // Bên phải: Nút Submit
             ElevatedButton(
               onPressed: busy ? null : onSubmit,
               style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
+                backgroundColor: _Colors.primary,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                textStyle: const TextStyle(fontWeight: FontWeight.w600),
               ),
               child: busy
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Submit Essay'),
+                  : const Text('Submit Essay', style: TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),

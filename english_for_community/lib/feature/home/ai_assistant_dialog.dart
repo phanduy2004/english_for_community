@@ -106,8 +106,7 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: const [
-                            Text('Trợ lý AI', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
-                            Text('Gemini 2.0 Flash', style: TextStyle(fontSize: 12, color: textMuted)),
+                            Text('AI Assistant', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
                           ],
                         ),
                       ],

@@ -223,18 +223,50 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           const Text('ACTIVITY (LAST 7 DAYS)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
-            height: 120, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            height: 120,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: borderCol)),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end, mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: (summary?.weeklyChart.minutes ?? []).asMap().entries.map((entry) {
-                final h = (entry.value / ((summary?.weeklyChart.minutes.reduce((a, b) => a > b ? a : b) ?? 1))) * 60;
-                return Column(mainAxisAlignment: MainAxisAlignment.end, children: [
-                  Container(width: 20, height: h == 0 ? 4 : h, decoration: BoxDecoration(color: const Color(0xFF0F172A), borderRadius: BorderRadius.circular(4))),
-                  const SizedBox(height: 8),
-                  Text(summary?.weeklyChart.labels[entry.key] ?? '', style: const TextStyle(fontSize: 10, color: textMuted)),
-                ]);
-              }).toList(),
+            child: LayoutBuilder( // Optional: Helps with constraints
+                builder: (context, constraints) {
+                  final minutes = summary?.weeklyChart.minutes ?? [];
+
+                  // 1. Safe Calculation for Max Value
+                  // If list is empty or max is 0, default to 1 to avoid Division by Zero
+                  final maxValRaw = minutes.isNotEmpty
+                      ? minutes.reduce((a, b) => a > b ? a : b)
+                      : 1;
+                  final maxVal = maxValRaw == 0 ? 1 : maxValRaw;
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: minutes.asMap().entries.map((entry) {
+                      // 2. Safe Height Calculation
+                      // 60 is the max height in pixels for the bar
+                      final h = (entry.value / maxVal) * 60;
+
+                      return Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                                width: 20,
+                                // Ensure height is finite and valid
+                                height: h <= 0 ? 4 : h.toDouble(),
+                                decoration: BoxDecoration(
+                                    color: const Color(0xFF0F172A),
+                                    borderRadius: BorderRadius.circular(4)
+                                )
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                                summary?.weeklyChart.labels[entry.key] ?? '',
+                                style: const TextStyle(fontSize: 10, color: textMuted)
+                            ),
+                          ]
+                      );
+                    }).toList(),
+                  );
+                }
             ),
           )
         ],
