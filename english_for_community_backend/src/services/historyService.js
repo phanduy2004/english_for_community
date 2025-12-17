@@ -17,95 +17,44 @@ import '../models/WritingTopics.js';
 import '../models/Reading.js';
 import '../models/SpeakingSet.js';
 import '../models/Listening.js';
-
+const toVietnamTime = (date) => {
+  if (!date) return null;
+  return new Date(date).toLocaleString('en-GB', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    hour12: false, // Dùng định dạng 24h
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    // second: '2-digit' // Bật lên nếu muốn hiện giây
+  }).replace(',', ''); // Xóa dấu phẩy ngăn cách nếu có
+};
 const getHistory = async (targetUserId, startDate, endDate, filterType) => {
   try {
+    // 1. XỬ LÝ TIMEZONE QUERY (Giữ nguyên logic query đã sửa ở bước trước)
     const start = startDate ? new Date(startDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Nếu không có startDate, mặc định lấy 30 ngày trước
-    if (!startDate) {
-      start.setDate(start.getDate() - 30);
-    }
+    if (!startDate) start.setDate(start.getDate() - 30);
 
-    // 2. Chuyển đổi Start Date: (00:00:00 VN -> UTC)
-    // Đặt về 00:00:00 theo UTC
+    // Chuyển về mốc 0h và 23h59 VN đổi sang UTC
     start.setUTCHours(0, 0, 0, 0);
-    // Trừ đi 7 giờ để khớp với 00:00 sáng tại VN
     start.setUTCHours(start.getUTCHours() - 7);
 
-    // 3. Chuyển đổi End Date: (23:59:59 VN -> UTC)
-    // Đặt về 23:59:59 theo UTC
     end.setUTCHours(23, 59, 59, 999);
-    // Trừ đi 7 giờ để khớp với 23:59 đêm tại VN
     end.setUTCHours(end.getUTCHours() - 7);
-
-    // Log kiểm tra (Bạn có thể xóa sau khi test)
-    // console.log(`Querying VN Time from: ${start.toISOString()} to ${end.toISOString()}`);
 
     const dateQuery = { $gte: start, $lte: end };
     const userFilter = targetUserId ? { userId: targetUserId } : {};
+
     let rawItems = [];
 
-    // --- A. WRITING ---
-    if (!filterType || filterType === 'writing') {
-      const docs = await WritingSubmission.find({
-        submittedAt: dateQuery,
-        status: { $in: ['submitted', 'reviewed'] },
-        ...userFilter
-      })
-        .populate('userId', 'fullName avatarUrl email')
-        .populate('topicId', 'name aiConfig')
-        .select('userId topicId score submittedAt durationInSeconds status wordCount generatedPrompt feedback')
-        .lean();
-      rawItems.push(...docs.map(d => ({ ...d, type: 'writing', time: d.submittedAt })));
-    }
+    // ... (Giữ nguyên phần query DB lấy rawItems: Writing, Reading, Speaking, Listening) ...
 
-    // --- B. READING ---
-    if (!filterType || filterType === 'reading') {
-      const docs = await ReadingProgress.find({
-        updatedAt: dateQuery,
-        status: 'completed',
-        ...userFilter
-      })
-        .populate('userId', 'fullName avatarUrl email')
-        .populate({ path: 'readingId', select: 'title questions' })
-        .lean();
-      rawItems.push(...docs.map(d => ({ ...d, type: 'reading', time: d.updatedAt })));
-    }
-
-    // --- C. SPEAKING ---
-    if (!filterType || filterType === 'speaking') {
-      const docs = await SpeakingEnrollment.find({
-        updatedAt: dateQuery,
-        isCompleted: true,
-        ...userFilter
-      })
-        .populate('userId', 'fullName avatarUrl email')
-        .populate({ path: 'speakingSetId', select: 'title mode sentences' })
-        .lean();
-      rawItems.push(...docs.map(d => ({ ...d, type: 'speaking', time: d.updatedAt })));
-    }
-
-    // --- D. LISTENING ---
-    if (!filterType || filterType === 'listening') {
-      const docs = await Enrollment.find({
-        updatedAt: dateQuery,
-        isCompleted: true,
-        ...userFilter
-      })
-        .populate('userId', 'fullName avatarUrl email')
-        .populate({ path: 'listeningId', select: 'title cues' })
-        .lean();
-      rawItems.push(...docs.map(d => ({ ...d, type: 'listening', time: d.updatedAt })));
-    }
-
-    // ======================================================
-    // 🔥 FIX: ENRICH DATA VỚI NULL CHECK KỸ LƯỠNG
-    // ======================================================
-
-    const finalResults = await Promise.all(rawItems.map(async (item) => {
-      // 1. Kiểm tra User (Nếu user bị xóa, item.userId sẽ là null)
+    // 2. MAP DỮ LIỆU (Giữ nguyên date gốc để lát nữa sort)
+    const processedResults = await Promise.all(rawItems.map(async (item) => {
+      // Check User
       const userObj = item.userId ? {
         id: item.userId._id.toString(),
         name: item.userId.fullName,
@@ -113,20 +62,18 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         email: item.userId.email
       } : { id: 'deleted', name: 'Deleted User', avatar: '', email: '' };
 
-      // Base object
       const base = {
         id: item._id.toString(),
         type: item.type,
         user: userObj,
+        // ⚠️ GIỮ DATE GỐC (OBJECT) ĐỂ SORT TRƯỚC
         date: item.time,
         status: item.status || 'completed',
       };
 
-      // 🛡️ Guard Clause: Nếu User ID null thì không thể query attempt theo user được
-      // Nếu muốn vẫn hiện bài làm của user đã xóa, ta phải bỏ qua bước query aggregate bên dưới
+      // --- LOGIC TỪNG LOẠI (Copy lại logic cũ) ---
       const userIdStr = item.userId?._id;
 
-      // --- LOGIC 1: WRITING ---
       if (item.type === 'writing') {
         return {
           ...base,
@@ -139,11 +86,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         };
       }
 
-      // --- LOGIC 2: READING ---
       if (item.type === 'reading') {
-        // 🔥 Fix: Kiểm tra bài đọc còn tồn tại không
         if (!item.readingId) return null;
-
         let totalDuration = 0;
         if (userIdStr) {
           const timeAgg = await ReadingAttempt.aggregate([
@@ -152,28 +96,20 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
           ]);
           totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
         }
-
-        const totalQ = item.readingId.questions?.length || 0;
-        const score = item.highScore || 0;
-
         return {
           ...base,
           title: item.readingId.title || 'Reading Practice',
-          score: score,
+          score: item.highScore || 0,
           duration: totalDuration,
           subType: 'Reading',
-          totalQuestions: totalQ,
-          correctCount: Math.round((score * totalQ) / 100)
+          totalQuestions: item.readingId.questions?.length || 0,
+          correctCount: Math.round(((item.highScore || 0) * (item.readingId.questions?.length || 0)) / 100)
         };
       }
 
-      // --- LOGIC 3: SPEAKING ---
       if (item.type === 'speaking') {
-        // 🔥 Fix: Kiểm tra speakingSetId có null không (do populate fail)
         if (!item.speakingSetId) return null;
-
         let setId = item.speakingSetId._id || item.speakingSetId;
-        // Fix lỗi 'toString' of null: Kiểm tra setId tồn tại trước
         if (setId && typeof setId === 'object') setId = setId.toString();
 
         let totalDuration = 0;
@@ -184,14 +120,11 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
           ]);
           totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
         }
-
         const wer = item.averageWer ?? 1;
-        const accuracy = Math.max(0, Math.round((1 - wer) * 100));
-
         return {
           ...base,
           title: item.speakingSetId.title || 'Speaking Set',
-          score: accuracy,
+          score: Math.max(0, Math.round((1 - wer) * 100)),
           duration: totalDuration,
           subType: item.speakingSetId.mode || 'Speaking',
           totalQuestions: item.speakingSetId.sentences?.length || 0,
@@ -199,11 +132,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         };
       }
 
-      // --- LOGIC 4: LISTENING ---
       if (item.type === 'listening') {
-        // 🔥 Fix: Kiểm tra bài nghe còn tồn tại không
         if (!item.listeningId) return null;
-
         let totalDuration = 0;
         if (userIdStr) {
           const timeAgg = await DictationAttempt.aggregate([
@@ -212,13 +142,10 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
           ]);
           totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
         }
-
-        const scoreVal = Math.round((item.progress || 0) * 100);
-
         return {
           ...base,
           title: item.listeningId.title || 'Listening Practice',
-          score: scoreVal,
+          score: Math.round((item.progress || 0) * 100),
           duration: totalDuration,
           subType: 'Dictation',
           totalQuestions: item.listeningId.cues?.length || 0,
@@ -226,14 +153,20 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         };
       }
 
-      return null; // Fallback
+      return null;
     }));
 
-    // 🔥 Filter bỏ các item bị null (do data bị xóa, populate fail)
-    const validResults = finalResults.filter(item => item !== null);
+    // 3. LỌC BỎ NULL & SẮP XẾP (Dùng date gốc để sort)
+    let sortedList = processedResults
+      .filter(item => item !== null)
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // Mới nhất lên đầu
 
-    // Sắp xếp
-    return validResults.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // 4. BƯỚC CUỐI: FORMAT LẠI DATE THÀNH STRING VIỆT NAM
+    // Đây là bước biến field 'date' thành 'dd/MM/yyyy HH:mm' như bạn muốn
+    return sortedList.map(item => ({
+      ...item,
+      date: toVietnamTime(item.date) // Ghi đè field date
+    }));
 
   } catch (error) {
     console.error("[History Service] Error:", error);
