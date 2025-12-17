@@ -148,7 +148,11 @@ class AppRouter {
         // 🟢 USER THƯỜNG
         else {
           // Chặn User thường truy cập các route bắt đầu bằng '/admin'
-          if (publicRoutes.contains(location) || location == SplashPage.routePath || location.contains('/admin')) {
+          final isDictionaryRoute = location.startsWith('/dictionary'); // Kiểm tra xem có phải route từ điển không
+
+          if ((publicRoutes.contains(location) && !isDictionaryRoute) || // 👈 THÊM ĐIỀU KIỆN NÀY
+              location == SplashPage.routePath ||
+              location.contains('/admin')) {
             return HomePage.routePath;
           }
         }
@@ -415,14 +419,30 @@ class AppRouter {
       ),
       GoRoute(
         path: '/dictionary-detail',
-        name: kDictDetailRouteName, // Giá trị là 'dict-detail'
+        name: kDictDetailRouteName,
         builder: (context, state) {
-          // Lấy entry và isGuest từ extra
-          final extra = state.extra as Map<String, dynamic>?;
-          final entry = extra?['entry'] as Entry?;
-          final isGuest = extra?['isGuest'] as bool? ?? false;
+          Entry? entry;
+          bool isGuest = false;
 
+          final extra = state.extra;
+
+          // 🛡️ CÁCH FIX AN TOÀN: Kiểm tra kiểu dữ liệu trước khi dùng
+
+          // Trường hợp 1: Code mới (Truyền Map để kèm biến isGuest)
+          if (extra is Map<String, dynamic>) { // Hoặc kiểm tra 'is Map'
+            entry = extra['entry'] as Entry?;
+            isGuest = extra['isGuest'] as bool? ?? false;
+          }
+          // Trường hợp 2: Code cũ (Chỉ truyền trực tiếp object Entry)
+          // Đoạn này giúp app không bị crash nếu bạn quên sửa chỗ pushNamed nào đó
+          else if (extra is Entry) {
+            entry = extra;
+            isGuest = false; // Mặc định
+          }
+
+          // Nếu không có dữ liệu entry thì quay về trang tìm kiếm
           if (entry == null) return const DictDemoPage();
+
           return DictDetailPage(entry: entry, isGuest: isGuest);
         },
       ),
