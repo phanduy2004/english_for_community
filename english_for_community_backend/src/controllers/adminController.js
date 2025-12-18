@@ -243,7 +243,7 @@ const getAllUsers = async (req, res) => {
 
     let query = { role: 'user' };
 
-    // 1. Tìm kiếm
+    // 1. Tìm kiếm (Giữ nguyên)
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: 'i' } },
@@ -252,24 +252,34 @@ const getAllUsers = async (req, res) => {
     }
 
     // 2. Bộ lọc Tab
-    const now = new Date();
     if (filter === 'today') {
-      // Logic lấy ngày hôm nay (UTC date string khớp với format lưu trong lastActivityDate nếu lưu string,
-      // nhưng model mới lưu Date nên dùng query range)
+      // 🔥 FIX TIMEZONE VIỆT NAM (UTC+7) 🔥
 
-      // Cách đơn giản nhất cho Date object: Lấy từ đầu ngày hôm nay
-      const startOfDay = new Date();
-      startOfDay.setHours(0,0,0,0);
-      query.lastActivityDate = { $gte: startOfDay };
+      // B1: Lấy thời gian hiện tại
+      const now = new Date();
+
+      // B2: Xác định "hôm nay là ngày mấy" theo giờ Việt Nam
+      // Bằng cách cộng thêm 7 tiếng vào giờ UTC hiện tại
+      const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
+
+      // B3: Đặt về đầu ngày (00:00:00) của ngày đó
+      vnTime.setUTCHours(0, 0, 0, 0);
+
+      // B4: Trừ đi 7 tiếng để ra mốc thời gian UTC tương ứng trong Database
+      // (00:00 VN = 17:00 hôm qua theo UTC)
+      const startOfVnDayInUtc = new Date(vnTime.getTime() - (7 * 60 * 60 * 1000));
+
+      // Query: Lấy những user hoạt động từ sau mốc 00:00 VN
+      query.lastActivityDate = { $gte: startOfVnDayInUtc };
 
     } else if (filter === 'online') {
-      // --- SỬA LẠI: Query thẳng vào trường isOnline ---
+      // Query thẳng vào trường isOnline
       query.isOnline = true;
     }
 
     const users = await User.find(query)
       .select('-password -refreshToken')
-      .sort({ isOnline: -1, lastActivityDate: -1 }) // Ưu tiên Online lên đầu
+      .sort({ isOnline: -1, lastActivityDate: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -283,7 +293,6 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Error fetching users', error: error.message });
   }
 };
-
 const getReports = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
