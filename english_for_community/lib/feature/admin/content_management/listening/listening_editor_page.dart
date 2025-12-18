@@ -17,6 +17,7 @@ import 'bloc/admin_listening_state.dart';
 
 class ListeningEditorPage extends StatelessWidget {
   final String? id;
+
   const ListeningEditorPage({super.key, this.id});
 
   @override
@@ -43,7 +44,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
 
   PlatformFile? _selectedAudioFile;
   String? _currentAudioUrl;
-
+  bool _isSubmitting = false;
   final ScrollController _scrollController = ScrollController();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
@@ -227,7 +228,9 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
       totalCues: cueEntities.length,
       cues: cueEntities,
     );
-
+    setState(() {
+      _isSubmitting = true;
+    });
     if (widget.id != null) {
       context.read<AdminListeningBloc>().add(
           UpdateListeningEvent(
@@ -281,18 +284,28 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
   Widget build(BuildContext context) {
     return BlocListener<AdminListeningBloc, AdminListeningState>(
       listener: (context, state) {
+        // 1. Xử lý Lỗi -> Tắt cờ submit để user ấn lại được
         if (state.status == AdminListeningStatus.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red));
+          setState(() => _isSubmitting = false); // 👈 Quan trọng
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red)
+          );
         }
 
+        // 2. Load Detail (Logic cũ)
         if (state.status == AdminListeningStatus.success && state.selectedListening != null && widget.id != null) {
           if (state.selectedListening!.id == widget.id && _isLoadingDetail) {
             _populateData(state.selectedListening!);
           }
         }
 
-        if (state.status == AdminListeningStatus.success && !_isLoadingDetail && state.selectedListening == null) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thao tác thành công!"), backgroundColor: Colors.green));
+        // 3. Xử lý Update/Create Thành công
+        // 🔥 ĐIỀU KIỆN MỚI: Phải đang trong quá trình submit (_isSubmitting == true)
+        if (state.status == AdminListeningStatus.success && _isSubmitting) {
+
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Thao tác thành công!"), backgroundColor: Colors.green)
+          );
           context.pop();
         }
       },
