@@ -47,20 +47,8 @@ class HistoryRepositoryImpl implements HistoryRepository {
           return Right(WritingSubmissionEntity.fromJson(json));
 
         case ActivityType.reading:
-        // Backend trả về object ReadingProgress đã gộp detail
-        // Ta cần map nó sang ReadingAttemptEntity để UI hiển thị được
-        // Lưu ý: Logic này phụ thuộc cấu trúc JSON backend trả về
-          return Right(ReadingAttemptEntity(
-            id: json['_id'],
-            userId: json['user']?['id'] ?? '',
-            readingId: json['readingId']?['_id'] ?? '',
-            answers: [], // Backend admin cần trả về answers nếu muốn hiện chi tiết
-            score: (json['score'] as num?)?.toDouble() ?? 0,
-            correctCount: json['correctCount'] ?? 0,
-            totalQuestions: json['totalQuestions'] ?? 0,
-            durationInSeconds: json['duration'] ?? 0,
-          ));
-
+        // Sử dụng fromJson để tự động parse readingDetail và answers
+          return Right(ReadingAttemptEntity.fromJson(json));
         case ActivityType.speaking:
         // 🔥 QUAN TRỌNG: Map JSON phẳng từ Admin thành SpeakingSetEntity lồng nhau
         // Backend trả về: { sentences: [{ sentenceId, script, userAudio, ... }] }

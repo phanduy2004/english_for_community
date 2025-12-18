@@ -120,7 +120,21 @@ const createListening = async (req, res) => {
 const adminUpdate = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await listeningService.updateListening(id, req.body);
+    let payload = { ...req.body }; // Copy req.body để tránh side-effect
+
+    // 🔥 FIX LỖI Ở ĐÂY: Kiểm tra nếu cues là String thì parse ra JSON
+    if (typeof payload.cues === 'string') {
+      try {
+        payload.cues = JSON.parse(payload.cues);
+      } catch (e) {
+        return res.status(400).json({ message: 'Invalid cues JSON format' });
+      }
+    }
+
+    // Nếu có file audio mới upload lên thì cập nhật link (nếu bạn có xử lý file)
+    // if (req.file) payload.audioUrl = req.file.path;
+
+    const result = await listeningService.updateListening(id, payload);
     res.status(200).json({ message: 'Update success', data: result });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
