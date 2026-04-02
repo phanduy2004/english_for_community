@@ -23,8 +23,17 @@ class FilterHistoryEvent extends HistoryEvent {
 }
 abstract class ActivityDetailEvent {}
 
-class FetchActivityDetailEvent extends ActivityDetailEvent {
+class FetchActivityDetailEvent extends HistoryEvent { // (Hoặc extends ActivityDetailEvent tùy code của bạn)
   final String id;
   final ActivityType type;
-  FetchActivityDetailEvent({required this.id, required this.type});
+  final String? subType; // 🔥 THÊM DÒNG NÀY
+
+  FetchActivityDetailEvent({
+    required this.id,
+    required this.type,
+    this.subType, // 🔥 THÊM DÒNG NÀY
+  });
+
+  @override
+  List<Object?> get props => [id, type, subType];
 }

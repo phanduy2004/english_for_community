@@ -38,11 +38,19 @@ class HistoryRemoteDatasource {
     final List<dynamic> data = response.data['data'];
     return data.map((json) => ActivityModel.fromJson(json)).toList();
   }
-  Future<Map<String, dynamic>> getActivityDetail(String id, String type) async {
+
+  // 🔥 ĐÃ THÊM: {String? subType}
+  Future<Map<String, dynamic>> getActivityDetail(String id, String type, {String? subType}) async {
     try {
+      // Đóng gói params
+      final Map<String, dynamic> queryParams = {'type': type};
+      if (subType != null && subType.isNotEmpty) {
+        queryParams['subType'] = subType; // Gửi subType lên cho Node.js biết
+      }
+
       final response = await dio.get(
-        'admin/activities/$id', // Endpoint này nhận EnrollmentID/SubmissionID
-        queryParameters: {'type': type},
+        '/admin/activities/$id', // Thêm dấu / ở đầu cho chuẩn
+        queryParameters: queryParams, // 🔥 Truyền params vào đây
       );
 
       if (response.data['success'] == true) {

@@ -226,7 +226,7 @@ export const updateProfile = async (req, res) => {
       fullName: req.body.fullName,
       username: req.body.username,
       bio: req.body.bio,
-      phone: req.body.phone,
+      phone: req.body.phone === '' ? undefined : req.body.phone,
       dateOfBirth: req.body.dateOfBirth,
       avatarUrl: avatarUrl,
       gender: req.body.gender,

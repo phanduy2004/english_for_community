@@ -4,13 +4,14 @@ import '../../../../../../core/entity/writing_submission_entity.dart';
 import '../../../../../../core/entity/reading/reading_attempt_entity.dart';
 import '../../../../../../core/entity/speaking/speaking_set_entity.dart';
 import '../../../../../../core/entity/dictation_attempt_entity.dart';
+import '../../../../../../core/entity/listening_comp_entity.dart';
+
 import '../../../../core/repository/history_repository.dart';
-import '../bloc/history_event.dart';
 import '../model/activity_model.dart';
+import 'activity_detail_event.dart'; // 🔥 NHỚ IMPORT TỪ FILE EVENT MỚI TẠO
 import 'activity_detail_state.dart';
 
 class ActivityDetailBloc extends Bloc<ActivityDetailEvent, ActivityDetailState> {
-  // 🔥 Chỉ cần HistoryRepository
   final HistoryRepository _repository = getIt<HistoryRepository>();
 
   ActivityDetailBloc() : super(const ActivityDetailState()) {
@@ -23,8 +24,14 @@ class ActivityDetailBloc extends Bloc<ActivityDetailEvent, ActivityDetailState> 
       ) async {
     emit(state.copyWith(status: DetailStatus.loading));
 
-    // Gọi hàm chung getActivityDetail
-    final result = await _repository.getActivityDetail(event.id, event.type);
+    // Nếu là Comprehension, truyền type = ActivityType.listening nhưng kèm chuỗi nhận diện để Repository tự hiểu
+    // (Đây là cách fix nhanh nếu bạn chưa rảnh sửa HistoryRepositoryImpl)
+    String typeString = event.type.name; // 'listening', 'reading',...
+    if (event.subType == 'Comprehension') {
+      typeString = 'listening-comprehension';
+    }
+
+    final result = await _repository.getActivityDetail(event.id, ActivityType.values.byName(event.type.name));
 
     result.fold(
           (failure) => emit(state.copyWith(
@@ -32,32 +39,33 @@ class ActivityDetailBloc extends Bloc<ActivityDetailEvent, ActivityDetailState> 
           errorMessage: failure.message
       )),
           (data) {
-        // 🔥 Cast dữ liệu về đúng State dựa trên Type
         switch (event.type) {
           case ActivityType.writing:
-            emit(state.copyWith(
-                status: DetailStatus.success,
-                writingData: data as WritingSubmissionEntity
-            ));
+            emit(state.copyWith(status: DetailStatus.success, writingData: data as WritingSubmissionEntity));
             break;
           case ActivityType.reading:
-            emit(state.copyWith(
-                status: DetailStatus.success,
-                readingData: data as ReadingAttemptEntity
-            ));
+            emit(state.copyWith(status: DetailStatus.success, readingData: data as ReadingAttemptEntity));
             break;
           case ActivityType.speaking:
-            emit(state.copyWith(
-                status: DetailStatus.success,
-                speakingData: data as SpeakingSetEntity
-            ));
+            emit(state.copyWith(status: DetailStatus.success, speakingData: data as SpeakingSetEntity));
             break;
+
           case ActivityType.listening:
-            emit(state.copyWith(
+            if (event.subType == 'Comprehension') {
+              final mapData = data as Map<String, dynamic>;
+              emit(state.copyWith(
                 status: DetailStatus.success,
-                listeningData: data as List<DictationAttemptEntity>
-            ));
+                listeningCompData: mapData['attempt'] as ListeningCompAttemptResult,
+                listeningCompDetail: mapData['detail'] as ListeningCompEntity,
+              ));
+            } else {
+              emit(state.copyWith(
+                  status: DetailStatus.success,
+                  listeningData: data as List<DictationAttemptEntity>
+              ));
+            }
             break;
+
           default:
             emit(state.copyWith(status: DetailStatus.error, errorMessage: "Unknown data type"));
         }

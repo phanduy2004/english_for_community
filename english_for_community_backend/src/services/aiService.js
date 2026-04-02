@@ -7,7 +7,7 @@ dotenv.config();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Model khuyến nghị
-const MODEL_NAME = "meta-llama/llama-4-maverick-17b-128e-instruct";
+const MODEL_NAME = "llama-3.3-70b-versatile";
 
 // Hàm clean JSON (Loại bỏ ```json ... ```)
 const cleanJson = (text) => {
@@ -88,14 +88,16 @@ Format Output: JSON Object (Tuyệt đối không dùng Markdown, chỉ trả v�
 - **JSON Strict:** Đảm bảo cấu trúc JSON hợp lệ, thoát các ký tự đặc biệt nếu cần.
 
 === 2. QUY ĐỊNH VỀ SỬA LỖI (REWRITE) - QUAN TRỌNG ===
-Trong trường "rewrite" của mỗi paragraph:
-- Giữ nguyên cấu trúc câu gốc của người dùng nếu đúng.
-- Khi phát hiện lỗi (Grammar, Vocab, Spelling, Punctuation), hãy dùng định dạng thẻ đặc biệt sau:
-  Format: {{từ_cũ||từ_mới||lý_do_ngắn_gọn_bằng_tiếng_Việt}}
-- Không sửa từ nếu đã đúng rồi thì đừng sửa giống nhau. Ví dụ như {{blurring||blurring||từ phù hợp} 
-- **Ví dụ Input:** "She go to shool yesterday."
-- **Ví dụ Output:** "She {{go||went||Sai thì quá khứ}} to {{shool||school||Lỗi chính tả}} yesterday."
-- KHÔNG paraphrase hay viết lại cả câu cho hay hơn, CHỈ sửa lỗi sai.
+- MỤC TIÊU: Giữ nguyên toàn bộ văn bản gốc. CHỈ sửa khi có lỗi sai thật sự (ngữ pháp, chính tả, sai ngữ cảnh). KHÔNG sửa chỉ để câu văn hay hơn.
+- QUY TẮC ĐÁNH DẤU (BẮT BUỘC): Nếu bạn thay đổi, thêm, hoặc bớt BẤT KỲ từ nào so với bản gốc, bạn PHẢI bọc nó trong tag {{từ_cũ||từ_mới||lý_do_ngắn_gọn_bằng_tiếng_Việt}}.
+- LỆNH CẤM: TUYỆT ĐỐI KHÔNG ĐƯỢC "SỬA NGẦM" (Tức là sửa lỗi nhưng không dùng tag). 
+
+🔴 VÍ DỤ THỰC TẾ:
+- Input gốc: "It is accessible sand convenient. It nows allows users to learn."
+- Output SAI (Bị cấm vì sửa ngầm không dùng tag): "It is accessible and convenient. It now allows users to learn."
+- Output CHUẨN (BẮT BUỘC): "It is accessible {{sand||and||Lỗi chính tả dư chữ s}} convenient. It {{nows allows||now allows||Sai ngữ pháp}} users to learn."
+
+- BẮT BUỘC PHẢI TRẢ VỀ TOÀN BỘ ĐOẠN VĂN GỐC. Chép y nguyên các câu đúng, và CHỈ dùng tag ở những chữ bị sai.
 
 === 3. QUY ĐỊNH VỀ BÀI MẪU (SAMPLES) - QUAN TRỌNG ===
 - **sampleMid (Band 7.0-8.0):** Viết lại bài của user (giữ ý tưởng chính) thành một bài luận hoàn chỉnh, sửa hết lỗi, flow trôi chảy.

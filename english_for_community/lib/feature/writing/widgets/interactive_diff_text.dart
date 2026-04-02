@@ -9,8 +9,7 @@ class InteractiveDiffText extends StatelessWidget {
   Widget build(BuildContext context) {
     // Regex tìm pattern: {{old||new||reason}}
     // Group 1: old, Group 2: new, Group 3: reason
-    final RegExp regex = RegExp(r'\{\{(.*?)\|\|(.*?)\|\|(.*?)\}\}');
-
+    final regex = RegExp(r'\{\{(.*?)\|\|(.*?)(?:\|\|(.*?))?\}\}');
     List<InlineSpan> spans = [];
     int lastMatchEnd = 0;
 

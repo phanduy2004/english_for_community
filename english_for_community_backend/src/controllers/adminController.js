@@ -1,309 +1,38 @@
-import User from '../models/User.js';
-import Report from '../models/Report.js';
-
-// --- MODELS CHO VIỆC TÍNH AI COST (USAGE) ---
-import WritingSubmission from '../models/WritingSubmission.js';
-import SpeakingAttempt from '../models/SpeakingAttempt.js';
-import DictationAttempt from '../models/DictationAttempt.js';
-
-// --- MODELS CHO VIỆC TÍNH BÀI HOÀN THÀNH (COMPLETION) ---
-import ReadingProgress from '../models/ReadingProgress.js';
-import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
-import Enrollment from '../models/Enrollment.js';
-import {getIO} from "../socket/socketManager.js";
-import historyService from "../services/historyService.js"; // Listening Enrollment
-
-const AI_PRICING = {
-  PER_WORD_WRITING: 0.0005 / 1000,
-  PER_SECOND_AUDIO: 0.0004,
-};
-
-// --- HELPER: Timezone VN ---
-const getVnDateRange = (range) => {
-  const now = new Date();
-  // UTC + 7 hours
-  const vnOffset = 7 * 60 * 60 * 1000;
-  const nowVn = new Date(now.getTime() + vnOffset);
-
-  let startVn = new Date(nowVn);
-  let endVn = new Date(nowVn);
-
-  let dateFormat = "%Y-%m-%d";
-
-  // Cuối ngày hôm nay (VN)
-  endVn.setUTCHours(23, 59, 59, 999);
-
-  if (range === 'day') {
-    // --- SỬA LẠI: Thống kê theo giờ trong ngày hôm nay ---
-    startVn.setUTCHours(0, 0, 0, 0);
-    dateFormat = "%H:00"; // Group theo giờ (00:00, 01:00...)
-  }
-  else if (range === 'week') {
-    // Tuần: Từ thứ 2
-    const day = startVn.getUTCDay();
-    const diff = startVn.getUTCDate() - day + (day === 0 ? -6 : 1);
-    startVn.setUTCDate(diff);
-    startVn.setUTCHours(0, 0, 0, 0);
-  }
-  else if (range === 'month') {
-    // Tháng: 30 ngày trượt
-    startVn.setUTCDate(startVn.getUTCDate() - 29);
-    startVn.setUTCHours(0, 0, 0, 0);
-  }
-
-  const startDate = new Date(startVn.getTime() - vnOffset);
-  const endDate = new Date(endVn.getTime() - vnOffset);
-
-  const duration = endDate.getTime() - startDate.getTime();
-  const previousEndDate = new Date(startDate.getTime() - 1);
-  const previousStartDate = new Date(previousEndDate.getTime() - duration);
-
-  return { startDate, endDate, previousStartDate, previousEndDate, dateFormat };
-};
-
-// Helper: Generate Labels
-const generateChartLabels = (range, startDate, endDate) => {
-  const labels = [];
-  const vnOffset = 7 * 60 * 60 * 1000;
-
-  let current = new Date(startDate.getTime() + vnOffset);
-  const end = new Date(endDate.getTime() + vnOffset);
-
-  if (range === 'day') {
-    // --- SỬA LẠI: Loop 24 giờ ---
-    for (let i = 0; i < 24; i++) {
-      labels.push(`${i.toString().padStart(2, '0')}:00`);
-    }
-  } else {
-    // Loop theo ngày
-    current.setUTCHours(0, 0, 0, 0);
-    end.setUTCHours(23, 59, 59, 999);
-
-    while (current <= end) {
-      const y = current.getUTCFullYear();
-      const m = String(current.getUTCMonth() + 1).padStart(2, '0');
-      const d = String(current.getUTCDate()).padStart(2, '0');
-      labels.push(`${y}-${m}-${d}`);
-      current.setUTCDate(current.getUTCDate() + 1);
-    }
-  }
-  return labels;
-};
-
-const calculateTrend = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
-};
-
-// --- MAIN CONTROLLER ---
+import { adminService } from '../services/adminService.js';
+import { getIO } from '../socket/socketManager.js';
 
 const getDashboardStats = async (req, res) => {
   try {
     const { range = 'week' } = req.query;
-
-    // Lấy khoảng thời gian dựa trên range (day, week, month)
-    const { startDate, endDate, previousStartDate, previousEndDate, dateFormat } = getVnDateRange(range);
-
-    const currentQuery = { $gte: startDate, $lte: endDate };
-    const prevQuery = { $gte: previousStartDate, $lte: previousEndDate };
-
-    const matchWriting = { status: { $in: ['submitted', 'reviewed'] } };
-    const matchReading = { status: 'completed' };
-    const matchSpeaking = { isCompleted: true };
-    const matchListening = { isCompleted: true };
-
-    // 1. METRICS (SUBMISSIONS) - Giữ nguyên
-    const [
-      curW, curS, curR, curL,
-      preW, preS, preR, preL
-    ] = await Promise.all([
-      WritingSubmission.countDocuments({ ...matchWriting, submittedAt: currentQuery }),
-      SpeakingEnrollment.countDocuments({ ...matchSpeaking, updatedAt: currentQuery }),
-      ReadingProgress.countDocuments({ ...matchReading, updatedAt: currentQuery }),
-      Enrollment.countDocuments({ ...matchListening, updatedAt: currentQuery }),
-
-      WritingSubmission.countDocuments({ ...matchWriting, submittedAt: prevQuery }),
-      SpeakingEnrollment.countDocuments({ ...matchSpeaking, updatedAt: prevQuery }),
-      ReadingProgress.countDocuments({ ...matchReading, updatedAt: prevQuery }),
-      Enrollment.countDocuments({ ...matchListening, updatedAt: prevQuery }),
-    ]);
-
-    const totalCurrent = curW + curS + curR + curL;
-    const totalPrevious = preW + preS + preR + preL;
-    const submissionTrend = calculateTrend(totalCurrent, totalPrevious);
-
-    // 2. AI COST - Giữ nguyên
-    const [writingCostAgg, speakingCostAgg, dictationCostAgg] = await Promise.all([
-      WritingSubmission.aggregate([
-        { $match: { ...matchWriting, createdAt: currentQuery } },
-        { $group: { _id: null, totalWords: { $sum: "$wordCount" } } }
-      ]),
-      SpeakingAttempt.aggregate([
-        { $match: { submittedAt: currentQuery } },
-        { $group: { _id: null, totalSeconds: { $sum: "$audioDurationSeconds" } } }
-      ]),
-      DictationAttempt.aggregate([
-        { $match: { submittedAt: currentQuery } },
-        { $group: { _id: null, totalSeconds: { $sum: "$durationInSeconds" } } }
-      ])
-    ]);
-
-    const totalWords = writingCostAgg[0]?.totalWords || 0;
-    const totalSeconds = (speakingCostAgg[0]?.totalSeconds || 0) + (dictationCostAgg[0]?.totalSeconds || 0);
-    const estimatedCost = (totalWords * AI_PRICING.PER_WORD_WRITING) + (totalSeconds * AI_PRICING.PER_SECOND_AUDIO);
-
-    // 🔥🔥🔥 SỬA PHẦN NÀY 🔥🔥🔥
-
-    // 3. ACTIVE USERS & REPORTS (Theo Filter Range)
-    const [activeUsersCount, reportsCount] = await Promise.all([
-      // Đếm user có hoạt động trong khoảng thời gian lọc
-      User.countDocuments({ lastActivityDate: currentQuery, role: 'user' }),
-
-      // Đếm report được tạo trong khoảng thời gian lọc
-      Report.countDocuments({ createdAt: currentQuery, status: 'pending' })
-    ]);
-
-    // 🔥🔥🔥 KẾT THÚC SỬA 🔥🔥🔥
-
-    // 4. CHART DATA - Giữ nguyên
-    const chartLabels = generateChartLabels(range, startDate, endDate);
-
-    const aggregateChart = async (Model, dateField, extraMatch = {}) => {
-      return await Model.aggregate([
-        { $match: { [dateField]: currentQuery, ...extraMatch } },
-        {
-          $group: {
-            _id: { $dateToString: { format: dateFormat, date: `$${dateField}`, timezone: "+07:00" } },
-            count: { $sum: 1 }
-          }
-        }
-      ]);
-    };
-
-    const [writingRaw, speakingRaw, readingRaw, listeningRaw] = await Promise.all([
-      aggregateChart(WritingSubmission, 'submittedAt', matchWriting),
-      aggregateChart(SpeakingEnrollment, 'updatedAt', matchSpeaking),
-      aggregateChart(ReadingProgress, 'updatedAt', matchReading),
-      aggregateChart(Enrollment, 'updatedAt', matchListening),
-    ]);
-
-    const fillData = (rawData) => chartLabels.map(label => {
-      const found = rawData.find(item => item._id === label);
-      return found ? found.count : 0;
-    });
-
-    return res.status(200).json({
-      metrics: {
-        submissions: {
-          value: totalCurrent,
-          trend: `${submissionTrend > 0 ? '+' : ''}${submissionTrend}%`,
-          trendLabel: range === 'day' ? 'vs yesterday' : 'vs prev period',
-          isPositive: submissionTrend >= 0
-        },
-        aiCost: {
-          value: `$${estimatedCost.toFixed(4)}`,
-          subLabel: `${totalWords} words • ${Math.round(totalSeconds/60)} mins`
-        },
-        reports: {
-          value: reportsCount,
-          // Nếu có report mới trong khoảng thời gian này thì báo Needs Action
-          status: reportsCount > 0 ? 'New Issues' : 'All Good'
-        },
-        activeUsers: {
-          value: activeUsersCount,
-          subLabel: range === 'day' ? 'Active today' : 'Active in period'
-        }
-      },
-      chart: {
-        labels: chartLabels,
-        writing: fillData(writingRaw),
-        speaking: fillData(speakingRaw),
-        reading: fillData(readingRaw),
-        dictation: fillData(listeningRaw)
-      },
-      distribution: {
-        writing: curW,
-        speaking: curS,
-        reading: curR,
-        dictation: curL
-      }
-    });
-
+    const result = await adminService.getDashboardStats(range);
+    return res.status(200).json(result);
   } catch (error) {
     console.error("Dashboard Stats Error:", error);
     return res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 const getAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
     const { filter, search } = req.query;
 
-    let query = { role: 'user' };
-
-    // 1. Tìm kiếm (Giữ nguyên)
-    if (search) {
-      query.$or = [
-        { fullName: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // 2. Bộ lọc Tab
-    if (filter === 'today') {
-      // 🔥 FIX TIMEZONE VIỆT NAM (UTC+7) 🔥
-
-      // B1: Lấy thời gian hiện tại
-      const now = new Date();
-
-      // B2: Xác định "hôm nay là ngày mấy" theo giờ Việt Nam
-      // Bằng cách cộng thêm 7 tiếng vào giờ UTC hiện tại
-      const vnTime = new Date(now.getTime() + (7 * 60 * 60 * 1000));
-
-      // B3: Đặt về đầu ngày (00:00:00) của ngày đó
-      vnTime.setUTCHours(0, 0, 0, 0);
-
-      // B4: Trừ đi 7 tiếng để ra mốc thời gian UTC tương ứng trong Database
-      // (00:00 VN = 17:00 hôm qua theo UTC)
-      const startOfVnDayInUtc = new Date(vnTime.getTime() - (7 * 60 * 60 * 1000));
-
-      // Query: Lấy những user hoạt động từ sau mốc 00:00 VN
-      query.lastActivityDate = { $gte: startOfVnDayInUtc };
-
-    } else if (filter === 'online') {
-      // Query thẳng vào trường isOnline
-      query.isOnline = true;
-    }
-
-    const users = await User.find(query)
-      .select('-password -refreshToken')
-      .sort({ isOnline: -1, lastActivityDate: -1 })
-      .skip(skip)
-      .limit(limit);
-
-    const total = await User.countDocuments(query);
-
-    res.status(200).json({
-      users,
-      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) }
-    });
+    const result = await adminService.getAllUsers(page, limit, filter, search);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: error.message });
   }
 };
+
 const getReports = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
     const { status } = req.query;
-    const filter = {};
-    if (status) filter.status = status;
-    const reports = await Report.find(filter).populate('userId', 'fullName email avatar').sort({ createdAt: -1 }).skip(skip).limit(limit);
-    const total = await Report.countDocuments(filter);
-    res.status(200).json({ reports, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+
+    const result = await adminService.getReports(page, limit, status);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching reports', error: error.message });
   }
@@ -313,84 +42,58 @@ const updateReportStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, adminResponse } = req.body;
-    const report = await Report.findByIdAndUpdate(id, { status, adminResponse, updatedAt: new Date() }, { new: true });
-    if (!report) return res.status(404).json({ message: 'Report not found' });
+
+    const report = await adminService.updateReportStatus(id, status, adminResponse);
     res.status(200).json({ message: 'Report updated successfully', report });
   } catch (error) {
+    if (error.message === 'Report not found') return res.status(404).json({ message: error.message });
     res.status(500).json({ message: 'Error updating report', error: error.message });
   }
 };
+
 const banUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { banType, durationInHours, reason } = req.body;
 
-    let updateData = {};
-    let socketMessage = '';
+    const result = await adminService.updateUserBanStatus(id, banType, durationInHours, reason);
 
-    if (banType === 'unban') {
-      updateData = { isBanned: false, banExpiresAt: null, banReason: '' };
-    } else {
-      // Logic Ban
-      updateData = {
-        isBanned: true,
-        banReason: reason || 'Vi phạm quy định cộng đồng',
-        isOnline: false, // Kick offline ngay lập tức
-        refreshToken: null // Hủy token
-      };
-
-      if (banType === 'permanent') {
-        updateData.banExpiresAt = null; // Null là vĩnh viễn
-        socketMessage = `Tài khoản của bạn đã bị khóa vĩnh viễn.\nLý do: ${updateData.banReason}`;
-      } else {
-        // Tính thời gian hết hạn
-        const hours = durationInHours || 24; // Mặc định 24h
-        const expireDate = new Date();
-        expireDate.setHours(expireDate.getHours() + hours);
-
-        updateData.banExpiresAt = expireDate;
-        socketMessage = `Tài khoản bị tạm khóa trong ${hours} giờ.\nLý do: ${updateData.banReason}`;
-      }
-    }
-
-    const user = await User.findByIdAndUpdate(id, updateData, { new: true });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // --- KICK USER VIA SOCKET ---
-    if (banType !== 'unban') {
-      // Bắn sự kiện force_logout vào room userId
-      getIO().to(id).emit('force_logout', { reason: socketMessage });
-
-      // Cập nhật trạng thái offline cho Admin thấy ngay
+    // --- XỬ LÝ SOCKET Ở CONTROLLER ---
+    if (result.banType !== 'unban') {
+      // Kick user qua socket
+      getIO().to(id).emit('force_logout', { reason: result.socketMessage });
+      // Báo cho Admin online biết user này vừa bị sút
       getIO().to('admin_room').emit('user_status_change', { userId: id, isOnline: false });
     }
 
-    res.status(200).json({ message: 'User status updated', user });
+    res.status(200).json({ message: 'User status updated', user: result.user });
   } catch (error) {
+    if (error.message === 'User not found') return res.status(404).json({ message: error.message });
     res.status(500).json({ message: 'Error updating user status', error: error.message });
   }
 };
+
 const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    // Soft delete (nên dùng) hoặc Hard delete
-    // Ở đây ví dụ Hard delete:
-    await User.findByIdAndDelete(id);
 
-    // Nếu đang online thì cũng kick ra luôn
+    await adminService.deleteUser(id);
+
+    // Xử lý socket
     getIO().to(id).emit('force_logout', { reason: 'Tài khoản đã bị xóa.' });
 
     res.status(200).json({ message: 'User deleted' });
   } catch (error) {
+    if (error.message === 'User not found') return res.status(404).json({ message: error.message });
     res.status(500).json({ message: 'Error', error: error.message });
   }
 };
-// 🔥 SỬA HÀM NÀY:
+
 const getActivities = async (req, res) => {
   try {
     const { startDate, endDate, type, userId } = req.query;
 
-    const data = await historyService.getHistory(userId, startDate, endDate, type);
+    const data = await adminService.getActivities(userId, startDate, endDate, type);
 
     res.status(200).json({
       success: true,
@@ -403,17 +106,16 @@ const getActivities = async (req, res) => {
   }
 };
 
-// 2. GET DETAIL
 const getActivityDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query; // ?type=writing, reading...
+    const { type } = req.query;
 
     if (!type) {
       return res.status(400).json({ message: "Missing 'type' parameter" });
     }
 
-    const data = await historyService.getActivityDetail(id, type);
+    const data = await adminService.getActivityDetail(id, type);
 
     res.status(200).json({
       success: true,
@@ -424,6 +126,7 @@ const getActivityDetail = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 export default {
   getDashboardStats,
   getAllUsers,

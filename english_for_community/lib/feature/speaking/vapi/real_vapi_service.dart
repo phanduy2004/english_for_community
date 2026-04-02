@@ -5,8 +5,8 @@ import 'package:vapi/vapi.dart' as vapi_sdk;
 import 'vapi_service.dart';
 
 class RealVapiService implements VapiService {
-  final String publicKey = "90fc2890-0578-4bfa-aac6-a6f680147edf";
-  final String assistantId = "d6c116ec-89c4-41eb-a87b-4e68fb1883f3";
+  final String publicKey = "c0e9f2a7-1c51-4511-a7cb-4b2aac7e96b0";
+  final String assistantId = "3d727e1d-d4c9-4693-8dab-8a547db715f3";
 
   late final vapi_sdk.VapiClient _client;
   vapi_sdk.VapiCall? _currentCall;
