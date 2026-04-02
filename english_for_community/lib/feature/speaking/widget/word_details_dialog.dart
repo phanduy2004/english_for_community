@@ -49,9 +49,6 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
     _audioPlayer.dispose();
     super.dispose();
   }
-
-  // ... (Phần _fetchWordDetails, _fetchDictionaryData, _fetchTranslation giữ nguyên)
-
   Future<void> _fetchWordDetails() async {
     try {
       final results = await Future.wait([

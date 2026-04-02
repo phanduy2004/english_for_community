@@ -365,6 +365,7 @@ class _AdminHistoryCard extends StatelessWidget {
                   // trong lúc chờ loading cho đỡ trống
                   summaryTitle: item.title,
                   summaryDate: item.date,
+                  subType: item.subType,
                 ),
               ),
             );          },

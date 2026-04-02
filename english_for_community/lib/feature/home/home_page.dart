@@ -18,6 +18,7 @@ import '../../core/entity/notification_entity.dart';
 import 'bloc_noti/notification_bloc.dart';
 import 'bloc_noti/notification_event.dart';
 import 'bloc_noti/notification_state.dart';
+import 'listening_mode_dialog.dart';
 import 'notification_dialog.dart';
 
 import '../auth/bloc/user_bloc.dart';
@@ -661,7 +662,7 @@ class _LessonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return _ShadcnCard(
       onTap: () {
-        if (title.contains('Listening')) context.pushNamed(ListeningListPage.routeName);
+        if (title.contains('Listening')) showListeningModeDialog(context);
         else if (title.contains('Reading')) context.pushNamed(ReadingListPage.routeName);
         else if (title.contains('Vocabulary')) context.pushNamed('VocabularyPage');
         else if (title.contains('Speaking')) showSpeakingModeDialog(context);

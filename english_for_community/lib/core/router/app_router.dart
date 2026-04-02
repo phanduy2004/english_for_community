@@ -1,6 +1,7 @@
 // lib/core/router/app_router.dart
 
 import 'dart:async';
+import 'package:english_for_community/feature/admin/content_management/listening_comp/admin_listening_comp_list_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 // --- CORE & UTILS ---
 import '../../feature/admin/content_management/listening/admin_listening_list_view.dart';
 import '../../feature/admin/content_management/listening/listening_editor_page.dart';
+import '../../feature/admin/content_management/listening_comp/listening_comp_editor_page.dart';
 import '../../feature/admin/content_management/reading/admin_reading_list_view.dart';
 import '../../feature/admin/content_management/reading/reading_editor_page.dart';
 import '../../feature/admin/content_management/speaking/admin_speaking_list_view.dart';
@@ -22,6 +24,9 @@ import '../../feature/auth/register_page.dart';
 import '../../feature/auth/reset_password_page.dart';
 import '../../feature/listening/listening_skill/bloc/cue_bloc.dart';
 import '../../feature/listening/listening_skill/bloc/cue_event.dart';
+import '../../feature/listening_comp/bloc/listening_comp_bloc.dart';
+import '../../feature/listening_comp/listening_comp_list_page.dart';
+import '../../feature/listening_comp/listening_comp_page.dart';
 import '../get_it/get_it.dart';
 import '../utils/global_keys.dart';
 import '../sqflite/dict_db.dart';
@@ -199,6 +204,7 @@ class AppRouter {
         builder: (context, state) => const ReportManagementPage(),
       ),
       // 👇 QUẢN LÝ NỘI DUNG (NESTED ROUTES) 👇
+      // 👇 QUẢN LÝ NỘI DUNG (NESTED ROUTES) 👇
       GoRoute(
         path: '/admin/content',
         name: ContentDashboardPage.routeName,
@@ -215,10 +221,13 @@ class AppRouter {
               if (type == 'reading') {
                 return const AdminReadingListView(skillType: 'reading');
               }
-              else if (type == 'listening') { // 🟢 Thêm case Listening
+              else if (type == 'listening') {
                 return const AdminListeningListView();
               }
-              // 👇 THÊM CASE SPEAKING
+              // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
+              else if (type == 'listening-comp') {
+                return const AdminListeningCompListPage();
+              }
               else if (type == 'speaking') {
                 return const AdminSpeakingListView();
               }
@@ -234,21 +243,20 @@ class AppRouter {
                 name: 'ContentEditorRoute',
                 builder: (context, state) {
                   final type = state.pathParameters['type'];
-
-                  // 🔥 KIỂM TRA DÒNG NÀY: Lấy ID từ extra
                   final id = state.extra as String?;
 
-                  // In ra log để kiểm tra xem có ID không
                   print("DEBUG ROUTER - Type: $type, ID: $id");
 
                   if (type == 'reading') {
                     return ReadingEditorPage(id: id);
                   }
                   else if (type == 'listening') {
-                    // 👇 Truyền ID vào đây
                     return ListeningEditorPage(id: id);
                   }
-                  // 👇 THÊM CASE SPEAKING
+                  // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
+                  else if (type == 'listening-comp') {
+                    return ListeningCompEditorPage(id: id);
+                  }
                   else if (type == 'speaking') {
                     return SpeakingEditorPage(id: id);
                   }
@@ -328,10 +336,31 @@ class AppRouter {
         builder: (context, state) => const ProgressReportPage(),
       ),
       // --- Listening ---
+      // --- Listening Dictation ---
       GoRoute(
-        path: ListeningListPage.routePath,
+        path: ListeningListPage.routePath, // '/listening-list'
         name: ListeningListPage.routeName,
         builder: (context, state) => const ListeningListPage(),
+      ),
+
+      // --- Listening Comprehension ---
+      GoRoute(
+        name: 'ListeningCompPage', // Bạn tự đặt tên route tương ứng
+        path: '/listening-comp/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id'];
+          if (id == null) return const Scaffold(body: Center(child: Text('Error: Missing ID')));
+
+          return BlocProvider(
+            create: (_) => getIt<ListeningCompBloc>(), // Khởi tạo BLoC ở đây
+            child: ListeningCompPage(id: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: ListeningCompListPage.routePath, // '/listening-comp-list'
+        name: ListeningCompListPage.routeName,
+        builder: (context, state) => const ListeningCompListPage(),
       ),
       GoRoute(
         path: '/listening-skills/:listeningId',

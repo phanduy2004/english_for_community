@@ -27,27 +27,19 @@ class ContentDashboardPage extends StatelessWidget {
             preferredSize: const Size.fromHeight(1),
             child: Container(color: kBorder, height: 1)),
       ),
-      // 🔥 SỬ DỤNG LAYOUT BUILDER ĐỂ RESPONSIVE
       body: LayoutBuilder(
         builder: (context, constraints) {
-          // Kiểm tra xem màn hình có rộng không (Web/Tablet > 900px)
           final bool isWide = constraints.maxWidth > 900;
-
-          // Số cột: Web = 4, Mobile = 2
           final int crossAxisCount = isWide ? 4 : 2;
-
-          // Tỉ lệ khung hình (Web cần thẻ thấp hơn chút để đẹp, Mobile cần cao hơn)
           final double childAspectRatio = isWide ? 1.1 : 1.3;
 
           return Center(
             child: Container(
-              // Giới hạn chiều rộng tối đa trên Web để nội dung tập trung
               constraints: const BoxConstraints(maxWidth: 1200),
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header Text Section
                   const Text("Chọn kỹ năng cần quản lý",
                       style: TextStyle(
                           fontSize: 18,
@@ -59,14 +51,12 @@ class ContentDashboardPage extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Grid View Responsive
                   Expanded(
                     child: GridView.count(
                       crossAxisCount: crossAxisCount,
                       crossAxisSpacing: 16,
                       mainAxisSpacing: 16,
                       childAspectRatio: childAspectRatio,
-                      // Dùng shrinkWrap và physics nếu nội dung ngắn để tránh lỗi scroll lồng nhau (nếu có)
                       children: [
                         _SkillCard(
                           title: 'Writing',
@@ -94,7 +84,8 @@ class ContentDashboardPage extends StatelessWidget {
                           count: 12,
                           color: const Color(0xFF8B5CF6),
                           icon: Icons.headphones,
-                          onTap: () => _navToList(context, 'listening'),
+                          // 🔥 ĐỔI SỰ KIỆN ONTAP Ở ĐÂY: Mở dialog thay vì chuyển trang ngay
+                          onTap: () => _showListeningTypeDialog(context),
                         ),
                       ],
                     ),
@@ -111,8 +102,96 @@ class ContentDashboardPage extends StatelessWidget {
   void _navToList(BuildContext context, String skillType) {
     context.pushNamed('ContentListViewRoute', pathParameters: {'type': skillType});
   }
-}
 
+  // 🔥 HÀM MỚI: Hiển thị Dialog chọn dạng bài Listening
+  void _showListeningTypeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          backgroundColor: kWhite,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Chọn dạng bài Listening',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kTextMain),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDialogOption(
+                title: 'Dictation',
+                subtitle: 'Nghe chép chính tả (Cues)',
+                icon: Icons.edit_document,
+                color: const Color(0xFF8B5CF6),
+                onTap: () {
+                  Navigator.pop(ctx); // Đóng dialog
+                  _navToList(context, 'listening'); // Dùng luồng cũ cho Dictation
+                },
+              ),
+              const SizedBox(height: 12),
+              _buildDialogOption(
+                title: 'Comprehension',
+                subtitle: 'Nghe hiểu (Trắc nghiệm)',
+                icon: Icons.quiz_outlined,
+                color: const Color(0xFF8B5CF6),
+                onTap: () {
+                  Navigator.pop(ctx); // Đóng dialog
+                  // Thay tên Route này thành Route bạn định nghĩa cho danh sách Comprehension
+                  context.pushNamed('ContentListViewRoute', pathParameters: {'type': 'listening-comp'});                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 🔥 WIDGET MỚI: Giao diện cho từng lựa chọn trong Dialog
+  Widget _buildDialogOption({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: kBorder),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: kTextMain, fontSize: 15)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: kTextMuted, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+}
 class _SkillCard extends StatelessWidget {
   final String title;
   final int count;

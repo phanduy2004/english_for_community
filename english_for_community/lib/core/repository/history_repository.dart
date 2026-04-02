@@ -10,5 +10,4 @@ abstract class HistoryRepository {
     required DateTime end,
     String? userId,
   });
-  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type);
-}
+  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type, {String? subType});}

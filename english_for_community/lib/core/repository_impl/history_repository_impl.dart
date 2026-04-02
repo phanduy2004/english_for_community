@@ -1,4 +1,3 @@
-
 import '../../feature/admin/submission_managerment/model/activity_model.dart';
 
 import '../datasource/history_remote_datasource.dart';
@@ -8,6 +7,8 @@ import '../entity/speaking/sentence_entity.dart';
 import '../entity/speaking/speaking_attempt_entity.dart';
 import '../entity/speaking/speaking_set_entity.dart';
 import '../entity/writing_submission_entity.dart';
+// 🔥 IMPORT THÊM ENTITY CỦA COMPREHENSION
+import '../entity/listening_comp_entity.dart';
 import '../model/either.dart';
 import '../model/failure.dart';
 import '../repository/history_repository.dart';
@@ -21,7 +22,7 @@ class HistoryRepositoryImpl implements HistoryRepository {
   Future<Either<Failure, List<ActivityModel>>> getHistory({
     required DateTime start,
     required DateTime end,
-    String? userId, // 🔥 Tham số này phải khớp hoàn toàn với abstract
+    String? userId,
   }) async {
     try {
       final result = await historyRemoteDatasource.getHistory(
@@ -31,15 +32,16 @@ class HistoryRepositoryImpl implements HistoryRepository {
       );
       return Right(result);
     } catch (e) {
-      // Xử lý lỗi (ví dụ ServerFailure)
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
   @override
-  // Return type là dynamic để trả về các Entity khác nhau tùy type
-  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type) async {
+  // 🔥 THÊM THAM SỐ {String? subType} VÀO ĐÂY
+  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type, {String? subType}) async {
     try {
-      final json = await historyRemoteDatasource.getActivityDetail(id, type.name);
+      // Truyền thêm subType xuống Datasource
+      final json = await historyRemoteDatasource.getActivityDetail(id, type.name, subType: subType);
 
       // 🔥 MAP DỮ LIỆU TƯƠNG ỨNG TỪNG LOẠI
       switch (type) {
@@ -47,15 +49,12 @@ class HistoryRepositoryImpl implements HistoryRepository {
           return Right(WritingSubmissionEntity.fromJson(json));
 
         case ActivityType.reading:
-        // Sử dụng fromJson để tự động parse readingDetail và answers
           return Right(ReadingAttemptEntity.fromJson(json));
+
         case ActivityType.speaking:
-        // 🔥 QUAN TRỌNG: Map JSON phẳng từ Admin thành SpeakingSetEntity lồng nhau
-        // Backend trả về: { sentences: [{ sentenceId, script, userAudio, ... }] }
           final List<dynamic> rawSentences = json['sentences'] ?? [];
 
           final sentencesEntity = rawSentences.map((s) {
-            // Map lịch sử (attempts) của từng câu
             final List<dynamic> rawHistory = s['history'] ?? [];
 
             final historyEntities = rawHistory.map((h) {
@@ -77,27 +76,41 @@ class HistoryRepositoryImpl implements HistoryRepository {
               order: (s['order'] as num?)?.toInt() ?? 0,
               speaker: s['speaker'] ?? '',
               script: s['script'] ?? '',
-              phoneticScript: s['phonetic_script'] ?? '', // 🔥 Chú ý key này khớp JSON
+              phoneticScript: s['phonetic_script'] ?? '',
               history: historyEntities,
             );
           }).toList();
 
-          // 2. Tạo SpeakingSetEntity
           return Right(SpeakingSetEntity(
             id: json['_id'] ?? '',
             title: json['title'] ?? 'Speaking Detail',
             description: json['description'] ?? '',
-            level: json['level'] ?? 'Beginner', // Giá trị mặc định nếu null
+            level: json['level'] ?? 'Beginner',
             mode: json['mode'] ?? 'readAloud',
             sentences: sentencesEntity,
             totalSentences: sentencesEntity.length,
           ));
 
         case ActivityType.listening:
-        // Backend listening trả về object enrollment có field 'attemptsDetail'
-          final List<dynamic> attemptsJson = json['attemptsDetail'] ?? [];
-          final attempts = attemptsJson.map((e) => DictationAttemptEntity.fromJson(e)).toList();
-          return Right(attempts);
+        // 🔥 RẼ NHÁNH XỬ LÝ COMPREHENSION VÀ DICTATION
+          if (subType == 'Comprehension') {
+            // Parse dữ liệu Comprehension
+            final attempt = ListeningCompAttemptResult.fromJson(json);
+
+            // Backend trả đề bài gốc ở field listeningId
+            final detail = ListeningCompEntity.fromJson(json['listeningId']);
+
+            // Trả về một Map chứa cả 2 để BLoC lấy
+            return Right({
+              'attempt': attempt,
+              'detail': detail,
+            });
+          } else {
+            // Parse Dictation (Giữ nguyên logic cũ của bạn)
+            final List<dynamic> attemptsJson = json['attemptsDetail'] ?? [];
+            final attempts = attemptsJson.map((e) => DictationAttemptEntity.fromJson(e)).toList();
+            return Right(attempts);
+          }
 
         default:
           return Left(ServerFailure(message: "Unsupported type"));

@@ -5,6 +5,7 @@ import WritingSubmission from '../models/WritingSubmission.js';
 import ReadingProgress from '../models/ReadingProgress.js';
 import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
 import Enrollment from '../models/Enrollment.js';
+import ListeningCompAttempt from '../models/ListeningCompAttempt.js'; // 🔥 THÊM MỚI CHỖ NÀY
 
 // --- MODELS PHỤ ---
 import ReadingAttempt from '../models/ReadingAttempt.js';
@@ -17,31 +18,22 @@ import '../models/WritingTopics.js';
 import '../models/Reading.js';
 import '../models/SpeakingSet.js';
 import '../models/Listening.js';
+import '../models/ListeningComprehension.js'; // 🔥 THÊM MỚI CHỖ NÀY
 
 const getHistory = async (targetUserId, startDate, endDate, filterType) => {
   try {
     const start = startDate ? new Date(startDate) : new Date();
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Nếu không có startDate, mặc định lấy 30 ngày trước
     if (!startDate) {
       start.setDate(start.getDate() - 30);
     }
 
-    // 2. Chuyển đổi Start Date: (00:00:00 VN -> UTC)
-    // Đặt về 00:00:00 theo UTC
     start.setUTCHours(0, 0, 0, 0);
-    // Trừ đi 7 giờ để khớp với 00:00 sáng tại VN
     start.setUTCHours(start.getUTCHours() - 7);
 
-    // 3. Chuyển đổi End Date: (23:59:59 VN -> UTC)
-    // Đặt về 23:59:59 theo UTC
     end.setUTCHours(23, 59, 59, 999);
-    // Trừ đi 7 giờ để khớp với 23:59 đêm tại VN
     end.setUTCHours(end.getUTCHours() - 7);
-
-    // Log kiểm tra (Bạn có thể xóa sau khi test)
-    // console.log(`Querying VN Time from: ${start.toISOString()} to ${end.toISOString()}`);
 
     const dateQuery = { $gte: start, $lte: end };
     const userFilter = targetUserId ? { userId: targetUserId } : {};
@@ -88,9 +80,10 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
       rawItems.push(...docs.map(d => ({ ...d, type: 'speaking', time: d.updatedAt })));
     }
 
-    // --- D. LISTENING ---
+    // --- D. LISTENING (Bao gồm Dictation & Comprehension) ---
     if (!filterType || filterType === 'listening') {
-      const docs = await Enrollment.find({
+      // 1. Lấy Dictation
+      const dictationDocs = await Enrollment.find({
         updatedAt: dateQuery,
         isCompleted: true,
         ...userFilter
@@ -98,15 +91,24 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         .populate('userId', 'fullName avatarUrl email')
         .populate({ path: 'listeningId', select: 'title cues' })
         .lean();
-      rawItems.push(...docs.map(d => ({ ...d, type: 'listening', time: d.updatedAt })));
+      rawItems.push(...dictationDocs.map(d => ({ ...d, type: 'dictation', time: d.updatedAt })));
+
+      // 2. Lấy Comprehension (🔥 THÊM LOGIC NÀY)
+      const compDocs = await ListeningCompAttempt.find({
+        createdAt: dateQuery,
+        ...userFilter
+      })
+        .populate('userId', 'fullName avatarUrl email')
+        .populate({ path: 'listeningId', select: 'title questions' })
+        .lean();
+      rawItems.push(...compDocs.map(c => ({ ...c, type: 'comprehension', time: c.createdAt })));
     }
 
     // ======================================================
-    // 🔥 FIX: ENRICH DATA VỚI NULL CHECK KỸ LƯỠNG
+    // ENRICH DATA VỚI NULL CHECK KỸ LƯỠNG
     // ======================================================
 
     const finalResults = await Promise.all(rawItems.map(async (item) => {
-      // 1. Kiểm tra User (Nếu user bị xóa, item.userId sẽ là null)
       const userObj = item.userId ? {
         id: item.userId._id.toString(),
         name: item.userId.fullName,
@@ -114,17 +116,14 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         email: item.userId.email
       } : { id: 'deleted', name: 'Deleted User', avatar: '', email: '' };
 
-      // Base object
       const base = {
         id: item._id.toString(),
-        type: item.type,
+        type: item.type === 'dictation' || item.type === 'comprehension' ? 'listening' : item.type, // Ép về type gốc cho giao diện
         user: userObj,
         date: item.time,
         status: item.status || 'completed',
       };
 
-      // 🛡️ Guard Clause: Nếu User ID null thì không thể query attempt theo user được
-      // Nếu muốn vẫn hiện bài làm của user đã xóa, ta phải bỏ qua bước query aggregate bên dưới
       const userIdStr = item.userId?._id;
 
       // --- LOGIC 1: WRITING ---
@@ -142,7 +141,6 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
       // --- LOGIC 2: READING ---
       if (item.type === 'reading') {
-        // 🔥 Fix: Kiểm tra bài đọc còn tồn tại không
         if (!item.readingId) return null;
 
         let totalDuration = 0;
@@ -170,11 +168,9 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
       // --- LOGIC 3: SPEAKING ---
       if (item.type === 'speaking') {
-        // 🔥 Fix: Kiểm tra speakingSetId có null không (do populate fail)
         if (!item.speakingSetId) return null;
 
         let setId = item.speakingSetId._id || item.speakingSetId;
-        // Fix lỗi 'toString' of null: Kiểm tra setId tồn tại trước
         if (setId && typeof setId === 'object') setId = setId.toString();
 
         let totalDuration = 0;
@@ -200,9 +196,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         };
       }
 
-      // --- LOGIC 4: LISTENING ---
-      if (item.type === 'listening') {
-        // 🔥 Fix: Kiểm tra bài nghe còn tồn tại không
+      // --- LOGIC 4: LISTENING - DICTATION ---
+      if (item.type === 'dictation') {
         if (!item.listeningId) return null;
 
         let totalDuration = 0;
@@ -218,7 +213,7 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
         return {
           ...base,
-          title: item.listeningId.title || 'Listening Practice',
+          title: item.listeningId.title || 'Dictation Practice',
           score: scoreVal,
           duration: totalDuration,
           subType: 'Dictation',
@@ -227,13 +222,25 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
         };
       }
 
-      return null; // Fallback
+      // --- LOGIC 5: LISTENING - COMPREHENSION (🔥 THÊM MỚI NÀY) ---
+      if (item.type === 'comprehension') {
+        if (!item.listeningId) return null;
+
+        return {
+          ...base,
+          title: item.listeningId.title || 'Comprehension Practice',
+          score: Math.round(item.score || 0),
+          duration: item.durationInSeconds || 0,
+          subType: 'Comprehension',
+          totalQuestions: item.totalQuestions || 0,
+          correctCount: item.correctCount || 0
+        };
+      }
+
+      return null;
     }));
 
-    // 🔥 Filter bỏ các item bị null (do data bị xóa, populate fail)
     const validResults = finalResults.filter(item => item !== null);
-
-    // Sắp xếp
     return validResults.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   } catch (error) {
@@ -242,11 +249,7 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
   }
 };
 
-// ... (Hàm getActivityDetail giữ nguyên)
-const getActivityDetail = async (id, type) => {
-  // ... code cũ của hàm này không đổi
-  // (nhưng bạn cũng nên thêm check null cho các populate trong hàm này tương tự nếu cần)
-  // Để tiết kiệm không gian tôi không paste lại hàm này vì lỗi 500 xảy ra ở getHistory
+const getActivityDetail = async (id, type, subType) => {
   try {
     let result = null;
 
@@ -264,15 +267,12 @@ const getActivityDetail = async (id, type) => {
         .lean();
 
       if (progress) {
-        // Check readingId exist
         if (!progress.readingId) throw new Error("Reading content deleted");
 
         const attempt = await ReadingAttempt.findOne({
           userId: progress.userId._id,
           readingId: progress.readingId._id
-        })
-          .sort({ createdAt: -1 })
-          .lean();
+        }).sort({ createdAt: -1 }).lean();
 
         result = {
           _id: progress._id,
@@ -313,25 +313,51 @@ const getActivityDetail = async (id, type) => {
       }
     }
 
+    // --- LISTENING XỬ LÝ 2 LOẠI (DICTATION & COMPREHENSION) ---
     if (type === 'listening') {
-      const enrollment = await Enrollment.findById(id)
-        .populate('userId', 'fullName avatarUrl')
-        .populate({ path: 'listeningId', select: 'title cues audioUrl' })
-        .lean();
+      // 1. Xử lý Comprehension
+      if (subType === 'Comprehension') {
+        const attempt = await ListeningCompAttempt.findById(id)
+          .populate('userId', 'fullName avatarUrl')
+          .populate({ path: 'listeningId', select: 'title questions audioUrl' })
+          .lean();
 
-      if (enrollment) {
-        if (!enrollment.listeningId) throw new Error("Listening content deleted");
+        if (attempt) {
+          if (!attempt.listeningId) throw new Error("Comprehension content deleted");
 
-        const attempts = await DictationAttempt.find({
-          userId: enrollment.userId._id,
-          listeningId: enrollment.listeningId._id
-        }).sort({ cueIdx: 1 }).lean();
+          result = {
+            _id: attempt._id,
+            score: attempt.score,
+            correctCount: attempt.correctCount,
+            totalQuestions: attempt.totalQuestions,
+            durationInSeconds: attempt.durationInSeconds,
+            answersDetail: attempt.answers, // Mảng chi tiết đúng sai từng câu
+            listeningId: attempt.listeningId, // Gói luôn bài nghe vào đây
+            user: attempt.userId
+          };
+        }
+      }
+      // 2. Xử lý Dictation (Như cũ)
+      else {
+        const enrollment = await Enrollment.findById(id)
+          .populate('userId', 'fullName avatarUrl')
+          .populate({ path: 'listeningId', select: 'title cues audioUrl' })
+          .lean();
 
-        result = {
-          _id: enrollment._id,
-          attemptsDetail: attempts,
-          user: enrollment.userId
-        };
+        if (enrollment) {
+          if (!enrollment.listeningId) throw new Error("Listening content deleted");
+
+          const attempts = await DictationAttempt.find({
+            userId: enrollment.userId._id,
+            listeningId: enrollment.listeningId._id
+          }).sort({ cueIdx: 1 }).lean();
+
+          result = {
+            _id: enrollment._id,
+            attemptsDetail: attempts,
+            user: enrollment.userId
+          };
+        }
       }
     }
 
