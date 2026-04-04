@@ -240,7 +240,7 @@ class _ListeningCompCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _handlePress(context),
+          onTap: () => _handleRetakeOrStart(context), // Click vào card mặc định là Start/Retake
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -273,7 +273,8 @@ class _ListeningCompCard extends StatelessWidget {
                             children: [
                               const Icon(Icons.format_list_bulleted, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              Text('${entity.totalQuestions} questions', style: const TextStyle(fontSize: 13, color: textMuted)),                              const SizedBox(width: 12),
+                              Text('${entity.totalQuestions} questions', style: const TextStyle(fontSize: 13, color: textMuted)),
+                              const SizedBox(width: 12),
                               const Icon(Icons.timer_outlined, size: 14, color: textMuted),
                               const SizedBox(width: 4),
                               Text('${entity.minutesToComplete} min', style: const TextStyle(fontSize: 13, color: textMuted)),
@@ -286,13 +287,15 @@ class _ListeningCompCard extends StatelessWidget {
                     Container(
                       width: 48, height: 48,
                       decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                      child: Icon(Icons.play_arrow_rounded, color: primaryColor, size: 28),
+                      child: Icon(isCompleted ? Icons.replay_rounded : Icons.play_arrow_rounded, color: primaryColor, size: 28),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5)),
                 const SizedBox(height: 12),
+
+                // 🔥 LOGIC NÚT BẤM MỚI Ở ĐÂY
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -301,31 +304,63 @@ class _ListeningCompCard extends StatelessWidget {
                           ? Text('High Score: $score%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green))
                           : const Text('Not started yet', style: TextStyle(fontSize: 12, color: textMuted, fontStyle: FontStyle.italic)),
                     ),
-                    SizedBox(
-                      height: 32,
-                      child: isCompleted
-                          ? OutlinedButton(
-                        onPressed: () => _handlePress(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: primaryColor,
-                          side: BorderSide(color: primaryColor.withOpacity(0.5)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                        ),
-                        child: const Text('Review', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+
+                    if (isCompleted)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Nút Review (Nếu bạn có trang review riêng thì gọi ở đây, tạm thời tôi để icon cho đẹp)
+                          SizedBox(
+                            height: 32,
+                            child: OutlinedButton.icon(
+                              onPressed: () {
+                                // TODO: Chuyển hướng sang trang xem lại chi tiết bài làm (nếu app bạn có hỗ trợ xem thẳng từ list)
+                                // Tạm thời có thể cho user vào tab History để xem review
+                              },
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textMuted,
+                                side: const BorderSide(color: borderCol),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Nút Retake (Làm lại bài)
+                          SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _handleRetakeOrStart(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor.withOpacity(0.1),
+                                foregroundColor: primaryColor,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.replay, size: 16),
+                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ],
                       )
-                          : ElevatedButton(
-                        onPressed: () => _handlePress(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    else
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton(
+                          onPressed: () => _handleRetakeOrStart(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          ),
+                          child: const Text('Start', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
-                        child: const Text('Start', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -336,14 +371,14 @@ class _ListeningCompCard extends StatelessWidget {
     );
   }
 
-  Future<void> _handlePress(BuildContext context) async {
-    // 🔥 ĐÃ FIX: Điều hướng sang trang làm bài
+  Future<void> _handleRetakeOrStart(BuildContext context) async {
+    // Điều hướng sang trang làm bài (Cho cả Start và Retake)
     await context.pushNamed(
-      'ListeningCompPage', // Tên route này phải giống với name khai báo trong app_router.dart
+      'ListeningCompPage',
       pathParameters: {'id': entity.id},
     );
 
-    // Refresh lại trạng thái danh sách sau khi làm xong quay lại
+    // Load lại danh sách để cập nhật trạng thái/High Score mới nếu có
     if (context.mounted) {
       onLessonFinished?.call();
     }

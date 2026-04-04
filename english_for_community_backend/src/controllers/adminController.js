@@ -109,13 +109,16 @@ const getActivities = async (req, res) => {
 const getActivityDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query;
+
+    // 🔥 1. ĐẢM BẢO PHẢI CÓ subType Ở ĐÂY
+    const { type, subType } = req.query;
 
     if (!type) {
       return res.status(400).json({ message: "Missing 'type' parameter" });
     }
 
-    const data = await adminService.getActivityDetail(id, type);
+    // 🔥 2. TRUYỀN ĐỦ 3 THAM SỐ VÀO SERVICE
+    const data = await adminService.getActivityDetail(id, type, subType);
 
     res.status(200).json({
       success: true,
