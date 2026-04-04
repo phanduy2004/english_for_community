@@ -335,8 +335,8 @@ const getActivities = async (userId, startDate, endDate, type) => {
   return await historyService.getHistory(userId, startDate, endDate, type);
 };
 
-const getActivityDetail = async (id, type) => {
-  return await historyService.getActivityDetail(id, type);
+const getActivityDetail = async (id, type, subType) => {
+  return await historyService.getActivityDetail(id, type, subType);
 };
 
 export const adminService = {

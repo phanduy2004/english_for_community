@@ -31,8 +31,11 @@ class ActivityDetailBloc extends Bloc<ActivityDetailEvent, ActivityDetailState> 
       typeString = 'listening-comprehension';
     }
 
-    final result = await _repository.getActivityDetail(event.id, ActivityType.values.byName(event.type.name));
-
+    final result = await _repository.getActivityDetail(
+      event.id,
+      event.type,
+      subType: event.subType, // 🔥 Đưa cái subType này vào!
+    );
     result.fold(
           (failure) => emit(state.copyWith(
           status: DetailStatus.error,

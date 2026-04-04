@@ -63,7 +63,6 @@ class ListeningCompDetailView extends StatelessWidget {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))
           ),
           const SizedBox(height: 16),
-
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -72,13 +71,17 @@ class ListeningCompDetailView extends StatelessWidget {
             itemBuilder: (context, index) {
               final q = questions[index];
 
-              // Tìm câu trả lời của user cho câu hỏi này
-              final userAnswerMap = data.answers.firstWhere(
-                    (a) => a['questionId'] == q.id,
-                orElse: () => {'questionId': q.id, 'chosenIndex': -1, 'isCorrect': false},
+              // 🔥 SỬA DÙNG NGOẶC VUÔNG ['questionId'] VÀ TRẢ VỀ MAP MẶC ĐỊNH
+              final userAnswer = data.answers.firstWhere(
+                    (a) => a['questionId']?.toString() == q.id.toString(),
+                orElse: () => {
+                  'questionId': q.id,
+                  'chosenIndex': -1,
+                  'isCorrect': false
+                },
               );
 
-              return _buildQuestionReviewItem(index + 1, q, userAnswerMap);
+              return _buildQuestionReviewItem(index + 1, q, userAnswer);
             },
           ),
         ],
@@ -101,16 +104,19 @@ class ListeningCompDetailView extends StatelessWidget {
   }
 
   Widget _buildQuestionReviewItem(int index, ListeningCompQuestionEntity q, Map<String, dynamic> userAnswer) {
-    bool isCorrect = userAnswer['isCorrect'] == true;
-    bool isSkipped = userAnswer['chosenIndex'] == -1;
+    // 1. Trích xuất dữ liệu an toàn từ Map
+    int chosenIdx = userAnswer['chosenIndex'] ?? -1;
+    bool isSkipped = chosenIdx == -1;
+    bool isCorrectOverall = userAnswer['isCorrect'] == true;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        // Viền tổng thể của Box: Xanh nếu đúng, Đỏ nếu sai/bỏ qua
         border: Border.all(
-            color: isCorrect ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)
+            color: isCorrectOverall ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)
         ),
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))
@@ -119,20 +125,17 @@ class ListeningCompDetailView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Số thứ tự câu hỏi và trạng thái đúng/sai
+          // 2. HEADER: Số thứ tự câu hỏi và text câu hỏi
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isCorrect ? Colors.green : (isSkipped ? Colors.grey : Colors.red),
+                  color: isCorrectOverall ? Colors.green : (isSkipped ? Colors.grey : Colors.red),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(
-                    "Q$index",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)
-                ),
+                child: Text("Q$index", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -145,26 +148,35 @@ class ListeningCompDetailView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // Options List
+          // 3. DANH SÁCH LỰA CHỌN (A, B, C, D)
           ...List.generate(q.options.length, (optIndex) {
-            bool isSelected = userAnswer['chosenIndex'] == optIndex;
-            bool isAnswerKey = q.correctAnswerIndex == optIndex;
+            bool isSelected = chosenIdx == optIndex; // Câu user đã chọn
+            bool isAnswerKey = q.correctAnswerIndex == optIndex; // Câu đáp án đúng của hệ thống
 
             Color bgColor = Colors.transparent;
             Color borderColor = Colors.grey.shade200;
             IconData? icon;
             Color iconColor = Colors.transparent;
 
-            if (isAnswerKey) {
-              bgColor = Colors.green.withOpacity(0.1);
+            // 🔥 LOGIC ĐỔ MÀU LỰA CHỌN
+            if (isSelected && isAnswerKey) {
+              // User chọn ĐÚNG
+              bgColor = Colors.green.withOpacity(0.15);
               borderColor = Colors.green;
               icon = Icons.check_circle;
               iconColor = Colors.green;
             } else if (isSelected && !isAnswerKey) {
+              // User chọn SAI (Hiển thị màu đỏ ở câu user đã đánh dấu)
               bgColor = Colors.red.withOpacity(0.1);
               borderColor = Colors.red;
               icon = Icons.cancel;
               iconColor = Colors.red;
+            } else if (!isSelected && isAnswerKey) {
+              // Hiển thị đáp án đúng (Khi user chọn sai câu khác hoặc bỏ trống)
+              bgColor = Colors.transparent;
+              borderColor = Colors.green;
+              icon = Icons.check_circle_outline;
+              iconColor = Colors.green;
             }
 
             return Container(
@@ -173,7 +185,8 @@ class ListeningCompDetailView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: bgColor,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderColor),
+                // Viền đậm hơn một chút nếu là câu user chọn
+                border: Border.all(color: borderColor, width: isSelected ? 1.5 : 1.0),
               ),
               child: Row(
                 children: [
@@ -194,14 +207,14 @@ class ListeningCompDetailView extends StatelessWidget {
             );
           }),
 
-          // Feedback / Explanation (Đã tùy chỉnh cho Listening)
+          // 4. GIẢI THÍCH (FEEDBACK & AUDIO HINT)
           if (q.feedback != null && (q.feedback!.reasoning.isNotEmpty || q.feedback!.hintTimestampSeconds != null)) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F9FF), // Light Blue
+                color: const Color(0xFFF0F9FF), // Xanh nhạt
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: const Color(0xFFBAE6FD)),
               ),
@@ -216,6 +229,7 @@ class ListeningCompDetailView extends StatelessWidget {
                     ],
                   ),
 
+                  // Text giải thích
                   if (q.feedback!.reasoning.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     Text(
@@ -224,7 +238,7 @@ class ListeningCompDetailView extends StatelessWidget {
                     ),
                   ],
 
-                  // Hiển thị vị trí giây chứa đáp án
+                  // Vị trí thời gian trong Audio chứa đáp án
                   if (q.feedback!.hintTimestampSeconds != null) ...[
                     const SizedBox(height: 8),
                     Row(
@@ -247,6 +261,7 @@ class ListeningCompDetailView extends StatelessWidget {
     );
   }
 
+  // Hàm helper định dạng thời gian giây -> phút:giây
   String _formatDuration(int sec) {
     if (sec <= 0) return '0s';
     final m = sec ~/ 60;

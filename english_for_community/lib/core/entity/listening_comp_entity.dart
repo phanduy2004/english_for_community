@@ -100,6 +100,6 @@ class ListeningCompAttemptResult {
     score: (json['score'] as num?)?.toDouble() ?? 0.0,
     correctCount: json['correctCount'] ?? 0,
     totalQuestions: json['totalQuestions'] ?? 0,
-    answers: List<Map<String, dynamic>>.from(json['answers'] ?? []),
+    answers: List<Map<String, dynamic>>.from(json['answersDetail'] ?? []),
   );
 }
