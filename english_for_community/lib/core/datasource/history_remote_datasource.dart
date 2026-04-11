@@ -62,4 +62,79 @@ class HistoryRemoteDatasource {
       rethrow;
     }
   }
+
+  /// Lịch sử bài tập của user đang đăng nhập (`GET /api/users/me/activities`)
+  Future<ActivityHistoryListResult> getMyHistory({
+    required DateTime startDate,
+    required DateTime endDate,
+    ActivityType? skillFilter,
+    int page = 1,
+    int limit = 20,
+    String sort = 'desc',
+  }) async {
+    final startStr = startDate.toIso8601String().split('T')[0];
+    final endStr = endDate.toIso8601String().split('T')[0];
+
+    final Map<String, dynamic> queryParams = {
+      'startDate': startStr,
+      'endDate': endStr,
+      'page': page,
+      'limit': limit,
+      'sort': sort,
+    };
+
+    if (skillFilter != null) {
+      switch (skillFilter) {
+        case ActivityType.writing:
+          queryParams['type'] = 'writing';
+          break;
+        case ActivityType.reading:
+          queryParams['type'] = 'reading';
+          break;
+        case ActivityType.speaking:
+          queryParams['type'] = 'speaking';
+          break;
+        case ActivityType.listening:
+          queryParams['type'] = 'listening';
+          break;
+        case ActivityType.unknown:
+          break;
+      }
+    }
+
+    final response = await dio.get(
+      'users/me/activities',
+      queryParameters: queryParams,
+    );
+
+    final raw = response.data;
+    final List<dynamic> list = raw['data'] as List<dynamic>? ?? [];
+    final items = list.map((e) => ActivityModel.fromJson(e as Map<String, dynamic>)).toList();
+
+    return ActivityHistoryListResult(
+      items: items,
+      total: (raw['total'] as num?)?.toInt() ?? items.length,
+      page: (raw['page'] as num?)?.toInt() ?? page,
+      limit: (raw['limit'] as num?)?.toInt() ?? limit,
+      hasMore: raw['hasMore'] as bool? ?? false,
+    );
+  }
+
+  /// Chi tiết một bài làm của chính user (`GET /api/users/me/activities/:id`)
+  Future<Map<String, dynamic>> getMyActivityDetail(String id, String type, {String? subType}) async {
+    final Map<String, dynamic> queryParams = {'type': type};
+    if (subType != null && subType.isNotEmpty) {
+      queryParams['subType'] = subType;
+    }
+
+    final response = await dio.get(
+      'users/me/activities/$id',
+      queryParameters: queryParams,
+    );
+
+    if (response.data['success'] == true) {
+      return response.data['data'] as Map<String, dynamic>;
+    }
+    throw Exception(response.data['message'] ?? 'Failed to load detail');
+  }
 }

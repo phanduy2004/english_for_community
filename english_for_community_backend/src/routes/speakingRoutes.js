@@ -3,6 +3,7 @@ import express from "express"; // (Middleware check JWT)
 const router = express.Router();
 import {speakingController} from '../controllers/speakingController.js';
 
+router.get('/vapi-config', authenticate, speakingController.getVapiConfig);
 router.get('/sets', authenticate, speakingController.getSpeakingSetsWithProgress);
 router.get('/sets/:setId', authenticate, speakingController.getSpeakingSetDetails);
 router.post('/submit', authenticate, speakingController.submitAttempt);

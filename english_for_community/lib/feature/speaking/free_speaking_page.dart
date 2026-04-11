@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:translator/translator.dart';
@@ -11,23 +10,12 @@ import 'package:translator/translator.dart';
 import 'package:english_for_community/feature/speaking/vapi/real_vapi_service.dart';
 import 'package:english_for_community/feature/speaking/vapi/vapi_service.dart';
 
-// --- 1. CẤU HÌNH THEME (Shadcn/ForUI Style) ---
-class AppColors {
-  // Primary: Màu chủ đạo (Xanh dương đậm)
-  static const primary = Color(0xFF2563EB);
-  static const primaryLight = Color(0xFFEFF6FF);
-
-  // Success: Trạng thái Online (Xanh lá)
-  static const success = Color(0xFF22C55E);
-  static const successBg = Color(0xFFDCFCE7);
-
-  // Neutral: Màu nền và văn bản (Zinc Palette)
-  static const background = Colors.white;
-  static const surface = Color(0xFFF4F4F5);
-  static const textMain = Color(0xFF09090B);
-  static const textMuted = Color(0xFF71717A);
-  static const border = Color(0xFFE4E4E7);
-}
+import '../../core/analytics/speaking_telemetry.dart';
+import '../../core/api/api_client.dart';
+import '../../core/config/vapi_env_config.dart';
+import '../../core/datasource/vapi_config_remote_datasource.dart';
+import '../../core/get_it/get_it.dart';
+import '../../core/theme/app_color.dart' as T;
 
 // --- 2. MODELS ---
 enum MessageRole { user, ai, system }
@@ -45,6 +33,30 @@ class ChatMessage {
   }
 }
 
+/// Gộp các [ChatMessage] liên tiếp cùng role (user / AI) để hiển thị **một** bong bóng.
+class _ConversationTurn {
+  _ConversationTurn({required this.role, required List<ChatMessage> parts})
+      : parts = List<ChatMessage>.from(parts);
+
+  final MessageRole role;
+  final List<ChatMessage> parts;
+
+  String get combinedText {
+    final buf = StringBuffer();
+    for (final p in parts) {
+      final t = p.text.trim();
+      if (t.isEmpty) continue;
+      if (buf.isNotEmpty) buf.write(' ');
+      buf.write(t);
+    }
+    return buf.toString();
+  }
+
+  bool get allFinal => parts.isNotEmpty && parts.every((p) => p.isFinal);
+}
+
+enum _VapiBootstrap { loading, ready, error }
+
 // --- 3. MAIN PAGE ---
 class FreeSpeakingPage extends StatefulWidget {
   const FreeSpeakingPage({super.key});
@@ -56,7 +68,11 @@ class FreeSpeakingPage extends StatefulWidget {
 }
 
 class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
-  late final VapiService _vapiService;
+  VapiService? _vapiService;
+  StreamSubscription<VapiEvent>? _vapiSub;
+  _VapiBootstrap _vapiBootstrap = _VapiBootstrap.loading;
+  String? _vapiBootstrapError;
+
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _textController = TextEditingController();
 
@@ -73,62 +89,151 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   double _volumeLevel = 0.0;
 
   // Quản lý giọng nói
-  late List<VapiVoice> _voiceList;
+  List<VapiVoice> _voiceList = [];
   late VapiVoice _selectedVoice;
 
   @override
   void initState() {
     super.initState();
-    _vapiService = RealVapiService();
+    _textController.addListener(() {
+      final isTyping = _textController.text.trim().isNotEmpty;
+      if (_isTyping != isTyping) setState(() => _isTyping = isTyping);
+    });
+    _bootstrapVapi();
+  }
 
-    // Lấy danh sách giọng từ Service và chọn mặc định cái đầu tiên
-    _voiceList = _vapiService.getAvailableVoices();
-    _selectedVoice = _voiceList.isNotEmpty ? _voiceList.first :
-    const VapiVoice(id: "", name: "Default", gender: "AI");
+  Future<void> _bootstrapVapi() async {
+    setState(() {
+      _vapiBootstrap = _VapiBootstrap.loading;
+      _vapiBootstrapError = null;
+    });
 
-    // Tin nhắn mở đầu
-    _addMessage(ChatMessage(
+    await _vapiSub?.cancel();
+    _vapiSub = null;
+    _vapiService?.dispose();
+    _vapiService = null;
+    _messages.clear();
+
+    String pk = '';
+    String aid = '';
+    var source = 'none';
+    VapiConfigFetchOutcome? remoteOutcome;
+
+    final ds = VapiConfigRemoteDatasource(apiClient: getIt<ApiClient>());
+    remoteOutcome = await ds.fetchConfig();
+    if (remoteOutcome.hasKeys) {
+      pk = remoteOutcome.publicKey!.trim();
+      aid = remoteOutcome.assistantId!.trim();
+      source = 'backend';
+    }
+
+    if (pk.isEmpty || aid.isEmpty) {
+      pk = VapiEnvConfig.publicKey.trim();
+      aid = VapiEnvConfig.assistantId.trim();
+      if (VapiEnvConfig.hasEnvKeys) source = 'dart_define';
+    }
+
+    if (pk.isEmpty || aid.isEmpty) {
+      if (!mounted) return;
+      final hint = _vapiConfigErrorHint(remoteOutcome);
+      setState(() {
+        _vapiBootstrap = _VapiBootstrap.error;
+        _vapiBootstrapError = hint;
+      });
+      return;
+    }
+
+    _vapiService = RealVapiService(publicKey: pk, vapiAssistantId: aid);
+    _voiceList = _vapiService!.getAvailableVoices();
+    _selectedVoice = _voiceList.isNotEmpty
+        ? _voiceList.first
+        : const VapiVoice(id: "", name: "Default", gender: "AI");
+
+    await SpeakingTelemetry.logVapiConfigLoaded(source: source);
+
+    _vapiSub = _vapiService!.onEvent.listen(_onVapiEvent);
+
+    _messages.add(ChatMessage(
       id: 'sys_init',
       text: 'Hello! Choose a voice and tap the microphone to start practicing English.',
       role: MessageRole.system,
     ));
 
-    // Lắng nghe sự kiện từ Vapi
-    _vapiService.onEvent.listen((event) {
-      if (!mounted) return;
-      switch (event.type) {
-        case 'status':
-          setState(() => _callStatus = event.value);
-          if (_callStatus == VapiCallStatus.ended || _callStatus == VapiCallStatus.disconnected) {
-            _resetState();
+    if (!mounted) return;
+    setState(() => _vapiBootstrap = _VapiBootstrap.ready);
+  }
+
+  String _vapiConfigErrorHint(VapiConfigFetchOutcome? o) {
+    final code = o?.statusCode;
+    if (code == 401 || code == 403) {
+      return 'Không tải được cấu hình cuộc gọi AI (chưa xác thực).\n\n'
+          '• Đăng nhập trong app, rồi mở lại Free Speaking.\n'
+          '• Nếu vừa hết phiên, đăng xuất / đăng nhập lại.';
+    }
+    if (code == 503) {
+      return 'Server báo chưa cấu hình Vapi (503).\n\n'
+          '• Trong .env backend cần đúng tên: VAPI_PUBLIC_KEY và VAPI_ASSISTANT_ID (không dấu cách sau dấu =).\n'
+          '• Lưu .env và restart backend (npm run dev).';
+    }
+    if (code != null && code >= 400) {
+      return 'API cấu hình Vapi trả lỗi (HTTP $code).\n\n${o?.message ?? ''}';
+    }
+    if (o?.message != null && (o!.publicKey == null || o.assistantId == null)) {
+      return 'Không lấy được cấu hình từ server (mạng / URL).\n\n'
+          '• Điện thoại và PC chạy Node cùng Wi‑Fi.\n'
+          '• Sửa IP trong lib/core/api/api_config.dart (_localLanIp) trùng IP máy bạn.\n'
+          '• Emulator Android: đặt isEmulator = true để dùng 10.0.2.2.\n\n'
+          'Chi tiết: ${o.message}';
+    }
+    return 'Chưa có public key / assistant id.\n\n'
+        '• Backend: thêm VAPI_PUBLIC_KEY và VAPI_ASSISTANT_ID vào .env, restart server.\n'
+        '• Hoặc build app: --dart-define=VAPI_PUBLIC_KEY=... --dart-define=VAPI_ASSISTANT_ID=...';
+  }
+
+  void _onVapiEvent(VapiEvent event) {
+    if (!mounted) return;
+    switch (event.type) {
+      case 'error':
+        final code = event.data?['code'] as String? ?? 'unknown';
+        final msg = event.data?['message'] as String? ?? 'Đã có lỗi xảy ra.';
+        SpeakingTelemetry.logError(code);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
+        );
+        break;
+
+      case 'status':
+        final prev = _callStatus;
+        setState(() => _callStatus = event.value as VapiCallStatus);
+        if (_callStatus == VapiCallStatus.active && prev != VapiCallStatus.active) {
+          SpeakingTelemetry.logCallStart();
+        }
+        if (_callStatus == VapiCallStatus.ended || _callStatus == VapiCallStatus.disconnected) {
+          if (prev == VapiCallStatus.active) {
+            SpeakingTelemetry.logCallEnd();
           }
-          break;
+          _resetState();
+        }
+        break;
 
-        case 'transcript':
-          if (event.data != null) _handleTranscript(event.data!);
-          break;
+      case 'transcript':
+        if (event.data != null) _handleTranscript(event.data!);
+        break;
 
-        case 'speech_start':
-          if (event.data?['role'] == 'ai') {
-            setState(() => _isAiSpeaking = true);
-            _startWaveAnimation();
-          }
-          break;
+      case 'speech_start':
+        if (event.data?['role'] == 'ai') {
+          setState(() => _isAiSpeaking = true);
+          _startWaveAnimation();
+        }
+        break;
 
-        case 'speech_end':
-          if (event.data?['role'] == 'ai') {
-            setState(() => _isAiSpeaking = false);
-            _stopWaveAnimation();
-          }
-          break;
-      }
-    });
-
-    // Lắng nghe ô nhập liệu
-    _textController.addListener(() {
-      final isTyping = _textController.text.trim().isNotEmpty;
-      if (_isTyping != isTyping) setState(() => _isTyping = isTyping);
-    });
+      case 'speech_end':
+        if (event.data?['role'] == 'ai') {
+          setState(() => _isAiSpeaking = false);
+          _stopWaveAnimation();
+        }
+        break;
+    }
   }
 
   void _resetState() {
@@ -155,7 +260,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
   @override
   void dispose() {
-    _vapiService.dispose();
+    _vapiSub?.cancel();
+    _vapiService?.dispose();
     _scrollController.dispose();
     _textController.dispose();
     _waveTimer?.cancel();
@@ -165,16 +271,27 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   // --- LOGIC XỬ LÝ ---
 
   Future<void> _handleBottomButtonPress() async {
+    if (_vapiBootstrap != _VapiBootstrap.ready || _vapiService == null) return;
+
     // Nếu đang kết nối thì không làm gì (để tránh spam)
     if (_callStatus == VapiCallStatus.connecting) return;
 
     // 1. Nếu chưa kết nối -> Bắt đầu gọi
     if (_callStatus == VapiCallStatus.disconnected || _callStatus == VapiCallStatus.ended) {
-      var status = await Permission.microphone.request();
-      if (status.isGranted) {
-        // Truyền giọng đã chọn vào hàm start
-        _vapiService.start(voiceId: _selectedVoice.id);
+      final status = await Permission.microphone.request();
+      if (!status.isGranted) {
+        await SpeakingTelemetry.logMicDenied();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cần quyền microphone để nói chuyện với AI. Hãy bật trong Cài đặt.'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
       }
+      await _vapiService!.start(voiceId: _selectedVoice.id);
       return;
     }
 
@@ -182,7 +299,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     if (_isTyping) {
       final text = _textController.text.trim();
       if (text.isNotEmpty) {
-        _vapiService.sendMessage(text);
+        _vapiService!.sendMessage(text);
         _textController.clear();
       }
       return;
@@ -190,13 +307,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     // 3. Nếu đang gọi mà không nhập -> Tắt cuộc gọi
     if (_callStatus == VapiCallStatus.active) {
-      await _vapiService.stop();
+      await _vapiService!.stop();
     }
-  }
-
-  void _addMessage(ChatMessage msg) {
-    setState(() => _messages.add(msg));
-    _scrollToBottom();
   }
 
   void _handleTranscript(Map<String, dynamic> data) {
@@ -220,6 +332,26 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     });
 
     if (!isFinal || role == MessageRole.user) _scrollToBottom();
+  }
+
+  /// System giữ từng dòng; user/AI gộp các đoạn transcript liên tiếp thành một lượt.
+  List<Object> _chatEntriesForList() {
+    final entries = <Object>[];
+    for (final m in _messages) {
+      if (m.role == MessageRole.system) {
+        entries.add(m);
+        continue;
+      }
+      if (entries.isNotEmpty && entries.last is _ConversationTurn) {
+        final turn = entries.last as _ConversationTurn;
+        if (turn.role == m.role) {
+          turn.parts.add(m);
+          continue;
+        }
+      }
+      entries.add(_ConversationTurn(role: m.role, parts: [m]));
+    }
+    return entries;
   }
 
   void _scrollToBottom() {
@@ -260,7 +392,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Text("Select AI Voice", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
-              const Divider(height: 1, color: AppColors.border),
+              const Divider(height: 1, color: T.AppColors.outline),
               const SizedBox(height: 8),
               // List giọng
               Flexible(
@@ -272,15 +404,15 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                     final isSelected = _selectedVoice.id == voice.id;
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: isSelected ? AppColors.primary.withOpacity(0.1) : AppColors.surface,
+                        backgroundColor: isSelected ? T.AppColors.primary.withValues(alpha: 0.1) : T.AppColors.surface,
                         child: Icon(
                             voice.gender == 'Male' ? Icons.face : Icons.face_3,
-                            color: isSelected ? AppColors.primary : AppColors.textMuted
+                            color: isSelected ? T.AppColors.primary : T.AppColors.textMuted
                         ),
                       ),
-                      title: Text(voice.name, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? AppColors.primary : AppColors.textMain)),
+                      title: Text(voice.name, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? T.AppColors.primary : T.AppColors.textPrimary)),
                       subtitle: Text("${voice.gender} • ${voice.accent}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      trailing: isSelected ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+                      trailing: isSelected ? const Icon(Icons.check_circle, color: T.AppColors.primary) : null,
                       onTap: () {
                         setState(() => _selectedVoice = voice);
                         Navigator.pop(context);
@@ -300,17 +432,86 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (_vapiBootstrap == _VapiBootstrap.loading) {
+      return Scaffold(
+        backgroundColor: T.AppColors.surfaceCard,
+        appBar: AppBar(
+          backgroundColor: T.AppColors.surfaceCard,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Free speaking', style: Theme.of(context).textTheme.titleMedium),
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Đang tải cấu hình…', style: TextStyle(color: T.AppColors.textMuted, fontSize: 14)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_vapiBootstrap == _VapiBootstrap.error) {
+      return Scaffold(
+        backgroundColor: T.AppColors.surfaceCard,
+        appBar: AppBar(
+          backgroundColor: T.AppColors.surfaceCard,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
+            onPressed: () => context.pop(),
+          ),
+          title: Text('Free speaking', style: Theme.of(context).textTheme.titleMedium),
+        ),
+        body: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.settings_ethernet, size: 48, color: T.AppColors.textMuted),
+                const SizedBox(height: 16),
+                Text(
+                  _vapiBootstrapError ?? 'Không tải được cấu hình.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: T.AppColors.textSecondary,
+                        height: 1.45,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _bootstrapVapi,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final bool isConnected = _callStatus == VapiCallStatus.active;
     final bool isConnecting = _callStatus == VapiCallStatus.connecting;
+    final chatEntries = _chatEntriesForList();
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: T.AppColors.surfaceCard,
       appBar: AppBar(
-        backgroundColor: AppColors.background,
+        backgroundColor: T.AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textMain, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
           onPressed: () => context.pop(),
         ),
         centerTitle: true,
@@ -319,20 +520,20 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isConnected ? AppColors.successBg : AppColors.surface,
+            color: isConnected ? const Color(0xFFDCFCE7) : T.AppColors.surface,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isConnected ? AppColors.success.withOpacity(0.2) : Colors.transparent),
+            border: Border.all(color: isConnected ? T.AppColors.success.withValues(alpha: 0.2) : Colors.transparent),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (isConnecting)
-                SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textMuted))
+                SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 1.5, color: T.AppColors.textMuted))
               else
                 Container(
                   width: 8, height: 8,
                   decoration: BoxDecoration(
-                    color: isConnected ? AppColors.success : AppColors.textMuted,
+                    color: isConnected ? T.AppColors.success : T.AppColors.textMuted,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -342,7 +543,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isConnected ? AppColors.success : AppColors.textMuted,
+                  color: isConnected ? T.AppColors.success : T.AppColors.textMuted,
                 ),
               ),
             ],
@@ -358,13 +559,13 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: T.AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
+                border: Border.all(color: T.AppColors.outline),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.record_voice_over_rounded, size: 16, color: AppColors.textMain),
+                  const Icon(Icons.record_voice_over_rounded, size: 16, color: T.AppColors.textPrimary),
                   const SizedBox(width: 6),
                   Text(_selectedVoice.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
@@ -374,7 +575,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.border, height: 1),
+          child: Container(color: T.AppColors.outline, height: 1),
         ),
       ),
       body: Column(
@@ -383,10 +584,16 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           Expanded(
             child: ListView.separated(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-              itemCount: _messages.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 24),
-              itemBuilder: (context, index) => _InteractiveMessageBubble(message: _messages[index]),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              itemCount: chatEntries.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              itemBuilder: (context, index) {
+                final e = chatEntries[index];
+                if (e is ChatMessage) {
+                  return _SystemHintBubble(message: e);
+                }
+                return _ConversationTurnBubble(turn: e as _ConversationTurn);
+              },
             ),
           ),
 
@@ -394,8 +601,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             decoration: const BoxDecoration(
-              color: AppColors.background,
-              border: Border(top: BorderSide(color: AppColors.border)),
+              color: T.AppColors.surfaceCard,
+              border: Border(top: BorderSide(color: T.AppColors.outline)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -414,21 +621,21 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                       child: Container(
                         height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: T.AppColors.surface,
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: TextField(
                           controller: _textController,
                           enabled: isConnected, // Chỉ nhập được khi đã kết nối
-                          style: const TextStyle(fontSize: 15, color: AppColors.textMain),
+                          style: const TextStyle(fontSize: 15, color: T.AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: isConnecting
                                 ? "Connecting..."
                                 : (isConnected ? "Type message..." : "Tap mic to connect"),
-                            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
+                            hintStyle: const TextStyle(color: T.AppColors.textMuted, fontSize: 14),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            prefixIcon: const Icon(Icons.keyboard_alt_outlined, size: 20, color: AppColors.textMuted),
+                            prefixIcon: const Icon(Icons.keyboard_alt_outlined, size: 20, color: T.AppColors.textMuted),
                           ),
                         ),
                       ),
@@ -442,13 +649,13 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                         duration: const Duration(milliseconds: 200),
                         height: 50, width: 50,
                         decoration: BoxDecoration(
-                            color: (isConnected && !_isTyping) ? Colors.red.shade500 : AppColors.primary,
+                            color: (isConnected && !_isTyping) ? Colors.red.shade500 : T.AppColors.primary,
                             borderRadius: BorderRadius.circular(14),
                             boxShadow: [
                               BoxShadow(
                                   color: (isConnected && !_isTyping)
-                                      ? Colors.red.withOpacity(0.3)
-                                      : AppColors.primary.withOpacity(0.3),
+                                      ? Colors.red.withValues(alpha: 0.3)
+                                      : T.AppColors.primary.withValues(alpha: 0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4)
                               )
@@ -481,17 +688,48 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   }
 }
 
-// --- 4. INTERACTIVE BUBBLE (Chat + Loa + Dịch) ---
+// --- 4. BONG BÓNG CHAT (gộp nhiều transcript cùng lượt + Loa / Dịch) ---
 
-class _InteractiveMessageBubble extends StatefulWidget {
+class _SystemHintBubble extends StatelessWidget {
   final ChatMessage message;
-  const _InteractiveMessageBubble({required this.message});
+  const _SystemHintBubble({required this.message});
 
   @override
-  State<_InteractiveMessageBubble> createState() => _InteractiveMessageBubbleState();
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: T.AppColors.outlineMuted,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: T.AppColors.outline),
+          ),
+          child: Text(
+            message.text,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: T.AppColors.textMuted,
+                  fontWeight: FontWeight.w500,
+                  height: 1.35,
+                ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _InteractiveMessageBubbleState extends State<_InteractiveMessageBubble> {
+class _ConversationTurnBubble extends StatefulWidget {
+  final _ConversationTurn turn;
+  const _ConversationTurnBubble({required this.turn});
+
+  @override
+  State<_ConversationTurnBubble> createState() => _ConversationTurnBubbleState();
+}
+
+class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
   final FlutterTts _flutterTts = FlutterTts();
   final GoogleTranslator _translator = GoogleTranslator();
 
@@ -499,6 +737,7 @@ class _InteractiveMessageBubbleState extends State<_InteractiveMessageBubble> {
   bool _isTranslating = false;
   bool _showTranslation = false;
   String? _translatedText;
+  String? _translationSourceText;
 
   @override
   void initState() {
@@ -515,139 +754,196 @@ class _InteractiveMessageBubbleState extends State<_InteractiveMessageBubble> {
   }
 
   @override
+  void didUpdateWidget(_ConversationTurnBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldText = oldWidget.turn.combinedText;
+    final newText = widget.turn.combinedText;
+    if (oldText != newText) {
+      setState(() {
+        _translatedText = null;
+        _showTranslation = false;
+        _translationSourceText = null;
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _flutterTts.stop();
     super.dispose();
   }
 
-  void _speak() async {
+  String get _displayText => widget.turn.combinedText;
+
+  Future<void> _speak() async {
+    final text = _displayText;
+    if (text.isEmpty) return;
     if (_isPlaying) {
       await _flutterTts.stop();
       setState(() => _isPlaying = false);
     } else {
       setState(() => _isPlaying = true);
-      await _flutterTts.speak(widget.message.text);
+      await _flutterTts.speak(text);
     }
   }
 
-  void _translate() async {
+  Future<void> _translate() async {
+    final text = _displayText;
+    if (text.isEmpty) return;
+
     if (_showTranslation) {
       setState(() => _showTranslation = false);
       return;
     }
-    if (_translatedText != null) {
+    if (_translatedText != null && _translationSourceText == text) {
       setState(() => _showTranslation = true);
       return;
     }
 
-    setState(() { _isTranslating = true; _showTranslation = true; });
+    setState(() {
+      _isTranslating = true;
+      _showTranslation = true;
+    });
     try {
-      final translation = await _translator.translate(widget.message.text, to: 'vi');
-      if (mounted) setState(() { _translatedText = translation.text; _isTranslating = false; });
+      final translation = await _translator.translate(text, to: 'vi');
+      if (mounted) {
+        setState(() {
+          _translatedText = translation.text;
+          _translationSourceText = text;
+          _isTranslating = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() { _translatedText = "Lỗi dịch thuật"; _isTranslating = false; });
+      if (mounted) {
+        setState(() {
+          _translatedText = "Lỗi dịch thuật";
+          _translationSourceText = text;
+          _isTranslating = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isUser = widget.message.role == MessageRole.user;
-    final isSystem = widget.message.role == MessageRole.system;
+    final isUser = widget.turn.role == MessageRole.user;
+    final scheme = Theme.of(context).colorScheme;
 
-    // System Bubble
-    if (isSystem) {
-      return Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            widget.message.text,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-        ),
-      );
-    }
-
-    // User & AI Bubble
     return Row(
       mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI Avatar
         if (!isUser)
           Container(
-            margin: const EdgeInsets.only(right: 12, top: 4),
-            width: 32, height: 32,
+            margin: const EdgeInsets.only(right: 10, top: 4),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppColors.border),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  T.AppColors.primary.withValues(alpha: 0.15),
+                  T.AppColors.secondary.withValues(alpha: 0.12),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: T.AppColors.outline),
             ),
-            child: const Icon(Icons.auto_awesome, color: AppColors.textMain, size: 16),
+            child: Icon(Icons.auto_awesome_rounded, color: T.AppColors.primary, size: 18),
           ),
-
-        // Nội dung
         Flexible(
           child: Column(
             crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isUser ? AppColors.primary : Colors.white,
-                  border: isUser ? null : Border.all(color: AppColors.border),
+                  color: isUser ? T.AppColors.primary : T.AppColors.surfaceCard,
+                  border: isUser ? null : Border.all(color: T.AppColors.outline),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(18),
-                    topRight: const Radius.circular(18),
-                    bottomLeft: Radius.circular(isUser ? 18 : 4),
-                    bottomRight: Radius.circular(isUser ? 4 : 18),
+                    topLeft: const Radius.circular(20),
+                    topRight: const Radius.circular(20),
+                    bottomLeft: Radius.circular(isUser ? 20 : 6),
+                    bottomRight: Radius.circular(isUser ? 6 : 20),
                   ),
-                  boxShadow: isUser ? [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 4))
-                  ] : [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))
+                  boxShadow: [
+                    BoxShadow(
+                      color: isUser
+                          ? T.AppColors.primary.withValues(alpha: 0.22)
+                          : Colors.black.withValues(alpha: 0.06),
+                      blurRadius: isUser ? 12 : 8,
+                      offset: const Offset(0, 2),
+                    ),
                   ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.message.text,
-                      style: TextStyle(
-                        fontSize: 15,
-                        height: 1.5,
-                        color: isUser ? Colors.white : AppColors.textMain,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _displayText.isEmpty ? '…' : _displayText,
+                            style: TextStyle(
+                              fontSize: 15,
+                              height: 1.5,
+                              color: isUser ? Colors.white : T.AppColors.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        if (!widget.turn.allFinal)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: AnimatedOpacity(
+                              opacity: 0.55,
+                              duration: const Duration(milliseconds: 400),
+                              child: Text(
+                                '…',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: isUser ? Colors.white70 : scheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-
-                    // Widget Dịch
                     if (_showTranslation) ...[
-                      const SizedBox(height: 8),
-                      Divider(height: 1, color: isUser ? Colors.white24 : Colors.black12),
+                      const SizedBox(height: 10),
+                      Divider(height: 1, color: isUser ? Colors.white24 : T.AppColors.outline),
                       const SizedBox(height: 8),
                       if (_isTranslating)
-                        SizedBox(height: 12, width: 12, child: CircularProgressIndicator(strokeWidth: 2, color: isUser ? Colors.white70 : Colors.grey))
+                        SizedBox(
+                          height: 14,
+                          width: 14,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: isUser ? Colors.white70 : T.AppColors.primary,
+                          ),
+                        )
                       else
                         Text(
                           _translatedText ?? "",
                           style: TextStyle(
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
-                            color: isUser ? Colors.white.withOpacity(0.9) : AppColors.textMuted,
+                            height: 1.45,
+                            color: isUser ? Colors.white.withValues(alpha: 0.92) : T.AppColors.textMuted,
                           ),
                         ),
-                    ]
+                    ],
                   ],
                 ),
               ),
-
-              // Công cụ (Loa & Dịch) - Chỉ hiện khi tin nhắn đã chốt (Final)
-              if (widget.message.isFinal)
+              if (widget.turn.allFinal && _displayText.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: 8),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -656,7 +952,7 @@ class _InteractiveMessageBubbleState extends State<_InteractiveMessageBubble> {
                         onTap: _speak,
                         active: _isPlaying,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       _ActionButton(
                         icon: Icons.translate_rounded,
                         onTap: _translate,
@@ -668,17 +964,17 @@ class _InteractiveMessageBubbleState extends State<_InteractiveMessageBubble> {
             ],
           ),
         ),
-
-        // User Avatar
         if (isUser)
           Container(
-            margin: const EdgeInsets.only(left: 12, top: 4),
-            width: 32, height: 32,
+            margin: const EdgeInsets.only(left: 10, top: 4),
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: T.AppColors.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: T.AppColors.primary.withValues(alpha: 0.25)),
             ),
-            child: const Icon(Icons.person, color: AppColors.primary, size: 18),
+            child: Icon(Icons.person_rounded, color: T.AppColors.primary, size: 20),
           ),
       ],
     );
@@ -700,13 +996,13 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: active ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
+          color: active ? T.AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: active ? AppColors.primary : AppColors.textMuted,
+          color: active ? T.AppColors.primary : T.AppColors.textMuted,
         ),
       ),
     );
@@ -732,7 +1028,7 @@ class _Waveform extends StatelessWidget {
           width: 3,
           height: 10 + (volume * 30 * scale),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.7),
+            color: T.AppColors.primary.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(2),
           ),
         );

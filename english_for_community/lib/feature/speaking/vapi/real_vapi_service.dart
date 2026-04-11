@@ -1,20 +1,27 @@
 // feature/speaking/vapi/real_vapi_service.dart
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:vapi/vapi.dart' as vapi_sdk;
 import 'vapi_service.dart';
 
 class RealVapiService implements VapiService {
-  final String publicKey = "c0e9f2a7-1c51-4511-a7cb-4b2aac7e96b0";
-  final String assistantId = "3d727e1d-d4c9-4693-8dab-8a547db715f3";
+  /// [vapiAssistantId] = ID assistant trên dashboard Vapi (không trùng tên với [VapiEnvConfig.assistantId] để tránh nhầm khi analyze).
+  RealVapiService({
+    required String publicKey,
+    required String vapiAssistantId,
+  })  : _publicKey = publicKey.trim(),
+        _assistantId = vapiAssistantId.trim();
 
-  late final vapi_sdk.VapiClient _client;
+  final String _publicKey;
+  final String _assistantId;
+
+  vapi_sdk.VapiClient? _client;
   vapi_sdk.VapiCall? _currentCall;
   final _controller = StreamController<VapiEvent>.broadcast();
 
-  RealVapiService() {
-    _client = vapi_sdk.VapiClient(publicKey);
-  }
+  bool get isConfigured =>
+      _publicKey.isNotEmpty && _assistantId.isNotEmpty;
 
   @override
   List<VapiVoice> getAvailableVoices() {
@@ -34,35 +41,40 @@ class RealVapiService implements VapiService {
 
   @override
   Future<void> start({String? voiceId}) async {
+    if (!isConfigured) {
+      _emit(
+        type: 'error',
+        data: {
+          'code': 'missing_config',
+          'message': 'Missing Vapi configuration.',
+        },
+      );
+      _emit(type: 'status', value: VapiCallStatus.disconnected);
+      return;
+    }
+
     _emit(type: 'status', value: VapiCallStatus.connecting);
     try {
-      // ⭐️ FIX: Khởi tạo là Map rỗng {} (Không dùng null)
-      Map<String, dynamic> overrides = {};
+      _client ??= vapi_sdk.VapiClient(_publicKey);
 
-      // 1. CHỈ thêm cấu hình Voice nếu có ID hợp lệ
+      Map<String, dynamic> overrides = {};
       if (voiceId != null && voiceId.isNotEmpty && voiceId != "default") {
-        print("🔹 Changing Voice to: $voiceId");
         overrides = {
           "voice": {
             "provider": "11labs",
             "voiceId": voiceId,
           }
         };
-      } else {
-        print("🔹 Using Default Assistant Voice");
       }
 
-      print("Vapi Config Payload: $overrides");
-
-      // 2. Bắt đầu cuộc gọi
-      _currentCall = await _client.start(
-        assistantId: assistantId,
-        assistantOverrides: overrides, // Bây giờ biến này là non-nullable Map
+      final call = _client!;
+      _currentCall = await call.start(
+        assistantId: _assistantId,
+        assistantOverrides: overrides,
       );
 
       _currentCall?.setMuted(false);
 
-      // ... (Phần lắng nghe sự kiện giữ nguyên như cũ)
       _currentCall?.onEvent.listen((vapi_sdk.VapiEvent event) {
         final label = event.label;
         final value = event.value;
@@ -75,25 +87,45 @@ class RealVapiService implements VapiService {
           _handleMessage(value);
         }
       });
-
-    } catch (e) {
-      print("🔴 Error Vapi Start: $e");
+    } catch (e, st) {
+      debugPrint('Vapi start error: $e\n$st');
+      _emit(
+        type: 'error',
+        data: {
+          'code': 'start_failed',
+          'message': e.toString(),
+        },
+      );
       _emit(type: 'status', value: VapiCallStatus.disconnected);
     }
   }
 
   @override
   Future<void> sendMessage(String text) async {
-    if (_currentCall == null) return;
+    if (_currentCall == null) {
+      _emit(
+        type: 'error',
+        data: {
+          'code': 'not_connected',
+          'message': 'No active call.',
+        },
+      );
+      return;
+    }
     try {
       _currentCall!.send({
         "type": "add-message",
         "message": {"role": "user", "content": text}
       });
-      // Tự hiển thị tin nhắn người dùng lên UI
       _emit(type: 'transcript', data: {'text': text, 'role': 'user', 'isFinal': true});
     } catch (e) {
-      print("Error sending message: $e");
+      _emit(
+        type: 'error',
+        data: {
+          'code': 'send_failed',
+          'message': e.toString(),
+        },
+      );
     }
   }
 
@@ -125,7 +157,7 @@ class RealVapiService implements VapiService {
   @override
   void dispose() {
     stop();
-    _client.dispose();
+    _client?.dispose();
     _controller.close();
   }
 
