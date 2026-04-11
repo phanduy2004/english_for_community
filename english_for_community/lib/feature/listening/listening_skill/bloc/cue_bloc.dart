@@ -25,28 +25,24 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     on<UpdateUserAnswer>(_onUpdateAnswer);
     on<LoadCommentsEvent>(_onLoadComments);
     on<PostCommentEvent>(_onPostComment);
-    on<IncomingSocketComment>(_onIncomingSocketComment); // 🔥 Thêm Handler này
+    on<IncomingSocketComment>(_onIncomingSocketComment);
     on<ReactToCommentEvent>(_onReactToComment);
     on<IncomingSocketReaction>(_onIncomingSocketReaction);
   }
+
   Future<void> _onReactToComment(ReactToCommentEvent event, Emitter<CueState> emit) async {
-    // 1. OPTIMISTIC UPDATE: Cập nhật UI ngay lập tức dựa trên event.userId
     final updatedComments = state.comments.map((c) {
       if (c.id == event.commentId) {
         final List<ReactionEntity> newReactions = List.from(c.reactions);
-
-        // Tìm xem user này đã thả emotion chưa
         final existingIndex = newReactions.indexWhere((r) => r.userId == event.userId);
 
         if (existingIndex != -1) {
-          // Nếu đã thả rồi
           if (newReactions[existingIndex].type == event.type) {
-            newReactions.removeAt(existingIndex); // Bấm lại nút cũ -> Xóa
+            newReactions.removeAt(existingIndex);
           } else {
-            newReactions[existingIndex] = ReactionEntity(userId: event.userId, type: event.type); // Bấm nút khác -> Đổi
+            newReactions[existingIndex] = ReactionEntity(userId: event.userId, type: event.type);
           }
         } else {
-          // Chưa thả -> Thêm mới
           newReactions.add(ReactionEntity(userId: event.userId, type: event.type));
         }
         return c.copyWith(reactions: newReactions);
@@ -56,21 +52,18 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
     emit(state.copyWith(comments: updatedComments));
 
-    // 2. GỌI API: Backend sẽ dùng Token để xác thực, userId gửi lên chỉ để validate
     final result = await listeningRepository.reactToComment(
       commentId: event.commentId,
       type: event.type.name,
     );
 
     result.fold(
-            (l) => print("❌ React failed: ${l.message}"), // Có thể revert UI ở đây nếu muốn
+            (l) => print("❌ React failed: ${l.message}"),
             (r) => null
     );
   }
 
-  // 2️⃣ Xử lý khi Socket trả về dữ liệu chuẩn từ Server
   void _onIncomingSocketReaction(IncomingSocketReaction event, Emitter<CueState> emit) {
-    // 🛡️ LỌC: Nếu Reaction này không thuộc Cue đang xem -> Bỏ qua
     if (state.currentCue == null || event.cueId != state.currentCue!.id) {
       return;
     }
@@ -84,30 +77,26 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
     emit(state.copyWith(comments: updatedComments));
   }
+
   void _onIncomingSocketComment(IncomingSocketComment event, Emitter<CueState> emit) {
-    // 🛡️ LỌC: Nếu Comment này không thuộc Cue đang xem -> Bỏ qua
     if (state.currentCue == null || event.cueId != state.currentCue!.id) {
       return;
     }
 
     final currentList = List<CommentEntity>.from(state.comments);
-    // Tránh duplicate (do mạng lag có thể nhận 2 lần)
     if (!currentList.any((c) => c.id == event.comment.id)) {
-      currentList.insert(0, event.comment); // Chèn lên đầu
+      currentList.insert(0, event.comment);
       emit(state.copyWith(comments: currentList));
     }
   }
 
   Future<void> _onLoad(LoadCuesAndAttempts e, Emitter<CueState> emit) async {
-    emit(state.copyWith(status: CueStatus.loading));
-    try {
-      final results = await Future.wait([
-        listeningRepository.getListeningById(e.listeningId),
-        listeningRepository.getDictationAttempts(e.listeningId)
-      ]);
+    // 🔥 CÚ CHỐT: Xóa sạch trí nhớ cũ, trả về state trắng tinh
+    emit(CueState.initial().copyWith(status: CueStatus.loading));
 
-      final listeningResult = results[0] as dynamic;
-      final attemptsResult = results[1] as dynamic;
+    try {
+      // 1. Lấy dữ liệu bài học (Không dùng Future.wait nữa)
+      final listeningResult = await listeningRepository.getListeningById(e.listeningId);
 
       List<CueEntity> cues = [];
       String? errorMsg;
@@ -121,47 +110,39 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
       cues.sort((a, b) => (a.startMs ?? 0).compareTo(b.startMs ?? 0));
 
-      final attempts = attemptsResult.fold(
-            (l) => <DictationAttemptEntity>[],
-            (r) => r as List<DictationAttemptEntity>,
-      );
-
       final latest = <int, DictationAttemptEntity>{};
       final completedSet = <int>{};
 
-      for (final a in attempts) {
-        if (a.cueIdx != null) {
-          int idx = a.cueIdx!;
-          if (idx >= 0 && idx < cues.length) {
-            latest[idx] = a;
-            final isPassed = (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
-            if (isPassed) completedSet.add(idx);
+      // 🔥 LOGIC RETAKE: Nếu KHÔNG PHẢI retake thì mới gọi API lấy lịch sử
+      if (!e.isRetake) {
+        final attemptsResult = await listeningRepository.getDictationAttempts(e.listeningId);
+
+        final attempts = attemptsResult.fold(
+              (l) => <DictationAttemptEntity>[],
+              (r) => r as List<DictationAttemptEntity>,
+        );
+
+        for (final a in attempts) {
+          if (a.cueIdx != null) {
+            int idx = a.cueIdx!;
+            if (idx >= 0 && idx < cues.length) {
+              latest[idx] = a;
+              final isPassed = (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
+              if (isPassed) completedSet.add(idx);
+            }
           }
         }
-      }
+      } // Nếu isRetake == true -> latest và completedSet sẽ hoàn toàn trống rỗng!
 
-      // 🔥 LOGIC CHỌN CUE BAN ĐẦU 🔥
+      // 🔥 LOGIC CHỌN CUE BAN ĐẦU
       int selectedIndex = 0;
 
-      // 1. Nếu có ID từ thông báo -> Ưu tiên tìm ID đó
       if (e.initialCueId != null && e.initialCueId!.isNotEmpty) {
-        // Log toàn bộ ID trong danh sách để so sánh
-        print("📋 [CueBloc] List of Cues IDs:");
-        for(var c in cues) {
-          print("   - ${c.id} (Match: ${c.id == e.initialCueId})");
-        }
-
         final foundIndex = cues.indexWhere((c) => c.id == e.initialCueId);
-
         if (foundIndex != -1) {
-          print("✅ [CueBloc] Found Match at Index: $foundIndex");
           selectedIndex = foundIndex;
-        } else {
-          print("⚠️ [CueBloc] NO MATCH FOUND!");
         }
-      }
-      // 2. Nếu không -> Tìm câu chưa làm đầu tiên
-      else {
+      } else {
         for (int i = 0; i < cues.length; i++) {
           if (!completedSet.contains(i)) {
             selectedIndex = i;
@@ -179,14 +160,13 @@ class CueBloc extends Bloc<CueEvent, CueState> {
         status: CueStatus.success,
         listeningId: e.listeningId,
         cues: cues,
-        selectedIndex: selectedIndex, // Index đã được tính toán ở trên
+        selectedIndex: selectedIndex,
         userAnswer: initialText,
         latestAttempts: latest,
         completedIdx: completedSet,
         justCompletedAll: completedSet.length >= cues.length,
       ));
 
-      // Load comment cho Cue được chọn
       if (cues.isNotEmpty) {
         add(LoadCommentsEvent(cues[selectedIndex].id));
       }
@@ -200,7 +180,6 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
     final int pageToLoad = event.isLoadMore ? state.commentPage + 1 : 1;
 
-    // Nếu load more mà đã hết dữ liệu thì dừng
     if (event.isLoadMore && state.hasReachedMaxComments) return;
 
     if (!event.isLoadMore) {
@@ -212,11 +191,8 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     result.fold(
           (failure) => emit(state.copyWith(isCommentsLoading: false)),
           (newComments) {
-        // Backend trả về Mới nhất -> Cũ nhất.
-
         List<CommentEntity> combinedList;
         if (event.isLoadMore) {
-          // Khi load more (kéo lên trên), ta thêm tin cũ vào SAU danh sách hiện tại
           combinedList = List.from(state.comments)..addAll(newComments);
         } else {
           combinedList = newComments;
@@ -231,9 +207,8 @@ class CueBloc extends Bloc<CueEvent, CueState> {
       },
     );
   }
-  Future<void> _onPostComment(
-      PostCommentEvent event, Emitter<CueState> emit) async {
-    // 🔥 Check Safety: Đảm bảo currentCue không null
+
+  Future<void> _onPostComment(PostCommentEvent event, Emitter<CueState> emit) async {
     final cue = state.currentCue;
     if (cue == null || state.listeningId.isEmpty) {
       return;
@@ -241,23 +216,22 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
     final result = await listeningRepository.postComment(
       listeningId: state.listeningId,
-      cueId: cue.id, // 🔥 Sử dụng biến local cue đã check null
+      cueId: cue.id,
       content: event.content,
       parentId: event.parentId,
     );
 
     result.fold((failure) => print("❌ Post comment failed: ${failure.message}"),
-        (newComment) {
-      // 🔥 QUAN TRỌNG: Tạo List mới để Bloc nhận diện thay đổi
-      final currentList = state.comments;
-      final exists = currentList.any((c) => c.id == newComment.id);
+            (newComment) {
+          final currentList = state.comments;
+          final exists = currentList.any((c) => c.id == newComment.id);
 
-      if (!exists) {
-        final updatedList = List<CommentEntity>.from(currentList);
-        updatedList.add(newComment);
-        emit(state.copyWith(comments: updatedList));
-      }
-    });
+          if (!exists) {
+            final updatedList = List<CommentEntity>.from(currentList);
+            updatedList.add(newComment);
+            emit(state.copyWith(comments: updatedList));
+          }
+        });
   }
 
   Future<SubmitResult> submitCue({
@@ -282,18 +256,17 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     );
 
     return result.fold(
-      (l) => SubmitResult(passed: false, wer: 0, cer: 0),
-      (data) {
+          (l) => SubmitResult(passed: false, wer: 0, cer: 0),
+          (data) {
         final details = data['details'] as List? ?? [];
         final myResult = details.firstWhere(
-          (e) => e['cueIdx'] == cueIdx,
+              (e) => e['cueIdx'] == cueIdx,
           orElse: () => {},
         );
 
         final isCorrect = myResult['isCorrect'] == true;
 
-        final newLatest =
-            Map<int, DictationAttemptEntity>.from(state.latestAttempts);
+        final newLatest = Map<int, DictationAttemptEntity>.from(state.latestAttempts);
         newLatest[cueIdx] = DictationAttemptEntity(
           id: 'local_${DateTime.now().millisecondsSinceEpoch}',
           listeningId: listeningId,
@@ -305,8 +278,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
         final newCompleted = Set<int>.from(state.completedIdx);
         if (isCorrect) newCompleted.add(cueIdx);
 
-        final isAllDone =
-            state.cues.isNotEmpty && newCompleted.length == state.cues.length;
+        final isAllDone = state.cues.isNotEmpty && newCompleted.length == state.cues.length;
 
         emit(state.copyWith(
           latestAttempts: newLatest,
@@ -342,7 +314,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     emit(state.copyWith(
       selectedIndex: idx,
       userAnswer: savedText,
-      comments: [], // Clear comment cũ
+      comments: [],
     ));
 
     add(LoadCommentsEvent(newCue.id));

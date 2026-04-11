@@ -24,9 +24,9 @@ class _ReadingListPageState extends State<ReadingListPage> {
 
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB); // Zinc-50
-    const borderCol = Color(0xFFE4E4E7); // Zinc-200
-    const textMain = Color(0xFF09090B); // Zinc-950
+    const bgPage = Color(0xFFF9FAFB);
+    const borderCol = Color(0xFFE4E4E7);
+    const textMain = Color(0xFF09090B);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
     return BlocProvider(
@@ -104,7 +104,8 @@ class _ReadingListPageState extends State<ReadingListPage> {
                                 itemBuilder: (context, index) => _ReadingCard(
                                   reading: state.readings[index],
                                   primaryColor: primaryColor,
-                                  onAction: () => _handleAction(context, blocContext, state.readings[index]),
+                                  // 🔥 ĐÃ SỬA: onAction giờ nhận tham số bool isRetake
+                                  onAction: (isRetake) => _handleAction(context, blocContext, state.readings[index], isRetake: isRetake),
                                 ),
                               );
                             },
@@ -130,11 +131,13 @@ class _ReadingListPageState extends State<ReadingListPage> {
     ));
   }
 
-  void _handleAction(BuildContext context, BuildContext blocContext, ReadingEntity reading) {
+  // 🔥 ĐÃ SỬA: Thêm tham số isRetake vào hàm này
+  void _handleAction(BuildContext context, BuildContext blocContext, ReadingEntity reading, {bool isRetake = false}) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ReadingDetailPage(reading: reading),
+        // 🔥 Truyền isRetake sang trang Detail
+        builder: (_) => ReadingDetailPage(reading: reading, isRetake: isRetake),
       ),
     ).then((_) {
       if (context.mounted) {
@@ -154,7 +157,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         gradient: const LinearGradient(
-          colors: [Color(0xFF18181B), Color(0xFF27272A)], // Zinc Dark Gradient
+          colors: [Color(0xFF18181B), Color(0xFF27272A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -283,7 +286,8 @@ class _ReadingCard extends StatelessWidget {
   });
 
   final ReadingEntity reading;
-  final VoidCallback onAction;
+  // 🔥 ĐÃ SỬA: callback giờ nhận tham số bool
+  final void Function(bool isRetake) onAction;
   final Color primaryColor;
 
   String _getLevelText(ReadingDifficulty? difficulty) {
@@ -333,7 +337,7 @@ class _ReadingCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: onAction,
+          onTap: () => onAction(false), // Nhấn vào thẻ bài mặc định là Start/Review
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -421,33 +425,60 @@ class _ReadingCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    SizedBox(
-                      height: 32,
-                      child: isCompleted
-                          ? OutlinedButton(
-                        onPressed: onAction,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: primaryColor,
-                          side: BorderSide(color: primaryColor.withOpacity(0.5)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
-                        child: const Text('Review'),
+
+                    // 🔥 NÚT BẤM REVIEW & RETAKE
+                    if (isCompleted)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 32,
+                            child: OutlinedButton.icon(
+                              onPressed: () => onAction(false), // Review
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textMuted,
+                                side: const BorderSide(color: borderCol),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: () => onAction(true), // Retake
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor.withOpacity(0.1),
+                                foregroundColor: primaryColor,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.replay, size: 16),
+                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ],
                       )
-                          : ElevatedButton(
-                        onPressed: onAction,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    else
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton(
+                          onPressed: () => onAction(false), // Start
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                          child: const Text('Start'),
                         ),
-                        child: const Text('Start'),
                       ),
-                    ),
                   ],
                 ),
               ],

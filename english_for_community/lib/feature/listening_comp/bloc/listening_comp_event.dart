@@ -10,10 +10,12 @@ abstract class ListeningCompEvent extends Equatable {
 // Gọi khi mở màn hình tải đề bài & check lịch sử
 class FetchListeningCompDetail extends ListeningCompEvent {
   final String id;
-  const FetchListeningCompDetail(this.id);
+  final bool isRetake; // 🔥 THÊM DÒNG NÀY
+
+  const FetchListeningCompDetail(this.id, {this.isRetake = false}); // Mặc định là false
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [id, isRetake];
 }
 
 // Gọi khi nộp bài
