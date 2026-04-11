@@ -4,6 +4,8 @@
 <dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>This app needs microphone access.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Ứng dụng dùng nhận dạng giọng nói để chấm điểm bài nói tiếng Anh của bạn.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>This app needs photo library access.</string>
     <key>NSCameraUsageDescription</key>

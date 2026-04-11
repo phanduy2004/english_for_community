@@ -10,4 +10,18 @@ abstract class HistoryRepository {
     required DateTime end,
     String? userId,
   });
-  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type, {String? subType});}
+
+  Future<Either<Failure, dynamic>> getActivityDetail(String id, ActivityType type, {String? subType});
+
+  /// Lịch sử bài tập của user đang đăng nhập (có phân trang)
+  Future<Either<Failure, ActivityHistoryListResult>> getMyHistory({
+    required DateTime start,
+    required DateTime end,
+    ActivityType? skillFilter,
+    int page = 1,
+    int limit = 20,
+    String sort = 'desc',
+  });
+
+  Future<Either<Failure, dynamic>> getMyActivityDetail(String id, ActivityType type, {String? subType});
+}

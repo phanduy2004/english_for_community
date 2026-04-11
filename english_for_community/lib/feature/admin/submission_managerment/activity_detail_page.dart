@@ -25,6 +25,9 @@ class ActivityDetailPage extends StatelessWidget {
   // 🔥 THÊM THUỘC TÍNH NÀY ĐỂ PHÂN BIỆT DICTATION VÀ COMPREHENSION
   final String? subType;
 
+  /// User xem lại bài của chính mình → API `/users/me/activities/...`
+  final bool useUserActivityApi;
+
   const ActivityDetailPage({
     super.key,
     required this.id,
@@ -32,13 +35,20 @@ class ActivityDetailPage extends StatelessWidget {
     this.summaryTitle,
     this.summaryDate,
     this.subType, // Truyền từ ActivityHistoryPage sang
+    this.useUserActivityApi = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       // Truyền thêm subType vào event để BLoC biết đường gọi API
-      create: (context) => ActivityDetailBloc()..add(FetchActivityDetailEvent(id: id, type: type, subType: subType)),
+      create: (context) => ActivityDetailBloc()
+        ..add(FetchActivityDetailEvent(
+          id: id,
+          type: type,
+          subType: subType,
+          useUserActivityApi: useUserActivityApi,
+        )),
       child: Scaffold(
         backgroundColor: kBgPage,
         appBar: AppBar(

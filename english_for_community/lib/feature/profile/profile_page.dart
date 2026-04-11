@@ -10,6 +10,7 @@ import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
 import '../auth/login_page.dart';
 import 'change_password_dialog.dart';
+import 'my_exercise_history/my_exercise_history_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -284,6 +285,21 @@ class _ProfilePageState extends State<ProfilePage> {
                           onTap: () => _showTimePicker(context, reminderTimeVal),
                         ),
                       ],
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // --- EXERCISE HISTORY ---
+                  const _SectionTitle('PROGRESS'),
+                  _ShadcnGroup(
+                    children: [
+                      _SettingsTile(
+                        icon: Icons.history_rounded,
+                        title: 'Exercise history',
+                        subtitle: 'Past attempts by skill',
+                        onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
+                      ),
                     ],
                   ),
 

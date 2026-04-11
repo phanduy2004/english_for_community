@@ -13,12 +13,16 @@ class FetchActivityDetailEvent extends ActivityDetailEvent {
   final ActivityType type;
   final String? subType;
 
+  /// `true` → gọi `GET /api/users/me/activities/:id` (user xem bài của mình)
+  final bool useUserActivityApi;
+
   const FetchActivityDetailEvent({
     required this.id,
     required this.type,
     this.subType,
+    this.useUserActivityApi = false,
   });
 
   @override
-  List<Object?> get props => [id, type, subType];
+  List<Object?> get props => [id, type, subType, useUserActivityApi];
 }

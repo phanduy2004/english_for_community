@@ -119,4 +119,102 @@ class HistoryRepositoryImpl implements HistoryRepository {
       return Left(ServerFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, ActivityHistoryListResult>> getMyHistory({
+    required DateTime start,
+    required DateTime end,
+    ActivityType? skillFilter,
+    int page = 1,
+    int limit = 20,
+    String sort = 'desc',
+  }) async {
+    try {
+      final result = await historyRemoteDatasource.getMyHistory(
+        startDate: start,
+        endDate: end,
+        skillFilter: skillFilter,
+        page: page,
+        limit: limit,
+        sort: sort,
+      );
+      return Right(result);
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, dynamic>> getMyActivityDetail(String id, ActivityType type, {String? subType}) async {
+    try {
+      final json = await historyRemoteDatasource.getMyActivityDetail(id, type.name, subType: subType);
+
+      switch (type) {
+        case ActivityType.writing:
+          return Right(WritingSubmissionEntity.fromJson(json));
+
+        case ActivityType.reading:
+          return Right(ReadingAttemptEntity.fromJson(json));
+
+        case ActivityType.speaking:
+          final List<dynamic> rawSentences = json['sentences'] ?? [];
+
+          final sentencesEntity = rawSentences.map((s) {
+            final List<dynamic> rawHistory = s['history'] ?? [];
+
+            final historyEntities = rawHistory.map((h) {
+              return SpeakingAttemptEntity(
+                id: h['_id'] ?? '',
+                sentenceId: h['sentenceId'] ?? s['id'] ?? '',
+                userTranscript: h['userTranscript'],
+                userAudioUrl: h['userAudioUrl'],
+                audioDurationSeconds: (h['audioDurationSeconds'] as num?)?.toInt(),
+                score: h['score'] != null
+                    ? SpeakingScoreEntity.fromJson(h['score'])
+                    : const SpeakingScoreEntity(wer: 1.0, confidence: 0.0),
+                submittedAt: DateTime.tryParse(h['submittedAt'] ?? ''),
+              );
+            }).toList();
+
+            return SentenceEntity(
+              id: s['id'] ?? '',
+              order: (s['order'] as num?)?.toInt() ?? 0,
+              speaker: s['speaker'] ?? '',
+              script: s['script'] ?? '',
+              phoneticScript: s['phonetic_script'] ?? '',
+              history: historyEntities,
+            );
+          }).toList();
+
+          return Right(SpeakingSetEntity(
+            id: json['_id'] ?? '',
+            title: json['title'] ?? 'Speaking Detail',
+            description: json['description'] ?? '',
+            level: json['level'] ?? 'Beginner',
+            mode: json['mode'] ?? 'readAloud',
+            sentences: sentencesEntity,
+            totalSentences: sentencesEntity.length,
+          ));
+
+        case ActivityType.listening:
+          if (subType == 'Comprehension') {
+            final attempt = ListeningCompAttemptResult.fromJson(json);
+            final detail = ListeningCompEntity.fromJson(json['listeningId']);
+            return Right({
+              'attempt': attempt,
+              'detail': detail,
+            });
+          } else {
+            final List<dynamic> attemptsJson = json['attemptsDetail'] ?? [];
+            final attempts = attemptsJson.map((e) => DictationAttemptEntity.fromJson(e)).toList();
+            return Right(attempts);
+          }
+
+        default:
+          return Left(ServerFailure(message: "Unsupported type"));
+      }
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
 }

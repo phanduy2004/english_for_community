@@ -24,18 +24,17 @@ class ActivityDetailBloc extends Bloc<ActivityDetailEvent, ActivityDetailState> 
       ) async {
     emit(state.copyWith(status: DetailStatus.loading));
 
-    // Nếu là Comprehension, truyền type = ActivityType.listening nhưng kèm chuỗi nhận diện để Repository tự hiểu
-    // (Đây là cách fix nhanh nếu bạn chưa rảnh sửa HistoryRepositoryImpl)
-    String typeString = event.type.name; // 'listening', 'reading',...
-    if (event.subType == 'Comprehension') {
-      typeString = 'listening-comprehension';
-    }
-
-    final result = await _repository.getActivityDetail(
-      event.id,
-      event.type,
-      subType: event.subType, // 🔥 Đưa cái subType này vào!
-    );
+    final result = event.useUserActivityApi
+        ? await _repository.getMyActivityDetail(
+            event.id,
+            event.type,
+            subType: event.subType,
+          )
+        : await _repository.getActivityDetail(
+            event.id,
+            event.type,
+            subType: event.subType,
+          );
     result.fold(
           (failure) => emit(state.copyWith(
           status: DetailStatus.error,

@@ -150,10 +150,36 @@ const adminDelete = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Đọc .env an toàn: trim + bỏ BOM; tránh giá trị rỗng do khoảng trắng sau dấu "=" trong .env
+const _envTrim = (key) => {
+  const raw = process.env[key];
+  if (raw == null) return '';
+  return String(raw).replace(/^\uFEFF/, '').trim();
+};
+
+// Cấu hình Vapi cho app Free Speaking — key giữ trên server, không hardcode trong Flutter release.
+const getVapiConfig = async (req, res) => {
+  try {
+    const publicKey = _envTrim('VAPI_PUBLIC_KEY');
+    const assistantId = _envTrim('VAPI_ASSISTANT_ID');
+    if (!publicKey || !assistantId) {
+      return res.status(503).json({
+        message: 'Voice chat is not configured. Set VAPI_PUBLIC_KEY and VAPI_ASSISTANT_ID on the server.',
+      });
+    }
+    res.status(200).json({ publicKey, assistantId });
+  } catch (error) {
+    console.error('getVapiConfig:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 export const speakingController = {
   getSpeakingSetsWithProgress,
   getSpeakingSetDetails,
   submitAttempt,
+  getVapiConfig,
   admin: {
     getList: adminGetList,
     getDetail: adminGetDetail,

@@ -43,6 +43,7 @@ import '../../feature/admin/user_management/user_management_page.dart';
 // 👇 IMPORT CÁC PAGE QUẢN LÝ NỘI DUNG MỚI
 import '../../feature/admin/content_management/content_dashboard_page.dart';
 import '../../feature/home/home_page.dart';
+import '../../feature/profile/my_exercise_history/my_exercise_history_page.dart';
 import '../../feature/profile/profile_page.dart';
 import '../../feature/profile/edit_profile_page.dart';
 import '../../feature/progress/progress_report_page.dart' hide AdminDashboardPage;
@@ -334,6 +335,11 @@ class AppRouter {
         path: ProgressReportPage.routePath,
         name: ProgressReportPage.routeName,
         builder: (context, state) => const ProgressReportPage(),
+      ),
+      GoRoute(
+        path: MyExerciseHistoryPage.routePath,
+        name: MyExerciseHistoryPage.routeName,
+        builder: (context, state) => const MyExerciseHistoryPage(),
       ),
       // --- Listening ---
       // --- Listening Dictation ---

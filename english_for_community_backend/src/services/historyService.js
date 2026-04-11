@@ -370,4 +370,95 @@ const getActivityDetail = async (id, type, subType) => {
   }
 };
 
-export default { getHistory, getActivityDetail };
+/**
+ * Danh sách lịch sử có phân trang (slice sau khi merge + sort).
+ * Chỉ dùng khi đã có targetUserId (luồng user xem chính mình).
+ */
+const getHistoryPaginated = async (
+  targetUserId,
+  startDate,
+  endDate,
+  filterType,
+  options = {},
+) => {
+  if (!targetUserId) {
+    throw new Error('targetUserId is required for paginated history');
+  }
+
+  const page = Math.max(1, parseInt(options.page, 10) || 1);
+  const limit = Math.min(Math.max(1, parseInt(options.limit, 10) || 20), 100);
+  const sort = options.sort === 'asc' ? 'asc' : 'desc';
+
+  const all = await getHistory(targetUserId, startDate, endDate, filterType);
+  const total = all.length;
+
+  let ordered = [...all];
+  if (sort === 'asc') ordered.reverse();
+
+  const startIdx = (page - 1) * limit;
+  const slice = ordered.slice(startIdx, startIdx + limit);
+  const hasMore = startIdx + slice.length < total;
+
+  return {
+    data: slice,
+    total,
+    page,
+    limit,
+    hasMore,
+  };
+};
+
+const assertActivityOwnedByUser = async (activityId, type, subType, requestUserId) => {
+  const uid = requestUserId.toString();
+
+  if (type === 'writing') {
+    const doc = await WritingSubmission.findById(activityId).select('userId').lean();
+    if (!doc) throw new Error('Activity not found');
+    if (doc.userId.toString() !== uid) throw new Error('Forbidden');
+    return;
+  }
+
+  if (type === 'reading') {
+    const doc = await ReadingProgress.findById(activityId).select('userId').lean();
+    if (!doc) throw new Error('Activity not found');
+    if (doc.userId.toString() !== uid) throw new Error('Forbidden');
+    return;
+  }
+
+  if (type === 'speaking') {
+    const doc = await SpeakingEnrollment.findById(activityId).select('userId').lean();
+    if (!doc) throw new Error('Activity not found');
+    if (doc.userId.toString() !== uid) throw new Error('Forbidden');
+    return;
+  }
+
+  if (type === 'listening') {
+    if (subType === 'Comprehension') {
+      const doc = await ListeningCompAttempt.findById(activityId).select('userId').lean();
+      if (!doc) throw new Error('Activity not found');
+      if (doc.userId.toString() !== uid) throw new Error('Forbidden');
+      return;
+    }
+    const doc = await Enrollment.findById(activityId).select('userId').lean();
+    if (!doc) throw new Error('Activity not found');
+    if (doc.userId.toString() !== uid) throw new Error('Forbidden');
+    return;
+  }
+
+  throw new Error('Invalid activity type');
+};
+
+/**
+ * Chi tiết bài làm chỉ khi bản ghi thuộc về requestUserId.
+ */
+const getActivityDetailForUser = async (activityId, type, subType, requestUserId) => {
+  await assertActivityOwnedByUser(activityId, type, subType, requestUserId);
+  return getActivityDetail(activityId, type, subType);
+};
+
+export default {
+  getHistory,
+  getActivityDetail,
+  getHistoryPaginated,
+  getActivityDetailForUser,
+};

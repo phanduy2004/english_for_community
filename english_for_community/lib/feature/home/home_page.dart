@@ -11,7 +11,14 @@ import '../../core/notification/local_notification_service.dart';
 import '../../core/repository/user_repository.dart';
 import '../../core/repository/user_vocab_repository.dart';
 import '../../core/socket/socket_service.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/ui/animation/animated_status_container.dart';
+import '../../core/ui/interactive/scale_pressable.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
+import '../../core/ui/widget/app_skeleton.dart';
+import '../progress/bloc/progress_bloc.dart';
+import '../progress/bloc/progress_event.dart';
+import 'widgets/home_study_dashboard.dart';
 import '../../core/entity/notification_entity.dart';
 
 // --- Feature Imports ---
@@ -24,7 +31,7 @@ import 'notification_dialog.dart';
 import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
-import '../listening/list_listening/listening_list_page.dart';
+import '../profile/my_exercise_history/my_exercise_history_page.dart';
 import '../profile/profile_page.dart';
 import '../progress/progress_report_page.dart';
 import '../reading/reading_list_page.dart';
@@ -49,20 +56,23 @@ class _HomePageState extends State<HomePage> {
   int _tab = 0;
   late final NotificationBloc _notificationBloc;
   bool _isSocketSetup = false;
-
-  final List<Widget> _pages = [
-    const _HomeContentView(),
-    const ProgressReportPage(),
-    BlocProvider.value(
-      value: GetIt.I<UserBloc>(),
-      child: const ProfilePage(),
-    ),
-  ];
+  late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
     _notificationBloc = GetIt.I<NotificationBloc>();
+    _pages = [
+      _HomeContentView(
+        onOpenNotifications: _openNotifications,
+        onOpenAiAssistant: _openAiAssistant,
+      ),
+      const ProgressReportPage(),
+      BlocProvider.value(
+        value: GetIt.I<UserBloc>(),
+        child: const ProfilePage(),
+      ),
+    ];
     _notificationBloc.add(const NotificationLoadStarted());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -116,7 +126,7 @@ class _HomePageState extends State<HomePage> {
             'audioUrl': audioUrl,
             'targetCommentId': commentId,
             'cueId': cueId,
-            'openDiscussion': true,
+            'openDiscussion': openDiscussion,
           },
         );
       }
@@ -279,7 +289,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss',
-      barrierColor: Colors.black.withOpacity(0.2),
+      barrierColor: Colors.black.withValues(alpha: 0.2),
       transitionDuration: const Duration(milliseconds: 250),
       pageBuilder: (context, anim1, anim2) => FadeTransition(
         opacity: anim1,
@@ -293,7 +303,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       barrierDismissible: true,
       barrierLabel: 'Dismiss',
-      barrierColor: Colors.black.withOpacity(0.2),
+      barrierColor: Colors.black.withValues(alpha: 0.2),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, anim1, anim2) => FadeTransition(
         opacity: anim1,
@@ -323,11 +333,10 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
         child: Scaffold(
-          backgroundColor: const Color(0xFFF9FAFB),
+          backgroundColor: AppColors.surface,
           body: SafeArea(
             child: IndexedStack(index: _tab, children: _pages),
           ),
-          floatingActionButton: _tab == 0 ? _buildHomeFABs() : null,
           bottomNavigationBar: AppNavigationBar.main(
             currentIndex: _tab,
             onIndexSelected: (i) {
@@ -340,150 +349,278 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+}
 
-  Widget _buildHomeFABs() {
-    const double buttonSize = 48.0;
-    const double iconSize = 22.0;
+// ============================================================================
+// 2. HOME HEADER ACTIONS (thông báo + AI — cùng hàng avatar, đối xứng nội dung)
+// ============================================================================
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        BlocBuilder<NotificationBloc, NotificationState>(
-          builder: (context, state) {
-            return SizedBox(
-              width: buttonSize, height: buttonSize,
-              child: Stack(
-                clipBehavior: Clip.none,
-                alignment: Alignment.center,
-                children: [
-                  FloatingActionButton(
-                    heroTag: "btn_notification",
-                    onPressed: _openNotifications,
-                    backgroundColor: Colors.white,
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(buttonSize / 2),
-                      side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
-                    ),
-                    child: const Icon(Icons.notifications_outlined, color: Color(0xFF09090B), size: iconSize),
+class _HomeHeaderNotificationButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _HomeHeaderNotificationButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    const double size = 44;
+    const double iconSize = 20;
+    return BlocBuilder<NotificationBloc, NotificationState>(
+      builder: (context, state) {
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              Material(
+                color: Colors.white,
+                elevation: 2,
+                shadowColor: Colors.black.withValues(alpha: 0.12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(size / 2),
+                  side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
+                ),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onPressed,
+                  child: const SizedBox(
+                    width: size,
+                    height: size,
+                    child: Icon(Icons.notifications_outlined, color: Color(0xFF09090B), size: iconSize),
                   ),
-                  if (state.unreadCount > 0)
-                    Positioned(
-                      top: -2, right: -2,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                        constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 2, offset: const Offset(0, 1))],
+                ),
+              ),
+              if (state.unreadCount > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
                         ),
-                        child: Center(
-                          child: Text(
-                            state.unreadCount > 99 ? '99+' : '${state.unreadCount}',
-                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700, height: 1.0),
-                          ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        state.unreadCount > 99 ? '99+' : '${state.unreadCount}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          height: 1.0,
                         ),
                       ),
                     ),
-                ],
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: buttonSize, height: buttonSize,
-          child: FloatingActionButton(
-            heroTag: "btn_ai_assistant",
-            onPressed: _openAiAssistant,
-            backgroundColor: const Color(0xFF09090B),
-            elevation: 4,
-            shape: const CircleBorder(),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: iconSize),
+                  ),
+                ),
+            ],
           ),
+        );
+      },
+    );
+  }
+}
+
+class _HomeHeaderAiButton extends StatelessWidget {
+  final VoidCallback onPressed;
+
+  const _HomeHeaderAiButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    const double size = 44;
+    const double iconSize = 20;
+    return Material(
+      color: const Color(0xFF09090B),
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.2),
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: const SizedBox(
+          width: size,
+          height: size,
+          child: Icon(Icons.auto_awesome, color: Colors.white, size: iconSize),
         ),
-      ],
+      ),
     );
   }
 }
 
 // ============================================================================
-// 2. HOME CONTENT VIEW
+// 3. HOME CONTENT VIEW
 // ============================================================================
 
 class _HomeContentView extends StatelessWidget {
-  const _HomeContentView();
+  final VoidCallback onOpenNotifications;
+  final VoidCallback onOpenAiAssistant;
+
+  const _HomeContentView({
+    required this.onOpenNotifications,
+    required this.onOpenAiAssistant,
+  });
 
   @override
   Widget build(BuildContext context) {
     final showAllLessons = ValueNotifier<bool>(false);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final scheme = Theme.of(context).colorScheme;
+    final textMain = scheme.onSurface;
+    final textMuted = scheme.onSurfaceVariant;
+    final primaryColor = scheme.primary;
 
     return BlocBuilder<UserBloc, UserState>(
       builder: (context, state) {
-        if (state.status == UserStatus.initial || state.status == UserStatus.loading) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-        }
-        if (state.status == UserStatus.error) {
-          return const Center(child: Text('Unable to load data', style: TextStyle(color: textMuted)));
-        }
-        if (state.status == UserStatus.unauthenticated) {
-          return const Center(child: Text('Please sign in'));
-        }
+        final statusKey =
+            '${state.status.name}_${state.userEntity?.id ?? 'x'}_${state.errorMessage ?? ''}';
 
-        if (state.status == UserStatus.success && state.userEntity != null) {
-          final user = state.userEntity!;
-
-          final int dailyProgress = user.dailyActivityProgress ?? 0;
-          // 🔥 Lấy goal từ user.dailyLessonGoal, mặc định là 5 nếu chưa set
-          final int dailyGoal = user.dailyLessonGoal ?? 5;
-          final double progressValue = (dailyGoal > 0) ? (dailyProgress / dailyGoal).clamp(0.0, 1.0) : 0.0;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(user.fullName, user.avatarUrl),
-                const SizedBox(height: 12),
-                _buildDailyGoalCard(dailyProgress, dailyGoal, progressValue, textMain, textMuted, primaryColor),
-                const SizedBox(height: 16),
-                _buildStatsRow(user),
-                const SizedBox(height: 32),
-                _buildLessonsSection(context, showAllLessons, textMain, primaryColor),
-                const SizedBox(height: 32),
-                _buildQuickActionsSection(textMain),
-              ],
-            ),
-          );
-        }
-        return const Center(child: Text('No data available'));
+        return AnimatedStatusContainer(
+          statusKey: statusKey,
+          child: _homeBodyForState(
+            context,
+            state,
+            showAllLessons,
+            textMain,
+            textMuted,
+            primaryColor,
+            onOpenNotifications,
+            onOpenAiAssistant,
+          ),
+        );
       },
     );
   }
 
-  Widget _buildHeader(String name, String? avatarUrl) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Hi, $name 👋', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF09090B), letterSpacing: -0.5)),
-            const SizedBox(height: 4),
-            const Text('Ready to continue learning?', style: TextStyle(fontSize: 14, color: Color(0xFF71717A))),
-          ],
+  Widget _homeBodyForState(
+    BuildContext context,
+    UserState state,
+    ValueNotifier<bool> showAllLessons,
+    Color textMain,
+    Color textMuted,
+    Color primaryColor,
+    VoidCallback onOpenNotifications,
+    VoidCallback onOpenAiAssistant,
+  ) {
+    if (state.status == UserStatus.initial || state.status == UserStatus.loading) {
+      return const HomeContentSkeleton();
+    }
+    if (state.status == UserStatus.error) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: SoftErrorBanner(
+            message: state.errorMessage ?? 'Unable to load data',
+            onRetry: () => context.read<UserBloc>().add(GetProfileEvent()),
+          ),
         ),
+      );
+    }
+    if (state.status == UserStatus.unauthenticated) {
+      return Center(
+        child: Text(
+          'Please sign in',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      );
+    }
+
+    if (state.status == UserStatus.success && state.userEntity != null) {
+      final user = state.userEntity!;
+
+      final int dailyProgress = user.dailyActivityProgress ?? 0;
+      final int dailyGoal = user.dailyLessonGoal ?? 5;
+      final double progressValue =
+          (dailyGoal > 0) ? (dailyProgress / dailyGoal).clamp(0.0, 1.0) : 0.0;
+
+      return BlocProvider(
+        create: (_) => GetIt.I<ProgressBloc>()..add(const FetchProgressData(range: 'week')),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(
+                context,
+                user.fullName,
+                user.avatarUrl,
+                onOpenNotifications: onOpenNotifications,
+                onOpenAiAssistant: onOpenAiAssistant,
+              ),
+              const SizedBox(height: 12),
+              _buildDailyGoalCard(
+                  dailyProgress, dailyGoal, progressValue, textMain, textMuted, primaryColor),
+              const SizedBox(height: 16),
+              HomeStudyDashboard(
+                streak: user.currentStreak ?? 0,
+                dailyProgress: dailyProgress,
+                dailyGoal: dailyGoal,
+                textMain: textMain,
+                textMuted: textMuted,
+                primaryColor: primaryColor,
+              ),
+              const SizedBox(height: 16),
+              _buildStatsRow(user),
+              const SizedBox(height: 32),
+              _buildLessonsSection(context, showAllLessons, textMain, primaryColor),
+              const SizedBox(height: 32),
+              _buildQuickActionsSection(context, textMain),
+            ],
+          ),
+        ),
+      );
+    }
+    return Center(
+      child: Text('No data available', style: Theme.of(context).textTheme.bodyMedium),
+    );
+  }
+
+  Widget _buildHeader(
+    BuildContext context,
+    String name,
+    String? avatarUrl, {
+    required VoidCallback onOpenNotifications,
+    required VoidCallback onOpenAiAssistant,
+  }) {
+    final tt = Theme.of(context).textTheme;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hi, $name 👋',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: tt.titleLarge?.copyWith(letterSpacing: -0.5),
+              ),
+              const SizedBox(height: 4),
+              Text('Ready to continue learning?', style: tt.bodySmall),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _HomeHeaderNotificationButton(onPressed: onOpenNotifications),
+        const SizedBox(width: 6),
+        _HomeHeaderAiButton(onPressed: onOpenAiAssistant),
+        const SizedBox(width: 8),
         Container(
-          width: 48, height: 48,
+          width: 48,
+          height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE4E4E7), width: 2),
+            border: Border.all(color: AppColors.outline, width: 2),
             image: DecorationImage(
               image: (avatarUrl != null && avatarUrl.startsWith('http'))
                   ? NetworkImage(avatarUrl)
@@ -499,34 +636,41 @@ class _HomeContentView extends StatelessWidget {
   Widget _buildDailyGoalCard(int progress, int goal, double progressValue, Color textMain, Color textMuted, Color primary) {
     return _ShadcnCard(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Builder(
+        builder: (context) {
+          final track = Theme.of(context).colorScheme.surfaceContainerHighest;
+          return Column(
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Daily Goal', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: textMain)),
-                  const SizedBox(height: 4),
-                  // 🔥 Cập nhật text hiển thị số bài học
-                  Text('$progress / $goal lessons completed', style: TextStyle(fontSize: 13, color: textMuted)),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Daily Goal', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: textMain)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$progress / $goal lessons completed',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textMuted),
+                      ),
+                    ],
+                  ),
+                  const Text('🏆', style: TextStyle(fontSize: 24)),
                 ],
               ),
-              const Text('🏆', style: TextStyle(fontSize: 24)),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progressValue,
+                  backgroundColor: track,
+                  valueColor: AlwaysStoppedAnimation(primary),
+                  minHeight: 8,
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progressValue,
-              backgroundColor: const Color(0xFFF4F4F5),
-              valueColor: AlwaysStoppedAnimation(primary),
-              minHeight: 8,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -587,19 +731,60 @@ class _HomeContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionsSection(Color textMain) {
+  Widget _buildQuickActionsSection(BuildContext context, Color textMain) {
+    final tt = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quick Access', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+        Text('Quick Access', style: tt.titleMedium?.copyWith(color: textMain)),
         const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            _QuickAction(colorBg: Color(0xFFF3E8FF), icon: Icons.favorite, iconColor: Color(0xFFA855F7), label: 'Favorites'),
-            _QuickAction(colorBg: Color(0xFFF0FDF4), icon: Icons.style, iconColor: Color(0xFF22C55E), label: 'Flashcards'),
-            _QuickAction(colorBg: Color(0xFFFEF2F2), icon: Icons.trending_up, iconColor: Color(0xFFEF4444), label: 'Stats'),
-            _QuickAction(colorBg: Color(0xFFEFF6FF), icon: Icons.history, iconColor: Color(0xFF3B82F6), label: 'History'),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFF3E8FF),
+                  icon: Icons.favorite,
+                  iconColor: const Color(0xFFA855F7),
+                  label: 'Favorites',
+                  onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 0}),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFF0FDF4),
+                  icon: Icons.style,
+                  iconColor: const Color(0xFF22C55E),
+                  label: 'Flashcards',
+                  onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 1}),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFFEF2F2),
+                  icon: Icons.trending_up,
+                  iconColor: const Color(0xFFEF4444),
+                  label: 'Stats',
+                  onTap: () => context.pushNamed(ProgressReportPage.routeName),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFEFF6FF),
+                  icon: Icons.history,
+                  iconColor: const Color(0xFF3B82F6),
+                  label: 'History',
+                  onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
+                ),
+              ),
+            ),
           ],
         ),
       ],
@@ -607,26 +792,53 @@ class _HomeContentView extends StatelessWidget {
   }
 }
 
-class _ShadcnCard extends StatelessWidget {
+class _ShadcnCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final VoidCallback? onTap;
   const _ShadcnCard({required this.child, this.padding, this.onTap});
+
+  @override
+  State<_ShadcnCard> createState() => _ShadcnCardState();
+}
+
+class _ShadcnCardState extends State<_ShadcnCard> {
+  bool _pressed = false;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(padding: padding ?? EdgeInsets.zero, child: child),
+    final scheme = Theme.of(context).colorScheme;
+    final radius = BorderRadius.circular(14);
+    return AnimatedScale(
+      scale: _pressed ? 0.985 : 1.0,
+      duration: const Duration(milliseconds: 130),
+      curve: Curves.easeOutCubic,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: radius,
+          border: Border.all(color: AppColors.outline),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: widget.onTap,
+            borderRadius: radius,
+            splashColor: scheme.primary.withValues(alpha: 0.12),
+            highlightColor: scheme.primary.withValues(alpha: 0.06),
+            onHighlightChanged: (v) => setState(() => _pressed = v),
+            child: Padding(
+              padding: widget.padding ?? EdgeInsets.zero,
+              child: widget.child,
+            ),
+          ),
         ),
       ),
     );
@@ -638,15 +850,16 @@ class _StatItem extends StatelessWidget {
   const _StatItem({required this.emoji, required this.value, required this.label});
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
     return _ShadcnCard(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       child: Column(
         children: [
           Text(emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(height: 6),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF09090B))),
+          Text(value, style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 2),
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF71717A))),
+          Text(label, style: tt.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -660,6 +873,8 @@ class _LessonCard extends StatelessWidget {
   const _LessonCard({required this.icon, required this.iconBg, required this.iconColor, required this.title, required this.subtitle});
   @override
   Widget build(BuildContext context) {
+    final tt = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return _ShadcnCard(
       onTap: () {
         if (title.contains('Listening')) showListeningModeDialog(context);
@@ -674,11 +889,11 @@ class _LessonCard extends StatelessWidget {
           Container(width: 48, height: 48, decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)), child: Icon(icon, color: iconColor, size: 24)),
           const SizedBox(width: 14),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF09090B))),
+            Text(title, style: tt.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
-            Text(subtitle, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A))),
+            Text(subtitle, style: tt.bodySmall?.copyWith(color: muted)),
           ])),
-          const Icon(Icons.play_circle_outline_rounded, color: Color(0xFFD4D4D8), size: 28),
+          Icon(Icons.play_circle_outline_rounded, color: AppColors.outline, size: 28),
         ],
       ),
     );
@@ -689,14 +904,52 @@ class _QuickAction extends StatelessWidget {
   final Color colorBg, iconColor;
   final IconData icon;
   final String label;
-  const _QuickAction({required this.colorBg, required this.icon, required this.iconColor, required this.label});
+  final VoidCallback onTap;
+
+  const _QuickAction({
+    required this.colorBg,
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.onTap,
+  });
+
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    const double iconDiameter = 52;
+    // Chỉ bo / clip vùng tròn của icon — chữ nằm ngoài Material để không bị cắt.
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Container(width: 56, height: 56, decoration: BoxDecoration(color: colorBg, shape: BoxShape.circle), child: Icon(icon, color: iconColor, size: 24)),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF52525B))),
+        ScalePressable(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(iconDiameter / 2),
+          minScale: 0.94,
+          splashColor: scheme.primary.withValues(alpha: 0.12),
+          highlightColor: scheme.primary.withValues(alpha: 0.06),
+          child: SizedBox(
+            width: iconDiameter,
+            height: iconDiameter,
+            child: DecoratedBox(
+              decoration: BoxDecoration(color: colorBg, shape: BoxShape.circle),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                height: 1.2,
+                color: scheme.onSurfaceVariant,
+              ),
+        ),
       ],
     );
   }

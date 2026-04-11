@@ -7,8 +7,10 @@ import 'package:english_for_community/core/entity/speaking/speaking_attempt_enti
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_bloc.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/feature/speaking/widget/word_details_dialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -45,13 +47,17 @@ class _SpeakingSkillsView extends StatefulWidget {
   State<_SpeakingSkillsView> createState() => _SpeakingSkillsViewState();
 }
 
-class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
+class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTickerProviderStateMixin {
   // --- SERVICES ---
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts _tts = FlutterTts();
 
+  late final AnimationController _micPulseController;
+
   // --- STATE ---
   bool _hasSpeech = false;
+  /// Locale thực tế trên máy (tránh truyền en_US khi máy không có).
+  String? _speechLocaleId;
   bool _isPlaying = false;
   bool _isRecording = false;
   bool _isSubmitting = false;
@@ -75,6 +81,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
   void initState() {
     super.initState();
     _isDisposed = false;
+    _micPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
     _initSpeech();
     _initTts();
   }
@@ -82,6 +89,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
   @override
   void dispose() {
     _isDisposed = true;
+    _micPulseController.dispose();
     _tts.stop();
     _speech.stop();
     _pageController.dispose();
@@ -107,91 +115,147 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
 
   Future<void> _initSpeech() async {
     final micStatus = await Permission.microphone.request();
-    if (micStatus != PermissionStatus.granted) return;
+    if (micStatus != PermissionStatus.granted) {
+      if (mounted) setState(() => _hasSpeech = false);
+      return;
+    }
 
     try {
       _hasSpeech = await _speech.initialize(
         onError: (e) {
           if (_isDisposed || !mounted) return;
-          print("Speech Error: ${e.errorMsg}");
-          // Nếu lỗi xảy ra (ví dụ mất mạng), tắt trạng thái recording để user biết bấm lại
+          debugPrint('Speech Error: ${e.errorMsg}');
+          _micPulseController.stop();
+          _micPulseController.reset();
           if (_isRecording) {
             setState(() => _isRecording = false);
           }
         },
         onStatus: (status) {
-          // Chỉ log để debug, không can thiệp logic tắt bật ở đây nữa
-          print("Speech Status: $status");
+          if (_isDisposed || !mounted) return;
+          debugPrint('Speech Status: $status');
         },
       );
+      if (_hasSpeech) {
+        await _pickEnglishLocale();
+      }
       if (mounted) setState(() {});
     } catch (e) {
-      print("Init Speech Exception: $e");
+      debugPrint('Init Speech Exception: $e');
+      if (mounted) setState(() => _hasSpeech = false);
     }
+  }
+
+  Future<void> _pickEnglishLocale() async {
+    try {
+      final locales = await _speech.locales();
+      if (locales.isEmpty) return;
+      const preferred = ['en_US', 'en_GB', 'en_AU', 'en_IN', 'en_CA', 'en_NZ', 'en_IE'];
+      for (final id in preferred) {
+        if (locales.any((l) => l.localeId == id)) {
+          _speechLocaleId = id;
+          return;
+        }
+      }
+      final en = locales.where((l) => l.localeId.toLowerCase().startsWith('en')).toList();
+      if (en.isNotEmpty) {
+        _speechLocaleId = en.first.localeId;
+      }
+    } catch (e) {
+      debugPrint('pickEnglishLocale: $e');
+    }
+  }
+
+  void _showMicSnack(String message, {bool openSettings = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+        action: openSettings
+            ? SnackBarAction(label: 'Cài đặt', onPressed: openAppSettings)
+            : null,
+      ),
+    );
   }
 
   // --- LOGIC GHI ÂM ĐƠN GIẢN (MANUAL STOP) ---
 
   Future<void> _toggleRecord() async {
     if (!_hasSpeech) await _initSpeech();
-    if (!_hasSpeech) return;
+    if (!_hasSpeech) {
+      _showMicSnack(
+        'Chưa bật được nhận dạng giọng nói. Hãy cấp quyền micro và (iOS) quyền Speech Recognition.',
+        openSettings: true,
+      );
+      return;
+    }
 
-    // 1. NẾU ĐANG GHI ÂM -> BẤM ĐỂ DỪNG (STOP)
     if (_isRecording) {
-      // Dừng stopwatch
+      _micPulseController.stop();
+      _micPulseController.reset();
       _recordingStopwatch.stop();
-
-      // Dừng speech plugin
       await _speech.stop();
-
-      // Update UI
       if (mounted) setState(() => _isRecording = false);
-
-      // Nộp bài
+      HapticFeedback.lightImpact();
       _submitAttempt();
       return;
     }
 
-    // 2. NẾU CHƯA GHI ÂM -> BẮT ĐẦU (START)
-
-    // Tắt loa nếu đang đọc mẫu
     if (_isPlaying) {
       await _tts.stop();
-      setState(() => _isPlaying = false);
+      if (mounted) setState(() => _isPlaying = false);
     }
+    // Tránh xung đột audio session (đặc biệt iOS) giữa TTS và STT.
+    await Future<void>.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
 
-    // Reset text cũ
     setState(() {
       _liveTranscript = '';
       _finalTranscript = '';
-      _isRecording = true;
       _isSubmitting = false;
     });
 
-    _recordingStopwatch.reset();
-    _recordingStopwatch.start();
-
-    await _speech.listen(
-      localeId: 'en_US',
-      onResult: (result) {
-        if (_isDisposed || !mounted) return;
-        setState(() {
-          // Cập nhật text liên tục
-          _liveTranscript = result.recognizedWords;
-          // Lưu lại bản final (nếu có) nhưng chưa submit vội
-          if (result.finalResult) {
-            _finalTranscript = result.recognizedWords;
-          }
-        });
-      },
-      // ⭐️ CẤU HÌNH QUAN TRỌNG: 5 PHÚT (300s) MỚI TỰ TẮT
-      // Điều này đảm bảo mic luôn mở cho đến khi bạn bấm dừng
-      listenFor: const Duration(seconds: 300),
-      pauseFor: const Duration(seconds: 300),
-      partialResults: true,
-      cancelOnError: true,
-      listenMode: stt.ListenMode.dictation,
-    );
+    try {
+      await _speech.listen(
+        onResult: (result) {
+          if (_isDisposed || !mounted) return;
+          setState(() {
+            _liveTranscript = result.recognizedWords;
+            if (result.finalResult) {
+              _finalTranscript = result.recognizedWords;
+            }
+          });
+        },
+        localeId: _speechLocaleId,
+        listenOptions: stt.SpeechListenOptions(
+          partialResults: true,
+          cancelOnError: false,
+          listenMode: stt.ListenMode.dictation,
+        ),
+      );
+      // listen() trả về trước khi platform báo "listening" — đợi ngắn rồi kiểm tra.
+      await Future<void>.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      if (!_speech.isListening) {
+        _showMicSnack(
+          'Không mở được micro. Trên Android cần dịch vụ nhận dạng của Google; hãy thử cài/cập nhật Google app và ngôn ngữ tiếng Anh.',
+          openSettings: true,
+        );
+        return;
+      }
+      if (mounted) {
+        setState(() => _isRecording = true);
+        HapticFeedback.mediumImpact();
+        _micPulseController.repeat(reverse: true);
+        _recordingStopwatch.reset();
+        _recordingStopwatch.start();
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMicSnack('Lỗi khi bật micro: $e');
+      }
+    }
   }
 
   // --- SUBMIT LOGIC ---
@@ -250,6 +314,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
 
     // Chuyển trang -> Reset hết
     if (_isRecording) {
+      _micPulseController.stop();
+      _micPulseController.reset();
       _speech.stop();
       _recordingStopwatch.stop();
     }
@@ -292,28 +358,28 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
 
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB);
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-
     return Scaffold(
-      backgroundColor: bgPage,
+      backgroundColor: AppColors.surface,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.surfaceCard,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: borderCol, height: 1),
+          child: Container(color: AppColors.outline, height: 1),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: textMain),
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           _set?.title ?? 'Practice',
-          style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
       ),
       body: SafeArea(
@@ -348,35 +414,69 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
 
             return Column(
               children: [
-                // HEADER PROGRESS
                 Container(
-                  color: Colors.white,
+                  color: AppColors.surfaceCard,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Sentence ${_currentPageIndex + 1} of ${_set!.sentences.length}',
-                              style: const TextStyle(color: Color(0xFF71717A), fontSize: 13, fontWeight: FontWeight.w500)),
-                          Text('${((_currentPageIndex + 1) / _set!.sentences.length * 100).toInt()}%',
-                              style: const TextStyle(color: Color(0xFF09090B), fontSize: 13, fontWeight: FontWeight.w600)),
+                          Text(
+                            'Câu ${_currentPageIndex + 1} / ${_set!.sentences.length}',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${((_currentPageIndex + 1) / _set!.sentences.length * 100).toInt()}%',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 8),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: (_currentPageIndex + 1) / _set!.sentences.length,
-                          minHeight: 4,
-                          backgroundColor: const Color(0xFFF4F4F5),
-                          color: Theme.of(context).colorScheme.primary,
+                          minHeight: 6,
+                          backgroundColor: AppColors.outlineMuted,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(height: 1, color: borderCol),
+                Container(height: 1, color: AppColors.outline),
+                if (!_hasSpeech)
+                  Material(
+                    color: AppColors.tertiary.withValues(alpha: 0.12),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 22),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Micro / nhận dạng giọng nói chưa sẵn sàng. Cấp quyền và thử lại.',
+                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => _initSpeech(),
+                            child: const Text('Thử lại'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 // MAIN CONTENT
                 Expanded(
@@ -414,26 +514,37 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
                   ),
                 ),
 
-                // BOTTOM BUTTON
                 Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(top: BorderSide(color: borderCol)),
-                  ),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceCard,
+                    border: Border(top: BorderSide(color: AppColors.outline)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4),
                       ),
-                      onPressed: (_isRecording || _isSubmitting) ? null : _goToNextSentence,
-                      child: Text(_currentPageIndex == _set!.sentences.length - 1 ? 'Finish' : 'Next Sentence'),
+                    ],
+                  ),
+                  child: SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                        ),
+                        onPressed: (_isRecording || _isSubmitting) ? null : _goToNextSentence,
+                        child: Text(
+                          _currentPageIndex == _set!.sentences.length - 1 ? 'Hoàn thành' : 'Câu tiếp theo',
+                        ),
+                      ),
                     ),
                   ),
                 )
@@ -453,9 +564,54 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
         required bool isRecording,
         required bool isSubmitting,
       }) {
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    final primaryColor = AppColors.primary;
+    final textMain = AppColors.textPrimary;
+    final textMuted = AppColors.textMuted;
+    final recordRed = AppColors.chartTrend;
+
+    final micCore = AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      width: 72,
+      height: 72,
+      decoration: BoxDecoration(
+        color: isRecording ? recordRed : primaryColor,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: (isRecording ? recordRed : primaryColor).withValues(alpha: 0.35),
+            blurRadius: isRecording ? 20 : 14,
+            spreadRadius: isRecording ? 1 : 0,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: isSubmitting
+          ? const Padding(
+              padding: EdgeInsets.all(22),
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+            )
+          : Icon(
+              isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
+    );
+
+    final micButton = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: isSubmitting ? null : _toggleRecord,
+        customBorder: const CircleBorder(),
+        child: isRecording
+            ? ScaleTransition(
+                scale: Tween<double>(begin: 1.0, end: 1.06).animate(
+                  CurvedAnimation(parent: _micPulseController, curve: Curves.easeInOut),
+                ),
+                child: micCore,
+              )
+            : micCore,
+      ),
+    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -469,77 +625,115 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.person_outline, size: 16, color: textMuted),
+                        Icon(Icons.person_outline, size: 16, color: textMuted),
                         const SizedBox(width: 4),
-                        Text(sentence.speaker, style: const TextStyle(fontSize: 13, color: textMuted, fontWeight: FontWeight.w500)),
+                        Text(
+                          sentence.speaker,
+                          style: TextStyle(fontSize: 13, color: textMuted, fontWeight: FontWeight.w500),
+                        ),
                       ],
                     ),
                     _LevelPill(label: _set?.level ?? 'Beginner', color: primaryColor),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 _buildTappableScript(context, sentence.script),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
                 Text(
                   sentence.phoneticScript,
-                  style: const TextStyle(color: textMuted, fontSize: 14, fontFamily: 'NotoSans'),
+                  style: TextStyle(color: textMuted, fontSize: 14, fontFamily: 'NotoSans'),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Play Button
-                    InkWell(
-                      onTap: (isRecording || isSubmitting) ? null : _togglePlay,
-                      borderRadius: BorderRadius.circular(24),
-                      child: Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE4E4E7)),
-                        ),
-                        child: Icon(_isPlaying ? Icons.stop_rounded : Icons.volume_up_rounded, color: textMain),
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineMuted,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.outline),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Column(
+                            children: [
+                              Material(
+                                color: AppColors.surfaceCard,
+                                shape: const CircleBorder(),
+                                child: InkWell(
+                                  onTap: (isRecording || isSubmitting) ? null : _togglePlay,
+                                  customBorder: const CircleBorder(),
+                                  child: Container(
+                                    width: 52,
+                                    height: 52,
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: AppColors.outline),
+                                    ),
+                                    child: Icon(
+                                      _isPlaying ? Icons.stop_rounded : Icons.volume_up_rounded,
+                                      color: textMain,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Nghe mẫu',
+                                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMuted),
+                              ),
+                              Text(
+                                'Sample',
+                                style: TextStyle(fontSize: 11, color: textMuted.withValues(alpha: 0.85)),
+                              ),
+                            ],
+                          ),
+                          Column(
+                            children: [
+                              micButton,
+                              const SizedBox(height: 8),
+                              Text(
+                                'Nói của bạn',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: isRecording ? recordRed : textMuted,
+                                ),
+                              ),
+                              Text(
+                                'Your turn',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: (isRecording ? recordRed : textMuted).withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 24),
-
-                    // RECORD BUTTON (LOGIC CHÍNH)
-                    InkWell(
-                      onTap: isSubmitting ? null : _toggleRecord,
-                      borderRadius: BorderRadius.circular(32),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          // Màu đỏ khi đang ghi âm, Màu chính khi chờ
-                          color: isRecording ? const Color(0xFFEF4444) : primaryColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: (isRecording ? const Color(0xFFEF4444) : primaryColor).withOpacity(0.3),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            )
-                          ],
+                      const SizedBox(height: 14),
+                      Text(
+                        isRecording
+                            ? 'Đang nghe… Chạm nút đỏ để dừng và chấm điểm.'
+                            : isSubmitting
+                                ? 'Đang gửi và phân tích…'
+                                : 'Chạm micro, đọc to cả câu rồi chạm lại để dừng.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: isRecording ? recordRed : textMuted,
+                          fontWeight: FontWeight.w500,
                         ),
-                        child: isSubmitting
-                            ? const Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                        // Icon vuông khi đang ghi âm (để bấm Stop)
-                            : Icon(isRecording ? Icons.stop_rounded : Icons.mic_rounded, color: Colors.white, size: 32),
                       ),
-                    ),
-                    const SizedBox(width: 24),
-                    const SizedBox(width: 48),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  isRecording ? 'Tap to stop' : (isSubmitting ? 'Analyzing...' : 'Tap mic to record'),
-                  style: TextStyle(fontSize: 12, color: isRecording ? const Color(0xFFEF4444) : textMuted, fontWeight: FontWeight.w500),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -551,24 +745,40 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('YOUR TRANSCRIPT', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: textMuted, letterSpacing: 0.5)),
+                  Text(
+                    'LỜI BẠN NÓI',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: textMuted,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    transcript.isEmpty ? '...' : transcript,
-                    style: TextStyle(fontSize: 16, color: transcript.isEmpty ? textMuted : textMain, height: 1.5),
+                    transcript.isEmpty ? 'Sẽ hiện ở đây khi bạn nói…' : transcript,
+                    style: TextStyle(
+                      fontSize: 17,
+                      color: transcript.isEmpty ? textMuted : textMain,
+                      height: 1.5,
+                      fontWeight: transcript.isEmpty ? FontWeight.w400 : FontWeight.w500,
+                    ),
                   ),
                   if (score != null) ...[
                     const SizedBox(height: 16),
-                    const Divider(height: 1, color: Color(0xFFF4F4F5)),
+                    Divider(height: 1, color: AppColors.outlineMuted),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Accuracy', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
+                        Text(
+                          'Độ chính xác',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain),
+                        ),
                         _ScorePill(
                           scoreText: '$score%',
                           bg: (score) >= 80 ? const Color(0xFFDCFCE7) : const Color(0xFFFFEDD5),
-                          fg: (score) >= 80 ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
+                          fg: (score) >= 80 ? AppColors.success : const Color(0xFFEA580C),
                         )
                       ],
                     )
@@ -621,10 +831,16 @@ class _ShadcnCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: AppColors.outline),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: child,
     );
@@ -639,7 +855,11 @@ class _LevelPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6), border: Border.all(color: color.withOpacity(0.2))),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
       child: Text(label.toUpperCase(), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
     );
   }

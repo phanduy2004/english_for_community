@@ -14,6 +14,7 @@ import '../../feature/home/bloc_noti/notification_bloc.dart';
 import '../../feature/listening/listening_skill/bloc/cue_bloc.dart';
 import '../../feature/listening_comp/bloc/listening_comp_bloc.dart';
 import '../../feature/listening_comp/bloc_list/listening_comp_list_bloc.dart';
+import '../../feature/profile/my_exercise_history/my_exercise_history_bloc.dart';
 import '../../feature/progress/bloc/progress_bloc.dart';
 import '../../feature/progress/bloc_report/report_bloc.dart';
 import '../../feature/reading/bloc/reading_bloc.dart';
@@ -223,6 +224,7 @@ void registerBloc() {
       () => NotificationBloc(repository: getIt()),
  );
  getIt.registerFactory(() => HistoryBloc(historyRepository: getIt()));
+ getIt.registerFactory(() => MyExerciseHistoryBloc(historyRepository: getIt()));
  getIt.registerFactory(() => ListeningCompListBloc(repository: getIt()));
  getIt.registerFactory(() => ListeningCompBloc(repo: getIt()));
  getIt.registerFactory(() => AdminListeningCompBloc(repository: getIt()));

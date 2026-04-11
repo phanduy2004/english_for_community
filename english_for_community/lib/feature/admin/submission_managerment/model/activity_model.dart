@@ -103,3 +103,20 @@ class ActivityModel {
     }
   }
 }
+
+/// Kết quả phân trang từ `GET /api/users/me/activities`
+class ActivityHistoryListResult {
+  final List<ActivityModel> items;
+  final int total;
+  final int page;
+  final int limit;
+  final bool hasMore;
+
+  const ActivityHistoryListResult({
+    required this.items,
+    required this.total,
+    required this.page,
+    required this.limit,
+    required this.hasMore,
+  });
+}

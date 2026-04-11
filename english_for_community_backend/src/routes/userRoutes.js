@@ -7,11 +7,17 @@ import {
   getPublicProfile,
   getUserDetailsForAdmin, changePassword, updateFcmToken
 } from '../controllers/userController.js';
+import { getMyActivities, getMyActivityDetail } from '../controllers/userActivityController.js';
 import { authenticate } from '../middleware/auth.js';
 import uploadCloud from "../config/cloudinary.js";
 
 const router = express.Router();
 router.use(authenticate);
+
+// Lịch sử bài tập (user) — đặt trước các route /:id/... để không nhầm "me" với id
+router.get('/me/activities', getMyActivities);
+router.get('/me/activities/:activityId', getMyActivityDetail);
+
 router.get('/profile', getProfile);
 router.put('/profile', uploadCloud.single('avatar'), updateProfile);
 router.delete('/profile', deleteAccount);
