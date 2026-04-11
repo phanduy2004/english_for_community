@@ -290,6 +290,7 @@ class _LessonCard extends StatelessWidget {
   final String level;
   final Color primaryColor;
   final VoidCallback onReturn;
+
   const _LessonCard({
     required this.set,
     required this.level,
@@ -315,9 +316,11 @@ class _LessonCard extends StatelessWidget {
     final levelColor = _getLevelColor(level);
     final bool isResumed = set.isResumed;
 
-    // Format Best Score safely
     final bool hasScore = set.bestScore != null && set.bestScore! > 0;
     final String scoreText = hasScore ? '${set.bestScore}%' : 'No attempts';
+
+    // 🔥 ĐỊNH NGHĨA TRẠNG THÁI COMPLETED TẠI ĐÂY (Vd: progress >= 99%)
+    final bool isCompleted = set.progress >= 0.99;
 
     return Container(
       decoration: BoxDecoration(
@@ -332,13 +335,12 @@ class _LessonCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _navigateToDetail(context),
+          onTap: () => _navigateToDetail(context, isRetake: false), // Mặc định là Review/Start
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row: Level & Icon
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -346,10 +348,7 @@ class _LessonCard extends StatelessWidget {
                     Icon(Icons.mic_rounded, size: 20, color: textMuted.withOpacity(0.5)),
                   ],
                 ),
-
                 const SizedBox(height: 12),
-
-                // Title & Info
                 Text(
                   set.title,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain, height: 1.3),
@@ -361,10 +360,7 @@ class _LessonCard extends StatelessWidget {
                   '${set.totalSentences} sentences • Topic: Daily Life',
                   style: const TextStyle(fontSize: 13, color: textMuted),
                 ),
-
                 const SizedBox(height: 16),
-
-                // Progress Section (Distinct from Score)
                 Row(
                   children: [
                     Expanded(
@@ -385,20 +381,18 @@ class _LessonCard extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5)),
                 const SizedBox(height: 12),
 
-                // Bottom Row: Best Score (Distinct Badge) vs Action Button
+                // Bottom Row: Best Score vs Action Button
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Best Score Badge (Visually distinct from Progress)
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: hasScore ? const Color(0xFFFFF7ED) : const Color(0xFFF4F4F5), // Orange-50 vs Gray-100
+                        color: hasScore ? const Color(0xFFFFF7ED) : const Color(0xFFF4F4F5),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: hasScore ? const Color(0xFFFFEDD5) : const Color(0xFFE4E4E7),
@@ -406,46 +400,72 @@ class _LessonCard extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                              Icons.emoji_events_outlined,
-                              size: 16,
-                              color: hasScore ? const Color(0xFFEA580C) : textMuted
-                          ),
+                          Icon(Icons.emoji_events_outlined, size: 16, color: hasScore ? const Color(0xFFEA580C) : textMuted),
                           const SizedBox(width: 6),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Best Score', style: TextStyle(fontSize: 10, color: hasScore ? const Color(0xFFC2410C) : textMuted)),
-                              Text(
-                                scoreText,
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: hasScore ? const Color(0xFF9A3412) : textMain
-                                ),
-                              ),
+                              Text(scoreText, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: hasScore ? const Color(0xFF9A3412) : textMain)),
                             ],
                           ),
                         ],
                       ),
                     ),
 
-                    // Action Button
-                    SizedBox(
-                      height: 36,
-                      child: ElevatedButton(
-                        onPressed: () => _navigateToDetail(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    // 🔥 LOGIC NÚT BẤM REVIEW & RETAKE
+                    if (isCompleted)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 36,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _navigateToDetail(context, isRetake: false), // Nút Review
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textMuted,
+                                side: const BorderSide(color: borderCol),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 36,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _navigateToDetail(context, isRetake: true), // Nút Retake
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor.withOpacity(0.1),
+                                foregroundColor: primaryColor,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              icon: const Icon(Icons.replay, size: 16),
+                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      SizedBox(
+                        height: 36,
+                        child: ElevatedButton(
+                          onPressed: () => _navigateToDetail(context, isRetake: false), // Nút Start
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                          child: Text(isResumed ? 'Resume' : 'Start'),
                         ),
-                        child: Text(isResumed ? 'Resume' : 'Start'),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -456,11 +476,12 @@ class _LessonCard extends StatelessWidget {
     );
   }
 
-  Future<void> _navigateToDetail(BuildContext context) async {
-    // Sử dụng await để đợi cho đến khi trang SpeakingSkillsPage đóng lại (pop)
+  // 🔥 TRUYỀN CỜ isRetake QUA URL
+  Future<void> _navigateToDetail(BuildContext context, {bool isRetake = false}) async {
     await context.pushNamed(
       SpeakingSkillsPage.routeName,
       pathParameters: {'setId': set.id},
+      queryParameters: {'isRetake': isRetake.toString()}, // Ném lên URL cho chắc ăn
     );
     onReturn();
   }

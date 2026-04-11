@@ -5,7 +5,6 @@ import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/spea
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 class SpeakingLessonBloc
     extends Bloc<SpeakingLessonEvent, SpeakingLessonState> {
   final SpeakingRepository speakingRepository;
@@ -20,17 +19,23 @@ class SpeakingLessonBloc
       FetchLessonDetailsEvent event,
       Emitter<SpeakingLessonState> emit,
       ) async {
-    emit(state.copyWith(status: LessonStatus.loading));
+
+    // 🔥 CÚ CHỐT: Đưa BLoC về trạng thái nguyên thủy trắng tinh trước khi tải
+    emit(SpeakingLessonState.initial().copyWith(status: LessonStatus.loading));
+
     final result = await speakingRepository.getSpeakingSetDetails(event.setId);
     result.fold(
           (l) => emit(state.copyWith(
         status: LessonStatus.error,
         errorMessage: l.message,
       )),
-          (r) => emit(state.copyWith(
-        status: LessonStatus.success,
-        set: r, // Tải thành công bài học
-      )),
+          (r) {
+        // Tải xong, quăng data ra cho UI xử lý tiếp
+        emit(state.copyWith(
+          status: LessonStatus.success,
+          set: r,
+        ));
+      },
     );
   }
 
@@ -45,7 +50,7 @@ class SpeakingLessonBloc
       userTranscript: event.userTranscript,
       userAudioUrl: event.userAudioUrl,
       score: event.score,
-      audioDurationSeconds: event.audioDurationSeconds, // <-- GỬI LÊN BLOC
+      audioDurationSeconds: event.audioDurationSeconds,
     );
     result.fold(
           (l) => emit(state.copyWith(
@@ -54,8 +59,8 @@ class SpeakingLessonBloc
       )),
           (r) {
         emit(state.copyWith(
-          status: LessonStatus.success, // Quay lại success
-          lastAttempt: r, // Lưu lại kết quả
+          status: LessonStatus.success,
+          lastAttempt: r,
         ));
       },
     );

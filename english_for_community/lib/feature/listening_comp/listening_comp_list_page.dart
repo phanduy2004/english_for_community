@@ -313,10 +313,7 @@ class _ListeningCompCard extends StatelessWidget {
                           SizedBox(
                             height: 32,
                             child: OutlinedButton.icon(
-                              onPressed: () {
-                                // TODO: Chuyển hướng sang trang xem lại chi tiết bài làm (nếu app bạn có hỗ trợ xem thẳng từ list)
-                                // Tạm thời có thể cho user vào tab History để xem review
-                              },
+                              onPressed: () => _handleRetakeOrStart(context, isRetake: false),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: textMuted,
                                 side: const BorderSide(color: borderCol),
@@ -332,8 +329,7 @@ class _ListeningCompCard extends StatelessWidget {
                           SizedBox(
                             height: 32,
                             child: ElevatedButton.icon(
-                              onPressed: () => _handleRetakeOrStart(context),
-                              style: ElevatedButton.styleFrom(
+                              onPressed: () => _handleRetakeOrStart(context, isRetake: true),                              style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryColor.withOpacity(0.1),
                                 foregroundColor: primaryColor,
                                 elevation: 0,
@@ -350,8 +346,7 @@ class _ListeningCompCard extends StatelessWidget {
                       SizedBox(
                         height: 32,
                         child: ElevatedButton(
-                          onPressed: () => _handleRetakeOrStart(context),
-                          style: ElevatedButton.styleFrom(
+                          onPressed: () => _handleRetakeOrStart(context, isRetake: false),                          style: ElevatedButton.styleFrom(
                             backgroundColor: primaryColor,
                             foregroundColor: Colors.white,
                             elevation: 0,
@@ -371,14 +366,14 @@ class _ListeningCompCard extends StatelessWidget {
     );
   }
 
-  Future<void> _handleRetakeOrStart(BuildContext context) async {
-    // Điều hướng sang trang làm bài (Cho cả Start và Retake)
+  Future<void> _handleRetakeOrStart(BuildContext context, {bool isRetake = false}) async {
     await context.pushNamed(
       'ListeningCompPage',
       pathParameters: {'id': entity.id},
+      // 🔥 SỬA THÀNH QUERY PARAMETERS ĐỂ KHÔNG BAO GIỜ BỊ RỚT
+      queryParameters: {'isRetake': isRetake.toString()},
     );
 
-    // Load lại danh sách để cập nhật trạng thái/High Score mới nếu có
     if (context.mounted) {
       onLessonFinished?.call();
     }

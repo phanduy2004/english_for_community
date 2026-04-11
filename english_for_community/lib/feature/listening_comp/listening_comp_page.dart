@@ -22,18 +22,28 @@ import 'bloc/listening_comp_state.dart';
 // =============================================================================
 class ListeningCompPage extends StatelessWidget {
   final String id;
-  const ListeningCompPage({super.key, required this.id});
+  // 🔥 KHAI BÁO THÊM BIẾN NÀY ĐỂ NHẬN TỪ ROUTER
+  final bool isRetake;
+
+  // Cập nhật Constructor
+  const ListeningCompPage({
+    super.key,
+    required this.id,
+    this.isRetake = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 Xóa đoạn dùng GoRouterState.of(context).extra đi
+
     return BlocProvider(
       create: (context) =>
-      getIt<ListeningCompBloc>()..add(FetchListeningCompDetail(id)),
+      // 🔥 TRUYỀN THẲNG VÀO ĐÂY
+      getIt<ListeningCompBloc>()..add(FetchListeningCompDetail(id, isRetake: isRetake)),
       child: const _ListeningCompView(),
     );
   }
 }
-
 // =============================================================================
 // 2. WIDGET CON
 // =============================================================================
@@ -238,6 +248,12 @@ class _ListeningCompViewState extends State<_ListeningCompView>
 
     return BlocConsumer<ListeningCompBloc, ListeningCompState>(
       listener: (context, state) {
+        if (state.status == CompStatus.loading || state.status == CompStatus.initial) {
+          setState(() {
+            _isReviewMode = false;
+            _selectedAnswers.clear();
+          });
+        }
         if (state.status == CompStatus.success &&
             !_audioInitialized &&
             state.data != null) {
@@ -252,8 +268,16 @@ class _ListeningCompViewState extends State<_ListeningCompView>
 
           setState(() {
             _isReviewMode = true;
+            _selectedAnswers.clear(); // Dọn sạch rác cũ
+
             for (var ans in result.answers) {
-              _selectedAnswers[ans['questionId']] = ans['chosenIndex'];
+              // 🔥 FIX CHUẨN XÁC: ans chắc chắn là Map nên chỉ dùng ngoặc vuông
+              final String qId = ans['questionId']?.toString() ?? '';
+              final int cIdx = ans['chosenIndex'] ?? -1;
+
+              if (qId.isNotEmpty) {
+                _selectedAnswers[qId] = cIdx;
+              }
             }
           });
 
@@ -676,8 +700,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               const Divider(height: 1, color: Color(0xFFF4F4F5)),
               Column(
                 children: List.generate(q.options.length, (optIdx) {
-                  final isSelected = _selectedAnswers[q.id] == optIdx;
-
+                  final isSelected = _selectedAnswers[q.id.toString()] == optIdx;
                   Color bgColor = Colors.transparent;
                   Color textColor = const Color(0xFF09090B);
                   IconData? icon;

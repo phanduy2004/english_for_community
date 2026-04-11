@@ -345,15 +345,20 @@ class AppRouter {
 
       // --- Listening Comprehension ---
       GoRoute(
-        name: 'ListeningCompPage', // Bạn tự đặt tên route tương ứng
+        name: 'ListeningCompPage',
         path: '/listening-comp/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'];
           if (id == null) return const Scaffold(body: Center(child: Text('Error: Missing ID')));
 
+          // 🔥 LẤY CỜ TỪ URL (QUERY PARAMETERS)
+          final isRetakeStr = state.uri.queryParameters['isRetake'];
+          final isRetake = isRetakeStr == 'true';
+
           return BlocProvider(
-            create: (_) => getIt<ListeningCompBloc>(), // Khởi tạo BLoC ở đây
-            child: ListeningCompPage(id: id),
+            create: (_) => getIt<ListeningCompBloc>(),
+            // Truyền cờ vào Constructor
+            child: ListeningCompPage(id: id, isRetake: isRetake),
           );
         },
       ),
@@ -500,7 +505,13 @@ class AppRouter {
         builder: (context, state) {
           final setId = state.pathParameters['setId'];
           if (setId == null) return const Scaffold(body: Center(child: Text('Error: Missing ID')));
-          return SpeakingSkillsPage(setId: setId);
+
+          // 🔥 BẮT CỜ isRetake TỪ URL
+          final isRetakeStr = state.uri.queryParameters['isRetake'];
+          final isRetake = isRetakeStr == 'true';
+
+          // Truyền vào Constructor
+          return SpeakingSkillsPage(setId: setId, isRetake: isRetake);
         },
       ),
       GoRoute(

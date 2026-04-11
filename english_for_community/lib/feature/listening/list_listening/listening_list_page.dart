@@ -269,7 +269,6 @@ class _ListeningListPageState extends State<ListeningListPage> {
     );
   }
 }
-
 class _ListeningCard extends StatelessWidget {
   const _ListeningCard({
     required this.entity,
@@ -330,7 +329,7 @@ class _ListeningCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _handlePress(context),
+          onTap: () => _handlePress(context, isRetake: false),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -345,19 +344,10 @@ class _ListeningCard extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              _Badge(
-                                label: levelText,
-                                color: levelColor,
-                                filled: false,
-                              ),
+                              _Badge(label: levelText, color: levelColor, filled: false),
                               if (isCompleted) ...[
                                 const SizedBox(width: 8),
-                                const _Badge(
-                                  label: 'Completed',
-                                  color: Color(0xFF059669),
-                                  filled: true,
-                                  bgColor: Color(0xFFECFDF5),
-                                ),
+                                const _Badge(label: 'Completed', color: Color(0xFF059669), filled: true, bgColor: Color(0xFFECFDF5)),
                               ]
                             ],
                           ),
@@ -365,25 +355,18 @@ class _ListeningCard extends StatelessWidget {
                           Text(
                             title,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain, height: 1.3),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2, overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 6),
                           Row(
                             children: [
                               const Icon(Icons.format_list_bulleted, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              Text(
-                                '$totalCues questions',
-                                style: const TextStyle(fontSize: 13, color: textMuted),
-                              ),
+                              Text('$totalCues questions', style: const TextStyle(fontSize: 13, color: textMuted)),
                               const SizedBox(width: 12),
                               const Icon(Icons.timer_outlined, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              const Text(
-                                'Dictation',
-                                style: TextStyle(fontSize: 13, color: textMuted),
-                              ),
+                              const Text('Dictation', style: TextStyle(fontSize: 13, color: textMuted)),
                             ],
                           ),
                         ],
@@ -391,21 +374,17 @@ class _ListeningCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.play_arrow_rounded, color: primaryColor, size: 28),
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
+                      child: Icon(isCompleted ? Icons.replay_rounded : Icons.play_arrow_rounded, color: primaryColor, size: 28),
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 16),
                 const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5)),
                 const SizedBox(height: 12),
 
+                // 🔥 NÚT BẤM CẬP NHẬT Ở ĐÂY
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -430,34 +409,60 @@ class _ListeningCard extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 24),
-                    SizedBox(
-                      height: 32,
-                      child: isCompleted
-                          ? OutlinedButton(
-                        onPressed: () => _handlePress(context),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: primaryColor,
-                          side: BorderSide(color: primaryColor.withOpacity(0.5)),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                        ),
-                        child: const Text('Review'),
+                    const SizedBox(width: 16),
+
+                    if (isCompleted)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            height: 32,
+                            child: OutlinedButton.icon(
+                              onPressed: () => _handlePress(context, isRetake: false),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: textMuted,
+                                side: const BorderSide(color: borderCol),
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 32,
+                            child: ElevatedButton.icon(
+                              onPressed: () => _handlePress(context, isRetake: true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor.withOpacity(0.1),
+                                foregroundColor: primaryColor,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                              ),
+                              icon: const Icon(Icons.replay, size: 16),
+                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ],
                       )
-                          : ElevatedButton(
-                        onPressed: () => _handlePress(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    else
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton(
+                          onPressed: () => _handlePress(context, isRetake: false),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                          ),
+                          child: const Text('Start'),
                         ),
-                        child: const Text('Start'),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -468,12 +473,16 @@ class _ListeningCard extends StatelessWidget {
     );
   }
 
-
-  Future<void> _handlePress(BuildContext context) async {
+  // 🔥 TRUYỀN BIẾN isRetake VÀO HÀM NÀY
+  Future<void> _handlePress(BuildContext context, {bool isRetake = false}) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => BlocProvider<CueBloc>(
-          create: (_) => getIt<CueBloc>()..add(LoadCuesAndAttempts(listeningId: entity.id)),
+          // 🔥 TRUYỀN isRetake VÀO EVENT CỦA BLOC
+          create: (_) => getIt<CueBloc>()..add(LoadCuesAndAttempts(
+            listeningId: entity.id,
+            isRetake: isRetake, // Thêm dòng này
+          )),
           child: ListeningSkillsPage(
             listeningId: entity.id,
             title: entity.title,
@@ -483,7 +492,6 @@ class _ListeningCard extends StatelessWidget {
         ),
       ),
     );
-    // Gọi callback để yêu cầu ListeningListPageState refresh BLoC sau khi quay lại
     if (context.mounted) {
       onLessonFinished?.call();
     }

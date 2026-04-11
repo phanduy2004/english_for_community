@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/entity/user_entity.dart';
+import '../../core/entity/user_entity.dart';      
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';

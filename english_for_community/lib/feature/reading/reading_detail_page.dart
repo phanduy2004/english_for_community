@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui'; // Để dùng FontFeature
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -16,11 +16,18 @@ import '../../core/get_it/get_it.dart';
 import '../../core/repository/reading_repository.dart';
 
 // =============================================================================
-// 1. WIDGET CHA: Chỉ tạo BlocProvider
+// 1. WIDGET CHA
 // =============================================================================
 class ReadingDetailPage extends StatelessWidget {
   final ReadingEntity reading;
-  const ReadingDetailPage({super.key, required this.reading});
+  // 🔥 THÊM BIẾN isRetake VÀO ĐÂY
+  final bool isRetake;
+
+  const ReadingDetailPage({
+    super.key,
+    required this.reading,
+    this.isRetake = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,24 +36,25 @@ class ReadingDetailPage extends StatelessWidget {
         final bloc = ReadingAttemptBloc(
           readingRepository: getIt<ReadingRepository>(),
         );
-        // Kiểm tra xem bài này đã hoàn thành chưa để load lại lịch sử
-        if (reading.progress?.status == ProgressStatus.completed) {
+        // 🔥 NẾU KHÔNG PHẢI RETAKE THÌ MỚI GỌI API LẤY LỊCH SỬ
+        if (reading.progress?.status == ProgressStatus.completed && !isRetake) {
           bloc.add(FetchLastAttemptEvent(readingId: reading.id));
         }
         return bloc;
       },
-      // Truyền xuống View con, lúc này View con sẽ nằm TRONG BlocProvider
-      child: _ReadingDetailView(reading: reading),
+      // Truyền isRetake xuống View con
+      child: _ReadingDetailView(reading: reading, isRetake: isRetake),
     );
   }
 }
 
 // =============================================================================
-// 2. WIDGET CON: Xử lý UI và Timer
+// 2. WIDGET CON
 // =============================================================================
 class _ReadingDetailView extends StatefulWidget {
   final ReadingEntity reading;
-  const _ReadingDetailView({required this.reading});
+  final bool isRetake; // 🔥 THÊM BIẾN NÀY
+  const _ReadingDetailView({required this.reading, this.isRetake = false});
 
   @override
   State<_ReadingDetailView> createState() => _ReadingDetailViewState();
@@ -69,12 +77,14 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    // Lấy thông tin từ widget.reading
+
     _totalSeconds = widget.reading.minutesToRead * 60;
     _remainingSeconds = _totalSeconds;
-    _isReviewMode = widget.reading.progress?.status == ProgressStatus.completed;
 
-    // Chỉ chạy timer nếu chưa làm xong
+    // 🔥 NẾU LÀ RETAKE THÌ ÉP CHẾ ĐỘ LÀM BÀI MỚI (isReviewMode = false)
+    _isReviewMode = (widget.reading.progress?.status == ProgressStatus.completed) && !widget.isRetake;
+
+    // Chỉ chạy timer nếu chưa làm xong (hoặc đang Retake)
     if (!_isReviewMode) {
       _startTimer();
     }
@@ -89,12 +99,8 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         });
       } else {
         timer.cancel();
-        // Kiểm tra mounted để đảm bảo widget còn tồn tại
         if (mounted) {
-          // 🔥 LÚC NÀY GỌI CONTEXT SẼ KHÔNG BỊ LỖI NỮA
           final currentState = context.read<ReadingAttemptBloc>().state;
-
-          // Chỉ nộp nếu chưa nộp (status vẫn là initial hoặc đang làm)
           if (currentState.status == AttemptStatus.initial || currentState.status == AttemptStatus.error) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -128,13 +134,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     final List<AnswerPayload> answerPayloads = [];
     int correctCount = 0;
 
-    // Tính thời gian làm bài thực tế
     final int durationInSeconds = _totalSeconds - _remainingSeconds;
 
     for (final question in questions) {
       final chosenIndex = _selectedAnswers[question.id];
       if (chosenIndex == null) {
-        // Chưa chọn đáp án
         answerPayloads.add(AnswerPayload(questionId: question.id, chosenIndex: -1, isCorrect: false));
         continue;
       }
@@ -163,10 +167,8 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     const borderCol = Color(0xFFE4E4E7);
     final primaryColor = Theme.of(context).colorScheme.primary;
 
-    // Sử dụng BlocConsumer để lắng nghe và xây dựng giao diện
     return BlocConsumer<ReadingAttemptBloc, ReadingAttemptState>(
       listener: (context, state) {
-        // 1. Chế độ xem lại (Lịch sử)
         if (state.status == AttemptStatus.review) {
           if (state.attemptResult == null) return;
           final Map<String, int> oldAnswers = {};
@@ -175,12 +177,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           }
           setState(() {
             _selectedAnswers.addAll(oldAnswers);
-            _isReviewMode = true; // Đảm bảo UI chuyển sang chế độ review
-            _timer?.cancel(); // Dừng timer nếu lỡ chạy
+            _isReviewMode = true;
+            _timer?.cancel();
           });
         }
 
-        // 2. Nộp bài thành công
         if (state.status == AttemptStatus.success) {
           final result = state.attemptResult;
           showDialog(
@@ -222,7 +223,6 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             ),
           );
         }
-        // 3. Lỗi
         else if (state.status == AttemptStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -276,13 +276,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           ),
           body: Column(
             children: [
-              // Header: Timer hoặc Review Info
               if (!_isReviewMode && state.status != AttemptStatus.success)
                 _buildTimerDisplay(context)
               else
                 _buildReviewHeader(context, state),
 
-              // Content: Tabs
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -293,7 +291,6 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 ),
               ),
 
-              // Bottom Bar: Nút nộp bài (Chỉ hiện khi chưa nộp và đang ở tab câu hỏi)
               if (_tabController.index == 1 && widget.reading.questions.isNotEmpty && !isSubmitted)
                 _buildBottomActionBar(context, isSubmitting),
             ],
@@ -302,8 +299,6 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
       },
     );
   }
-
-  // --- CÁC WIDGET PHỤ TRỢ (Copy nguyên từ code cũ của bạn) ---
 
   Widget _buildTimerDisplay(BuildContext context) {
     final bool isTimeRunningOut = _remainingSeconds <= 30;
@@ -530,7 +525,6 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               final isSelected = _selectedAnswers[question.id] == optionIndex;
 
               Color bgColor = Colors.transparent;
-              // Color borderColor = Colors.transparent; // Không dùng biến này nếu không cần thiết
               Color textColor = const Color(0xFF09090B);
               IconData? icon;
               Color iconColor = Colors.transparent;
@@ -539,13 +533,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 final bool isCorrectAnswer = optionIndex == question.correctAnswerIndex;
                 if (isCorrectAnswer) {
                   bgColor = const Color(0xFFECFDF5);
-                  // borderColor = const Color(0xFF86EFAC);
                   textColor = const Color(0xFF14532D);
                   icon = Icons.check_circle;
                   iconColor = const Color(0xFF16A34A);
                 } else if (isSelected) {
                   bgColor = const Color(0xFFFEF2F2);
-                  // borderColor = const Color(0xFFFECACA);
                   textColor = const Color(0xFF7F1D1D);
                   icon = Icons.cancel;
                   iconColor = const Color(0xFFDC2626);
@@ -553,7 +545,6 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               } else {
                 if (isSelected) {
                   bgColor = primaryColor.withOpacity(0.05);
-                  // borderColor = primaryColor;
                 }
               }
 

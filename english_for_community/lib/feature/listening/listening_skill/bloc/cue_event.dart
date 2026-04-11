@@ -44,15 +44,17 @@ class UpdateUserAnswer extends CueEvent {
 }
 class LoadCuesAndAttempts extends CueEvent {
   final String listeningId;
-  final String? initialCueId; // 🔥 Thêm cái này để biết cần jump đến cue nào
+  final String? initialCueId;
+  final bool isRetake; // 🔥 THÊM BIẾN NÀY
 
   const LoadCuesAndAttempts({
     required this.listeningId,
-    this.initialCueId
+    this.initialCueId,
+    this.isRetake = false, // Mặc định là false
   });
 
   @override
-  List<Object?> get props => [listeningId, initialCueId];
+  List<Object?> get props => [listeningId, initialCueId, isRetake];
 }
 // 🔥 EVENT MỚI: Load danh sách comment của câu hiện tại
 class LoadCommentsEvent extends CueEvent {

@@ -92,14 +92,26 @@ class ListeningCompAttemptResult {
   final double score;
   final int correctCount;
   final int totalQuestions;
-  final List<Map<String, dynamic>> answers;
+  final List<dynamic> answers;
 
-  ListeningCompAttemptResult({required this.score, required this.correctCount, required this.totalQuestions, required this.answers});
+  ListeningCompAttemptResult({
+    required this.score,
+    required this.correctCount,
+    required this.totalQuestions,
+    required this.answers,
+  });
 
-  factory ListeningCompAttemptResult.fromJson(Map<String, dynamic> json) => ListeningCompAttemptResult(
-    score: (json['score'] as num?)?.toDouble() ?? 0.0,
-    correctCount: json['correctCount'] ?? 0,
-    totalQuestions: json['totalQuestions'] ?? 0,
-    answers: List<Map<String, dynamic>>.from(json['answersDetail'] ?? []),
-  );
+  factory ListeningCompAttemptResult.fromJson(Map<String, dynamic> json) {
+    // 🔥 CÚ CHỐT NẰM Ở ĐÂY: Dạy Flutter đọc CẢ 2 KEY từ API
+    final rawAnswers = json['answers'] ?? json['answersDetail'];
+
+    return ListeningCompAttemptResult(
+      score: (json['score'] as num?)?.toDouble() ?? 0.0,
+      correctCount: json['correctCount'] ?? 0,
+      totalQuestions: json['totalQuestions'] ?? 0,
+
+      // Đọc mảng an toàn, nếu null thì trả về mảng rỗng
+      answers: rawAnswers != null ? List<dynamic>.from(rawAnswers) : [],
+    );
+  }
 }

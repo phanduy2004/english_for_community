@@ -16,10 +16,12 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class SpeakingSkillsPage extends StatelessWidget {
   final String setId;
+  final bool isRetake; // 🔥 THÊM BIẾN NÀY
 
   const SpeakingSkillsPage({
     super.key,
     required this.setId,
+    this.isRetake = false, // Mặc định false
   });
 
   static const routeName = 'SpeakingSkillsPage';
@@ -29,7 +31,8 @@ class SpeakingSkillsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<SpeakingLessonBloc>()
-        ..add(FetchLessonDetailsEvent(setId: setId)),
+      // 🔥 TRUYỀN isRetake XUỐNG EVENT CỦA BLOC
+        ..add(FetchLessonDetailsEvent(setId: setId, isRetake: isRetake)),
       child: const _SpeakingSkillsView(),
     );
   }
