@@ -1,5 +1,22 @@
 import 'package:flutter/material.dart';
 
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
+
+class _TutorialStep {
+  const _TutorialStep({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.spans,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final List<InlineSpan> spans;
+}
+
 class VocabularyTutorialDialog extends StatefulWidget {
   const VocabularyTutorialDialog({super.key});
 
@@ -11,58 +28,92 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  // Dữ liệu cho các slide hướng dẫn
-  final List<Map<String, dynamic>> _steps = [
-    {
-      "title": "Welcome to Vocabulary",
-      "desc": [
-        const TextSpan(text: "Xây dựng vốn từ vựng vững chắc với phương pháp "),
-        const TextSpan(text: "Lặp lại ngắt quãng", style: TextStyle(fontWeight: FontWeight.bold)),
-        const TextSpan(text: " (Spaced Repetition)."),
-      ],
-      "icon": Icons.auto_stories_rounded,
-      "color": const Color(0xFF3B82F6) // Blue 500
-    },
-    {
-      "title": "Tra cứu & Lưu trữ",
-      "desc": [
-        const TextSpan(text: "Tra từ nhanh chóng. Nhấn "),
-        WidgetSpan(child: Icon(Icons.bookmark, size: 16, color: Colors.amber[700])),
-        TextSpan(text: " Save", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber[700])),
-        const TextSpan(text: " để lưu lại, hoặc nhấn "),
-        const WidgetSpan(child: Icon(Icons.school, size: 16, color: Color(0xFF10B981))),
-        const TextSpan(text: " Learn", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
-        const TextSpan(text: " để học ngay."),
-      ],
-      "icon": Icons.search_rounded,
-      "color": const Color(0xFFF59E0B) // Amber 500
-    },
-    {
-      "title": "Thuật toán thông minh",
-      "desc": [
-        const TextSpan(text: "Dựa trên lịch sử học của bạn, "),
-        const TextSpan(text: "Hệ thống Server", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10B981))),
-        const TextSpan(text: " sẽ tự động tính toán "),
-        const TextSpan(text: "điểm rơi trí nhớ", style: TextStyle(fontWeight: FontWeight.bold)),
-        const TextSpan(text: " để nhắc nhở ngay trước khi bạn sắp quên từ đó."),
-      ],
-      "icon": Icons.psychology_rounded, // Đổi icon thành bộ não/xử lý
-      "color": const Color(0xFF10B981) // Emerald 500
-    },
-    {
-      "title": "Ôn tập mỗi ngày",
-      "desc": [
-        const TextSpan(text: "Khi đến hạn, nhấn "),
-        const TextSpan(text: "Review Now", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFEF4444))),
-        const TextSpan(text: ". Đánh giá mức độ nhớ (Hard/Good/Easy) để tối ưu lịch học."),
-      ],
-      "icon": Icons.history_edu_rounded,
-      "color": const Color(0xFFA855F7) // Purple 500
-    },
-  ];
+  List<_TutorialStep> _steps(AppLocalizations t) {
+    const textMuted = Color(0xFF71717A);
+    const green = Color(0xFF10B981);
+    const amber700 = Color(0xFFB45309);
+    const reviewRed = Color(0xFFEF4444);
 
-  void _nextPage() {
-    if (_currentIndex < _steps.length - 1) {
+    final bodyStyle = const TextStyle(fontSize: 15, color: textMuted, height: 1.6);
+
+    return [
+      _TutorialStep(
+        title: t.vocabTutorialSlide1Title,
+        icon: Icons.auto_stories_rounded,
+        color: const Color(0xFF3B82F6),
+        spans: [
+          TextSpan(style: bodyStyle, children: [
+            TextSpan(text: t.vocabTutorialSlide1a),
+            TextSpan(text: t.vocabTutorialSlide1b, style: bodyStyle.copyWith(fontWeight: FontWeight.bold)),
+            TextSpan(text: t.vocabTutorialSlide1c),
+          ]),
+        ],
+      ),
+      _TutorialStep(
+        title: t.vocabTutorialSlide2Title,
+        icon: Icons.search_rounded,
+        color: const Color(0xFFF59E0B),
+        spans: [
+          TextSpan(style: bodyStyle, children: [
+            TextSpan(text: t.vocabTutorialSlide2a),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(Icons.bookmark, size: 16, color: Colors.amber[700]),
+            ),
+            TextSpan(
+              text: ' ${t.vocabTutorialSlide2SaveLabel}',
+              style: bodyStyle.copyWith(fontWeight: FontWeight.bold, color: amber700),
+            ),
+            TextSpan(text: t.vocabTutorialSlide2b),
+            const WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(Icons.school, size: 16, color: green),
+            ),
+            TextSpan(
+              text: ' ${t.vocabTutorialSlide2LearnLabel}',
+              style: bodyStyle.copyWith(fontWeight: FontWeight.bold, color: green),
+            ),
+            TextSpan(text: t.vocabTutorialSlide2c),
+          ]),
+        ],
+      ),
+      _TutorialStep(
+        title: t.vocabTutorialSlide3Title,
+        icon: Icons.psychology_rounded,
+        color: green,
+        spans: [
+          TextSpan(style: bodyStyle, children: [
+            TextSpan(text: t.vocabTutorialSlide3a),
+            TextSpan(
+              text: t.vocabTutorialSlide3b,
+              style: bodyStyle.copyWith(fontWeight: FontWeight.bold, color: green),
+            ),
+            TextSpan(text: t.vocabTutorialSlide3c),
+            TextSpan(text: t.vocabTutorialSlide3d, style: bodyStyle.copyWith(fontWeight: FontWeight.bold)),
+            TextSpan(text: t.vocabTutorialSlide3e),
+          ]),
+        ],
+      ),
+      _TutorialStep(
+        title: t.vocabTutorialSlide4Title,
+        icon: Icons.history_edu_rounded,
+        color: const Color(0xFFA855F7),
+        spans: [
+          TextSpan(style: bodyStyle, children: [
+            TextSpan(text: t.vocabTutorialSlide4a),
+            TextSpan(
+              text: t.vocabReviewNowFab,
+              style: bodyStyle.copyWith(fontWeight: FontWeight.bold, color: reviewRed),
+            ),
+            TextSpan(text: t.vocabTutorialSlide4c),
+          ]),
+        ],
+      ),
+    ];
+  }
+
+  void _nextPage(int stepCount) {
+    if (_currentIndex < stepCount - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.fastOutSlowIn,
@@ -74,11 +125,12 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
+    final steps = _steps(t);
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
 
-    // Lấy màu hiện tại
-    final currentColor = _steps[_currentIndex]['color'] as Color;
+    final currentColor = steps[_currentIndex].color;
 
     return Dialog(
       backgroundColor: Colors.white,
@@ -89,13 +141,11 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
         constraints: const BoxConstraints(maxWidth: 360, maxHeight: 480),
         child: Column(
           children: [
-            // 1. HEADER (ANIMATED BACKGROUND + ICON)
             Expanded(
               flex: 5,
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Background Gradient Animation
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 400),
                     decoration: BoxDecoration(
@@ -110,13 +160,11 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                       ),
                     ),
                   ),
-
-                  // Floating Icon
                   AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
                     transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
                     child: Container(
-                      key: ValueKey<int>(_currentIndex), // Key để trigger animation
+                      key: ValueKey<int>(_currentIndex),
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -130,7 +178,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                         ],
                       ),
                       child: Icon(
-                        _steps[_currentIndex]['icon'],
+                        steps[_currentIndex].icon,
                         size: 64,
                         color: currentColor,
                       ),
@@ -139,17 +187,15 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                 ],
               ),
             ),
-
-            // 2. TEXT CONTENT
             Expanded(
               flex: 4,
               child: PageView.builder(
                 controller: _pageController,
                 physics: const BouncingScrollPhysics(),
                 onPageChanged: (index) => setState(() => _currentIndex = index),
-                itemCount: _steps.length,
+                itemCount: steps.length,
                 itemBuilder: (context, index) {
-                  final step = _steps[index];
+                  final step = steps[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 32.0),
                     child: Column(
@@ -157,7 +203,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                       children: [
                         const SizedBox(height: 24),
                         Text(
-                          step['title'],
+                          step.title,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 22,
@@ -174,9 +220,8 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                               fontSize: 15,
                               color: textMuted,
                               height: 1.6,
-                              fontFamily: 'Inter', // Hoặc font mặc định của bạn
                             ),
-                            children: step['desc'],
+                            children: step.spans,
                           ),
                         ),
                       ],
@@ -185,52 +230,45 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                 },
               ),
             ),
-
-            // 3. FOOTER (DOTS + BUTTON)
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Dots Indicator
                   Row(
-                    children: List.generate(_steps.length, (index) {
+                    children: List.generate(steps.length, (index) {
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         margin: const EdgeInsets.only(right: 6),
                         height: 6,
                         width: _currentIndex == index ? 24 : 6,
                         decoration: BoxDecoration(
-                          color: _currentIndex == index
-                              ? currentColor // Dot active theo màu chủ đạo
-                              : const Color(0xFFE4E4E7),
+                          color: _currentIndex == index ? currentColor : const Color(0xFFE4E4E7),
                           borderRadius: BorderRadius.circular(3),
                         ),
                       );
                     }),
                   ),
-
-                  // Next Button
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     child: ElevatedButton(
-                      onPressed: _nextPage,
+                      onPressed: () => _nextPage(steps.length),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: textMain,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30), // Bo tròn nhiều hơn
+                          borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       child: Row(
                         children: [
                           Text(
-                            _currentIndex == _steps.length - 1 ? "Let's go" : "Next",
+                            _currentIndex == steps.length - 1 ? t.vocabTutorialLetsGo : t.next,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
-                          if (_currentIndex != _steps.length - 1) ...[
+                          if (_currentIndex != steps.length - 1) ...[
                             const SizedBox(width: 8),
                             const Icon(Icons.arrow_forward_rounded, size: 16),
                           ]

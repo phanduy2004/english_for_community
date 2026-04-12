@@ -6,7 +6,8 @@ export const geminiTools = [
       // ========================================
       {
         name: "get_learning_history",
-        description: "Lấy thống kê tổng quan (số phút học, số từ vựng mới, điểm trung bình) trong một khoảng thời gian.",
+        description:
+          "Thống kê UserDailyProgress (phút học, từ mới, điểm TB) trong khoảng ngày. Chỉ dùng khi đã có chính xác startDate/endDate (YYYY-MM-DD). KHÔNG bịa ngày — với hôm nay/tuần/tháng dùng get_learning_history_period hoặc get_daily_activity.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -16,13 +17,43 @@ export const geminiTools = [
           required: ["startDate", "endDate"],
         },
       },
+      {
+        name: "get_learning_history_period",
+        description:
+          "Giống get_learning_history nhưng server tự tính ngày theo múi giờ user: today | week (7 ngày gần nhất) | month (từ mùng 1 đến hôm nay). Luôn ưu tiên tool này khi user hỏi tuần này/tháng này/hôm nay.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            range: {
+              type: "STRING",
+              enum: ["today", "week", "month"],
+              description: "today = hôm nay; week = 7 ngày tính đến hôm nay; month = tháng hiện tại",
+            },
+          },
+        },
+      },
+      {
+        name: "get_daily_activity",
+        description:
+          "Danh sách bài đã làm trong MỘT ngày (khớp màn Progress/Lịch sử app): đếm số activity và từng tiêu đề. Dùng khi user hỏi hôm nay làm mấy bài / progress hôm nay.",
+        parameters: {
+          type: "OBJECT",
+          properties: {
+            date: {
+              type: "STRING",
+              description: "YYYY-MM-DD (tùy chọn). Bỏ trống = hôm nay theo timezone user.",
+            },
+          },
+        },
+      },
 
       // ========================================
       // 2. CHI TIẾT SPEAKING (Mở rộng)
       // ========================================
       {
         name: "get_speaking_details",
-        description: "Lấy danh sách các bài tập Nói (Speaking) đã làm, kèm điểm số WER, transcript và thời lượng audio.",
+        description:
+          "Danh sách bài Speaking đã hoàn thành. Có thể lọc theo khoảng ngày (theo timezone user) để khớp 'hôm nay'.",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -31,7 +62,9 @@ export const geminiTools = [
               type: "STRING",
               enum: ["Read-aloud", "Shadowing", "all"],
               description: "Lọc theo chế độ Speaking (không bắt buộc)"
-            }
+            },
+            startDate: { type: "STRING", description: "Lọc lastAccessedAt từ ngày (YYYY-MM-DD), dùng cùng endDate" },
+            endDate: { type: "STRING", description: "Lọc đến ngày (YYYY-MM-DD)" },
           },
         },
       },
@@ -41,7 +74,8 @@ export const geminiTools = [
       // ========================================
       {
         name: "get_reading_details",
-        description: "Lấy danh sách các bài Đọc đã làm, kèm điểm số, số lần thử và tốc độ đọc (WPM).",
+        description:
+          "Bài Reading đã hoàn thành. Truyền startDate+endDate (YYYY-MM-DD) để chỉ lấy bài có hoạt động trong khoảng đó (ví dụ hôm nay).",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -50,7 +84,9 @@ export const geminiTools = [
               type: "STRING",
               enum: ["easy", "medium", "hard", "all"],
               description: "Lọc theo độ khó (không bắt buộc)"
-            }
+            },
+            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
+            endDate: { type: "STRING", description: "YYYY-MM-DD" },
           },
         },
       },
@@ -60,7 +96,7 @@ export const geminiTools = [
       // ========================================
       {
         name: "get_writing_details",
-        description: "Lấy danh sách các bài Viết đã nộp, kèm điểm số, nhận xét chi tiết từ AI và thời gian làm bài.",
+        description: "Bài Writing đã nộp. Có thể lọc submittedAt theo startDate/endDate (YYYY-MM-DD).",
         parameters: {
           type: "OBJECT",
           properties: {
@@ -68,7 +104,9 @@ export const geminiTools = [
             topicId: {
               type: "STRING",
               description: "Lọc theo Topic cụ thể (không bắt buộc)"
-            }
+            },
+            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
+            endDate: { type: "STRING", description: "YYYY-MM-DD" },
           },
         },
       },
@@ -78,11 +116,14 @@ export const geminiTools = [
       // ========================================
       {
         name: "get_listening_details",
-        description: "Lấy danh sách các bài Nghe chép chính tả (Dictation) đã làm, kèm điểm số độ chính xác.",
+        description:
+          "Bài Dictation đã hoàn thành. startDate+endDate (YYYY-MM-DD) lọc theo lastAccessedAt trong ngày của user.",
         parameters: {
           type: "OBJECT",
           properties: {
-            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" }
+            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" },
+            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
+            endDate: { type: "STRING", description: "YYYY-MM-DD" },
           },
         },
       },
@@ -136,8 +177,8 @@ export const geminiTools = [
             },
             range: {
               type: "STRING",
-              enum: ["day", "week", "month"],
-              description: "Phạm vi thời gian (mặc định: week)"
+              enum: ["today", "day", "week", "month"],
+              description: "today/day = hôm nay; week = 7 ngày; month = từ mùng 1 (timezone user). Mặc định: week"
             }
           },
           required: ["skill"]
@@ -192,8 +233,8 @@ export const geminiTools = [
           properties: {
             range: {
               type: "STRING",
-              enum: ["week", "month"],
-              description: "Phạm vi phân tích (mặc định: week)"
+              enum: ["today", "day", "week", "month"],
+              description: "today/day = hôm nay; week/month theo timezone user (mặc định: week)"
             }
           }
         },

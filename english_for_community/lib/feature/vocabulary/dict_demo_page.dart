@@ -6,6 +6,7 @@ import '../../core/repository/dictionary_repository.dart';
 import '../../core/repository/user_vocab_repository.dart';
 import '../../core/router/app_router.dart';
 import '../../core/sqflite/dict_db.dart';
+import '../../core/locale/l10n_context.dart';
 
 class DictDemoPage extends StatefulWidget {
   // 🔥 Thêm cờ nhận diện chế độ khách
@@ -76,6 +77,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Color(0xFFF9FAFB);
     const textMain = Color(0xFF09090B);
 
@@ -91,7 +93,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
         ),
         // Hiển thị tiêu đề khác nếu là Guest
         title: Text(
-            widget.isGuest ? 'Quick Search' : 'Dictionary',
+            widget.isGuest ? t.dictQuickSearchTitle : t.dictDictionaryTitle,
             style: const TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 18)
         ),
         bottom: PreferredSize(
@@ -99,15 +101,16 @@ class _DictDemoPageState extends State<DictDemoPage> {
           child: Container(
             decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFE4E4E7)))),
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: _buildSearchInput(),
+            child: _buildSearchInput(context),
           ),
         ),
       ),
-      body: _buildBody(),
+      body: _buildBody(context),
     );
   }
 
-  Widget _buildSearchInput() {
+  Widget _buildSearchInput(BuildContext context) {
+    final t = context.l10n;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -120,7 +123,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
         autofocus: true,
         style: const TextStyle(fontSize: 16, color: Color(0xFF09090B), fontWeight: FontWeight.w500),
         decoration: InputDecoration(
-          hintText: 'Search words (e.g., serendipity)...',
+          hintText: t.dictSearchHint,
           hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 15),
           prefixIcon: const Icon(Icons.search_rounded, size: 22, color: Color(0xFF09090B)),
           suffixIcon: _isLoading
@@ -135,20 +138,21 @@ class _DictDemoPageState extends State<DictDemoPage> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
+    final t = context.l10n;
     if (_error.isNotEmpty) return Center(child: Text(_error, style: const TextStyle(color: Colors.red)));
     if (_controller.text.trim().isEmpty) {
-      return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.manage_search_rounded, size: 48, color: Color(0xFFE4E4E7)),
-        SizedBox(height: 12),
-        Text('Start typing to search', style: TextStyle(color: Color(0xFF71717A))),
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.manage_search_rounded, size: 48, color: Color(0xFFE4E4E7)),
+        const SizedBox(height: 12),
+        Text(t.dictStartTyping, style: const TextStyle(color: Color(0xFF71717A))),
       ]));
     }
     if (!_isLoading && _results.isEmpty) {
-      return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.search_off_rounded, size: 48, color: Color(0xFFE4E4E7)),
-        SizedBox(height: 12),
-        Text('No results found', style: TextStyle(color: Color(0xFF71717A))),
+      return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.search_off_rounded, size: 48, color: Color(0xFFE4E4E7)),
+        const SizedBox(height: 12),
+        Text(t.dictNoResults, style: const TextStyle(color: Color(0xFF71717A))),
       ]));
     }
 
@@ -158,7 +162,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final entry = _results[index];
-        return _ResultCard(entry: entry, onTap: () => _handleEntryTap(entry));
+        return _ResultCard(entry: entry, onTap: () => _handleEntryTap(entry), noDefinition: context.l10n.dictNoDefinitionAvailable);
       },
     );
   }
@@ -183,11 +187,12 @@ class _DictDemoPageState extends State<DictDemoPage> {
 class _ResultCard extends StatelessWidget {
   final Entry entry;
   final VoidCallback onTap;
-  const _ResultCard({required this.entry, required this.onTap});
+  final String noDefinition;
+  const _ResultCard({required this.entry, required this.onTap, required this.noDefinition});
 
   @override
   Widget build(BuildContext context) {
-    final firstDef = entry.senses.isNotEmpty ? entry.senses.first.def : 'No definition available';
+    final firstDef = entry.senses.isNotEmpty ? entry.senses.first.def : noDefinition;
 
     return Container(
       decoration: BoxDecoration(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'data_mock/task_type_instructions.dart';
+import '../../core/locale/l10n_context.dart';
 
 class WritingTaskInstructionDialog extends StatelessWidget {
   final String taskType;
@@ -14,6 +15,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     // Lấy thông tin hướng dẫn dựa trên taskType. Nếu không tìm thấy thì dùng mặc định.
     final instruction = taskInstructions[taskType] ??
         taskInstructions['Opinion']!; // Fallback về Opinion nếu lỗi
@@ -51,7 +53,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'How to write: ${instruction.title}',
+                          t.writingInstructionHowTo(instruction.title),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -60,7 +62,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Quick guide & structure',
+                          t.writingInstructionSubtitle,
                           style: const TextStyle(color: zinc500, fontSize: 13),
                         ),
                       ],
@@ -69,7 +71,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
                     icon: const Icon(Icons.close, color: zinc500),
-                    tooltip: 'Close',
+                    tooltip: t.commonClose,
                   ),
                 ],
               ),
@@ -84,7 +86,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // 1. Description
-                    _buildSectionTitle('WHAT IS IT?'),
+                    _buildSectionTitle(t.writingInstructionWhatIsIt),
                     Text(
                       instruction.description,
                       style: const TextStyle(fontSize: 15, color: zinc900, height: 1.5),
@@ -92,7 +94,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // 2. Structure
-                    _buildSectionTitle('SUGGESTED STRUCTURE'),
+                    _buildSectionTitle(t.writingInstructionSuggestedStructure),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -108,7 +110,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // 3. Key Tips
-                    _buildSectionTitle('KEY TIPS'),
+                    _buildSectionTitle(t.writingInstructionKeyTipsSection),
                     ...instruction.keyTips.map((tip) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Row(
@@ -146,7 +148,7 @@ class WritingTaskInstructionDialog extends StatelessWidget {
                     textStyle: const TextStyle(fontWeight: FontWeight.w600),
                     elevation: 0,
                   ),
-                  child: const Text('Got it, let\'s write!'),
+                  child: Text(t.writingInstructionGotIt),
                 ),
               ),
             ),

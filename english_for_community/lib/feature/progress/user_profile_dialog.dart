@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
+
 class UserProfileDialog extends StatelessWidget {
   final String? avatarUrl;
   final String fullName;
@@ -36,6 +39,7 @@ class UserProfileDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Dialog(
       backgroundColor: bgSurface,
       surfaceTintColor: bgSurface,
@@ -147,21 +151,21 @@ class UserProfileDialog extends StatelessWidget {
                         icon: Icons.local_fire_department_rounded,
                         color: const Color(0xFFF97316), // Orange
                         value: '$currentStreak',
-                        label: 'Streak',
+                        label: t.statStreak,
                       ),
                       _verticalDivider(),
                       _buildStatItem(
                         icon: Icons.stars_rounded,
                         color: const Color(0xFFEAB308), // Yellow
                         value: NumberFormat.compact().format(totalPoints),
-                        label: 'XP',
+                        label: t.statPoints,
                       ),
                       _verticalDivider(),
                       _buildStatItem(
                         icon: Icons.bar_chart_rounded,
                         color: const Color(0xFF3B82F6), // Blue
                         value: '$level',
-                        label: 'Level',
+                        label: t.statLevelLabel,
                       ),
                     ],
                   ),
@@ -182,15 +186,15 @@ class UserProfileDialog extends StatelessWidget {
                         if (dateOfBirth != null)
                           _buildDetailRow(
                             icon: Icons.cake_outlined,
-                            label: 'Birthday',
+                            label: t.labelBirthday,
                             value: DateFormat('dd MMM yyyy').format(dateOfBirth!),
                             showDivider: gender != null, // Hiện gạch ngang nếu có dòng gender bên dưới
                           ),
                         if (gender != null)
                           _buildDetailRow(
                             icon: Icons.transgender_outlined,
-                            label: 'Gender',
-                            value: _capitalize(gender!),
+                            label: t.labelGender,
+                            value: _localizedGender(t, gender!),
                             showDivider: false,
                           ),
                       ],
@@ -215,9 +219,9 @@ class UserProfileDialog extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
-                          child: const Text(
-                            'Close',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          child: Text(
+                            t.close,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -325,5 +329,18 @@ class UserProfileDialog extends StatelessWidget {
   String _capitalize(String s) {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1);
+  }
+
+  String _localizedGender(AppLocalizations t, String raw) {
+    switch (raw.toLowerCase()) {
+      case 'male':
+        return t.genderMale;
+      case 'female':
+        return t.genderFemale;
+      case 'other':
+        return t.genderOther;
+      default:
+        return _capitalize(raw);
+    }
   }
 }

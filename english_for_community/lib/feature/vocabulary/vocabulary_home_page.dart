@@ -10,6 +10,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/repository/dictionary_repository.dart';
 import '../../core/router/app_router.dart';
 import 'vocabulary_tutorial_dialog.dart';
+import '../../core/locale/l10n_context.dart';
 
 class VocabularyHomePage extends StatefulWidget {
   final int? initialIndex;
@@ -56,7 +57,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
       final result = await _dictionaryRepository.searchWord(headword, limit: 1);
       result.fold(
             (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${failure.message}')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabErrorWithMessage(failure.message))));
         },
             (entries) {
           if (entries.isNotEmpty && entries.first.headword == headword) {
@@ -64,17 +65,18 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
               context.pushNamed(kDictDetailRouteName, extra: entries.first).then((_) => _loadData());
             }
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No details found for "$headword"')));
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabNoDetailsForWord(headword))));
           }
         },
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabErrorWithMessage(e.toString()))));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Color(0xFFF9FAFB);
     const textMain = Color(0xFF09090B);
     const borderCol = Color(0xFFE4E4E7);
@@ -88,14 +90,14 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: false,
-          title: const Text(
-            'Vocabulary',
-            style: TextStyle(color: textMain, fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
+          title: Text(
+            t.vocabularyScreenTitle,
+            style: const TextStyle(color: textMain, fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
           ),
           actions: [
             IconButton(
               icon: Icon(Icons.help_outline_rounded, color: Colors.blue[600]), // Icon màu xanh
-              tooltip: 'Tutorial',
+              tooltip: t.vocabTutorialTooltip,
               onPressed: _showTutorial,
             ),
             Container(
@@ -103,7 +105,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
               decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
               child: IconButton(
                 icon: const Icon(Icons.search, color: textMain),
-                tooltip: 'Search Dictionary',
+                tooltip: t.vocabSearchDictionaryTooltip,
                 onPressed: () => context.pushNamed(kDictDemoRouteName).then((_) => _loadData()),
               ),
             ),
@@ -123,7 +125,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
                 indicatorWeight: 3,
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                tabs: const [Tab(text: 'Recently'), Tab(text: 'Learning'), Tab(text: 'Saved')],
+                tabs: [Tab(text: t.vocabTabRecently), Tab(text: t.vocabTabLearning), Tab(text: t.vocabTabSaved)],
               ),
             ),
           ),
@@ -134,7 +136,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
               return const Center(child: CircularProgressIndicator(strokeWidth: 2));
             }
             if (state.status == VocabularyStatus.error) {
-              return _ErrorView(message: state.errorMessage ?? "Unknown error");
+              return _ErrorView(message: state.errorMessage ?? t.vocabUnknownError);
             }
             return TabBarView(
               controller: _tabController,
@@ -160,7 +162,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
           foregroundColor: Colors.white,
           elevation: 4,
           icon: const Icon(Icons.play_lesson_rounded),
-          label: const Text('Review Now', style: TextStyle(fontWeight: FontWeight.w700)),
+          label: Text(t.vocabReviewNowFab, style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
       ),
     );
@@ -177,7 +179,8 @@ class _RecentTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (words.isEmpty) return const _EmptyView(message: 'No words looked up recently.', icon: Icons.history_rounded, color: Colors.blue);
+    final t = context.l10n;
+    if (words.isEmpty) return _EmptyView(message: t.vocabNoRecentWords, icon: Icons.history_rounded, color: Colors.blue);
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: words.length,
@@ -209,7 +212,8 @@ class _LearningTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (words.isEmpty) return const _EmptyView(message: 'Start learning to build your deck.', icon: Icons.school_rounded, color: Color(0xFF10B981));
+    final t = context.l10n;
+    if (words.isEmpty) return _EmptyView(message: t.vocabLearningEmpty, icon: Icons.school_rounded, color: const Color(0xFF10B981));
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: words.length,
@@ -241,7 +245,7 @@ class _LearningTab extends StatelessWidget {
                         color: isDue ? const Color(0xFFDC2626) : const Color(0xFF059669)),
                     const SizedBox(width: 4),
                     Text(
-                      isDue ? 'Review Now' : 'Review: $nextReviewStr',
+                      isDue ? t.vocabReviewNowBadge : t.vocabReviewOnDate(nextReviewStr),
                       style: TextStyle(
                         fontSize: 11, fontWeight: FontWeight.w700,
                         color: isDue ? const Color(0xFFDC2626) : const Color(0xFF059669),
@@ -251,7 +255,7 @@ class _LearningTab extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Text('Lv.${word.learningLevel}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A))),
+              Text(t.vocabLevelShort(word.learningLevel), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A))),
             ],
           ),
           action: isDue
@@ -274,7 +278,8 @@ class _SavedTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (words.isEmpty) return const _EmptyView(message: 'Bookmark words to verify later.', icon: Icons.bookmark_rounded, color: Colors.amber);
+    final t = context.l10n;
+    if (words.isEmpty) return _EmptyView(message: t.vocabSavedEmpty, icon: Icons.bookmark_rounded, color: Colors.amber);
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: words.length,
@@ -339,6 +344,7 @@ class _WordCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -381,9 +387,9 @@ class _WordCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       if (customSubtitle != null) customSubtitle!
                       else if (showMeaning)
-                        Text(word.shortDefinition ?? 'No definition', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B)))
+                        Text(word.shortDefinition ?? t.wordNoDefinition, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B)))
                       else
-                        Text(word.pos ?? 'Unknown type', style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
+                        Text(word.pos ?? t.wordUnknownType, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
                     ],
                   ),
                 ),

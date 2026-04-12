@@ -6,8 +6,9 @@ dotenv.config();
 // Khởi tạo Groq Client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// Model khuyến nghị
-const MODEL_NAME = "llama-3.3-70b-versatile";
+// Model Groq dùng chung (chat, writing prompt, feedback). Đổi một chỗ — tránh model cũ / không tồn tại.
+export const GROQ_MODEL_NAME = "llama-3.3-70b-versatile";
+const MODEL_NAME = GROQ_MODEL_NAME;
 
 // Hàm clean JSON (Loại bỏ ```json ... ```)
 const cleanJson = (text) => {
@@ -17,6 +18,7 @@ const cleanJson = (text) => {
 };
 
 export const aiService = {
+  MODEL_NAME: GROQ_MODEL_NAME,
   // --- 1. LOGIC TẠO ĐỀ (Giữ nguyên) ---
   generateWritingPrompt: async (topicName, aiConfig, taskType) => {
     try {

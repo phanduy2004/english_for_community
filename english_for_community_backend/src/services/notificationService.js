@@ -110,4 +110,44 @@ const createNotification = async ({
   }
 };
 
-export const notificationService = { createNotification };
+/** API user: danh sách + phân trang (không emit socket) */
+const listForUser = async (userId, page = 1, limit = 20) => {
+  const notifications = await Notification.find({ recipientId: userId })
+    .sort({ createdAt: -1 })
+    .skip((page - 1) * limit)
+    .limit(limit)
+    .populate('senderId', 'fullName avatarUrl');
+
+  const unreadCount = await Notification.countDocuments({ recipientId: userId, isRead: false });
+  const totalDocs = await Notification.countDocuments({ recipientId: userId });
+  const hasMore = totalDocs > page * limit;
+
+  return {
+    data: notifications,
+    unreadCount,
+    pagination: { page, hasMore },
+  };
+};
+
+const markOneAsReadForUser = async (userId, notificationId) => {
+  const updated = await Notification.findOneAndUpdate(
+    { _id: notificationId, recipientId: userId },
+    { isRead: true },
+    { new: true },
+  );
+  return updated;
+};
+
+const markAllAsReadForUser = async (userId) => {
+  await Notification.updateMany(
+    { recipientId: userId, isRead: false },
+    { isRead: true },
+  );
+};
+
+export const notificationService = {
+  createNotification,
+  listForUser,
+  markOneAsReadForUser,
+  markAllAsReadForUser,
+};

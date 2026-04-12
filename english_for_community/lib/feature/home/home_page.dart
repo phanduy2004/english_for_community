@@ -16,6 +16,8 @@ import '../../core/ui/animation/animated_status_container.dart';
 import '../../core/ui/interactive/scale_pressable.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
 import '../../core/ui/widget/app_skeleton.dart';
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../progress/bloc/progress_bloc.dart';
 import '../progress/bloc/progress_event.dart';
 import 'widgets/home_study_dashboard.dart';
@@ -288,7 +290,7 @@ class _HomePageState extends State<HomePage> {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
+      barrierLabel: context.l10n.barrierDismiss,
       barrierColor: Colors.black.withValues(alpha: 0.2),
       transitionDuration: const Duration(milliseconds: 250),
       pageBuilder: (context, anim1, anim2) => FadeTransition(
@@ -302,7 +304,7 @@ class _HomePageState extends State<HomePage> {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
+      barrierLabel: context.l10n.barrierDismiss,
       barrierColor: Colors.black.withValues(alpha: 0.2),
       transitionDuration: const Duration(milliseconds: 200),
       pageBuilder: (context, anim1, anim2) => FadeTransition(
@@ -343,6 +345,9 @@ class _HomePageState extends State<HomePage> {
               if (i == 0) context.read<UserBloc>().add(GetProfileEvent());
               setState(() => _tab = i);
             },
+            homeLabel: context.l10n.navHome,
+            progressLabel: context.l10n.navProgress,
+            profileLabel: context.l10n.navProfile,
             vocabularyBadge: null,
           ),
         ),
@@ -473,6 +478,7 @@ class _HomeContentView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final showAllLessons = ValueNotifier<bool>(false);
     final scheme = Theme.of(context).colorScheme;
     final textMain = scheme.onSurface;
@@ -495,6 +501,7 @@ class _HomeContentView extends StatelessWidget {
             primaryColor,
             onOpenNotifications,
             onOpenAiAssistant,
+            t,
           ),
         );
       },
@@ -510,6 +517,7 @@ class _HomeContentView extends StatelessWidget {
     Color primaryColor,
     VoidCallback onOpenNotifications,
     VoidCallback onOpenAiAssistant,
+    AppLocalizations t,
   ) {
     if (state.status == UserStatus.initial || state.status == UserStatus.loading) {
       return const HomeContentSkeleton();
@@ -519,7 +527,7 @@ class _HomeContentView extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: SoftErrorBanner(
-            message: state.errorMessage ?? 'Unable to load data',
+            message: state.errorMessage ?? t.homeLoadFailed,
             onRetry: () => context.read<UserBloc>().add(GetProfileEvent()),
           ),
         ),
@@ -528,7 +536,7 @@ class _HomeContentView extends StatelessWidget {
     if (state.status == UserStatus.unauthenticated) {
       return Center(
         child: Text(
-          'Please sign in',
+          t.homePleaseSignIn,
           style: Theme.of(context).textTheme.bodyLarge,
         ),
       );
@@ -553,12 +561,13 @@ class _HomeContentView extends StatelessWidget {
                 context,
                 user.fullName,
                 user.avatarUrl,
+                t,
                 onOpenNotifications: onOpenNotifications,
                 onOpenAiAssistant: onOpenAiAssistant,
               ),
               const SizedBox(height: 12),
               _buildDailyGoalCard(
-                  dailyProgress, dailyGoal, progressValue, textMain, textMuted, primaryColor),
+                  dailyProgress, dailyGoal, progressValue, textMain, textMuted, primaryColor, t),
               const SizedBox(height: 16),
               HomeStudyDashboard(
                 streak: user.currentStreak ?? 0,
@@ -569,25 +578,26 @@ class _HomeContentView extends StatelessWidget {
                 primaryColor: primaryColor,
               ),
               const SizedBox(height: 16),
-              _buildStatsRow(user),
+              _buildStatsRow(user, t),
               const SizedBox(height: 32),
-              _buildLessonsSection(context, showAllLessons, textMain, primaryColor),
+              _buildLessonsSection(context, showAllLessons, textMain, primaryColor, t),
               const SizedBox(height: 32),
-              _buildQuickActionsSection(context, textMain),
+              _buildQuickActionsSection(context, textMain, t),
             ],
           ),
         ),
       );
     }
     return Center(
-      child: Text('No data available', style: Theme.of(context).textTheme.bodyMedium),
+      child: Text(t.homeNoData, style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 
   Widget _buildHeader(
     BuildContext context,
     String name,
-    String? avatarUrl, {
+    String? avatarUrl,
+    AppLocalizations t, {
     required VoidCallback onOpenNotifications,
     required VoidCallback onOpenAiAssistant,
   }) {
@@ -600,13 +610,13 @@ class _HomeContentView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hi, $name 👋',
+                t.homeGreeting(name),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: tt.titleLarge?.copyWith(letterSpacing: -0.5),
               ),
               const SizedBox(height: 4),
-              Text('Ready to continue learning?', style: tt.bodySmall),
+              Text(t.homeReadySubtitle, style: tt.bodySmall),
             ],
           ),
         ),
@@ -633,7 +643,7 @@ class _HomeContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyGoalCard(int progress, int goal, double progressValue, Color textMain, Color textMuted, Color primary) {
+  Widget _buildDailyGoalCard(int progress, int goal, double progressValue, Color textMain, Color textMuted, Color primary, AppLocalizations t) {
     return _ShadcnCard(
       padding: const EdgeInsets.all(16),
       child: Builder(
@@ -647,10 +657,10 @@ class _HomeContentView extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Daily Goal', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: textMain)),
+                      Text(t.homeDailyGoal, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: textMain)),
                       const SizedBox(height: 4),
                       Text(
-                        '$progress / $goal lessons completed',
+                        t.homeDailyLessonsLine(progress, goal),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: textMuted),
                       ),
                     ],
@@ -676,31 +686,31 @@ class _HomeContentView extends StatelessWidget {
   }
 
   // ... (Các phần _buildStatsRow, _buildLessonsSection, _ShadcnCard... giữ nguyên như cũ)
-  Widget _buildStatsRow(dynamic user) {
+  Widget _buildStatsRow(dynamic user, AppLocalizations t) {
     return Row(
       children: [
-        Expanded(child: _StatItem(emoji: '🔥', value: '${user.currentStreak ?? 0}', label: 'Streak')),
+        Expanded(child: _StatItem(emoji: '🔥', value: '${user.currentStreak ?? 0}', label: t.statStreak)),
         const SizedBox(width: 12),
-        Expanded(child: _StatItem(emoji: '⭐', value: '${user.totalPoints ?? 0}', label: 'Points')),
+        Expanded(child: _StatItem(emoji: '⭐', value: '${user.totalPoints ?? 0}', label: t.statPoints)),
         const SizedBox(width: 12),
-        Expanded(child: _StatItem(emoji: '📚', value: 'Lv.${user.level ?? 1}', label: 'Level')),
+        Expanded(child: _StatItem(emoji: '📚', value: 'Lv.${user.level ?? 1}', label: t.statLevelLabel)),
       ],
     );
   }
 
-  Widget _buildLessonsSection(BuildContext context, ValueNotifier<bool> showAllNotifier, Color textMain, Color primary) {
+  Widget _buildLessonsSection(BuildContext context, ValueNotifier<bool> showAllNotifier, Color textMain, Color primary, AppLocalizations t) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Today\'s Lessons', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+            Text(t.homeTodaysLessons, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
             ValueListenableBuilder<bool>(
               valueListenable: showAllNotifier,
               builder: (context, showAll, child) {
                 return GestureDetector(
                   onTap: () => showAllNotifier.value = !showAll,
-                  child: Text(showAll ? 'Show less' : 'See all', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
+                  child: Text(showAll ? t.homeShowLess : t.homeSeeAll, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
                 );
               },
             ),
@@ -712,16 +722,16 @@ class _HomeContentView extends StatelessWidget {
           builder: (context, showAll, child) {
             return Column(
               children: [
-                const _LessonCard(icon: Icons.headphones, iconBg: Color(0xFFE8F5E9), iconColor: Color(0xFF2E7D32), title: 'Listening Practice', subtitle: 'Daily conversations • 15 min'),
+                _LessonCard(slot: _HomeLessonSlot.listening, icon: Icons.headphones, iconBg: const Color(0xFFE8F5E9), iconColor: const Color(0xFF2E7D32), title: t.homeLessonListeningTitle, subtitle: t.homeLessonListeningSubtitle),
                 const SizedBox(height: 12),
-                const _LessonCard(icon: Icons.menu_book, iconBg: Color(0xFFFFF8E1), iconColor: Color(0xFFF9A825), title: 'Reading Comprehension', subtitle: 'Short stories • 20 min'),
+                _LessonCard(slot: _HomeLessonSlot.reading, icon: Icons.menu_book, iconBg: const Color(0xFFFFF8E1), iconColor: const Color(0xFFF9A825), title: t.homeLessonReadingTitle, subtitle: t.homeLessonReadingSubtitle),
                 const SizedBox(height: 12),
-                const _LessonCard(icon: Icons.quiz, iconBg: Color(0xFFE3F2FD), iconColor: Color(0xFF1976D2), title: 'Vocabulary Builder', subtitle: 'New words • 10 min'),
+                _LessonCard(slot: _HomeLessonSlot.vocabulary, icon: Icons.quiz, iconBg: const Color(0xFFE3F2FD), iconColor: const Color(0xFF1976D2), title: t.homeLessonVocabTitle, subtitle: t.homeLessonVocabSubtitle),
                 if (showAll) ...[
                   const SizedBox(height: 12),
-                  const _LessonCard(icon: Icons.record_voice_over, iconBg: Color(0xFFFCE4EC), iconColor: Color(0xFFD81B60), title: 'Speaking Practice', subtitle: 'Pronunciation • 25 min'),
+                  _LessonCard(slot: _HomeLessonSlot.speaking, icon: Icons.record_voice_over, iconBg: const Color(0xFFFCE4EC), iconColor: const Color(0xFFD81B60), title: t.homeLessonSpeakingTitle, subtitle: t.homeLessonSpeakingSubtitle),
                   const SizedBox(height: 12),
-                  const _LessonCard(icon: Icons.edit_note_rounded, iconBg: Color(0xFFE0F7FA), iconColor: Color(0xFF00838F), title: 'Writing Practice', subtitle: 'Select a topic • 15 min'),
+                  _LessonCard(slot: _HomeLessonSlot.writing, icon: Icons.edit_note_rounded, iconBg: const Color(0xFFE0F7FA), iconColor: const Color(0xFF00838F), title: t.homeLessonWritingTitle, subtitle: t.homeLessonWritingSubtitle),
                 ],
               ],
             );
@@ -731,12 +741,12 @@ class _HomeContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionsSection(BuildContext context, Color textMain) {
+  Widget _buildQuickActionsSection(BuildContext context, Color textMain, AppLocalizations t) {
     final tt = Theme.of(context).textTheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Quick Access', style: tt.titleMedium?.copyWith(color: textMain)),
+        Text(t.homeQuickAccess, style: tt.titleMedium?.copyWith(color: textMain)),
         const SizedBox(height: 16),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -747,7 +757,7 @@ class _HomeContentView extends StatelessWidget {
                   colorBg: const Color(0xFFF3E8FF),
                   icon: Icons.favorite,
                   iconColor: const Color(0xFFA855F7),
-                  label: 'Favorites',
+                  label: t.homeQuickFavorites,
                   onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 0}),
                 ),
               ),
@@ -758,7 +768,7 @@ class _HomeContentView extends StatelessWidget {
                   colorBg: const Color(0xFFF0FDF4),
                   icon: Icons.style,
                   iconColor: const Color(0xFF22C55E),
-                  label: 'Flashcards',
+                  label: t.homeQuickFlashcards,
                   onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 1}),
                 ),
               ),
@@ -769,7 +779,7 @@ class _HomeContentView extends StatelessWidget {
                   colorBg: const Color(0xFFFEF2F2),
                   icon: Icons.trending_up,
                   iconColor: const Color(0xFFEF4444),
-                  label: 'Stats',
+                  label: t.homeQuickStats,
                   onTap: () => context.pushNamed(ProgressReportPage.routeName),
                 ),
               ),
@@ -866,22 +876,44 @@ class _StatItem extends StatelessWidget {
   }
 }
 
+enum _HomeLessonSlot { listening, reading, vocabulary, speaking, writing }
+
 class _LessonCard extends StatelessWidget {
+  final _HomeLessonSlot slot;
   final IconData icon;
   final Color iconBg, iconColor;
   final String title, subtitle;
-  const _LessonCard({required this.icon, required this.iconBg, required this.iconColor, required this.title, required this.subtitle});
+  const _LessonCard({
+    required this.slot,
+    required this.icon,
+    required this.iconBg,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+  });
   @override
   Widget build(BuildContext context) {
     final tt = Theme.of(context).textTheme;
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     return _ShadcnCard(
       onTap: () {
-        if (title.contains('Listening')) showListeningModeDialog(context);
-        else if (title.contains('Reading')) context.pushNamed(ReadingListPage.routeName);
-        else if (title.contains('Vocabulary')) context.pushNamed('VocabularyPage');
-        else if (title.contains('Speaking')) showSpeakingModeDialog(context);
-        else if (title.contains('Writing')) context.pushNamed(WritingTopicsPage.routeName);
+        switch (slot) {
+          case _HomeLessonSlot.listening:
+            showListeningModeDialog(context);
+            break;
+          case _HomeLessonSlot.reading:
+            context.pushNamed(ReadingListPage.routeName);
+            break;
+          case _HomeLessonSlot.vocabulary:
+            context.pushNamed('VocabularyPage');
+            break;
+          case _HomeLessonSlot.speaking:
+            showSpeakingModeDialog(context);
+            break;
+          case _HomeLessonSlot.writing:
+            context.pushNamed(WritingTopicsPage.routeName);
+            break;
+        }
       },
       padding: const EdgeInsets.all(12),
       child: Row(

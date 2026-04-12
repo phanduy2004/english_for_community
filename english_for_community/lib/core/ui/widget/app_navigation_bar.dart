@@ -48,6 +48,9 @@ class AppNavigationBar extends StatelessWidget {
     required int currentIndex,
     required ValueChanged<int> onIndexSelected,
     bool useGoRouter = false,
+    required String homeLabel,
+    required String progressLabel,
+    required String profileLabel,
     // Gắn tên route nếu bạn dùng GoRouter
     String? homeRouteName,
     String? vocabularyRouteName,
@@ -60,20 +63,20 @@ class AppNavigationBar extends StatelessWidget {
   }) {
     final items = <AppNavItem>[
       AppNavItem(
-        label: 'Home',
+        label: homeLabel,
         icon: Icons.home_outlined,
         selectedIcon: Icons.home,
         routeName: homeRouteName,
       ),
       AppNavItem(
-        label: 'Progress',
+        label: progressLabel,
         icon: Icons.style_outlined,
         selectedIcon: Icons.style,
         routeName: vocabularyRouteName,
         badge: vocabularyBadge,
       ),
       AppNavItem(
-        label: 'Profile',
+        label: profileLabel,
         icon: Icons.person_outline,
         selectedIcon: Icons.person,
         routeName: profileRouteName,

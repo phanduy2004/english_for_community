@@ -10,6 +10,7 @@ import '../../core/entity/user_entity.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
+import '../../core/locale/l10n_context.dart';
 
 class EditProfilePage extends StatefulWidget {
   static String routeName = 'EditProfilePage';
@@ -135,11 +136,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
           context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated successfully')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.profileUpdatedSuccess)));
         }
       },
       builder: (context, state) {
         final isLoading = state.status == UserStatus.loading;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -150,10 +152,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
               icon: const Icon(Icons.arrow_back, color: textMain),
               onPressed: () => context.pop(),
             ),
-            title: const Text(
-                'Edit Profile',
-                // Không set fontFamily để dùng font mặc định của app
-                style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17)
+            title: Text(
+                t.editProfileTitle,
+                style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17)
             ),
             centerTitle: true,
             actions: [
@@ -169,7 +170,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: isLoading
                       ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text(
-                    'Save',
+                    t.saveChanges,
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       color: (_isDirty && !isLoading) ? Colors.white : const Color(0xFF71717A),
@@ -237,34 +238,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(height: 32),
 
                 // --- 2. PUBLIC INFO (Blue Accents) ---
-                const _SectionHeader('PUBLIC INFO'),
+                _SectionHeader(t.sectionPublicInfo),
                 _ColorfulGroup(
                   children: [
                     _ColorfulInput(
                       icon: Icons.person_rounded,
                       iconColor: Colors.blue,
-                      label: 'Full Name',
+                      label: t.labelFullName,
                       controller: _fullNameController,
                       onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) => v!.isEmpty ? t.fieldRequired : null,
                     ),
                     const _Divider(),
                     _ColorfulInput(
                       icon: Icons.alternate_email_rounded,
                       iconColor: Colors.indigo,
-                      label: 'Username',
+                      label: t.labelUsername,
                       controller: _usernameController,
                       prefixText: '@',
                       onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                      validator: (v) => v!.isEmpty ? t.fieldRequired : null,
                     ),
                     const _Divider(),
                     _ColorfulInput(
                       icon: Icons.edit_note_rounded,
                       iconColor: Colors.cyan,
-                      label: 'Bio',
+                      label: t.labelBio,
                       controller: _bioController,
-                      hint: 'Tell us about yourself...',
+                      hint: t.hintBio,
                       maxLines: 3,
                       onChanged: (_) => _markDirty(),
                     ),
@@ -273,15 +274,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(height: 24),
 
                 // --- 3. PRIVATE DETAILS (Warm Accents) ---
-                const _SectionHeader('PRIVATE DETAILS'),
+                _SectionHeader(t.sectionPrivateDetails),
                 _ColorfulGroup(
                   children: [
                     _ColorfulDropdown(
                       icon: Icons.wc_rounded,
                       iconColor: Colors.pink,
-                      label: 'Gender',
+                      label: t.labelGender,
                       value: _selectedGender,
-                      items: const ['Male', 'Female', 'Other'],
+                      items: [
+                        ('Male', t.genderMale),
+                        ('Female', t.genderFemale),
+                        ('Other', t.genderOther),
+                      ],
                       onChanged: (val) {
                         setState(() {
                           _selectedGender = val;
@@ -293,10 +298,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _ColorfulInput(
                       icon: Icons.cake_rounded,
                       iconColor: Colors.orange,
-                      label: 'Birthday',
+                      label: t.labelBirthday,
                       controller: _dobController,
                       readOnly: true,
-                      hint: 'Select date',
+                      hint: t.hintSelectDate,
                       onTap: _pickDate,
                       suffixIcon: Icons.calendar_today_rounded,
                     ),
@@ -304,10 +309,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _ColorfulInput(
                       icon: Icons.phone_rounded,
                       iconColor: Colors.green,
-                      label: 'Phone',
+                      label: t.labelPhone,
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
-                      hint: '+84...',
+                      hint: t.hintPhoneShort,
                       onChanged: (_) => _markDirty(),
                     ),
                   ],
@@ -315,13 +320,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 const SizedBox(height: 24),
 
                 // --- 4. SYSTEM INFO (Neutral Accents) ---
-                const _SectionHeader('SYSTEM INFO'),
+                _SectionHeader(t.sectionSystemInfo),
                 _ColorfulGroup(
                   children: [
                     _ColorfulInput(
                       icon: Icons.email_rounded,
                       iconColor: Colors.teal,
-                      label: 'Email',
+                      label: t.labelEmail,
                       initialValue: _profile!.email,
                       readOnly: true,
                       enabled: false,
@@ -332,7 +337,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _ColorfulInput(
                       icon: Icons.security_rounded,
                       iconColor: Colors.blueGrey,
-                      label: 'Role',
+                      label: t.labelRole,
                       initialValue: _profile!.role.toUpperCase(),
                       readOnly: true,
                       enabled: false,
@@ -341,7 +346,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _ColorfulInput(
                       icon: Icons.fingerprint_rounded,
                       iconColor: Colors.grey,
-                      label: 'User ID',
+                      label: t.labelUserId,
                       initialValue: _profile!.id,
                       readOnly: true,
                       enabled: false,
@@ -547,7 +552,7 @@ class _ColorfulInput extends StatelessWidget {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied'), duration: Duration(seconds: 1)));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.copiedToClipboard), duration: const Duration(seconds: 1)));
                   }
                 },
                 child: const Padding(padding: EdgeInsets.only(left: 12), child: Icon(Icons.copy_rounded, size: 16, color: textPlaceholder)),
@@ -569,7 +574,8 @@ class _ColorfulDropdown extends StatelessWidget {
   final Color iconColor;
   final String label;
   final String? value;
-  final List<String> items;
+  /// API values (e.g. Male/Female/Other) with localized labels.
+  final List<(String, String)> items;
   final ValueChanged<String?> onChanged;
 
   const _ColorfulDropdown({
@@ -585,6 +591,8 @@ class _ColorfulDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     const textMain = Color(0xFF09090B);
     const textPlaceholder = Color(0xFFA1A1AA);
+    final selectHint = context.l10n.selectPlaceholder;
+    final values = items.map((e) => e.$1).toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -596,11 +604,11 @@ class _ColorfulDropdown extends StatelessWidget {
           const Spacer(),
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
-              value: (value != null && items.contains(value)) ? value : null,
+              value: (value != null && values.contains(value)) ? value : null,
               icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: textPlaceholder),
               style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), fontWeight: FontWeight.w500),
-              hint: const Text('Select', style: TextStyle(color: textPlaceholder, fontSize: 14)),
-              items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              hint: Text(selectHint, style: const TextStyle(color: textPlaceholder, fontSize: 14)),
+              items: items.map((e) => DropdownMenuItem<String>(value: e.$1, child: Text(e.$2))).toList(),
               onChanged: onChanged,
             ),
           ),

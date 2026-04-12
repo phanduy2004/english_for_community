@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:translator_plus/translator_plus.dart';
 
+import '../../../core/locale/l10n_context.dart';
+
 class WordDetailsDialog extends StatefulWidget {
   final String word;
   final FlutterTts tts;
@@ -62,17 +64,18 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
       _vietnameseMeaning = results[1] as String;
 
       if (_apiResult == null && _vietnameseMeaning == 'Cannot translate.') {
-        throw Exception("Cannot find word details.");
+        throw Exception('__WORD_NOT_FOUND__');
       }
 
       setState(() => _isLoading = false);
     } catch (e) {
       if (!mounted) return;
+      final loc = context.l10n;
       setState(() {
         _isLoading = false;
-        _error = e.toString().contains("Exception:")
-            ? e.toString().replaceFirst("Exception: ", "")
-            : "An error occurred.";
+        final msg = e.toString();
+        final stripped = msg.contains('Exception:') ? msg.replaceFirst('Exception: ', '').trim() : msg;
+        _error = stripped == '__WORD_NOT_FOUND__' ? loc.wordDetailsNotFound : (stripped.isEmpty ? loc.genericLoadError : stripped);
       });
     }
   }
@@ -163,6 +166,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -195,7 +199,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Close'),
+                child: Text(t.close),
               ),
             ),
           ],
@@ -229,6 +233,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
       return _buildErrorState();
     }
 
+    final t = context.l10n;
     final primaryColor = Theme.of(context).colorScheme.primary;
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
@@ -297,7 +302,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
 
           if (_apiResult?.meanings.isNotEmpty ?? false) ...[
             const SizedBox(height: 24),
-            const Text("Definitions", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMuted)),
+            Text(t.dictDefinitions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMuted)),
             const SizedBox(height: 12),
             ..._apiResult!.meanings.map((m) => _buildMeaningSection(m)),
           ],

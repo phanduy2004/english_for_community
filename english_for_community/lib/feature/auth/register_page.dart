@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/locale/l10n_context.dart';
 import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_state.dart';
 import '../auth/bloc/user_event.dart';
@@ -89,12 +90,13 @@ class _RegisterPageState extends State<RegisterPage> {
     final pass = _passController.text;
     final confirm = _confirmPassController.text;
 
+    final t = context.l10n;
     if (name.isEmpty || username.isEmpty || email.isEmpty || pass.isEmpty) {
-      _showShadcnDialog(context, title: 'Error', message: 'Please fill in all required fields (*).', isError: true);
+      _showShadcnDialog(context, title: t.errorTitle, message: t.fillRequiredFields, isError: true);
       return;
     }
     if (pass != confirm) {
-      _showShadcnDialog(context, title: 'Password Error', message: 'Confirmation password does not match.', isError: true);
+      _showShadcnDialog(context, title: t.passwordErrorTitle, message: t.passwordMismatch, isError: true);
       return;
     }
 
@@ -113,7 +115,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: 'Registration Failed', message: state.errorMessage!, isError: true);
+          _showShadcnDialog(context, title: context.l10n.registrationFailedTitle, message: state.errorMessage!, isError: true);
         }
 
         if (state.status == UserStatus.otpRequired) {
@@ -122,6 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
       },
       builder: (context, state) {
         final isLoading = state.isFormLoading;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -143,16 +146,16 @@ class _RegisterPageState extends State<RegisterPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // --- 1. HEADER ---
-                    const Text(
-                      'Create Your Account',
+                    Text(
+                      t.registerHeroTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Fill in the details to start your journey.',
+                    Text(
+                      t.registerHeroSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: textMuted),
+                      style: const TextStyle(fontSize: 14, color: textMuted),
                     ),
                     const SizedBox(height: 32),
 
@@ -171,18 +174,18 @@ class _RegisterPageState extends State<RegisterPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Full Name
-                          _Label('Full Name *'),
+                          _Label(t.labelFullName),
                           const SizedBox(height: 8),
                           _ShadcnInput(
-                            controller: _nameController, hintText: 'John Doe', icon: Icons.badge_outlined, enabled: !isLoading,
+                            controller: _nameController, hintText: t.hintFullName, icon: Icons.badge_outlined, enabled: !isLoading,
                           ),
                           const SizedBox(height: 16),
 
                           // Username
-                          _Label('Username *'),
+                          _Label(t.labelUsername),
                           const SizedBox(height: 8),
                           _ShadcnInput(
-                            controller: _usernameController, hintText: 'username123', icon: Icons.alternate_email, enabled: !isLoading,
+                            controller: _usernameController, hintText: t.hintUsername, icon: Icons.alternate_email, enabled: !isLoading,
                           ),
                           const SizedBox(height: 16),
 
@@ -195,10 +198,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _Label('Phone Number'),
+                                    _Label(t.labelPhone),
                                     const SizedBox(height: 8),
                                     _ShadcnInput(
-                                      controller: _phoneController, hintText: '0912...', icon: Icons.phone_outlined, enabled: !isLoading, keyboardType: TextInputType.phone,
+                                      controller: _phoneController, hintText: t.hintPhoneShort, icon: Icons.phone_outlined, enabled: !isLoading, keyboardType: TextInputType.phone,
                                     ),
                                   ],
                                 ),
@@ -209,10 +212,10 @@ class _RegisterPageState extends State<RegisterPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _Label('Date of Birth'),
+                                    _Label(t.labelDateOfBirth),
                                     const SizedBox(height: 8),
                                     _ShadcnInput(
-                                      controller: _dobController, hintText: 'DD/MM/YYYY', icon: Icons.calendar_today_outlined, enabled: !isLoading, readOnly: true, onTap: () => _selectDate(context),
+                                      controller: _dobController, hintText: t.hintDatePlaceholder, icon: Icons.calendar_today_outlined, enabled: !isLoading, readOnly: true, onTap: () => _selectDate(context),
                                     ),
                                   ],
                                 ),
@@ -222,27 +225,27 @@ class _RegisterPageState extends State<RegisterPage> {
                           const SizedBox(height: 16),
 
                           // Email
-                          _Label('Email *'),
+                          _Label('${t.labelEmail} *'),
                           const SizedBox(height: 8),
                           _ShadcnInput(
-                            controller: _emailController, hintText: 'name@example.com', icon: Icons.email_outlined, enabled: !isLoading, keyboardType: TextInputType.emailAddress,
+                            controller: _emailController, hintText: t.hintEmail, icon: Icons.email_outlined, enabled: !isLoading, keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 16),
 
                           // Password
-                          _Label('Password *'),
+                          _Label('${t.labelPassword} *'),
                           const SizedBox(height: 8),
                           _ShadcnInput(
-                            controller: _passController, hintText: '******', icon: Icons.lock_outline, obscureText: _obscurePass, enabled: !isLoading,
+                            controller: _passController, hintText: t.hintPasswordMask, icon: Icons.lock_outline, obscureText: _obscurePass, enabled: !isLoading,
                             suffixIcon: IconButton(icon: Icon(_obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: textMuted), onPressed: () => setState(() => _obscurePass = !_obscurePass)),
                           ),
                           const SizedBox(height: 16),
 
                           // Confirm Password
-                          _Label('Confirm Password *'),
+                          _Label(t.labelConfirmPassword),
                           const SizedBox(height: 8),
                           _ShadcnInput(
-                            controller: _confirmPassController, hintText: '******', icon: Icons.verified_user_outlined, obscureText: _obscureConfirm, enabled: !isLoading,
+                            controller: _confirmPassController, hintText: t.hintPasswordMask, icon: Icons.verified_user_outlined, obscureText: _obscureConfirm, enabled: !isLoading,
                             suffixIcon: IconButton(icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined, size: 18, color: textMuted), onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm)),
                           ),
                           const SizedBox(height: 24),
@@ -257,7 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               child: isLoading
                                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('Register', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  : Text(t.registerButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                             ),
                           ),
                         ],
@@ -270,10 +273,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text('Already have an account? ', style: TextStyle(fontSize: 14, color: textMuted)),
+                        Text(t.alreadyHaveAccount, style: const TextStyle(fontSize: 14, color: textMuted)),
                         GestureDetector(
                           onTap: () => context.goNamed('LoginPage'),
-                          child: const Text('Sign In', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                          child: Text(t.signIn, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
                         ),
                       ],
                     ),
@@ -347,6 +350,7 @@ class _ShadcnInput extends StatelessWidget {
 }
 
 void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
+  final t = context.l10n;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -365,7 +369,7 @@ void _showShadcnDialog(BuildContext context, {required String title, required St
         SizedBox(width: double.infinity, child: OutlinedButton(
           onPressed: () => Navigator.pop(ctx),
           style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), side: const BorderSide(color: Color(0xFFE4E4E7)), foregroundColor: const Color(0xFF09090B)),
-          child: const Text('Close'),
+          child: Text(t.close),
         ))
       ],
     ),

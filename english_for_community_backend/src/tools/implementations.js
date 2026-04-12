@@ -10,6 +10,12 @@ import Listening from '../models/Listening.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import User from '../models/User.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
+import historyService from '../services/historyService.js';
+import {
+  isPlainYmd,
+  utcRangeForCalendarDate,
+  addCalendarDays,
+} from '../utils/localDayBounds.js';
 
 // ========================================
 // HELPER FUNCTIONS
@@ -19,26 +25,43 @@ const formatScore = (val) => (val === undefined || val === null) ? 'N/A' : val;
 const formatPercent = (val) => Math.round(val * 100) + '%';
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id); // 🔥 NEW: Validate ID
 
-const calculateDateRange = (range, timezone = 'Asia/Ho_Chi_Minh') => {
-  const now = new Date();
-  const todayStr = now.toLocaleDateString('en-CA', { timeZone: timezone });
+/** Khoảng YYYY-MM-DD theo timezone user (không dùng giờ máy chủ). */
+const resolveZonedRangeYmd = async (userId, range) => {
+  const user = await User.findById(userId).select('timezone').lean();
+  const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+  const todayYmd = new Date().toLocaleDateString('en-CA', { timeZone: tz });
 
-  let startDate = now; // Bắt đầu từ 00:00:00 hôm nay (local time)
-
-  if (range === 'week') {
-    const dayOfWeek = now.getDay();
-    const offset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Thứ 2 là ngày 1
-    startDate = new Date(now.setDate(now.getDate() - offset));
-    // Reset giờ về 00:00:00
-    startDate.setHours(0, 0, 0, 0);
-  } else if (range === 'month') {
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (range === 'day') {
+    return { startDate: todayYmd, endDate: todayYmd, timezone: tz, todayYmd };
   }
+  if (range === 'week') {
+    return {
+      startDate: addCalendarDays(todayYmd, -6),
+      endDate: todayYmd,
+      timezone: tz,
+      todayYmd,
+    };
+  }
+  if (range === 'month') {
+    return {
+      startDate: `${todayYmd.slice(0, 7)}-01`,
+      endDate: todayYmd,
+      timezone: tz,
+      todayYmd,
+    };
+  }
+  return {
+    startDate: addCalendarDays(todayYmd, -6),
+    endDate: todayYmd,
+    timezone: tz,
+    todayYmd,
+  };
+};
 
-  // Chuyển về chuỗi YYYY-MM-DD để query DB
-  const finalStartDate = startDate.toLocaleDateString('en-CA', { timeZone: timezone });
-
-  return { startDate: finalStartDate, endDate: todayStr };
+const normalizePeriodArg = (range) => {
+  if (range === 'today') return 'day';
+  if (range === 'day' || range === 'week' || range === 'month') return range;
+  return 'week';
 };
 
 export const toolImplementations = {
@@ -49,6 +72,13 @@ export const toolImplementations = {
   get_learning_history: async (userId, args) => {
     const { startDate, endDate } = args;
     console.log(`🛠️ Tool: get_learning_history (${startDate} -> ${endDate})`);
+
+    if (!isPlainYmd(startDate) || !isPlainYmd(endDate)) {
+      return {
+        error:
+          'startDate và endDate bắt buộc dạng YYYY-MM-DD. Với "hôm nay/tuần này/tháng này" hãy dùng get_daily_activity hoặc get_learning_history_period để server tự lấy ngày đúng theo múi giờ user.',
+      };
+    }
 
     const records = await UserDailyProgress.find({
       userId,
@@ -103,6 +133,65 @@ export const toolImplementations = {
     };
   },
 
+  /**
+   * Tổng quan UserDailyProgress theo today/week/month — không cần model tự đoán ngày.
+   */
+  get_learning_history_period: async (userId, args) => {
+    const range = normalizePeriodArg(args.range || 'week');
+    const { startDate, endDate, timezone } = await resolveZonedRangeYmd(userId, range);
+    console.log(`🛠️ Tool: get_learning_history_period (${range} → ${startDate}..${endDate}, ${timezone})`);
+    return toolImplementations.get_learning_history(userId, { startDate, endDate });
+  },
+
+  /**
+   * Danh sách bài đã làm trong MỘT ngày dương lịch (theo timezone user), khớp màn Progress app.
+   */
+  get_daily_activity: async (userId, args) => {
+    const user = await User.findById(userId).select('timezone').lean();
+    const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+    const ymd =
+      args.date && isPlainYmd(args.date)
+        ? args.date
+        : new Date().toLocaleDateString('en-CA', { timeZone: tz });
+    console.log(`🛠️ Tool: get_daily_activity (${ymd}, tz=${tz})`);
+
+    const rec = await UserDailyProgress.findOne({ userId, date: ymd }).lean();
+    const activities = await historyService.getHistory(userId.toString(), ymd, ymd, null);
+
+    const lc = rec?.lessonsCompleted;
+    const lessonsSum = lc
+      ? (lc.listening || 0) + (lc.reading || 0) + (lc.speaking || 0) + (lc.writing || 0)
+      : 0;
+
+    return {
+      date: ymd,
+      timezone_used: tz,
+      user_daily_progress: rec
+        ? {
+            study_minutes: Math.round((rec.studySeconds || 0) / 60),
+            vocab_learned: rec.vocabLearned || 0,
+            lessons_completed_by_skill: {
+              listening: lc?.listening || 0,
+              reading: lc?.reading || 0,
+              speaking: lc?.speaking || 0,
+              writing: lc?.writing || 0,
+            },
+            lessons_completed_sum: lessonsSum,
+          }
+        : null,
+      activity_count: activities.length,
+      activities: activities.map((a) => ({
+        type: a.type,
+        sub_type: a.subType,
+        title: a.title,
+        score: a.score,
+        completed_at: a.date,
+      })),
+      note:
+        'activity_count là số hoạt động trong ngày (mỗi reading/speaking/writing/listening là một dòng). lessons_completed_sum đếm theo log ngày (có thể khác nếu một bài được cập nhật nhiều lần).',
+    };
+  },
+
   // ========================================
   // 2. CHI TIẾT SPEAKING
   // ========================================
@@ -113,17 +202,36 @@ export const toolImplementations = {
 
     const query = { userId: userId, isCompleted: true };
 
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      const user = await User.findById(userId).select('timezone').lean();
+      const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+      const a = utcRangeForCalendarDate(args.startDate, tz);
+      const b = utcRangeForCalendarDate(args.endDate, tz);
+      if (a && b) {
+        const rStart = a.start < b.start ? a.start : b.start;
+        const rEnd = a.end > b.end ? a.end : b.end;
+        query.lastAccessedAt = { $gte: rStart, $lte: rEnd };
+      }
+    }
+
+    const fetchCap =
+      isPlainYmd(args.startDate) && isPlainYmd(args.endDate) ? 80 : limit;
+
     const items = await SpeakingEnrollment.find(query)
       .populate('speakingSetId', 'title mode level')
       .sort({ lastAccessedAt: -1 })
-      .limit(limit)
+      .limit(fetchCap)
       .lean();
 
     if (!items.length) return "Bạn chưa hoàn thành bài Nói nào.";
 
-    const filtered = mode && mode !== 'all'
+    let filtered = mode && mode !== 'all'
       ? items.filter(item => item.speakingSetId?.mode === mode)
       : items;
+
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      filtered = filtered.slice(0, limit);
+    }
 
     return {
       total: filtered.length,
@@ -145,17 +253,34 @@ export const toolImplementations = {
     const difficulty = args.difficulty;
     console.log(`🛠️ Tool: get_reading_details (limit ${limit})`);
 
-    const items = await ReadingProgress.find({ userId: userId, status: 'completed' })
+    const q = { userId: userId, status: 'completed' };
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      const user = await User.findById(userId).select('timezone').lean();
+      const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+      const a = utcRangeForCalendarDate(args.startDate, tz);
+      const b = utcRangeForCalendarDate(args.endDate, tz);
+      if (a && b) {
+        const rStart = a.start < b.start ? a.start : b.start;
+        const rEnd = a.end > b.end ? a.end : b.end;
+        q.lastAttemptedAt = { $gte: rStart, $lte: rEnd };
+      }
+    }
+
+    const items = await ReadingProgress.find(q)
       .populate('readingId', 'title difficulty')
       .sort({ lastAttemptedAt: -1 })
-      .limit(limit)
+      .limit(isPlainYmd(args.startDate) && isPlainYmd(args.endDate) ? 80 : limit)
       .lean();
 
     if (!items.length) return "Bạn chưa hoàn thành bài Đọc nào.";
 
-    const filtered = difficulty && difficulty !== 'all'
+    let filtered = difficulty && difficulty !== 'all'
       ? items.filter(item => item.readingId?.difficulty === difficulty)
       : items;
+
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      filtered = filtered.slice(0, limit);
+    }
 
     return {
       total: filtered.length,
@@ -183,18 +308,34 @@ export const toolImplementations = {
       query.topicId = topicId;
     }
 
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      const user = await User.findById(userId).select('timezone').lean();
+      const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+      const a = utcRangeForCalendarDate(args.startDate, tz);
+      const b = utcRangeForCalendarDate(args.endDate, tz);
+      if (a && b) {
+        const rStart = a.start < b.start ? a.start : b.start;
+        const rEnd = a.end > b.end ? a.end : b.end;
+        query.submittedAt = { $gte: rStart, $lte: rEnd };
+      }
+    }
+
     const items = await WritingSubmission.find(query)
       // CHỈ LẤY CÁC FIELD CẦN THIẾT
       .select('generatedPrompt.title generatedPrompt.taskType submittedAt score durationInSeconds wordCount feedback.generalComment')
       .sort({ submittedAt: -1 })
-      .limit(limit)
+      .limit(isPlainYmd(args.startDate) && isPlainYmd(args.endDate) ? 80 : limit)
       .lean();
 
     if (!items.length) return "Bạn chưa nộp bài Viết nào.";
 
+    const capped = isPlainYmd(args.startDate) && isPlainYmd(args.endDate)
+      ? items.slice(0, limit)
+      : items;
+
     return {
-      total: items.length,
-      exercises: items.map(item => {
+      total: capped.length,
+      exercises: capped.map(item => {
         const isReviewed = item.score !== undefined && item.score !== null;
         return {
           date: item.submittedAt ? new Date(item.submittedAt).toLocaleDateString('vi-VN') : 'N/A',
@@ -216,17 +357,34 @@ export const toolImplementations = {
     const limit = args.limit || 5;
     console.log(`🛠️ Tool: get_listening_details (limit ${limit})`);
 
-    const items = await Enrollment.find({ userId: userId, isCompleted: true })
+    const q = { userId: userId, isCompleted: true };
+    if (isPlainYmd(args.startDate) && isPlainYmd(args.endDate)) {
+      const user = await User.findById(userId).select('timezone').lean();
+      const tz = user?.timezone || 'Asia/Ho_Chi_Minh';
+      const a = utcRangeForCalendarDate(args.startDate, tz);
+      const b = utcRangeForCalendarDate(args.endDate, tz);
+      if (a && b) {
+        const rStart = a.start < b.start ? a.start : b.start;
+        const rEnd = a.end > b.end ? a.end : b.end;
+        q.lastAccessedAt = { $gte: rStart, $lte: rEnd };
+      }
+    }
+
+    const items = await Enrollment.find(q)
       .populate('listeningId', 'title difficulty')
       .sort({ lastAccessedAt: -1 })
-      .limit(limit)
+      .limit(isPlainYmd(args.startDate) && isPlainYmd(args.endDate) ? 80 : limit)
       .lean();
 
     if (!items.length) return "Bạn chưa hoàn thành bài Nghe nào.";
 
+    const capped = isPlainYmd(args.startDate) && isPlainYmd(args.endDate)
+      ? items.slice(0, limit)
+      : items;
+
     return {
-      total: items.length,
-      exercises: items.map(item => ({
+      total: capped.length,
+      exercises: capped.map(item => ({
         date: item.lastAccessedAt ? new Date(item.lastAccessedAt).toLocaleDateString('vi-VN') : 'N/A',
         title: item.listeningId?.title || "Bài nghe",
         difficulty: item.listeningId?.difficulty || "N/A",
@@ -285,18 +443,19 @@ export const toolImplementations = {
   // ========================================
   get_skill_statistics: async (userId, args) => {
     const { skill, range = 'week' } = args;
-    console.log(`🛠️ Tool: get_skill_statistics (${skill}, ${range})`);
+    const period = normalizePeriodArg(range);
+    console.log(`🛠️ Tool: get_skill_statistics (${skill}, ${period})`);
 
-    const user = await User.findById(userId).select('timezone').lean();
-    const timezone = user?.timezone || 'Asia/Ho_Chi_Minh';
-    const { startDate, endDate } = calculateDateRange(range, timezone);
+    const { startDate, endDate, timezone } = await resolveZonedRangeYmd(userId, period);
 
     const records = await UserDailyProgress.find({ userId, date: { $gte: startDate, $lte: endDate } }).lean();
 
     if (!records.length) return `Không có dữ liệu cho kỹ năng ${skill} trong khoảng thời gian này.`;
 
     let stats = {
-      skill: skill, period: `${startDate} đến ${endDate}`,
+      skill: skill,
+      period: `${startDate} đến ${endDate}`,
+      timezone_used: timezone,
       total_sessions: 0, average_score: 0, lessons_completed: 0
     };
 
@@ -390,11 +549,11 @@ export const toolImplementations = {
   // ========================================
   analyze_weaknesses: async (userId, args) => {
     const { range = 'week' } = args;
-    console.log(`🛠️ Tool: analyze_weaknesses (${range})`);
+    const period = range === 'today' ? 'day' : (range === 'day' || range === 'week' || range === 'month' ? range : 'week');
+    console.log(`🛠️ Tool: analyze_weaknesses (${period})`);
 
     const user = await User.findById(userId).select('timezone dailyMinutes').lean();
-    const timezone = user?.timezone || 'Asia/Ho_Chi_Minh';
-    const { startDate, endDate } = calculateDateRange(range, timezone);
+    const { startDate, endDate, timezone } = await resolveZonedRangeYmd(userId, period);
 
     const records = await UserDailyProgress.find({ userId, date: { $gte: startDate, $lte: endDate } }).lean();
 
@@ -445,7 +604,7 @@ export const toolImplementations = {
 
     if (analysis.length === 0) { return "Bạn đang học tập rất tốt, không có điểm yếu nào đáng kể!"; }
 
-    return { period: `${startDate} đến ${endDate}`, weaknesses: analysis };
+    return { period: `${startDate} đến ${endDate}`, timezone_used: timezone, weaknesses: analysis };
   },
 
   // ========================================

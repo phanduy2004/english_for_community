@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/locale/l10n_context.dart';
+
 class WritingCard extends StatelessWidget {
   final String title;
   final IconData leadingIcon;
@@ -123,7 +125,7 @@ class WritingCard extends StatelessWidget {
                                 Icon(Icons.description_outlined, size: 14, color: textMuted),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '$submissions essays',
+                                  context.l10n.writingSubmissionsCount(submissions!),
                                   style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500),
                                 ),
                               ],

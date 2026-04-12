@@ -8,6 +8,8 @@ import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_state.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../core/router/app_router.dart'; // Để dùng kDictDemoRouteName
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -71,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
     final pass = _passController.text;
 
     if (email.isEmpty || pass.isEmpty) {
-      _showShadcnDialog(context, title: 'Missing Info', message: 'Enter email and password.', isError: true);
+      _showShadcnDialog(context, title: context.l10n.missingInfo, message: context.l10n.enterEmailPassword, isError: true);
       return;
     }
     _saveUserCredentials();
@@ -89,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: 'Login Failed', message: state.errorMessage!, isError: true);
+          _showShadcnDialog(context, title: context.l10n.loginFailed, message: state.errorMessage!, isError: true);
         }
       },
       builder: (context, state) {
@@ -126,9 +128,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text('Welcome Back!', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain)),
+                        Text(context.l10n.loginWelcomeBack, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain)),
                         const SizedBox(height: 8),
-                        const Text('Enter your details to continue.', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: textMuted)),
+                        Text(context.l10n.loginSubtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: textMuted)),
                         const SizedBox(height: 32),
 
                         // Form Card
@@ -143,15 +145,15 @@ class _LoginPageState extends State<LoginPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const _Label('Email'),
+                              _Label(context.l10n.labelEmail),
                               const SizedBox(height: 8),
-                              _ShadcnInput(controller: _emailController, hintText: 'name@example.com', icon: Icons.email_outlined, enabled: !isLoading),
+                              _ShadcnInput(controller: _emailController, hintText: context.l10n.hintEmail, icon: Icons.email_outlined, enabled: !isLoading),
                               const SizedBox(height: 16),
-                              const _Label('Password'),
+                              _Label(context.l10n.labelPassword),
                               const SizedBox(height: 8),
                               _ShadcnInput(
                                 controller: _passController,
-                                hintText: 'Enter password...',
+                                hintText: context.l10n.hintPassword,
                                 icon: Icons.lock_outline,
                                 obscureText: _obscurePassword,
                                 enabled: !isLoading,
@@ -171,13 +173,13 @@ class _LoginPageState extends State<LoginPage> {
                                       children: [
                                         SizedBox(width: 20, height: 20, child: Checkbox(value: _rememberMe, activeColor: primaryCol, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)), onChanged: (v) => setState(() => _rememberMe = v!))),
                                         const SizedBox(width: 8),
-                                        const Text('Remember me', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
+                                        Text(context.l10n.rememberMe, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
                                       ],
                                     ),
                                   ),
                                   GestureDetector(
                                     onTap: () => context.pushNamed('ForgotPasswordPage'),
-                                    child: const Text('Forgot password?', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
+                                    child: Text(context.l10n.forgotPasswordLink, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: textMain)),
                                   ),
                                 ],
                               ),
@@ -187,24 +189,24 @@ class _LoginPageState extends State<LoginPage> {
                                 child: ElevatedButton(
                                   onPressed: () => _onSignIn(isLoading: isLoading),
                                   style: ElevatedButton.styleFrom(backgroundColor: primaryCol, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                                  child: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Sign In', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  child: isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Text(context.l10n.signIn, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                                 ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Row(children: [const Expanded(child: Divider(color: borderCol)), const Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('OR', style: TextStyle(fontSize: 11, color: textMuted, fontWeight: FontWeight.w600))), const Expanded(child: Divider(color: borderCol))]),
+                        Row(children: [const Expanded(child: Divider(color: borderCol)), Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text(context.l10n.orDivider, style: const TextStyle(fontSize: 11, color: textMuted, fontWeight: FontWeight.w600))), const Expanded(child: Divider(color: borderCol))]),
                         const SizedBox(height: 24),
                         _buildGoogleButton(context, isLoading),
                         const SizedBox(height: 32),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text("Don't have an account? ", style: TextStyle(fontSize: 14, color: textMuted)),
+                            Text(context.l10n.noAccountPrompt, style: const TextStyle(fontSize: 14, color: textMuted)),
                             GestureDetector(
                               onTap: () => context.pushNamed('RegisterPage'),
-                              child: const Text('Sign Up', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textMain)),
+                              child: Text(context.l10n.signUp, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textMain)),
                             ),
                           ],
                         ),
@@ -255,12 +257,12 @@ class _LoginPageState extends State<LoginPage> {
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.menu_book_rounded, size: 18, color: Color(0xFF52525B)), // Icon xám đậm
-              SizedBox(width: 8),
+            children: [
+              const Icon(Icons.menu_book_rounded, size: 18, color: Color(0xFF52525B)), // Icon xám đậm
+              const SizedBox(width: 8),
               Text(
-                'Dictionary',
-                style: TextStyle(
+                context.l10n.dictionary,
+                style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF18181B), // Chữ đen
@@ -294,7 +296,7 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 SvgPicture.asset('assets/images/google.svg', width: 22, height: 22),
                 const SizedBox(width: 12),
-                const Text('Continue with Google', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                Text(context.l10n.continueWithGoogle, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
               ],
             ),
           ),
@@ -352,7 +354,7 @@ void _showShadcnDialog(BuildContext context, {required String title, required St
       backgroundColor: Colors.white, surfaceTintColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Row(children: [Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded, color: isError ? Colors.red : Colors.green, size: 24), const SizedBox(width: 12), Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600))]),
       content: Text(message, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
-      actions: [SizedBox(width: double.infinity, child: OutlinedButton(onPressed: () => Navigator.pop(ctx), style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), foregroundColor: const Color(0xFF09090B)), child: const Text('Close')))],
+      actions: [SizedBox(width: double.infinity, child: OutlinedButton(onPressed: () => Navigator.pop(ctx), style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), foregroundColor: const Color(0xFF09090B)), child: Text(AppLocalizations.of(ctx)!.close)))],
     ),
   );
 }

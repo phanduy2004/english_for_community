@@ -70,6 +70,7 @@ import '../repository_impl/user_vocab_repository_impl.dart';
 import '../repository_impl/writing_repository_impl.dart';
 import 'package:english_for_community/feature/vocabulary/bloc/vocabulary_bloc.dart';
 import '../socket/socket_service.dart';
+import '../locale/app_locale_controller.dart';
 
 var getIt = GetIt.instance;
 
@@ -86,6 +87,7 @@ void registerApiClient() {
 }
 void registerServices() {
  getIt.registerLazySingleton<SocketService>(() => SocketService());
+ getIt.registerSingleton<AppLocaleController>(AppLocaleController());
 }
 void registerDataSource() {
  final api = getIt<ApiClient>();

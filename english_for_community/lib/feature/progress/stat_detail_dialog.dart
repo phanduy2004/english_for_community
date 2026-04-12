@@ -5,6 +5,8 @@ import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import '../../core/entity/progress_summary_entity.dart';
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 enum StatDetailRange { day, week, month }
 
@@ -35,15 +37,15 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     }
   }
 
-  String _getTitle() {
+  String _getTitle(AppLocalizations t) {
     switch (widget.statKey) {
-      case 'vocab': return 'Vocabulary Detail';
-      case 'reading': return 'Reading Attempts Detail';
-      case 'dictation': return 'Listening/Dictation Detail';
-      case 'speaking': return 'Speaking Practice Detail';
-      case 'writing': return 'Writing Submissions Detail';
-      case 'lessons': return 'Lessons Completed Detail';
-      default: return 'Progress Detail';
+      case 'vocab': return t.statDetailVocab;
+      case 'reading': return t.statDetailReading;
+      case 'dictation': return t.statDetailDictation;
+      case 'speaking': return t.statDetailSpeaking;
+      case 'writing': return t.statDetailWriting;
+      case 'lessons': return t.statDetailLessons;
+      default: return t.statDetailGeneric;
     }
   }
 
@@ -73,7 +75,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
   }
 
   // 🔥 1. Widget Item đơn lẻ (Đã tinh chỉnh cho Grouped List)
-  Widget _buildDetailItem(ProgressDetailEntity item, String statKey, Color primaryColor) {
+  Widget _buildDetailItem(ProgressDetailEntity item, String statKey, Color primaryColor, AppLocalizations t) {
     final dateDisplay = _formatDate(item.date);
 
     String subtitle;
@@ -84,7 +86,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     // Logic cho lessons (Khi đã nằm trong nhóm, không cần hiện Type ở subtitle nữa)
     if (statKey == 'lessons') {
       icon = Icons.check_circle_outline_rounded; // Icon mặc định cho item con
-      subtitle = dateDisplay; // Chỉ hiện ngày
+      subtitle = dateDisplay.isEmpty ? '' : t.statDetailDateOnly(dateDisplay);
       valueDisplay = '';
       unit = '';
 
@@ -101,27 +103,27 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     // ... (Giữ nguyên logic cho các statKey khác: reading, speaking, vocab...)
     if (statKey == 'reading') {
       final scoreDisplay = (item.score).toString();
-      subtitle = 'Accuracy: ${scoreDisplay}% | Date: $dateDisplay';
+      subtitle = t.statDetailReadingSubtitle(scoreDisplay, dateDisplay);
       valueDisplay = scoreDisplay;
       unit = '%';
       icon = Icons.menu_book_rounded;
     } else if (statKey == 'speaking') {
-      subtitle = 'Score: ${item.score}% | Date: $dateDisplay';
+      subtitle = t.statDetailScoreDateSubtitle(item.score.toString(), dateDisplay);
       valueDisplay = item.score.toString();
       unit = '%';
       icon = Icons.mic_external_on_rounded;
     } else if (statKey == 'writing') {
-      subtitle = 'Band Score: ${item.score} | Date: $dateDisplay';
+      subtitle = t.statDetailWritingSubtitle(item.score.toString(), dateDisplay);
       valueDisplay = item.score.toString();
       unit = '';
       icon = Icons.edit_note_rounded;
     } else if (statKey == 'dictation' || statKey == 'listening') {
-      subtitle = 'Score: ${item.score}% | Date: $dateDisplay';
+      subtitle = t.statDetailScoreDateSubtitle(item.score.toString(), dateDisplay);
       valueDisplay = item.score.toString();
       unit = '%';
       icon = Icons.headphones_rounded;
     } else {
-      subtitle = 'Date: $dateDisplay';
+      subtitle = dateDisplay.isEmpty ? '' : t.statDetailDateLine(dateDisplay);
       valueDisplay = '';
       unit = '';
       icon = Icons.info_outline;
@@ -137,12 +139,12 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
   }
 
   // 🔥 2. Hàm xây dựng danh sách gom nhóm (Dành riêng cho Lessons)
-  Widget _buildGroupedLessonsList(List<ProgressDetailEntity> data, Color primaryColor) {
+  Widget _buildGroupedLessonsList(List<ProgressDetailEntity> data, Color primaryColor, AppLocalizations t) {
     // Gom nhóm data theo item.type
     Map<String, List<ProgressDetailEntity>> groupedData = {};
     for (var item in data) {
       // Nếu type rỗng thì cho vào nhóm 'Other'
-      String key = (item.type.isEmpty) ? 'Other' : item.type;
+      String key = (item.type.isEmpty) ? t.statDetailLessonsGroupOther : item.type;
       if (!groupedData.containsKey(key)) {
         groupedData[key] = [];
       }
@@ -179,7 +181,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
             ),
 
             // --- Danh sách item trong nhóm ---
-            ...groupItems.map((item) => _buildDetailItem(item, 'lessons', primaryColor)),
+            ...groupItems.map((item) => _buildDetailItem(item, 'lessons', primaryColor, t)),
 
             const SizedBox(height: 8), // Khoảng cách giữa các nhóm
           ],
@@ -192,31 +194,32 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
   Widget _buildDetailList(BuildContext context, ProgressState state) {
     const textMuted = Color(0xFF71717A);
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final t = context.l10n;
 
     if (state.detailStatus == ProgressDetailStatus.loading) {
       return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
     }
 
     if (state.detailStatus == ProgressDetailStatus.error) {
-      return Center(child: Padding(padding: EdgeInsets.all(20), child: Text(state.errorMessage ?? 'Error')));
+      return Center(child: Padding(padding: EdgeInsets.all(20), child: Text(state.errorMessage ?? t.genericLoadError)));
     }
 
     if (state.detailStatus == ProgressDetailStatus.success) {
       final List<ProgressDetailEntity> data = state.detailData.cast<ProgressDetailEntity>();
 
       if (data.isEmpty) {
-        return Center(child: Padding(padding: EdgeInsets.all(40), child: Text('No data found.', style: TextStyle(color: textMuted))));
+        return Center(child: Padding(padding: EdgeInsets.all(40), child: Text(t.statDetailNoData, style: TextStyle(color: textMuted))));
       }
 
       // 🔥 NẾU LÀ LESSONS => GỌI HÀM GOM NHÓM
       if (widget.statKey == 'lessons') {
-        return _buildGroupedLessonsList(data, primaryColor);
+        return _buildGroupedLessonsList(data, primaryColor, t);
       }
 
       // Các trường hợp khác giữ nguyên list phẳng
       return Column(
         children: data
-            .map((item) => _buildDetailItem(item, widget.statKey, primaryColor))
+            .map((item) => _buildDetailItem(item, widget.statKey, primaryColor, t))
             .toList(),
       );
     }
@@ -225,7 +228,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
 
   @override
   Widget build(BuildContext context) {
-    // ... (Giữ nguyên phần khung Dialog)
+    final t = context.l10n;
     const textMain = Color(0xFF09090B);
     const borderCol = Color(0xFFE4E4E7);
 
@@ -248,9 +251,9 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_getTitle(), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                        Text(_getTitle(t), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
                         const SizedBox(height: 4),
-                        Text('Showing ${widget.rangeLabel.toLowerCase()} log.', style: const TextStyle(fontSize: 13, color: Color(0xFF71717A))),
+                        Text(t.statDetailPeriodLog(widget.rangeLabel), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A))),
                       ],
                     ),
                   ),
@@ -285,7 +288,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
                     side: const BorderSide(color: borderCol),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Close', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(t.close, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             )

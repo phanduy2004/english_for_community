@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   # UI & state
   cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
@@ -106,6 +108,7 @@ flutter_launcher_icons:
   adaptive_icon_background: "#2E7D32"  # 👈 Thay mã màu bạn thích vào đây (Ví dụ: Xanh #2E7D32, Đen #000000)
 flutter:
   uses-material-design: true
+  generate: true
 
   assets:
     - assets/images/

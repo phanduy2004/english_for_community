@@ -8,6 +8,8 @@ import 'package:english_for_community/feature/listening_comp/bloc_list/listening
 
 import '../../core/entity/listening_comp_entity.dart';
 import 'bloc_list/listening_comp_list_bloc.dart';
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class ListeningCompListPage extends StatefulWidget {
   const ListeningCompListPage({super.key});
@@ -21,19 +23,14 @@ class ListeningCompListPage extends StatefulWidget {
 
 class _ListeningCompListPageState extends State<ListeningCompListPage> {
   int _selectedFilterIndex = 0;
-  final List<String> _filters = const ['Beginner', 'Intermediate', 'Advanced'];
+  static const List<String> _difficultyApiKeys = ['easy', 'medium', 'hard'];
 
-  String _getDifficultyForIndex(int index) {
-    switch (_filters[index]) {
-      case 'Beginner': return 'easy';
-      case 'Intermediate': return 'medium';
-      case 'Advanced': return 'hard';
-      default: return 'easy';
-    }
-  }
+  String _getDifficultyForIndex(int index) => _difficultyApiKeys[index];
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
+    final filterLabels = [t.difficultyBeginner, t.difficultyIntermediate, t.difficultyAdvanced];
     const bgPage = Color(0xFFF9FAFB);
     const textMain = Color(0xFF09090B);
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -58,9 +55,9 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                 icon: const Icon(Icons.arrow_back, color: textMain),
                 onPressed: () => context.pop(),
               ),
-              title: const Text(
-                'Listening Comprehension',
-                style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
+              title: Text(
+                t.listeningCompTitle,
+                style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
               ),
               centerTitle: true,
             ),
@@ -74,12 +71,12 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                         clipBehavior: Clip.none,
                         children: [
                           const SizedBox(height: 8),
-                          _buildHeader(context),
+                          _buildHeader(context, t),
                           const SizedBox(height: 20),
-                          _buildSearchBox(context, primaryColor),
+                          _buildSearchBox(context, primaryColor, t),
                           const SizedBox(height: 16),
                           _FilterRow(
-                            filters: _filters,
+                            filters: filterLabels,
                             selectedIndex: _selectedFilterIndex,
                             primaryColor: primaryColor,
                             onSelected: (i) {
@@ -101,14 +98,14 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                               }
                               if (state.status == CompListStatus.error) {
                                 return _ErrorView(
-                                  message: state.errorMessage ?? 'Something went wrong',
+                                  message: state.errorMessage ?? t.genericLoadError,
                                   onRetry: refreshList,
                                 );
                               }
 
                               final items = state.listData;
                               if (items.isEmpty && state.status == CompListStatus.success) {
-                                return const _EmptyView();
+                                return _EmptyView(message: t.listeningCompEmpty);
                               }
 
                               return ListView.separated(
@@ -120,6 +117,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                                   entity: items[index],
                                   primaryColor: primaryColor,
                                   onLessonFinished: refreshList,
+                                  t: t,
                                 ),
                               );
                             },
@@ -138,7 +136,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations t) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -159,13 +157,13 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Listening Comprehension',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                Text(
+                  t.listeningCompTitle,
+                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Listen to the audio and answer multiple choice questions.',
+                  t.listeningCompSubtitle,
                   style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, height: 1.4),
                 ),
               ],
@@ -182,7 +180,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
     );
   }
 
-  Widget _buildSearchBox(BuildContext context, Color primaryColor) {
+  Widget _buildSearchBox(BuildContext context, Color primaryColor, AppLocalizations t) {
     const borderColor = Color(0xFFE4E4E7);
     const textMuted = Color(0xFF71717A);
 
@@ -195,7 +193,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
         readOnly: true,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search topics, IDs...',
+          hintText: t.listeningCompSearchHint,
           hintStyle: const TextStyle(fontSize: 14, color: textMuted),
           prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
           border: InputBorder.none,
@@ -211,11 +209,13 @@ class _ListeningCompCard extends StatelessWidget {
   const _ListeningCompCard({
     required this.entity,
     required this.primaryColor,
+    required this.t,
     this.onLessonFinished,
   });
 
   final ListeningCompEntity entity;
   final Color primaryColor;
+  final AppLocalizations t;
   final VoidCallback? onLessonFinished;
 
   @override
@@ -224,7 +224,9 @@ class _ListeningCompCard extends StatelessWidget {
     const textMuted = Color(0xFF71717A);
     const borderCol = Color(0xFFE4E4E7);
 
-    final levelText = entity.difficulty == 'hard' ? 'Advanced' : (entity.difficulty == 'medium' ? 'Intermediate' : 'Beginner');
+    final levelText = entity.difficulty == 'hard'
+        ? t.difficultyAdvanced
+        : (entity.difficulty == 'medium' ? t.difficultyIntermediate : t.difficultyBeginner);
     final levelColor = entity.difficulty == 'hard' ? const Color(0xFFDC2626) : (entity.difficulty == 'medium' ? const Color(0xFFEA580C) : const Color(0xFF16A34A));
 
     final bool isCompleted = entity.userProgress >= 1.0;
@@ -258,7 +260,7 @@ class _ListeningCompCard extends StatelessWidget {
                               _Badge(label: levelText, color: levelColor),
                               if (isCompleted) ...[
                                 const SizedBox(width: 8),
-                                const _Badge(label: 'Completed', color: Color(0xFF059669), filled: true, bgColor: Color(0xFFECFDF5)),
+                                _Badge(label: t.completedBadge, color: const Color(0xFF059669), filled: true, bgColor: const Color(0xFFECFDF5)),
                               ]
                             ],
                           ),
@@ -273,11 +275,11 @@ class _ListeningCompCard extends StatelessWidget {
                             children: [
                               const Icon(Icons.format_list_bulleted, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              Text('${entity.totalQuestions} questions', style: const TextStyle(fontSize: 13, color: textMuted)),
+                              Text(t.listeningCompQuestionCount(entity.totalQuestions), style: const TextStyle(fontSize: 13, color: textMuted)),
                               const SizedBox(width: 12),
                               const Icon(Icons.timer_outlined, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              Text('${entity.minutesToComplete} min', style: const TextStyle(fontSize: 13, color: textMuted)),
+                              Text(t.readingMinutesShort(entity.minutesToComplete), style: const TextStyle(fontSize: 13, color: textMuted)),
                             ],
                           ),
                         ],
@@ -301,8 +303,8 @@ class _ListeningCompCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: isCompleted
-                          ? Text('High Score: $score%', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green))
-                          : const Text('Not started yet', style: TextStyle(fontSize: 12, color: textMuted, fontStyle: FontStyle.italic)),
+                          ? Text(t.listeningCompHighScore(score), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.green))
+                          : Text(t.listeningCompNotStarted, style: const TextStyle(fontSize: 12, color: textMuted, fontStyle: FontStyle.italic)),
                     ),
 
                     if (isCompleted)
@@ -321,7 +323,7 @@ class _ListeningCompCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              label: Text(t.listeningCompReview, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -337,7 +339,7 @@ class _ListeningCompCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.replay, size: 16),
-                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              label: Text(t.listeningCompRetake, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                             ),
                           ),
                         ],
@@ -353,7 +355,7 @@ class _ListeningCompCard extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                           ),
-                          child: const Text('Start', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                          child: Text(t.listeningCompStart, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         ),
                       ),
                   ],
@@ -396,7 +398,12 @@ class _Badge extends StatelessWidget {
   }
 }
 
-class _EmptyView extends StatelessWidget { const _EmptyView(); @override Widget build(BuildContext context) => const Center(child: Text('No listening lessons found')); }
+class _EmptyView extends StatelessWidget {
+  final String message;
+  const _EmptyView({required this.message});
+  @override
+  Widget build(BuildContext context) => Center(child: Text(message));
+}
 class _ErrorView extends StatelessWidget { final String message; final VoidCallback onRetry; const _ErrorView({required this.message, required this.onRetry}); @override Widget build(BuildContext context) => Center(child: Text(message)); }
 class _FilterRow extends StatelessWidget {
   final List<String> filters; final int selectedIndex; final ValueChanged<int> onSelected; final Color primaryColor;

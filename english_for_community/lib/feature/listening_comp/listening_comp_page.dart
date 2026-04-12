@@ -8,6 +8,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 import 'package:translator/translator.dart';
 
 import '../../../../core/api/api_config.dart';
+import '../../../../core/locale/l10n_context.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../listening/widget/listening_common_widgets.dart';
@@ -182,8 +183,8 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           final currentState = context.read<ListeningCompBloc>().state;
           if (currentState.status == CompStatus.success) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Time's up! Submitting your answers..."),
+              SnackBar(
+                content: Text(context.l10n.quizTimeUpSubmitting),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -290,20 +291,25 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             showDialog(
               context: context,
               barrierDismissible: false,
-              builder: (ctx) => AlertDialog(
+              builder: (ctx) {
+                final d = ctx.l10n;
+                return AlertDialog(
                 backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
-                title: const Text('Result',
-                    style: TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(d.readingQuizResultTitle,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
                 content: Text(
-                  'Correct: ${result.correctCount} / ${result.totalQuestions}\n'
-                      'Score: ${result.score.toStringAsFixed(0)}%',
+                  d.readingQuizResultSummary(
+                    result.correctCount,
+                    result.totalQuestions,
+                    result.score.round(),
+                  ),
                   style: const TextStyle(fontSize: 16),
                 ),
                 actions: [
                   TextButton(
-                    child: const Text('Review'),
+                    child: Text(d.listeningCompReview),
                     onPressed: () => Navigator.of(ctx).pop(),
                   ),
                   FilledButton(
@@ -311,10 +317,11 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                       Navigator.of(ctx).pop();
                       context.pop();
                     },
-                    child: const Text('Done'),
+                    child: Text(d.commonDone),
                   ),
                 ],
-              ),
+              );
+              },
             );
           }
         }
@@ -322,7 +329,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         if (state.status == CompStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage ?? 'Error'),
+              content: Text(state.errorMessage ?? context.l10n.commonError),
               backgroundColor: Colors.red,
             ),
           );
@@ -341,13 +348,14 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         }
 
         if (state.data == null) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: bgPage,
-            body: Center(child: Text('Error loading lesson')),
+            body: Center(child: Text(context.l10n.listeningCompLoadError)),
           );
         }
 
         final entity = state.data!;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -359,9 +367,9 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               icon: const Icon(Icons.close, color: textMain),
               onPressed: () => context.pop(),
             ),
-            title: const Text(
-              'Comprehension',
-              style: TextStyle(
+            title: Text(
+              t.listeningCompTitle,
+              style: const TextStyle(
                   color: textMain,
                   fontWeight: FontWeight.w600,
                   fontSize: 16),
@@ -447,8 +455,8 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600),
                   tabs: [
-                    Tab(text: 'Questions (${entity.questions.length})'),
-                    const Tab(text: 'Transcript'),
+                    Tab(text: t.readingTabQuestionsCount(entity.questions.length)),
+                    Tab(text: t.listeningCompTabTranscript),
                   ],
                 ),
               ),
@@ -543,6 +551,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
 
   // Cập nhật: Thêm nút Bật/Tắt Dịch Toàn Cục vào Header Review
   Widget _buildReviewHeader(BuildContext context, ListeningCompState state, ListeningCompEntity entity) {
+    final t = context.l10n;
     final score = state.attemptResult?.score ?? 0;
     final primaryColor = Theme.of(context).colorScheme.primary;
 
@@ -558,7 +567,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               const Icon(Icons.check_circle_outline, color: Color(0xFF15803D), size: 18),
               const SizedBox(width: 8),
               Text(
-                'Reviewing (Score: ${score.toStringAsFixed(0)}%)',
+                t.readingReviewingWithScore(score.round()),
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF15803D),
@@ -579,7 +588,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                   ),
                 ),
               Text(
-                'Dịch',
+                t.listeningCompTranslateToggle,
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
               ),
               const SizedBox(width: 4),
@@ -601,6 +610,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   }
 
   Widget _buildBottomActionBar(BuildContext context, bool isSubmitting) {
+    final t = context.l10n;
     final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -629,7 +639,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               height: 24,
               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
             )
-                : const Text('Submit Answers'),
+                : Text(t.readingSubmitAnswers),
           ),
         ),
       ),
@@ -649,6 +659,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
       itemBuilder: (context, index) {
         final q = entity.questions[index];
         final isExpanded = _expandedFeedback.contains(q.id);
+        final t = context.l10n;
 
         return Container(
           decoration: BoxDecoration(
@@ -665,7 +676,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Question ${index + 1}',
+                      t.listeningCompQuestionNumber(index + 1),
                       style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -818,7 +829,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                             const Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFFF59E0B)),
                             const SizedBox(width: 6),
                             Text(
-                              'Explanation',
+                              t.readingFeedbackExplanation,
                               style: TextStyle(
                                   fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
                             ),
@@ -855,7 +866,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                             ActionChip(
                               avatar: const Icon(Icons.play_circle_fill, size: 18, color: Colors.white),
                               label: Text(
-                                'Nghe đoạn chứa đáp án (${q.feedback!.hintTimestampSeconds}s)',
+                                t.listeningCompHintSeekSeconds(q.feedback!.hintTimestampSeconds!),
                               ),
                               backgroundColor: primaryColor.withOpacity(0.8),
                               labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -879,6 +890,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   // =========================================================================
   Widget _buildTranscriptTab(
       ListeningCompEntity entity, bool isSubmitted, Color primaryColor) {
+    final t = context.l10n;
     if (!isSubmitted) {
       return Center(
         child: Container(
@@ -889,23 +901,23 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFFE4E4E7)),
           ),
-          child: const Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.lock_outline, color: Color(0xFFE4E4E7), size: 48),
-              SizedBox(height: 16),
+              const Icon(Icons.lock_outline, color: Color(0xFFE4E4E7), size: 48),
+              const SizedBox(height: 16),
               Text(
-                'Transcript Locked',
-                style: TextStyle(
+                t.listeningCompTranscriptLocked,
+                style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                     color: Color(0xFF09090B)),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
-                'Submit your answers first to unlock the full audio transcript.',
+                t.listeningCompTranscriptLockedHint,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                     color: Color(0xFF71717A), fontSize: 14, height: 1.4),
               ),
             ],
@@ -920,9 +932,9 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Bản Gốc
-          const Text(
-            'Bản gốc (Tiếng Anh):',
-            style: TextStyle(
+          Text(
+            t.listeningCompTranscriptOriginal,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: Color(0xFF71717A),
@@ -945,9 +957,9 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               padding: EdgeInsets.symmetric(vertical: 24.0),
               child: Divider(color: Color(0xFFE4E4E7), thickness: 1.5),
             ),
-            const Text(
-              'Bản dịch (Tiếng Việt):',
-              style: TextStyle(
+            Text(
+              t.listeningCompTranscriptTranslation,
+              style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFF71717A),

@@ -1,5 +1,7 @@
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_bloc.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_event.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_state.dart';
@@ -33,9 +35,9 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  // 👇 1. THÊM BIẾN CHO BỘ LỌC
+  // Bộ lọc theo level (chuỗi khớp backend: beginner / intermediate / advanced)
   int _selectedFilterIndex = 0;
-  final _filters = ['Beginner', 'Intermediate', 'Advanced'];
+  static const _levelFilterKeys = ['beginner', 'intermediate', 'advanced'];
 
   @override
   void initState() {
@@ -71,22 +73,23 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
   }
 
   // --- CONFIG ICON & MÀU SẮC CHO TASK TYPE ---
-  ({IconData icon, Color color, String desc}) _getTaskTypeConfig(String type) {
-    final t = type.toLowerCase();
-    if (t.contains('opinion') || t.contains('agree')) {
-      return (icon: Icons.lightbulb_outline, color: const Color(0xFFF59E0B), desc: 'Express your personal view'); // Amber
-    } else if (t.contains('discuss')) {
-      return (icon: Icons.people_outline, color: const Color(0xFF3B82F6), desc: 'Analyze multiple perspectives'); // Blue
-    } else if (t.contains('problem') || t.contains('solution') || t.contains('cause')) {
-      return (icon: Icons.build_circle_outlined, color: const Color(0xFFEF4444), desc: 'Identify issues & fixes'); // Red
-    } else if (t.contains('advantage')) {
-      return (icon: Icons.balance, color: const Color(0xFF10B981), desc: 'Weigh pros and cons'); // Emerald
+  ({IconData icon, Color color, String desc}) _getTaskTypeConfig(String type, AppLocalizations t) {
+    final s = type.toLowerCase();
+    if (s.contains('opinion') || s.contains('agree')) {
+      return (icon: Icons.lightbulb_outline, color: const Color(0xFFF59E0B), desc: t.writingTaskDescOpinion);
+    } else if (s.contains('discuss')) {
+      return (icon: Icons.people_outline, color: const Color(0xFF3B82F6), desc: t.writingTaskDescDiscuss);
+    } else if (s.contains('problem') || s.contains('solution') || s.contains('cause')) {
+      return (icon: Icons.build_circle_outlined, color: const Color(0xFFEF4444), desc: t.writingTaskDescProblemSolution);
+    } else if (s.contains('advantage')) {
+      return (icon: Icons.balance, color: const Color(0xFF10B981), desc: t.writingTaskDescAdvantages);
     }
-    return (icon: Icons.edit_note, color: const Color(0xFF6366F1), desc: 'General writing practice'); // Indigo
+    return (icon: Icons.edit_note, color: const Color(0xFF6366F1), desc: t.writingTaskDescGeneral);
   }
 
   // --- MODAL CHỌN TASK (SHADCN STYLE) ---
   void _showTaskSelectionModal(BuildContext context, WritingTopicEntity topic) {
+    final t = context.l10n;
     final taskTypes = topic.aiConfig?.taskTypes ??
         ['Opinion', 'Discussion', 'Problem-Solution', 'Advantages-Disadvantages'];
 
@@ -129,13 +132,13 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Select Task Type',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: zinc900),
+                        Text(
+                          t.writingSelectTaskType,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: zinc900),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'For topic: "${topic.name}"',
+                          t.writingForTopic(topic.name),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: zinc500, fontSize: 13),
@@ -155,7 +158,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final type = taskTypes[index];
-                    final config = _getTaskTypeConfig(type);
+                    final config = _getTaskTypeConfig(type, t);
 
                     return InkWell(
                       onTap: () {
@@ -250,12 +253,12 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
   }
 
   // 👇 3. WIDGET BỘ LỌC (FILTER BAR)
-  Widget _buildFilterBar(Color primaryColor) {
+  Widget _buildFilterBar(Color primaryColor, List<String> filterLabels) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
       child: Row(
-        children: _filters.asMap().entries.map((entry) {
+        children: filterLabels.asMap().entries.map((entry) {
           final index = entry.key;
           final label = entry.value;
           final isSelected = index == _selectedFilterIndex;
@@ -289,7 +292,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
     );
   }
 
-  Widget _buildSearchBox() {
+  Widget _buildSearchBox(AppLocalizations t) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -303,7 +306,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
         controller: _searchController,
         style: const TextStyle(fontSize: 14, color: zinc900),
         decoration: InputDecoration(
-          hintText: 'Search topics...',
+          hintText: t.writingSearchTopicsHint,
           hintStyle: const TextStyle(fontSize: 14, color: zinc500),
           prefixIcon: const Icon(Icons.search, size: 20, color: zinc500),
           border: InputBorder.none,
@@ -324,8 +327,9 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Màu chủ đạo mặc định (Dùng cho thanh filter, search box)
+    final t = context.l10n;
     final themePrimaryColor = Theme.of(context).colorScheme.primary;
+    final filterLabels = [t.difficultyBeginner, t.difficultyIntermediate, t.difficultyAdvanced];
 
     return BlocProvider.value(
       value: _writingBloc,
@@ -344,9 +348,9 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
             icon: const Icon(Icons.arrow_back, color: zinc900, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
-            'Writing Practice',
-            style: TextStyle(color: zinc900, fontWeight: FontWeight.w600, fontSize: 16),
+          title: Text(
+            t.homeLessonWritingTitle,
+            style: const TextStyle(color: zinc900, fontWeight: FontWeight.w600, fontSize: 16),
           ),
         ),
         body: CustomScrollView(
@@ -360,10 +364,9 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                   children: [
                     const WritingHeader(),
                     const SizedBox(height: 24),
-                    _buildSearchBox(),
+                    _buildSearchBox(t),
                     const SizedBox(height: 16),
-                    // 👇 4. HIỂN THỊ BỘ LỌC
-                    _buildFilterBar(themePrimaryColor),
+                    _buildFilterBar(themePrimaryColor, filterLabels),
                   ],
                 ),
               ),
@@ -377,7 +380,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                 }
                 if (state.status == WritingStatus.error) {
                   return SliverFillRemaining(
-                    child: WritingErrorView(message: state.errorMessage ?? 'An error occurred'),
+                    child: WritingErrorView(message: state.errorMessage ?? t.commonError),
                   );
                 }
 
@@ -392,13 +395,8 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                   ).toList();
                 }
 
-                // Lọc theo Level (Dựa vào _selectedFilterIndex)
-                final selectedLevel = _filters[_selectedFilterIndex];
-                if (selectedLevel != 'All') {
-                  topics = topics.where((t) =>
-                  (t.aiConfig?.level ?? '').toLowerCase() == selectedLevel.toLowerCase()
-                  ).toList();
-                }
+                final levelKey = _levelFilterKeys[_selectedFilterIndex];
+                topics = topics.where((x) => (x.aiConfig?.level ?? '').toLowerCase() == levelKey).toList();
 
                 if (topics.isEmpty) {
                   return const SliverFillRemaining(child: WritingEmptyView());
@@ -409,25 +407,19 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
                           (context, index) {
-                        final t = topics[index];
+                        final topicItem = topics[index];
                         const commonIcon = Icons.history_edu;
-
-                        // 👇 6. LẤY MÀU THEO ĐỘ KHÓ
-                        final levelColor = _getLevelColor(t.aiConfig?.level);
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: WritingCard(
-                            title: t.name,
+                            title: topicItem.name,
                             leadingIcon: commonIcon,
-                            onTap: () => _onCardTap(t),
-                            onHistoryTap: () => _showHistoryModal(context, t),
-                            level: t.aiConfig?.level,
-                            submissions: t.stats?.submissionsCount,
-                            avgScore: t.stats?.avgScore,
-
-                            // 👇 7. TRUYỀN MÀU VÀO CARD
-                            // WritingCard của bạn sẽ dùng màu này để tô Badge và các icon
+                            onTap: () => _onCardTap(topicItem),
+                            onHistoryTap: () => _showHistoryModal(context, topicItem),
+                            level: topicItem.aiConfig?.level,
+                            submissions: topicItem.stats?.submissionsCount,
+                            avgScore: topicItem.stats?.avgScore,
                             primaryColor: themePrimaryColor,
                           ),
                         );

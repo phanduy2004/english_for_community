@@ -1,20 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../listening/list_listening/listening_list_page.dart';
 import '../listening_comp/listening_comp_list_page.dart';
 
 enum ListeningMode {
   dictation,
-  comprehension;
-
-  String get title {
-    switch (this) {
-      case ListeningMode.dictation:
-        return 'Dictation';
-      case ListeningMode.comprehension:
-        return 'Multiple Choice';
-    }
-  }
+  comprehension,
 }
 
 Future<void> showListeningModeDialog(BuildContext context) {
@@ -31,7 +25,7 @@ Future<void> showListeningModeDialog(BuildContext context) {
           padding: const EdgeInsets.only(top: 100, left: 16, right: 16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
-            child: const _ListeningModeDialogContent(),
+            child: _ListeningModeDialogContent(),
           ),
         ),
       );
@@ -55,6 +49,7 @@ class _ListeningModeDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgCard = Colors.white;
     const borderCol = Color(0xFFE4E4E7); // Zinc-200
     const textMain = Color(0xFF09090B); // Zinc-950
@@ -86,9 +81,9 @@ class _ListeningModeDialogContent extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Listening Practice',
-                  style: TextStyle(
+                Text(
+                  t.listeningPracticeTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: textMain,
@@ -106,15 +101,15 @@ class _ListeningModeDialogContent extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Choose how you want to train your ear today.',
-              style: TextStyle(fontSize: 14, color: textMuted, height: 1.4),
+            Text(
+              t.listeningChooseSubtitle,
+              style: const TextStyle(fontSize: 14, color: textMuted, height: 1.4),
             ),
             const SizedBox(height: 24),
 
             // --- MODE LIST ---
             Column(
-              children: availableModes.map((mode) => _ModeTile(mode: mode)).toList(),
+              children: availableModes.map((mode) => _ModeTile(mode: mode, l10n: t)).toList(),
             ),
           ],
         ),
@@ -125,8 +120,9 @@ class _ListeningModeDialogContent extends StatelessWidget {
 
 class _ModeTile extends StatelessWidget {
   final ListeningMode mode;
+  final AppLocalizations l10n;
 
-  const _ModeTile({required this.mode});
+  const _ModeTile({required this.mode, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +174,7 @@ class _ModeTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getModeTitle(mode),
+                        _modeTitle(l10n, mode),
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -187,7 +183,7 @@ class _ModeTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _getModeDescription(mode),
+                        _modeDescription(l10n, mode),
                         style: const TextStyle(fontSize: 13, color: textMuted),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -219,17 +215,21 @@ class _ModeTile extends StatelessWidget {
 
   // --- DATA HELPERS ---
 
-  String _getModeTitle(ListeningMode mode) {
+  String _modeTitle(AppLocalizations t, ListeningMode mode) {
     switch (mode) {
-      case ListeningMode.dictation: return 'Dictation';
-      case ListeningMode.comprehension: return 'Comprehension';
+      case ListeningMode.dictation:
+        return t.listeningDictation;
+      case ListeningMode.comprehension:
+        return t.listeningModeComprehensionTitle;
     }
   }
 
-  String _getModeDescription(ListeningMode mode) {
+  String _modeDescription(AppLocalizations t, ListeningMode mode) {
     switch (mode) {
-      case ListeningMode.dictation: return 'Listen and type exactly what you hear.';
-      case ListeningMode.comprehension: return 'Listen to audio and answer multiple choice questions.';
+      case ListeningMode.dictation:
+        return t.listeningModeDictationTileDesc;
+      case ListeningMode.comprehension:
+        return t.listeningModeComprehensionDesc;
     }
   }
 

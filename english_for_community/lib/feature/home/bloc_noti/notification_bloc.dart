@@ -7,6 +7,9 @@ import 'notification_state.dart';
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final NotificationRepository repository;
 
+  /// Tránh hai [NotificationLoadMore] chạy song song (trùng trang).
+  bool _isLoadingMore = false;
+
   NotificationBloc({required this.repository}) : super(const NotificationState()) {
     on<NotificationLoadStarted>(_onLoadStarted);
     on<NotificationLoadMore>(_onLoadMore);
@@ -53,25 +56,33 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       NotificationLoadMore event,
       Emitter<NotificationState> emit,
       ) async {
-    // Nếu đang load dở hoặc đã hết dữ liệu thì chặn lại
-    if (state.hasReachedMax || state.status == NotificationStatus.loading) return;
+    if (state.hasReachedMax ||
+        state.status == NotificationStatus.loading ||
+        _isLoadingMore) {
+      return;
+    }
 
+    _isLoadingMore = true;
     final nextPage = state.page + 1;
-    final result = await repository.getNotifications(nextPage);
+    try {
+      final result = await repository.getNotifications(nextPage);
 
-    result.fold(
-          (failure) => null, // Load more lỗi thì im lặng hoặc hiện snackbar (tùy UI)
-          (data) {
-        final List<NotificationEntity> newItems = data['items'];
-        final bool hasMore = data['hasMore'];
+      result.fold(
+        (failure) => null,
+        (data) {
+          final List<NotificationEntity> newItems = data['items'];
+          final bool hasMore = data['hasMore'];
 
-        emit(state.copyWith(
-          notifications: List.of(state.notifications)..addAll(newItems),
-          hasReachedMax: !hasMore,
-          page: nextPage,
-        ));
-      },
-    );
+          emit(state.copyWith(
+            notifications: List.of(state.notifications)..addAll(newItems),
+            hasReachedMax: !hasMore,
+            page: nextPage,
+          ));
+        },
+      );
+    } finally {
+      _isLoadingMore = false;
+    }
   }
 
   /// 3. Đánh dấu 1 tin đã đọc

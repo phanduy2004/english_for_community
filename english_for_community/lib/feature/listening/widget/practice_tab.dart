@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../listening_skill/bloc/cue_state.dart';
+import '../../../core/locale/l10n_context.dart';
 
 class PracticeTab extends StatelessWidget {
   final CueState state;
@@ -31,23 +32,24 @@ class PracticeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final isDone = state.completedIdx.contains(state.selectedIndex);
     final cue = state.currentCue;
     final isLast = state.selectedIndex == state.cues.length - 1;
 
-    String btnText = 'Check';
+    String btnText = t.dictationCheckButton;
     Color btnColor = Theme.of(context).primaryColor;
     VoidCallback onBtn = onSubmit;
     IconData btnIcon = Icons.check;
 
     if (isDone) {
       if (!isLast) {
-        btnText = 'Next';
+        btnText = t.dictationNextButton;
         btnColor = const Color(0xFF10B981);
         btnIcon = Icons.arrow_forward;
         onBtn = onNext;
       } else {
-        btnText = 'Finish';
+        btnText = t.dictationFinishButton;
         btnColor = Colors.green;
         onBtn = () => Navigator.pop(context, true);
       }
@@ -61,7 +63,7 @@ class PracticeTab extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Sentence ${state.selectedIndex + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(t.listeningSentenceNumber(state.selectedIndex + 1), style: const TextStyle(fontWeight: FontWeight.bold)),
               Row(children: [
                 IconButton(onPressed: state.selectedIndex > 0 ? onPrev : null, icon: const Icon(Icons.chevron_left)),
                 IconButton(onPressed: !isLast ? onNext : null, icon: const Icon(Icons.chevron_right)),
@@ -73,7 +75,7 @@ class PracticeTab extends StatelessWidget {
             controller: controller,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Type what you hear...',
+              hintText: t.dictationTypeWhatYouHearHint,
               filled: true,
               fillColor: const Color(0xFFF9FAFB),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
@@ -100,7 +102,7 @@ class PracticeTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Meaning:", style: TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold)),
+                  Text(t.meaningLabel, style: const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(cue!.meaning!, style: const TextStyle(color: Color(0xFF1E3A8A), fontStyle: FontStyle.italic)),
                 ],
@@ -131,7 +133,7 @@ class PracticeTab extends StatelessWidget {
           ]),
           const SizedBox(height: 12),
           Row(children: [
-            const Text('Auto-play next', style: TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(t.listeningAutoPlayNext, style: const TextStyle(fontSize: 13, color: Colors.grey)),
             const Spacer(),
             Switch(value: autoPlay, onChanged: onToggleAutoPlay, activeColor: Theme.of(context).primaryColor),
           ]),

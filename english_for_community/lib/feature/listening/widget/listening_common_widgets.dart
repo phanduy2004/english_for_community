@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../core/locale/l10n_context.dart';
+
 // =============================================================================
 // 1. HEADER: Hiển thị tiêu đề, độ khó và tiến độ tổng quát
 // =============================================================================
@@ -77,7 +79,7 @@ class ListeningHeader extends StatelessWidget {
                   ),
                 const SizedBox(height: 8),
                 Text(
-                  'Hoàn thành $doneCount / $totalCount câu',
+                  context.l10n.listeningCueProgress(doneCount, totalCount),
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],

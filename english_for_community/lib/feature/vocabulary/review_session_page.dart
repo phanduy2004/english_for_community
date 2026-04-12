@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/repository/user_vocab_repository.dart';
 
 import 'bloc_review/review_bloc.dart';
@@ -44,6 +46,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Color(0xFFF9FAFB);
     const textMain = Color(0xFF09090B);
 
@@ -57,7 +60,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
           icon: const Icon(Icons.close, color: textMain),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text('Review Session', style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
+        title: Text(t.vocabReviewSessionTitle, style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Container(color: const Color(0xFFE4E4E7), height: 1),
@@ -67,7 +70,12 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
         listener: (context, state) {},
         builder: (context, state) {
           if (state.status == ReviewStatus.loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
-          if (state.status == ReviewStatus.error) return Center(child: Text(state.errorMessage ?? 'Error'));
+          if (state.status == ReviewStatus.error) {
+            final msg = state.errorMessage;
+            return Center(
+              child: Text(msg.isEmpty ? t.genericLoadError : msg),
+            );
+          }
           if (state.status == ReviewStatus.complete || state.currentWord == null) return const _CompleteView();
 
           final word = state.currentWord!;
@@ -114,7 +122,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
                             ),
                           ] else ...[
                             const SizedBox(height: 48),
-                            const Text("Tap to see meaning", style: TextStyle(color: Color(0xFFA1A1AA), fontSize: 14)),
+                            Text(t.tapToSeeMeaning, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14)),
                           ]
                         ],
                       ),
@@ -123,7 +131,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
                 ),
               ),
               const SizedBox(height: 24),
-              _buildButtons(context, state),
+              _buildButtons(context, state, t),
               const SizedBox(height: 24),
             ],
           );
@@ -132,7 +140,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
     );
   }
 
-  Widget _buildButtons(BuildContext context, ReviewState state) {
+  Widget _buildButtons(BuildContext context, ReviewState state, AppLocalizations t) {
     if (!state.isFlipped) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -144,7 +152,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
               backgroundColor: const Color(0xFF09090B), foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Show Answer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(t.showAnswerButton, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ),
       );
@@ -155,11 +163,11 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          Expanded(child: _FeedbackBtn(label: 'Hard', color: Colors.red, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'hard', word: word, duration: _getElapsedSeconds())))),
+          Expanded(child: _FeedbackBtn(label: t.srsHard, color: Colors.red, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'hard', word: word, duration: _getElapsedSeconds())))),
           const SizedBox(width: 12),
-          Expanded(child: _FeedbackBtn(label: 'Good', color: Colors.orange, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'good', word: word, duration: _getElapsedSeconds())))),
+          Expanded(child: _FeedbackBtn(label: t.srsGood, color: Colors.orange, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'good', word: word, duration: _getElapsedSeconds())))),
           const SizedBox(width: 12),
-          Expanded(child: _FeedbackBtn(label: 'Easy', color: Colors.green, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'easy', word: word, duration: _getElapsedSeconds())))),
+          Expanded(child: _FeedbackBtn(label: t.srsEasy, color: Colors.green, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'easy', word: word, duration: _getElapsedSeconds())))),
         ],
       ),
     );
@@ -194,20 +202,21 @@ class _CompleteView extends StatelessWidget {
   const _CompleteView();
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.check_circle_rounded, size: 64, color: Colors.green),
           const SizedBox(height: 24),
-          const Text("Session Complete!", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(t.vocabSessionCompleteTitle, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text("You've reviewed all words for now.", style: TextStyle(color: Colors.grey)),
+          Text(t.vocabSessionCompleteBody, style: const TextStyle(color: Colors.grey)),
           const SizedBox(height: 32),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-            child: const Text("Back to Home"),
+            child: Text(t.backToHome),
           )
         ],
       ),

@@ -5,11 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/locale/l10n_context.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
-import 'login_page.dart'; // Để sử dụng _showShadcnDialog nếu không share
-
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -75,8 +74,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     if (isLoading) return;
     final email = _emailController.text.trim();
 
+    final t = context.l10n;
     if (email.isEmpty) {
-      _showShadcnDialog(context, title: 'Error', message: 'Please enter your email.', isError: true);
+      _showShadcnDialog(context, title: t.errorTitle, message: t.enterEmailRequired, isError: true);
       return;
     }
 
@@ -88,7 +88,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final otp = _textController.text;
 
     if (otp.length < 6) {
-      _showShadcnDialog(context, title: 'Error', message: 'Please enter the 6-digit code.', isError: true);
+      _showShadcnDialog(context, title: context.l10n.errorTitle, message: context.l10n.otpSixDigitsRequired, isError: true);
       return;
     }
 
@@ -101,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     context.read<UserBloc>().add(RequestForgotPasswordEvent(email: _email!));
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resending code...')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.resendingCodeSnack)));
     startTimer();
   }
 
@@ -110,7 +110,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: 'Error', message: state.errorMessage!, isError: true);
+          _showShadcnDialog(context, title: context.l10n.errorTitle, message: state.errorMessage!, isError: true);
         }
 
         if (state.status == UserStatus.otpRequired) {
@@ -122,11 +122,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _focusNode.requestFocus();
           });
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('OTP sent to your email.')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.otpSentEmailSnack)));
         }
       },
       builder: (context, state) {
         final isLoading = state.isFormLoading;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -158,27 +159,27 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       child: const Icon(Icons.lock_reset_outlined, size: 32, color: accentCol),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Reset Your Password',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                    Text(
+                      t.forgotHeroTitle,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Enter your email to receive a verification code.',
+                    Text(
+                      t.forgotHeroSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: textMuted),
+                      style: const TextStyle(fontSize: 14, color: textMuted),
                     ),
                     const SizedBox(height: 32),
 
                     // 2. Email Input with Send Button
-                    _Label('Email'),
+                    _Label(t.labelEmail),
                     const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
                           child: _ShadcnInput(
                             controller: _emailController,
-                            hintText: 'name@example.com',
+                            hintText: t.hintEmail,
                             icon: Icons.email_outlined,
                             enabled: !isLoading && !_showOtpInput, // Disable after send
                           ),
@@ -196,7 +197,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             ),
                             child: isLoading && !_showOtpInput
                                 ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Send', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                : Text(t.sendButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                           ),
                         ),
                       ],
@@ -205,9 +206,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                     // 3. OTP Input (Show after send)
                     if (_showOtpInput) ...[
-                      const Text(
-                        'Enter Verification Code',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textMain),
+                      Text(
+                        t.enterVerificationCode,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textMain),
                       ),
                       const SizedBox(height: 8),
                       RichText(
@@ -215,12 +216,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         text: TextSpan(
                           style: const TextStyle(fontSize: 14, color: textMuted, height: 1.5),
                           children: [
-                            const TextSpan(text: 'A 6-digit code has been sent to\n'),
+                            TextSpan(text: t.otpSentPrefix),
                             TextSpan(
                               text: _email,
                               style: const TextStyle(fontWeight: FontWeight.w600, color: textMain),
                             ),
-                            const TextSpan(text: '. Please check your inbox.'),
+                            TextSpan(text: t.otpSentSuffix),
                           ],
                         ),
                       ),
@@ -245,21 +246,21 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           child: isLoading
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : const Text('Next', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                              : Text(t.next, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                         ),
                       ),
                       const SizedBox(height: 24),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Didn't receive the code? ", style: TextStyle(fontSize: 14, color: textMuted)),
+                          Text(t.didNotReceiveCode, style: const TextStyle(fontSize: 14, color: textMuted)),
                           _canResend
                               ? GestureDetector(
                             onTap: _onResend,
-                            child: const Text('Resend', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                            child: Text(t.resendAction, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
                           )
                               : Text(
-                            'Resend in $_start s',
+                            t.resendCooldown(_start),
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMuted),
                           ),
                         ],
@@ -435,6 +436,7 @@ class _ShadcnInput extends StatelessWidget {
 
 // Helper Dialog: Copied
 void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
+  final t = context.l10n;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -461,7 +463,7 @@ void _showShadcnDialog(BuildContext context, {required String title, required St
               side: const BorderSide(color: Color(0xFFE4E4E7)),
               foregroundColor: const Color(0xFF09090B),
             ),
-            child: const Text('Close'),
+            child: Text(t.close),
           ),
         )
       ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/locale/l10n_context.dart';
+
 // --- Header ---
 class WritingHeader extends StatelessWidget {
   const WritingHeader({super.key});
@@ -30,9 +32,9 @@ class WritingHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Essay Writing',
-                  style: TextStyle(
+                Text(
+                  context.l10n.writingHeaderEssayTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -40,7 +42,7 @@ class WritingHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Practice organizing ideas and building strong arguments.',
+                  context.l10n.writingHeaderEssaySubtitle,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 13,
@@ -55,9 +57,9 @@ class WritingHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
-                  child: const Text(
-                    'AI Feedback',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  child: Text(
+                    context.l10n.writingAiFeedbackBadge,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -107,7 +109,7 @@ class WritingSearchBox extends StatelessWidget {
         readOnly: true,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search topics, tasks...',
+          hintText: context.l10n.writingSearchTopicsTasksHint,
           hintStyle: const TextStyle(fontSize: 14, color: textMuted),
           prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
           border: InputBorder.none,
@@ -205,7 +207,7 @@ class WritingEmptyView extends StatelessWidget {
             child: const Icon(Icons.edit_off_outlined, size: 40, color: textMuted),
           ),
           const SizedBox(height: 16),
-          const Text('No writing topics found', style: TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(context.l10n.writingNoTopicsFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );

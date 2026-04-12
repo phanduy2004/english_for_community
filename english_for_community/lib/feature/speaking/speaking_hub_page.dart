@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/dtos/speaking_response_dto.dart';
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../speaking/speaking_skills_page.dart';
 import 'bloc/speaking_bloc.dart';
 import 'bloc/speaking_event.dart';
@@ -13,14 +15,20 @@ enum SpeakingMode {
   readAloud,
   shadowing,
   pronunciation,
-  freeSpeaking;
+  freeSpeaking,
+}
 
-  String get title {
+extension SpeakingModeL10n on SpeakingMode {
+  String titleLocalized(AppLocalizations t) {
     switch (this) {
-      case SpeakingMode.readAloud: return 'Read Aloud';
-      case SpeakingMode.shadowing: return 'Shadowing';
-      case SpeakingMode.pronunciation: return 'Pronunciation';
-      case SpeakingMode.freeSpeaking: return 'Free Speaking';
+      case SpeakingMode.readAloud:
+        return t.speakingModeReadAloud;
+      case SpeakingMode.shadowing:
+        return t.speakingModeShadowing;
+      case SpeakingMode.pronunciation:
+        return t.speakingModePronunciation;
+      case SpeakingMode.freeSpeaking:
+        return t.speakingModeFreeSpeaking;
     }
   }
 }
@@ -59,10 +67,12 @@ class _SpeakingHubView extends StatefulWidget {
 
 class _SpeakingHubViewState extends State<_SpeakingHubView> {
   int _selectedFilterIndex = 0;
-  final _filters = ['Beginner', 'Intermediate', 'Advanced'];
+
+  /// Backend expects English level names.
+  static const _apiLevels = ['Beginner', 'Intermediate', 'Advanced'];
 
   void _fetchData() {
-    final selectedLevel = _filters[_selectedFilterIndex];
+    final selectedLevel = _apiLevels[_selectedFilterIndex];
     context.read<SpeakingBloc>().add(
       FetchSpeakingSetsEvent(
         mode: widget.mode,
@@ -73,6 +83,8 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
+    final levels = [t.difficultyBeginner, t.difficultyIntermediate, t.difficultyAdvanced];
     const bgPage = Color(0xFFF9FAFB);
     const borderCol = Color(0xFFE4E4E7);
     const textMain = Color(0xFF09090B);
@@ -94,7 +106,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          widget.mode.title,
+          widget.mode.titleLocalized(t),
           style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
         ),
         actions: [
@@ -114,12 +126,12 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                   clipBehavior: Clip.none,
                   children: [
                     const SizedBox(height: 20),
-                    _buildHeader(context),
+                    _buildHeader(context, t),
                     const SizedBox(height: 20),
-                    _buildSearchBox(context, primaryColor),
+                    _buildSearchBox(context, primaryColor, t),
                     const SizedBox(height: 16),
                     _FilterRow(
-                      filters: _filters,
+                      filters: levels,
                       selectedIndex: _selectedFilterIndex,
                       primaryColor: primaryColor,
                       onSelected: (i) {
@@ -138,7 +150,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                         }
                         if (state.status == SpeakingStatus.error) {
                           return _ErrorView(
-                            message: state.errorMessage ?? 'Failed to load data',
+                            message: state.errorMessage ?? t.loadDataFailed,
                             onRetry: _fetchData,
                           );
                         }
@@ -153,7 +165,8 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                             itemBuilder: (context, index) {
                               return _LessonCard(
                                 set: state.sets[index],
-                                level: _filters[_selectedFilterIndex],
+                                levelApi: _apiLevels[_selectedFilterIndex],
+                                levelLabel: levels[_selectedFilterIndex],
                                 primaryColor: primaryColor,
                                 // 👇 THÊM DÒNG NÀY: Truyền hàm _fetchData vào để gọi lại khi quay về
                                 onReturn: _fetchData,
@@ -175,7 +188,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations t) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -200,9 +213,9 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Speaking Mastery',
-                  style: TextStyle(
+                Text(
+                  t.speakingMasteryTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -210,7 +223,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Practice pronunciation and fluency with AI feedback.',
+                  t.speakingMasterySubtitle,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 13,
@@ -225,9 +238,9 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
-                  child: const Text(
-                    'AI Powered',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  child: Text(
+                    t.aiPoweredBadge,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -247,7 +260,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
     );
   }
 
-  Widget _buildSearchBox(BuildContext context, Color primaryColor) {
+  Widget _buildSearchBox(BuildContext context, Color primaryColor, AppLocalizations t) {
     const borderColor = Color(0xFFE4E4E7);
     const textMuted = Color(0xFF71717A);
 
@@ -268,7 +281,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
         readOnly: true,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search topic, ID...',
+          hintText: t.searchTopicHint,
           hintStyle: const TextStyle(fontSize: 14, color: textMuted),
           prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
           border: InputBorder.none,
@@ -287,13 +300,15 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
 
 class _LessonCard extends StatelessWidget {
   final SpeakingSetProgressEntity set;
-  final String level;
+  final String levelApi;
+  final String levelLabel;
   final Color primaryColor;
   final VoidCallback onReturn;
 
   const _LessonCard({
     required this.set,
-    required this.level,
+    required this.levelApi,
+    required this.levelLabel,
     required this.primaryColor,
     required this.onReturn,
   });
@@ -309,15 +324,16 @@ class _LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
     const borderCol = Color(0xFFE4E4E7);
 
-    final levelColor = _getLevelColor(level);
+    final levelColor = _getLevelColor(levelApi);
     final bool isResumed = set.isResumed;
 
     final bool hasScore = set.bestScore != null && set.bestScore! > 0;
-    final String scoreText = hasScore ? '${set.bestScore}%' : 'No attempts';
+    final String scoreText = hasScore ? '${set.bestScore}%' : t.noAttemptsYet;
 
     // 🔥 ĐỊNH NGHĨA TRẠNG THÁI COMPLETED TẠI ĐÂY (Vd: progress >= 99%)
     final bool isCompleted = set.progress >= 0.99;
@@ -344,7 +360,7 @@ class _LessonCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _Badge(label: level.toUpperCase(), color: levelColor),
+                    _Badge(label: levelLabel, color: levelColor),
                     Icon(Icons.mic_rounded, size: 20, color: textMuted.withOpacity(0.5)),
                   ],
                 ),
@@ -357,7 +373,7 @@ class _LessonCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${set.totalSentences} sentences • Topic: Daily Life',
+                  t.lessonMetaLine(set.totalSentences, t.topicDailyLife),
                   style: const TextStyle(fontSize: 13, color: textMuted),
                 ),
                 const SizedBox(height: 16),
@@ -376,7 +392,7 @@ class _LessonCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      '${(set.progress * 100).toInt()}% done',
+                      t.percentDone((set.progress * 100).toInt()),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain),
                     ),
                   ],
@@ -405,7 +421,7 @@ class _LessonCard extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Best Score', style: TextStyle(fontSize: 10, color: hasScore ? const Color(0xFFC2410C) : textMuted)),
+                              Text(t.bestScoreLabel, style: TextStyle(fontSize: 10, color: hasScore ? const Color(0xFFC2410C) : textMuted)),
                               Text(scoreText, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: hasScore ? const Color(0xFF9A3412) : textMain)),
                             ],
                           ),
@@ -429,7 +445,7 @@ class _LessonCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              label: Text(t.reviewAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -445,7 +461,7 @@ class _LessonCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               icon: const Icon(Icons.replay, size: 16),
-                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              label: Text(t.retakeAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                             ),
                           ),
                         ],
@@ -463,7 +479,7 @@ class _LessonCard extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                             textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
-                          child: Text(isResumed ? 'Resume' : 'Start'),
+                          child: Text(isResumed ? t.resumeAction : t.startAction),
                         ),
                       ),
                   ],
@@ -576,6 +592,7 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const textMuted = Color(0xFF71717A);
     return Center(
       child: Column(
@@ -592,7 +609,7 @@ class _EmptyView extends StatelessWidget {
             child: const Icon(Icons.mic_off_outlined, size: 40, color: textMuted),
           ),
           const SizedBox(height: 16),
-          const Text('No speaking lessons found', style: TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(t.noSpeakingLessonsFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -607,6 +624,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 60),
@@ -624,7 +642,7 @@ class _ErrorView extends StatelessWidget {
                 side: const BorderSide(color: Color(0xFFE4E4E7)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Retry'),
+              child: Text(t.commonRetry),
             ),
           ],
         ),
