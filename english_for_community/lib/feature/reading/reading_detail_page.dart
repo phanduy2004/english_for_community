@@ -13,6 +13,7 @@ import '../../core/entity/reading/reading_entity.dart';
 import '../../core/entity/reading/reading_feedback_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
+import '../../core/locale/l10n_context.dart';
 import '../../core/repository/reading_repository.dart';
 
 // =============================================================================
@@ -103,8 +104,8 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           final currentState = context.read<ReadingAttemptBloc>().state;
           if (currentState.status == AttemptStatus.initial || currentState.status == AttemptStatus.error) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text("Time's up! Submitting your answers..."),
+              SnackBar(
+                content: Text(context.l10n.quizTimeUpSubmitting),
                 backgroundColor: Colors.orange,
               ),
             );
@@ -187,17 +188,23 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           showDialog(
             context: context,
             barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
+            builder: (ctx) {
+              final d = ctx.l10n;
+              return AlertDialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              title: const Text('Result', style: TextStyle(fontWeight: FontWeight.w700)),
+              title: Text(d.readingQuizResultTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
               content: Text(
-                  'Correct: ${result?.correctCount ?? 0} / ${result?.totalQuestions ?? 0}\nScore: ${result?.score.toStringAsFixed(0) ?? 0}%',
+                  d.readingQuizResultSummary(
+                    result?.correctCount ?? 0,
+                    result?.totalQuestions ?? 0,
+                    (result?.score ?? 0).round(),
+                  ),
                   style: const TextStyle(fontSize: 16)
               ),
               actions: [
                 TextButton(
-                  child: const Text('Retry', style: TextStyle(color: Color(0xFF71717A))),
+                  child: Text(d.commonRetry, style: const TextStyle(color: Color(0xFF71717A))),
                   onPressed: () {
                     Navigator.of(ctx).pop();
                     context.read<ReadingAttemptBloc>().add(ResetAttemptEvent());
@@ -217,16 +224,17 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
                   ),
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('OK'),
+                  child: Text(d.commonOk),
                 ),
               ],
-            ),
+            );
+            },
           );
         }
         else if (state.status == AttemptStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(state.errorMessage ?? 'Submission failed'),
+              content: Text(state.errorMessage ?? context.l10n.readingSubmissionFailed),
               backgroundColor: Colors.red,
             ),
           );
@@ -240,6 +248,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 _isReviewMode;
 
         final bool isSubmitting = isLoading && !_isReviewMode;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -267,8 +276,8 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600),
                   tabs: [
-                    const Tab(text: 'Article'),
-                    Tab(text: 'Questions (${widget.reading.questions.length})'),
+                    Tab(text: t.readingTabArticle),
+                    Tab(text: t.readingTabQuestionsCount(widget.reading.questions.length)),
                   ],
                 ),
               ),
@@ -335,14 +344,15 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   }
 
   Widget _buildReviewHeader(BuildContext context, ReadingAttemptState state) {
-    String textToShow = 'Review Mode';
+    final t = context.l10n;
+    String textToShow = t.readingReviewMode;
     IconData icon = Icons.remove_red_eye_outlined;
     Color color = const Color(0xFF09090B);
     Color bgColor = Colors.white;
     final score = state.attemptResult?.score ?? widget.reading.progress?.highScore;
 
     if (score != null) {
-      textToShow = 'Reviewing (Score: ${score.toStringAsFixed(0)}%)';
+      textToShow = t.readingReviewingWithScore(score.round());
       icon = Icons.check_circle_outline;
       color = const Color(0xFF15803D);
       bgColor = const Color(0xFFF0FDF4);
@@ -370,6 +380,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   }
 
   Widget _buildBottomActionBar(BuildContext context, bool isSubmitting) {
+    final t = context.l10n;
     final primaryColor = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -393,7 +404,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             ),
             child: isSubmitting
                 ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Submit Answers'),
+                : Text(t.readingSubmitAnswers),
           ),
         ),
       ),
@@ -401,6 +412,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   }
 
   Widget _buildReadingTab(BuildContext context, bool isSubmitted) {
+    final t = context.l10n;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final translation = widget.reading.translation;
 
@@ -416,7 +428,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               child: OutlinedButton.icon(
                 onPressed: () => setState(() => _showReadingTranslation = !_showReadingTranslation),
                 icon: Icon(_showReadingTranslation ? Icons.visibility_off_outlined : Icons.translate, size: 18, color: primaryColor),
-                label: Text(_showReadingTranslation ? 'Hide Translation' : 'Show Translation', style: TextStyle(color: primaryColor)),
+                label: Text(_showReadingTranslation ? t.readingHideTranslation : t.readingShowTranslation, style: TextStyle(color: primaryColor)),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: primaryColor.withOpacity(0.5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -465,7 +477,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     }
     final questions = widget.reading.questions;
     if (questions.isEmpty) {
-      return const Center(child: Text('No questions available.', style: TextStyle(color: Color(0xFF71717A))));
+      return Center(child: Text(context.l10n.readingNoQuestionsAvailable, style: const TextStyle(color: Color(0xFF71717A))));
     }
 
     return ListView.separated(
@@ -616,7 +628,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                       children: [
                         const Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFFF59E0B)),
                         const SizedBox(width: 6),
-                        Text('Explanation', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.primaryColor)),
+                        Text(context.l10n.readingFeedbackExplanation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.primaryColor)),
                         const Spacer(),
                         Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 18, color: const Color(0xFFA1A1AA)),
                       ],
@@ -648,11 +660,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             child: Divider(height: 1, color: Color(0xFFE4E4E7)),
           ),
         if (feedback.paragraphIndex != null)
-          Text('• Location: Paragraph ${feedback.paragraphIndex! + 1}', style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
+          Text(context.l10n.readingFeedbackLocationParagraph(feedback.paragraphIndex! + 1), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
         if (feedback.keySentence != null)
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
-            child: Text('• Key sentence: "${feedback.keySentence}"', style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
+            child: Text(context.l10n.readingFeedbackKeySentence(feedback.keySentence!), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
           ),
       ],
     );

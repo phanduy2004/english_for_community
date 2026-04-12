@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/locale/l10n_context.dart';
+import '../l10n/generated/app_localizations.dart';
+import 'auth/login_page.dart';
+
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
 
@@ -21,39 +25,41 @@ class _OnboardingPageState extends State<OnboardingPage> {
     super.dispose();
   }
 
-  void _onGetStarted() {
-    if (_current < _slides.length - 1) {
+  void _onPrimaryCta(List<_SlideContent> slides) {
+    if (_current < slides.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      Navigator.of(context).pushNamed('GoalSetupPage'); // đổi theo route của bạn
+      context.pushNamed(LoginPage.routeName);
     }
   }
 
-  void _onSignIn() => Navigator.of(context).pushNamed('AuthPage'); // đổi route
+  void _onSignIn() => context.pushNamed(LoginPage.routeName);
 
-  static final _slides = <_SlideContent>[
+  List<_SlideContent> _slides(AppLocalizations t) => [
     _SlideContent(
-      title: 'Personalized Learning Path',
-      subtitle: 'A plan tailored to your goals, CEFR level, and schedule.',
+      title: t.onboardingSlide1Title,
+      subtitle: t.onboardingSlide1Subtitle,
       icon: Icons.timeline_rounded,
     ),
     _SlideContent(
-      title: 'AI Tutor for Speaking & Writing',
-      subtitle: 'Realtime pronunciation feedback & rubric-based review.',
+      title: t.onboardingSlide2Title,
+      subtitle: t.onboardingSlide2Subtitle,
       icon: Icons.psychology_rounded,
     ),
     _SlideContent(
-      title: 'Stay Motivated with Rewards',
-      subtitle: 'Streaks, XP, and badges keep you engaged daily.',
+      title: t.onboardingSlide3Title,
+      subtitle: t.onboardingSlide3Subtitle,
       icon: Icons.emoji_events_rounded,
     ),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
+    final slides = _slides(t);
     final scheme = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
 
@@ -78,14 +84,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                 Align(
                   alignment: Alignment.topRight,
                   child: TextButton(
-                    onPressed: () => Navigator.of(context).pushNamed('GoalSetupPage'),
-                    child: const Text('Skip', style: TextStyle(color: Colors.white)),
+                    onPressed: () => context.pushNamed(LoginPage.routeName),
+                    child: Text(t.onboardingSkip, style: const TextStyle(color: Colors.white)),
                   ),
                 ),
                 const SizedBox(height: 8),
 
                 // Logo & title
-                const _LogoTitle(),
+                _LogoTitle(brand: t.appNameBrand, tagline: t.appTagline),
 
                 const SizedBox(height: 24),
 
@@ -98,13 +104,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         Expanded(
                           child: PageView.builder(
                             controller: _pageController,
-                            itemCount: _slides.length,
+                            itemCount: slides.length,
                             onPageChanged: (i) => setState(() => _current = i),
-                            itemBuilder: (_, i) => _Slide(data: _slides[i]),
+                            itemBuilder: (_, i) => _Slide(data: slides[i]),
                           ),
                         ),
                         const SizedBox(height: 16),
-                        _Dots(active: _current, total: _slides.length),
+                        _Dots(active: _current, total: slides.length),
                         const SizedBox(height: 8),
                       ],
                     ),
@@ -120,17 +126,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () {
-                            if (_current < _slides.length - 1) {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeOut,
-                              );
-                            } else {
-                              // slide cuối -> đi tới LoginPage
-                              context.pushNamed('LoginPage'); // hoặc LoginPage.routeName
-                            }
-                          },
+                          onPressed: () => _onPrimaryCta(slides),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFF19DB8A),
@@ -138,7 +134,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: Text(_current < _slides.length - 1 ? 'Get Started' : 'Continue'),
+                          child: Text(_current < slides.length - 1 ? t.next : t.continueAction),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -146,14 +142,14 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'Already have an account? ',
+                            t.alreadyHaveAccount,
                             style: text.bodyMedium!.copyWith(color: Colors.white.withOpacity(.85)),
                           ),
                           InkWell(
-                            onTap: () => context.pushNamed('LoginPage'), // giữ như cũ
-                            child: const Text(
-                              'Sign In',
-                              style: TextStyle(
+                            onTap: () => context.pushNamed(LoginPage.routeName),
+                            child: Text(
+                              t.signInAction,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
                                 decoration: TextDecoration.underline,
@@ -176,7 +172,10 @@ class _OnboardingPageState extends State<OnboardingPage> {
 }
 
 class _LogoTitle extends StatelessWidget {
-  const _LogoTitle();
+  const _LogoTitle({required this.brand, required this.tagline});
+
+  final String brand;
+  final String tagline;
 
   @override
   Widget build(BuildContext context) {
@@ -193,14 +192,14 @@ class _LogoTitle extends StatelessWidget {
           child: const Icon(Icons.school_rounded, color: Color(0xFF19DB8A), size: 56),
         ),
         const SizedBox(height: 12),
-        Text('LearnLingo',
+        Text(brand,
             textAlign: TextAlign.center,
             style: text.displayMedium?.copyWith(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
-            'Master English with AI-powered learning',
+            tagline,
             textAlign: TextAlign.center,
             style: text.bodyLarge?.copyWith(color: Colors.white.withOpacity(.92), fontSize: 16, height: 1.3),
           ),

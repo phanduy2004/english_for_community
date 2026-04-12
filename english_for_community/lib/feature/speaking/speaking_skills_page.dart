@@ -7,14 +7,29 @@ import 'package:english_for_community/core/entity/speaking/speaking_attempt_enti
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_bloc.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/feature/speaking/widget/word_details_dialog.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+
+String _localizedLevelLabel(AppLocalizations t, String level) {
+  switch (level.toLowerCase()) {
+    case 'beginner':
+      return t.difficultyBeginner;
+    case 'intermediate':
+      return t.difficultyIntermediate;
+    case 'advanced':
+      return t.difficultyAdvanced;
+    default:
+      return level;
+  }
+}
 
 class SpeakingSkillsPage extends StatelessWidget {
   final String setId;
@@ -61,6 +76,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
   bool _isPlaying = false;
   bool _isRecording = false;
   bool _isSubmitting = false;
+  /// True trong lúc đang bật micro (trước khi `_isRecording` = true). Tránh spam click gọi `listen()` nhiều lần (web: InvalidStateError).
+  bool _micStartInProgress = false;
   bool _isDisposed = false;
 
   // --- DATA ---
@@ -89,6 +106,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
   @override
   void dispose() {
     _isDisposed = true;
+    _micStartInProgress = false;
     _micPulseController.dispose();
     _tts.stop();
     _speech.stop();
@@ -168,12 +186,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   void _showMicSnack(String message, {bool openSettings = false}) {
     if (!mounted) return;
+    final t = context.l10n;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         content: Text(message),
         action: openSettings
-            ? SnackBarAction(label: 'Cài đặt', onPressed: openAppSettings)
+            ? SnackBarAction(label: t.settings, onPressed: openAppSettings)
             : null,
       ),
     );
@@ -185,13 +204,14 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     if (!_hasSpeech) await _initSpeech();
     if (!_hasSpeech) {
       _showMicSnack(
-        'Chưa bật được nhận dạng giọng nói. Hãy cấp quyền micro và (iOS) quyền Speech Recognition.',
+        context.l10n.speechNotAvailableSnack,
         openSettings: true,
       );
       return;
     }
 
     if (_isRecording) {
+      _micStartInProgress = false;
       _micPulseController.stop();
       _micPulseController.reset();
       _recordingStopwatch.stop();
@@ -202,48 +222,10 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
       return;
     }
 
-    if (_isPlaying) {
-      await _tts.stop();
-      if (mounted) setState(() => _isPlaying = false);
-    }
-    // Tránh xung đột audio session (đặc biệt iOS) giữa TTS và STT.
-    await Future<void>.delayed(const Duration(milliseconds: 350));
-    if (!mounted) return;
+    if (_micStartInProgress) return;
 
-    setState(() {
-      _liveTranscript = '';
-      _finalTranscript = '';
-      _isSubmitting = false;
-    });
-
-    try {
-      await _speech.listen(
-        onResult: (result) {
-          if (_isDisposed || !mounted) return;
-          setState(() {
-            _liveTranscript = result.recognizedWords;
-            if (result.finalResult) {
-              _finalTranscript = result.recognizedWords;
-            }
-          });
-        },
-        localeId: _speechLocaleId,
-        listenOptions: stt.SpeechListenOptions(
-          partialResults: true,
-          cancelOnError: false,
-          listenMode: stt.ListenMode.dictation,
-        ),
-      );
-      // listen() trả về trước khi platform báo "listening" — đợi ngắn rồi kiểm tra.
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-      if (!mounted) return;
-      if (!_speech.isListening) {
-        _showMicSnack(
-          'Không mở được micro. Trên Android cần dịch vụ nhận dạng của Google; hãy thử cài/cập nhật Google app và ngôn ngữ tiếng Anh.',
-          openSettings: true,
-        );
-        return;
-      }
+    // Platform đã listen (ví dụ web) nhưng UI chưa kịp cập nhật — không gọi listen() lần nữa.
+    if (_speech.isListening) {
       if (mounted) {
         setState(() => _isRecording = true);
         HapticFeedback.mediumImpact();
@@ -251,10 +233,81 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         _recordingStopwatch.reset();
         _recordingStopwatch.start();
       }
-    } catch (e) {
-      if (mounted) {
-        _showMicSnack('Lỗi khi bật micro: $e');
+      return;
+    }
+
+    _micStartInProgress = true;
+    if (mounted) setState(() {});
+
+    try {
+      if (_isPlaying) {
+        await _tts.stop();
+        if (mounted) setState(() => _isPlaying = false);
       }
+      // Tránh xung đột audio session (đặc biệt iOS) giữa TTS và STT.
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+      if (!mounted) return;
+
+      setState(() {
+        _liveTranscript = '';
+        _finalTranscript = '';
+        _isSubmitting = false;
+      });
+
+      if (_speech.isListening) {
+        if (mounted) {
+          setState(() => _isRecording = true);
+          HapticFeedback.mediumImpact();
+          _micPulseController.repeat(reverse: true);
+          _recordingStopwatch.reset();
+          _recordingStopwatch.start();
+        }
+        return;
+      }
+
+      try {
+        await _speech.listen(
+          onResult: (result) {
+            if (_isDisposed || !mounted) return;
+            setState(() {
+              _liveTranscript = result.recognizedWords;
+              if (result.finalResult) {
+                _finalTranscript = result.recognizedWords;
+              }
+            });
+          },
+          localeId: _speechLocaleId,
+          listenOptions: stt.SpeechListenOptions(
+            partialResults: true,
+            cancelOnError: false,
+            listenMode: stt.ListenMode.dictation,
+          ),
+        );
+        // listen() trả về trước khi platform báo "listening" — đợi ngắn rồi kiểm tra.
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        if (!_speech.isListening) {
+          _showMicSnack(
+            context.l10n.micOpenFailedSnack,
+            openSettings: true,
+          );
+          return;
+        }
+        if (mounted) {
+          setState(() => _isRecording = true);
+          HapticFeedback.mediumImpact();
+          _micPulseController.repeat(reverse: true);
+          _recordingStopwatch.reset();
+          _recordingStopwatch.start();
+        }
+      } catch (e) {
+        if (mounted) {
+          _showMicSnack(context.l10n.micStartError('$e'));
+        }
+      }
+    } finally {
+      _micStartInProgress = false;
+      if (mounted) setState(() {});
     }
   }
 
@@ -313,7 +366,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     if (_set == null) return;
 
     // Chuyển trang -> Reset hết
-    if (_isRecording) {
+    if (_isRecording || _micStartInProgress) {
       _micPulseController.stop();
       _micPulseController.reset();
       _speech.stop();
@@ -327,6 +380,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
       _liveTranscript = '';
       _finalTranscript = '';
       _isRecording = false;
+      _micStartInProgress = false;
       _isSubmitting = false;
       _isPlaying = false;
     });
@@ -358,6 +412,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.surface,
       appBar: AppBar(
@@ -374,7 +429,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          _set?.title ?? 'Practice',
+          _set?.title ?? t.practiceFallbackTitle,
           style: TextStyle(
             color: AppColors.textPrimary,
             fontWeight: FontWeight.w600,
@@ -408,6 +463,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
             }
           },
           builder: (context, state) {
+            final t = context.l10n;
             if (state.status == LessonStatus.loading || _set == null) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2));
             }
@@ -423,7 +479,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Câu ${_currentPageIndex + 1} / ${_set!.sentences.length}',
+                            t.sentenceIndex(_currentPageIndex + 1, _set!.sentences.length),
                             style: TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 13,
@@ -465,13 +521,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Micro / nhận dạng giọng nói chưa sẵn sàng. Cấp quyền và thử lại.',
+                              t.microInfoBanner,
                               style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
                             ),
                           ),
                           TextButton(
                             onPressed: () => _initSpeech(),
-                            child: const Text('Thử lại'),
+                            child: Text(t.tryAgain),
                           ),
                         ],
                       ),
@@ -504,11 +560,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
                       return _buildSentenceCard(
                         context,
+                        t: t,
                         sentence: sentence,
                         transcript: displayTranscript,
                         score: score,
                         isRecording: _isRecording && (_currentPageIndex == index),
                         isSubmitting: _isSubmitting && (_currentPageIndex == index),
+                        micBusy: _micStartInProgress && (_currentPageIndex == index),
                       );
                     },
                   ),
@@ -542,7 +600,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                         ),
                         onPressed: (_isRecording || _isSubmitting) ? null : _goToNextSentence,
                         child: Text(
-                          _currentPageIndex == _set!.sentences.length - 1 ? 'Hoàn thành' : 'Câu tiếp theo',
+                          _currentPageIndex == _set!.sentences.length - 1 ? t.finishPractice : t.nextSentence,
                         ),
                       ),
                     ),
@@ -558,11 +616,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   Widget _buildSentenceCard(
       BuildContext context, {
+        required AppLocalizations t,
         required SentenceEntity sentence,
         required String transcript,
         int? score,
         required bool isRecording,
         required bool isSubmitting,
+        required bool micBusy,
       }) {
     final primaryColor = AppColors.primary;
     final textMain = AppColors.textPrimary;
@@ -585,7 +645,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
           ),
         ],
       ),
-      child: isSubmitting
+      child: (isSubmitting || micBusy)
           ? const Padding(
               padding: EdgeInsets.all(22),
               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
@@ -600,7 +660,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     final micButton = Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: isSubmitting ? null : _toggleRecord,
+        onTap: (isSubmitting || micBusy) ? null : _toggleRecord,
         customBorder: const CircleBorder(),
         child: isRecording
             ? ScaleTransition(
@@ -633,7 +693,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                         ),
                       ],
                     ),
-                    _LevelPill(label: _set?.level ?? 'Beginner', color: primaryColor),
+                    _LevelPill(label: _localizedLevelLabel(t, _set?.level ?? 'Beginner'), color: primaryColor),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -685,11 +745,11 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Nghe mẫu',
+                                t.sampleListen,
                                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMuted),
                               ),
                               Text(
-                                'Sample',
+                                t.sampleListenSub,
                                 style: TextStyle(fontSize: 11, color: textMuted.withValues(alpha: 0.85)),
                               ),
                             ],
@@ -699,7 +759,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                               micButton,
                               const SizedBox(height: 8),
                               Text(
-                                'Nói của bạn',
+                                t.yourTurn,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -707,7 +767,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                                 ),
                               ),
                               Text(
-                                'Your turn',
+                                t.yourTurnSub,
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: (isRecording ? recordRed : textMuted).withValues(alpha: 0.85),
@@ -720,10 +780,10 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                       const SizedBox(height: 14),
                       Text(
                         isRecording
-                            ? 'Đang nghe… Chạm nút đỏ để dừng và chấm điểm.'
+                            ? t.listeningForSpeech
                             : isSubmitting
-                                ? 'Đang gửi và phân tích…'
-                                : 'Chạm micro, đọc to cả câu rồi chạm lại để dừng.',
+                                ? t.submittingAnalysis
+                                : t.tapMicToRecord,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
@@ -746,7 +806,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LỜI BẠN NÓI',
+                    t.yourSpeechSection,
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -756,7 +816,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    transcript.isEmpty ? 'Sẽ hiện ở đây khi bạn nói…' : transcript,
+                    transcript.isEmpty ? t.transcriptPlaceholder : transcript,
                     style: TextStyle(
                       fontSize: 17,
                       color: transcript.isEmpty ? textMuted : textMain,
@@ -772,7 +832,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Độ chính xác',
+                          t.accuracyLabel,
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain),
                         ),
                         _ScorePill(
@@ -860,7 +920,7 @@ class _LevelPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
-      child: Text(label.toUpperCase(), style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+      child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
     );
   }
 }

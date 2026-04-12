@@ -9,6 +9,7 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_task_bloc/writing_task_state.dart';
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
+import '../../core/locale/l10n_context.dart';
 
 // --- 1. ĐỊNH NGHĨA MÀU SẮC (Theme Local) ---
 class _Colors {
@@ -145,31 +146,33 @@ class _WritingTaskViewState extends State<WritingTaskView> {
 
     final shouldSave = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        final t = ctx.l10n;
+        return AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Save Draft?', style: TextStyle(fontWeight: FontWeight.w600)),
-        content: const Text(
-          'Do you want to save your changes?',
-          style: TextStyle(color: _Colors.textMuted),
+        title: Text(t.writingSaveDraftTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+        content: Text(
+          t.writingSaveDraftMessage,
+          style: const TextStyle(color: _Colors.textMuted),
         ),
-        // Actions mặc định của AlertDialog sẽ xếp ngang (Row) trên Android
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: const Text('Cancel', style: TextStyle(color: _Colors.textMuted)),
+            child: Text(t.cancel, style: const TextStyle(color: _Colors.textMuted)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Discard', style: TextStyle(color: _Colors.error)),
+            child: Text(t.writingDiscardButton, style: const TextStyle(color: _Colors.error)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save', style: TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
+            child: Text(t.saveChanges, style: const TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
           ),
         ],
-      ),
+      );
+      },
     );
 
     if (shouldSave == null) return;
@@ -194,14 +197,16 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        final t = ctx.l10n;
+        return AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('Resume Writing?', style: TextStyle(fontWeight: FontWeight.w600)),
-        content: const Text(
-          'We found an unfinished draft. Do you want to continue where you left off?',
-          style: TextStyle(color: _Colors.textMuted),
+        title: Text(t.writingResumeTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+        content: Text(
+          t.writingResumeMessage,
+          style: const TextStyle(color: _Colors.textMuted),
         ),
         actions: [
           TextButton(
@@ -220,7 +225,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                 _isDirty = false;
               }
             },
-            child: const Text('Start New', style: TextStyle(color: _Colors.error)),
+            child: Text(t.writingStartNewButton, style: const TextStyle(color: _Colors.error)),
           ),
           TextButton(
             onPressed: () {
@@ -231,15 +236,17 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                 _isDirty = false;
               });
             },
-            child: const Text('Resume', style: TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
+            child: Text(t.writingResumeButton, style: const TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
           ),
         ],
-      ),
+      );
+      },
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return PopScope(
       canPop: false,
       onPopInvoked: _onWillPop,
@@ -259,7 +266,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
           title: Column(
             children: [
               Text(
-                context.watch<WritingTaskBloc>().state.topic?.name ?? 'Writing Task',
+                context.watch<WritingTaskBloc>().state.topic?.name ?? t.writingTaskDefaultTitle,
                 style: const TextStyle(color: _Colors.textMain, fontWeight: FontWeight.w600, fontSize: 16),
               ),
               if (_taskType != null)
@@ -273,7 +280,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
           actions: [
             IconButton(
               icon: const Icon(Icons.lightbulb_outline, color: _Colors.textMain),
-              tooltip: 'Instructions',
+              tooltip: t.writingInstructionsTooltip,
               onPressed: _showInstructionDialog,
             ),
           ],
@@ -298,7 +305,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               }
             }
             if (state.status == WritingTaskStatus.savedSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Draft saved successfully!')));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.writingDraftSavedSnack)));
               Navigator.of(context).pop();
             }
             if (state.status == WritingTaskStatus.success && state.submission != null) {
@@ -306,7 +313,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)));
             }
             if (state.status == WritingTaskStatus.error) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Error')));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? context.l10n.genericLoadError)));
             }
           },
           builder: (context, state) {
@@ -314,7 +321,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: _Colors.primary));
             }
             if (state.submission == null) {
-              return const Center(child: Text('Preparing task...', style: TextStyle(color: _Colors.textMuted)));
+              return Center(child: Text(context.l10n.writingPreparingTask, style: const TextStyle(color: _Colors.textMuted)));
             }
             if (_taskType == null) {
               _taskType = state.submission!.generatedPrompt?.taskType ?? widget.initialTaskType;
@@ -341,7 +348,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                             widget.promptBuilder != null
                                 ? widget.promptBuilder!(context, state, _taskType, (v) => setState(() => _taskType = v))
                                 : _PromptCard(
-                              title: state.submission!.generatedPrompt?.title ?? 'Topic',
+                              title: state.submission!.generatedPrompt?.title ?? context.l10n.writingTopicFallback,
                               text: state.submission!.generatedPrompt?.text ?? '',
                             ),
 
@@ -397,6 +404,7 @@ class _PromptCardState extends State<_PromptCard> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -426,7 +434,7 @@ class _PromptCardState extends State<_PromptCard> {
                       children: [
                         Text(widget.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _Colors.textMain), maxLines: 1, overflow: TextOverflow.ellipsis),
                         const SizedBox(height: 2),
-                        Text(_isExpanded ? 'Tap to collapse' : 'Tap to expand prompt', style: const TextStyle(fontSize: 12, color: _Colors.textMuted)),
+                        Text(_isExpanded ? t.writingPromptTapCollapse : t.writingPromptTapExpand, style: const TextStyle(fontSize: 12, color: _Colors.textMuted)),
                       ],
                     ),
                   ),
@@ -461,6 +469,7 @@ class _Editor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * 0.5),
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -474,10 +483,10 @@ class _Editor extends StatelessWidget {
         textCapitalization: TextCapitalization.sentences,
         style: const TextStyle(fontSize: 16, height: 1.6, color: _Colors.textMain),
         cursorColor: _Colors.primary,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           border: InputBorder.none,
-          hintText: 'Start writing your essay here...',
-          hintStyle: TextStyle(color: Color(0xFFD4D4D8)),
+          hintText: t.writingEditorHint,
+          hintStyle: const TextStyle(color: Color(0xFFD4D4D8)),
         ),
       ),
     );
@@ -494,6 +503,7 @@ class _ClassicBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
@@ -503,9 +513,8 @@ class _ClassicBottomBar extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // Bên trái: Số từ
             Text(
-              '$wordCount words',
+              t.wordCountN(wordCount),
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -515,7 +524,6 @@ class _ClassicBottomBar extends StatelessWidget {
 
             const Spacer(),
 
-            // Bên phải: Nút Submit
             ElevatedButton(
               onPressed: busy ? null : onSubmit,
               style: ElevatedButton.styleFrom(
@@ -527,7 +535,7 @@ class _ClassicBottomBar extends StatelessWidget {
               ),
               child: busy
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Submit Essay', style: TextStyle(fontWeight: FontWeight.w600)),
+                  : Text(t.writingSubmitEssay, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),

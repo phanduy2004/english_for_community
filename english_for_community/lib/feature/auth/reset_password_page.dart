@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/locale/l10n_context.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -49,16 +50,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     final pass = _passController.text;
     final confirm = _confirmPassController.text;
 
+    final t = context.l10n;
     if (pass.isEmpty || confirm.isEmpty) {
-      _showShadcnDialog(context, title: 'Error', message: 'Please enter both passwords.', isError: true);
+      _showShadcnDialog(context, title: t.errorTitle, message: t.enterBothPasswords, isError: true);
       return;
     }
     if (pass != confirm) {
-      _showShadcnDialog(context, title: 'Password Error', message: 'Passwords do not match.', isError: true);
+      _showShadcnDialog(context, title: t.passwordErrorTitle, message: t.passwordsDoNotMatchShort, isError: true);
       return;
     }
     if (pass.length < 6) {
-      _showShadcnDialog(context, title: 'Password Error', message: 'Password must be at least 6 characters.', isError: true);
+      _showShadcnDialog(context, title: t.passwordErrorTitle, message: t.passwordMinSixChars, isError: true);
       return;
     }
 
@@ -74,7 +76,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: 'Reset Failed', message: state.errorMessage!, isError: true);
+          _showShadcnDialog(context, title: context.l10n.resetFailedTitle, message: state.errorMessage!, isError: true);
         }
 
         if (state.status == UserStatus.unauthenticated && state.errorMessage != null) {
@@ -86,6 +88,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       },
       builder: (context, state) {
         final isLoading = state.isFormLoading;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -117,24 +120,24 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       child: const Icon(Icons.key_outlined, size: 32, color: accentCol),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Set New Password',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                    Text(
+                      t.setNewPasswordTitle,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Enter a new password for your account.',
+                    Text(
+                      t.setNewPasswordSubtitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: textMuted),
+                      style: const TextStyle(fontSize: 14, color: textMuted),
                     ),
                     const SizedBox(height: 32),
 
                     // 2. Password Input
-                    _Label('New Password'),
+                    _Label(t.labelNewPassword),
                     const SizedBox(height: 8),
                     _ShadcnInput(
                       controller: _passController,
-                      hintText: 'Enter new password...',
+                      hintText: t.hintEnterNewPassword,
                       icon: Icons.lock_outline,
                       obscureText: _obscurePass,
                       enabled: !isLoading,
@@ -150,11 +153,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     const SizedBox(height: 16),
 
                     // Confirm Password Input
-                    _Label('Confirm New Password'),
+                    _Label(t.labelConfirmNewPassword),
                     const SizedBox(height: 8),
                     _ShadcnInput(
                       controller: _confirmPassController,
-                      hintText: 'Confirm new password...',
+                      hintText: t.hintConfirmNewPassword,
                       icon: Icons.verified_user_outlined,
                       obscureText: _obscureConfirm,
                       enabled: !isLoading,
@@ -183,7 +186,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                         child: isLoading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Text('Reset Password', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            : Text(t.resetPasswordButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                       ),
                     ),
                   ],
@@ -258,6 +261,7 @@ class _ShadcnInput extends StatelessWidget {
 
 // Helper Dialog: Copied
 void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
+  final t = context.l10n;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -284,7 +288,7 @@ void _showShadcnDialog(BuildContext context, {required String title, required St
               side: const BorderSide(color: Color(0xFFE4E4E7)),
               foregroundColor: const Color(0xFF09090B),
             ),
-            child: const Text('Close'),
+            child: Text(t.close),
           ),
         )
       ],

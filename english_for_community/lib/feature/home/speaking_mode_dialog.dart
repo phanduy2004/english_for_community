@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../speaking/free_speaking_page.dart';
 import '../speaking/speaking_hub_page.dart';
 
@@ -41,6 +44,7 @@ class _SpeakingModeDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgCard = Colors.white;
     const borderCol = Color(0xFFE4E4E7); // Zinc-200
     const textMain = Color(0xFF09090B); // Zinc-950
@@ -75,9 +79,9 @@ class _SpeakingModeDialogContent extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Select Practice Mode',
-                  style: TextStyle(
+                Text(
+                  t.speakingSelectModeTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: textMain,
@@ -95,15 +99,15 @@ class _SpeakingModeDialogContent extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Choose a method to start your speaking journey.',
-              style: TextStyle(fontSize: 14, color: textMuted, height: 1.4),
+            Text(
+              t.speakingSelectModeSubtitle,
+              style: const TextStyle(fontSize: 14, color: textMuted, height: 1.4),
             ),
             const SizedBox(height: 24),
 
             // --- MODE LIST ---
             Column(
-              children: availableModes.map((mode) => _ModeTile(mode: mode)).toList(),
+              children: availableModes.map((mode) => _ModeTile(mode: mode, l10n: t)).toList(),
             ),
           ],
         ),
@@ -114,8 +118,9 @@ class _SpeakingModeDialogContent extends StatelessWidget {
 
 class _ModeTile extends StatelessWidget {
   final SpeakingMode mode;
+  final AppLocalizations l10n;
 
-  const _ModeTile({required this.mode});
+  const _ModeTile({required this.mode, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +172,7 @@ class _ModeTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _getModeTitle(mode),
+                        mode.titleLocalized(l10n),
                         style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -176,7 +181,7 @@ class _ModeTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _getModeDescription(mode),
+                        _modeDescription(l10n, mode),
                         style: const TextStyle(fontSize: 13, color: textMuted),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -208,25 +213,16 @@ class _ModeTile extends StatelessWidget {
     }
   }
 
-  // --- DATA HELPERS ---
-
-  String _getModeTitle(SpeakingMode mode) {
+  String _modeDescription(AppLocalizations t, SpeakingMode mode) {
     switch (mode) {
-      case SpeakingMode.readAloud: return 'Read Aloud';
-      case SpeakingMode.freeSpeaking: return 'Free Speaking';
-    // Temporarily disabled
-      case SpeakingMode.shadowing: return 'Shadowing';
-      case SpeakingMode.pronunciation: return 'Pronunciation';
-    }
-  }
-
-  String _getModeDescription(SpeakingMode mode) {
-    switch (mode) {
-      case SpeakingMode.readAloud: return 'Read text passages clearly.';
-      case SpeakingMode.freeSpeaking: return 'Chat freely about any topic.';
-    // Temporarily disabled
-      case SpeakingMode.shadowing: return 'Listen and repeat instantly.';
-      case SpeakingMode.pronunciation: return 'Practice syllable precision.';
+      case SpeakingMode.readAloud:
+        return t.speakingDescReadAloud;
+      case SpeakingMode.freeSpeaking:
+        return t.speakingDescFreeSpeaking;
+      case SpeakingMode.shadowing:
+        return t.speakingDescShadowing;
+      case SpeakingMode.pronunciation:
+        return t.speakingDescPronunciation;
     }
   }
 

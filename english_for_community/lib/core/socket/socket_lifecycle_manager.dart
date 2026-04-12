@@ -7,6 +7,7 @@ import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_state.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../utils/global_keys.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class SocketLifecycleManager extends StatefulWidget {
   final Widget child;
@@ -38,24 +39,28 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
         showDialog(
           context: context,
           barrierDismissible: false, // Prevent dismissing by tapping outside
-          builder: (ctx) => PopScope(
+          builder: (ctx) {
+            final t = AppLocalizations.of(ctx)!;
+            return PopScope(
             canPop: false, // Prevent Android Back button
             child: AlertDialog(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               title: Row(
-                children: const [
-                  Icon(Icons.block_rounded, color: Colors.red, size: 28),
-                  SizedBox(width: 10),
-                  Text('Account Suspended', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                children: [
+                  const Icon(Icons.block_rounded, color: Colors.red, size: 28),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(t.accountSuspendedTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  ),
                 ],
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Your session has been terminated.", style: TextStyle(fontWeight: FontWeight.w500)),
+                  Text(t.accountSessionTerminated, style: const TextStyle(fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -68,7 +73,7 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Reason:", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
+                        Text(t.suspensionReasonLabel, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
                         const SizedBox(height: 4),
                         Text(reason, style: const TextStyle(fontSize: 14, color: Color(0xFF7F1D1D))),
                       ],
@@ -93,12 +98,13 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                    child: const Text('Agree & Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text(t.agreeAndLogout, style: const TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 )
               ],
             ),
-          ),
+          );
+          },
         );
       } else {
         // Fallback: If context is unavailable (rare), force logout immediately

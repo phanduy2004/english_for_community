@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../core/locale/app_locale_controller.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../core/entity/user_entity.dart';
 import '../../core/socket/socket_service.dart';
 import '../auth/bloc/user_bloc.dart';
@@ -44,13 +46,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _handleDeleteAccount() {
+    final t = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text('This action cannot be undone. All data will be deleted.'),
+        title: Text(t.deleteAccountTitle),
+        content: Text(t.deleteAccountBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(t.cancel)),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
@@ -58,7 +61,7 @@ class _ProfilePageState extends State<ProfilePage> {
               context.read<UserBloc>().add(DeleteAccountEvent());
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete Permanently'),
+            child: Text(t.deletePermanently),
           ),
         ],
       ),
@@ -114,6 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // 🔥 2. PICKER: Chọn Thời Gian Học (Phút)
   void _showDailyTimePicker(BuildContext context, int currentMinutes) {
+    final t = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -124,10 +128,10 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 16),
-              const Text('Set Daily Time Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(t.setDailyTimeGoal, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
               ...[15, 30, 45, 60].map((mins) => ListTile(
-                title: Text('$mins minutes / day'),
+                title: Text(t.minutesPerDayOption(mins)),
                 leading: const Icon(Icons.timer_outlined, color: Colors.grey),
                 trailing: currentMinutes == mins ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
                 onTap: () {
@@ -145,6 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // 🔥 3. PICKER: Chọn Số Bài Học (Bài)
   void _showLessonGoalPicker(BuildContext context, int currentGoal) {
+    final t = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
@@ -155,10 +160,10 @@ class _ProfilePageState extends State<ProfilePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 16),
-              const Text('Set Daily Lesson Goal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(t.setDailyLessonGoal, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 8),
               ...[3, 5, 7, 10].map((count) => ListTile(
-                title: Text('$count lessons / day'),
+                title: Text(t.lessonsPerDayOption(count)),
                 leading: const Icon(Icons.flag_outlined, color: Colors.grey),
                 trailing: currentGoal == count ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
                 onTap: () {
@@ -166,6 +171,51 @@ class _ProfilePageState extends State<ProfilePage> {
                   if (currentGoal != count) _quickUpdateProfile(dailyLessonGoal: count);
                 },
               )),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAppLanguagePicker(BuildContext context) {
+    final t = AppLocalizations.of(context)!;
+    final ctrl = GetIt.I<AppLocaleController>();
+    const textMuted = Color(0xFF71717A);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: 16),
+              Text(t.selectAppLanguage, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                child: Text(t.appLanguageFootnote, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, color: textMuted)),
+              ),
+              ListTile(
+                title: Text(t.languageEnglish),
+                leading: const Icon(Icons.language, color: Colors.grey),
+                trailing: ctrl.locale.languageCode == 'en' ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
+                onTap: () {
+                  ctrl.setLocale(const Locale('en'));
+                  Navigator.pop(ctx);
+                },
+              ),
+              ListTile(
+                title: Text(t.languageVietnamese),
+                leading: const Icon(Icons.language, color: Colors.grey),
+                trailing: ctrl.locale.languageCode == 'vi' ? Icon(Icons.check_circle, color: Theme.of(context).primaryColor) : null,
+                onTap: () {
+                  ctrl.setLocale(const Locale('vi'));
+                  Navigator.pop(ctx);
+                },
+              ),
               const SizedBox(height: 16),
             ],
           ),
@@ -215,6 +265,9 @@ class _ProfilePageState extends State<ProfilePage> {
         final user = state.userEntity;
         if (user == null) return const SizedBox();
 
+        final t = AppLocalizations.of(context)!;
+        final localeCtrl = GetIt.I<AppLocaleController>();
+
         // Data Prep
         final int dailyMinutes = user.dailyMinutes ?? 15;
         final int dailyLessonGoal = user.dailyLessonGoal ?? 5; // Lấy từ Entity
@@ -234,7 +287,7 @@ class _ProfilePageState extends State<ProfilePage> {
             elevation: 0,
             centerTitle: true,
             bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: borderCol, height: 1)),
-            title: const Text('Profile & Settings', style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
+            title: Text(t.profileAndSettings, style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
           ),
           body: RefreshIndicator(
             onRefresh: () async => context.read<UserBloc>().add(GetProfileEvent()),
@@ -245,31 +298,31 @@ class _ProfilePageState extends State<ProfilePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // --- PROFILE HEADER ---
-                  _buildProfileHeader(user, textMain, textMuted, borderCol),
+                  _buildProfileHeader(context, user, textMain, textMuted, borderCol),
                   const SizedBox(height: 32),
 
                   // --- LEARNING SETTINGS ---
-                  const _SectionTitle('LEARNING PREFERENCES'),
+                  _SectionTitle(t.learningPreferences),
                   _ShadcnGroup(
                     children: [
                       _SettingsTile(
                         icon: Icons.timer_outlined,
-                        title: 'Daily Time Goal',
-                        value: '$dailyMinutes mins',
+                        title: t.dailyTimeGoal,
+                        value: t.minutesShort(dailyMinutes),
                         onTap: () => _showDailyTimePicker(context, dailyMinutes),
                       ),
                       const _Divider(),
                       // 🔥 MỤC TIÊU SỐ BÀI HỌC
                       _SettingsTile(
                         icon: Icons.flag_outlined,
-                        title: 'Daily Lesson Goal',
-                        value: '$dailyLessonGoal lessons',
+                        title: t.dailyLessonGoal,
+                        value: t.lessonsShort(dailyLessonGoal),
                         onTap: () => _showLessonGoalPicker(context, dailyLessonGoal),
                       ),
                       const _Divider(),
                       _SettingsTile(
                         icon: Icons.notifications_none_rounded,
-                        title: 'Daily Reminder',
+                        title: t.dailyReminder,
                         trailing: Switch.adaptive(
                           value: isReminderOn,
                           activeColor: textMain,
@@ -280,7 +333,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         const _Divider(),
                         _SettingsTile(
                           icon: Icons.access_time,
-                          title: 'Reminder Time',
+                          title: t.reminderTime,
                           value: reminderTimeStr,
                           onTap: () => _showTimePicker(context, reminderTimeVal),
                         ),
@@ -291,13 +344,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 24),
 
                   // --- EXERCISE HISTORY ---
-                  const _SectionTitle('PROGRESS'),
+                  _SectionTitle(t.progress),
                   _ShadcnGroup(
                     children: [
                       _SettingsTile(
                         icon: Icons.history_rounded,
-                        title: 'Exercise history',
-                        subtitle: 'Past attempts by skill',
+                        title: t.exerciseHistory,
+                        subtitle: t.exerciseHistorySubtitle,
                         onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
                       ),
                     ],
@@ -306,24 +359,29 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 24),
 
                   // --- GENERAL SETTINGS ---
-                  const _SectionTitle('GENERAL SETTINGS'),
+                  _SectionTitle(t.generalSettings),
                   _ShadcnGroup(
                     children: [
-                      _SettingsTile(icon: Icons.language, title: 'App Language', value: user.language ?? 'English', onTap: () {}),
+                      _SettingsTile(
+                        icon: Icons.language,
+                        title: t.appLanguage,
+                        value: localeCtrl.locale.languageCode == 'vi' ? t.languageVietnamese : t.languageEnglish,
+                        onTap: () => _showAppLanguagePicker(context),
+                      ),
                       const _Divider(),
-                      _SettingsTile(icon: Icons.public, title: 'Timezone', value: user.timezone ?? 'GMT+7', onTap: () {}),
+                      _SettingsTile(icon: Icons.public, title: t.timezone, value: user.timezone ?? 'GMT+7', onTap: () {}),
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
                   // --- ACCOUNT ---
-                  const _SectionTitle('ACCOUNT & SECURITY'),
+                  _SectionTitle(t.accountAndSecurity),
                   _ShadcnGroup(
                     children: [
-                      _SettingsTile(icon: Icons.lock_outline, title: 'Change Password', onTap: _goChangePassword),
+                      _SettingsTile(icon: Icons.lock_outline, title: t.changePassword, onTap: _goChangePassword),
                       const _Divider(),
-                      _SettingsTile(icon: Icons.file_download_outlined, title: 'Export Data', subtitle: 'Download learning history', onTap: _goExportData),
+                      _SettingsTile(icon: Icons.file_download_outlined, title: t.exportData, subtitle: t.exportDataSubtitle, onTap: _goExportData),
                     ],
                   ),
 
@@ -340,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: borderCol)),
                       ),
-                      child: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(t.signOut, style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -349,7 +407,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: TextButton(
                       onPressed: _handleDeleteAccount,
                       style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Delete Account', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(t.deleteAccount, style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -362,7 +420,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildProfileHeader(UserEntity user, Color textMain, Color textMuted, Color borderCol) {
+  Widget _buildProfileHeader(BuildContext context, UserEntity user, Color textMain, Color textMuted, Color borderCol) {
+    final t = AppLocalizations.of(context)!;
     final roleColor = (user.role == 'admin') ? Colors.red : Colors.indigo;
 
     return Container(
@@ -403,7 +462,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _ShadcnBadge(label: user.role == 'admin' ? 'Admin' : 'Member', color: roleColor),
+                      _ShadcnBadge(label: user.role == 'admin' ? t.admin : t.member, color: roleColor),
                       const SizedBox(width: 8),
                       _ShadcnBadge(label: 'Lv.${user.level ?? 1}', color: Colors.teal),
                       const SizedBox(width: 8),

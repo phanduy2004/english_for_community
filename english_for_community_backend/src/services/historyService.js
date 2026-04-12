@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+import User from '../models/User.js';
+import {
+  isPlainYmd,
+  utcRangeForCalendarDate,
+  addCalendarDays,
+} from '../utils/localDayBounds.js';
+
 // --- MODELS CHÍNH ---
 import WritingSubmission from '../models/WritingSubmission.js';
 import ReadingProgress from '../models/ReadingProgress.js';
@@ -13,7 +20,6 @@ import SpeakingAttempt from '../models/SpeakingAttempt.js';
 import DictationAttempt from '../models/DictationAttempt.js';
 
 // --- MODELS POPULATE ---
-import '../models/User.js';
 import '../models/WritingTopics.js';
 import '../models/Reading.js';
 import '../models/SpeakingSet.js';
@@ -22,18 +28,47 @@ import '../models/ListeningComprehension.js'; // 🔥 THÊM MỚI CHỖ NÀY
 
 const getHistory = async (targetUserId, startDate, endDate, filterType) => {
   try {
-    const start = startDate ? new Date(startDate) : new Date();
-    const end = endDate ? new Date(endDate) : new Date();
-
-    if (!startDate) {
-      start.setDate(start.getDate() - 30);
+    let tz = 'Asia/Ho_Chi_Minh';
+    if (targetUserId) {
+      const u = await User.findById(targetUserId).select('timezone').lean();
+      if (u?.timezone) tz = u.timezone;
     }
 
-    start.setUTCHours(0, 0, 0, 0);
-    start.setUTCHours(start.getUTCHours() - 7);
+    let start;
+    let end;
 
-    end.setUTCHours(23, 59, 59, 999);
-    end.setUTCHours(end.getUTCHours() - 7);
+    if (isPlainYmd(startDate) && isPlainYmd(endDate)) {
+      const r0 = utcRangeForCalendarDate(startDate, tz);
+      const r1 = utcRangeForCalendarDate(endDate, tz);
+      if (!r0 || !r1) {
+        throw new Error('Invalid startDate or endDate (expected YYYY-MM-DD)');
+      }
+      start = r0.start;
+      end = r1.end;
+    } else if (!startDate && !endDate) {
+      const todayYmd = new Date().toLocaleDateString('en-CA', { timeZone: tz });
+      const fromYmd = addCalendarDays(todayYmd, -29);
+      start = utcRangeForCalendarDate(fromYmd, tz).start;
+      end = utcRangeForCalendarDate(todayYmd, tz).end;
+    } else {
+      const s = startDate ? new Date(startDate) : new Date();
+      const e = endDate ? new Date(endDate) : new Date();
+      if (!startDate) {
+        s.setDate(s.getDate() - 30);
+      }
+      start = s;
+      end = e;
+      start.setUTCHours(0, 0, 0, 0);
+      start.setUTCHours(start.getUTCHours() - 7);
+      end.setUTCHours(23, 59, 59, 999);
+      end.setUTCHours(end.getUTCHours() - 7);
+    }
+
+    if (start > end) {
+      const t = start;
+      start = end;
+      end = t;
+    }
 
     const dateQuery = { $gte: start, $lte: end };
     const userFilter = targetUserId ? { userId: targetUserId } : {};
@@ -456,9 +491,62 @@ const getActivityDetailForUser = async (activityId, type, subType, requestUserId
   return getActivityDetail(activityId, type, subType);
 };
 
+const MAX_HISTORY_RANGE_DAYS = 90;
+
+/** Chuẩn hoá phần tử list cho API GET /users/me/activities */
+export function normalizeActivityListItem(item) {
+  const dateVal = item.date;
+  return {
+    ...item,
+    durationSeconds: item.duration ?? 0,
+    tags: Array.isArray(item.tags) ? item.tags : [],
+    date:
+      dateVal instanceof Date
+        ? dateVal.toISOString()
+        : dateVal,
+  };
+}
+
+/**
+ * Khoảng ngày không vượt quá MAX_HISTORY_RANGE_DAYS.
+ * Trả về {} nếu hợp lệ không cần chỉnh; { error: string } nếu sai.
+ */
+export function validateActivityDateRange(startDateStr, endDateStr) {
+  if (!startDateStr && !endDateStr) {
+    return {};
+  }
+
+  const end = endDateStr ? new Date(endDateStr) : new Date();
+  let start;
+  if (startDateStr) {
+    start = new Date(startDateStr);
+  } else {
+    start = new Date(end);
+    start.setDate(start.getDate() - 30);
+  }
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return { error: 'Invalid startDate or endDate' };
+  }
+  if (end < start) {
+    return { error: 'endDate must be on or after startDate' };
+  }
+
+  const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+  if (diffDays > MAX_HISTORY_RANGE_DAYS) {
+    return {
+      error: `Date range cannot exceed ${MAX_HISTORY_RANGE_DAYS} days`,
+    };
+  }
+
+  return {};
+}
+
 export default {
   getHistory,
   getActivityDetail,
   getHistoryPaginated,
   getActivityDetailForUser,
+  normalizeActivityListItem,
+  validateActivityDateRange,
 };

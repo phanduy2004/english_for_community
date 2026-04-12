@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../core/entity/reading/reading_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
@@ -24,6 +27,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Color(0xFFF9FAFB);
     const borderCol = Color(0xFFE4E4E7);
     const textMain = Color(0xFF09090B);
@@ -54,9 +58,9 @@ class _ReadingListPageState extends State<ReadingListPage> {
                   icon: const Icon(Icons.arrow_back, color: textMain),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
-                title: const Text(
-                  'Reading Practice',
-                  style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
+                title: Text(
+                  t.readingPracticeTitle,
+                  style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
                 ),
                 actions: [
                   IconButton(
@@ -73,9 +77,9 @@ class _ReadingListPageState extends State<ReadingListPage> {
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         children: [
                           const SizedBox(height: 20),
-                          _buildHeader(context),
+                          _buildHeader(context, t),
                           const SizedBox(height: 24),
-                          _buildFilterRow(blocContext, primaryColor),
+                          _buildFilterRow(blocContext, primaryColor, t),
                           const SizedBox(height: 20),
                           BlocBuilder<ReadingBloc, ReadingState>(
                             builder: (context, state) {
@@ -87,7 +91,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
                               }
                               if (state.status == ReadingStatus.error) {
                                 return _ErrorView(
-                                  message: state.errorMessage ?? 'Something went wrong',
+                                  message: state.errorMessage ?? t.loadDataFailed,
                                   onRetry: () => _retry(blocContext),
                                 );
                               }
@@ -102,6 +106,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
                                 itemCount: state.readings.length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                                 itemBuilder: (context, index) => _ReadingCard(
+                                  t: t,
                                   reading: state.readings[index],
                                   primaryColor: primaryColor,
                                   // 🔥 ĐÃ SỬA: onAction giờ nhận tham số bool isRetake
@@ -150,7 +155,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
     });
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations t) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -175,9 +180,9 @@ class _ReadingListPageState extends State<ReadingListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Reading Skills',
-                  style: TextStyle(
+                Text(
+                  t.readingSkillsHeaderTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -185,7 +190,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Improve comprehension and vocabulary with curated articles.',
+                  t.readingSkillsHeaderSubtitle,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 13,
@@ -200,9 +205,9 @@ class _ReadingListPageState extends State<ReadingListPage> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
-                  child: const Text(
-                    'Daily Articles',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  child: Text(
+                    t.readingDailyArticlesBadge,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -222,11 +227,11 @@ class _ReadingListPageState extends State<ReadingListPage> {
     );
   }
 
-  Widget _buildFilterRow(BuildContext blocContext, Color primaryColor) {
+  Widget _buildFilterRow(BuildContext blocContext, Color primaryColor, AppLocalizations t) {
     final filters = [
-      {'id': 'easy', 'label': 'Beginner'},
-      {'id': 'medium', 'label': 'Intermediate'},
-      {'id': 'hard', 'label': 'Advanced'},
+      {'id': 'easy', 'label': t.difficultyBeginner},
+      {'id': 'medium', 'label': t.difficultyIntermediate},
+      {'id': 'hard', 'label': t.difficultyAdvanced},
     ];
 
     return SingleChildScrollView(
@@ -280,11 +285,13 @@ class _ReadingListPageState extends State<ReadingListPage> {
 
 class _ReadingCard extends StatelessWidget {
   const _ReadingCard({
+    required this.t,
     required this.reading,
     required this.onAction,
     required this.primaryColor,
   });
 
+  final AppLocalizations t;
   final ReadingEntity reading;
   // 🔥 ĐÃ SỬA: callback giờ nhận tham số bool
   final void Function(bool isRetake) onAction;
@@ -292,10 +299,10 @@ class _ReadingCard extends StatelessWidget {
 
   String _getLevelText(ReadingDifficulty? difficulty) {
     switch (difficulty) {
-      case ReadingDifficulty.easy: return 'Beginner';
-      case ReadingDifficulty.medium: return 'Intermediate';
-      case ReadingDifficulty.hard: return 'Advanced';
-      default: return 'Unknown';
+      case ReadingDifficulty.easy: return t.difficultyBeginner;
+      case ReadingDifficulty.medium: return t.difficultyIntermediate;
+      case ReadingDifficulty.hard: return t.difficultyAdvanced;
+      default: return t.unknownLevel;
     }
   }
 
@@ -317,7 +324,7 @@ class _ReadingCard extends StatelessWidget {
     final progress = reading.progress;
     final bool isCompleted = progress?.status == ProgressStatus.completed;
     final String? scoreText = (progress != null && progress.highScore > 0)
-        ? 'Score: ${progress.highScore.toStringAsFixed(0)}%'
+        ? t.readingScorePercent(progress.highScore.toStringAsFixed(0))
         : null;
 
     return Container(
@@ -359,8 +366,8 @@ class _ReadingCard extends StatelessWidget {
                               ),
                               if (isCompleted) ...[
                                 const SizedBox(width: 8),
-                                const _Badge(
-                                  label: 'Completed',
+                                _Badge(
+                                  label: t.completedBadge,
                                   color: Color(0xFF059669),
                                   filled: true,
                                   bgColor: Color(0xFFECFDF5),
@@ -409,9 +416,9 @@ class _ReadingCard extends StatelessWidget {
                         runSpacing: 4,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
-                          _IconText(icon: Icons.schedule, text: '${reading.minutesToRead} min'),
+                          _IconText(icon: Icons.schedule, text: t.readingMinutesShort(reading.minutesToRead)),
                           if (reading.questions.isNotEmpty)
-                            _IconText(icon: Icons.quiz_outlined, text: '${reading.questions.length} quiz'),
+                            _IconText(icon: Icons.quiz_outlined, text: t.readingQuizCount(reading.questions.length)),
                           if (scoreText != null)
                             Row(
                               mainAxisSize: MainAxisSize.min,
@@ -442,7 +449,7 @@ class _ReadingCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              label: Text(t.reviewAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -458,7 +465,7 @@ class _ReadingCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.replay, size: 16),
-                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              label: Text(t.retakeAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                             ),
                           ),
                         ],
@@ -476,7 +483,7 @@ class _ReadingCard extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
-                          child: const Text('Start'),
+                          child: Text(t.startAction),
                         ),
                       ),
                   ],
@@ -561,7 +568,7 @@ class _EmptyView extends StatelessWidget {
             child: const Icon(Icons.article_outlined, size: 40, color: textMuted),
           ),
           const SizedBox(height: 16),
-          const Text('No reading articles found', style: TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(context.l10n.noReadingArticlesFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -576,6 +583,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 60),
@@ -593,7 +601,7 @@ class _ErrorView extends StatelessWidget {
                 side: const BorderSide(color: Color(0xFFE4E4E7)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Retry'),
+              child: Text(t.commonRetry),
             ),
           ],
         ),

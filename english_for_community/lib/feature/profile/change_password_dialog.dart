@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../core/locale/l10n_context.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -39,16 +41,17 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     final newPass = _newPassController.text;
     final confirm = _confirmPassController.text;
 
+    final t = context.l10n;
     if (current.isEmpty || newPass.isEmpty || confirm.isEmpty) {
-      _showToast(context, 'Please fill in all fields', isError: true);
+      _showToast(context, t.fillAllFields, isError: true);
       return;
     }
     if (newPass != confirm) {
-      _showToast(context, 'New passwords do not match', isError: true);
+      _showToast(context, t.newPasswordMismatchToast, isError: true);
       return;
     }
     if (newPass.length < 6) {
-      _showToast(context, 'Password must be at least 6 characters', isError: true);
+      _showToast(context, t.passwordMinSixChars, isError: true);
       return;
     }
 
@@ -68,6 +71,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return BlocListener<UserBloc, UserState>(
       listener: (context, state) {
         if (!state.isFormLoading) {
@@ -94,12 +98,12 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             children: [
               // HEADER
               Row(
-                children: const [
-                  Icon(Icons.lock_reset_rounded, color: textMain),
-                  SizedBox(width: 12),
+                children: [
+                  const Icon(Icons.lock_reset_rounded, color: textMain),
+                  const SizedBox(width: 12),
                   Text(
-                    'Change Password',
-                    style: TextStyle(
+                    t.changePasswordTitle,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: textMain,
@@ -109,40 +113,40 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Update your password to keep your account secure.',
-                style: TextStyle(fontSize: 13, color: textMuted),
+              Text(
+                t.changePasswordSubtitle,
+                style: const TextStyle(fontSize: 13, color: textMuted),
               ),
               const SizedBox(height: 24),
 
               // INPUTS
-              _Label('Current Password'),
+              _Label(t.labelCurrentPassword),
               const SizedBox(height: 6),
               _ShadcnInput(
                 controller: _currentPassController,
-                hintText: 'Enter current password',
+                hintText: t.hintCurrentPassword,
                 obscureText: _obscureCurrent,
                 onToggleObscure: () => setState(() => _obscureCurrent = !_obscureCurrent),
               ),
 
               const SizedBox(height: 16),
 
-              _Label('New Password'),
+              _Label(t.labelNewPassword),
               const SizedBox(height: 6),
               _ShadcnInput(
                 controller: _newPassController,
-                hintText: 'Enter new password',
+                hintText: t.hintEnterNewPassword,
                 obscureText: _obscureNew,
                 onToggleObscure: () => setState(() => _obscureNew = !_obscureNew),
               ),
 
               const SizedBox(height: 16),
 
-              _Label('Confirm New Password'),
+              _Label(t.labelConfirmNewPassword),
               const SizedBox(height: 6),
               _ShadcnInput(
                 controller: _confirmPassController,
-                hintText: 'Re-enter new password',
+                hintText: t.hintReenterNewPassword,
                 obscureText: _obscureConfirm,
                 onToggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
               ),
@@ -161,7 +165,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         foregroundColor: textMain,
                       ),
-                      child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
+                      child: Text(t.cancel, style: const TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -181,8 +185,8 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               width: 20,
                               height: 20,
                               child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text('Save Changes',
-                              style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+                              : Text(t.saveChanges,
+                              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
                         );
                       },
                     ),

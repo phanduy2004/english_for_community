@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/api/api_config.dart';
+import '../../../core/locale/l10n_context.dart';
 import '../../../core/entity/comment_entity.dart';
 import '../../../core/entity/cue_entity.dart';
 import '../../../core/socket/socket_service.dart';
@@ -200,8 +201,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     );
     setState(() => _showHint = !result.passed);
     if (!mounted) return;
+    final t = context.l10n;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result.passed ? '✅ Correct!' : '⚠️ Try again'),
+      content: Text(result.passed ? '✅ ${t.dictationSnackCorrect}' : '⚠️ ${t.dictationSnackTryAgain}'),
       duration: const Duration(milliseconds: 1000),
       backgroundColor: result.passed ? Colors.green : Colors.orange,
     ));
@@ -209,12 +211,13 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final String myUserId = context.select((UserBloc bloc) => bloc.state.userEntity?.id ?? "");
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
-        title: Text(widget.title ?? 'Practice', style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600)),
+        title: Text(widget.title ?? t.listeningSkillsPracticeTitle, style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -243,14 +246,16 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
           },
           builder: (context, state) {
             if (state.status == CueStatus.loading) return const Center(child: CircularProgressIndicator());
-            if (state.status == CueStatus.error) return Center(child: Text(state.errorMessage ?? 'Error'));
+            if (state.status == CueStatus.error) {
+              return Center(child: Text(state.errorMessage ?? context.l10n.commonError));
+            }
 
             return SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
                 children: [
                   ListeningHeader(
-                    title: widget.title ?? 'Listening Task',
+                    title: widget.title ?? t.listeningSkillsHeaderTitle,
                     levelText: widget.levelText,
                     doneCount: state.completedIdx.length,
                     totalCount: state.cues.length,
@@ -282,9 +287,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                           labelColor: Theme.of(context).primaryColor,
                           unselectedLabelColor: Colors.grey,
                           indicatorSize: TabBarIndicatorSize.tab,
-                          tabs: const [
-                            Tab(icon: Icon(Icons.edit_note), text: "Practice"),
-                            Tab(icon: Icon(Icons.forum_outlined), text: "Discuss"),
+                          tabs: [
+                            Tab(icon: const Icon(Icons.edit_note), text: t.listeningSkillsTabPractice),
+                            Tab(icon: const Icon(Icons.forum_outlined), text: t.listeningSkillsTabDiscuss),
                           ],
                         ),
                         const Divider(height: 1, color: Color(0xFFE4E4E7)),

@@ -2,6 +2,7 @@ import 'package:english_for_community/feature/writing/widgets/interactive_diff_t
 import 'package:flutter/material.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 import '../../core/entity/writing_submission_entity.dart';
+import '../../core/locale/l10n_context.dart';
 
 class WritingFeedbackPage extends StatelessWidget {
   final WritingSubmissionEntity submission;
@@ -14,6 +15,7 @@ class WritingFeedbackPage extends StatelessWidget {
     const borderCol = Color(0xFFE4E4E7);
     const textMain = Color(0xFF09090B);
     final primaryColor = Theme.of(context).colorScheme.primary;
+    final t = context.l10n;
 
     final fb = submission.feedback;
     // 👇 Lấy thông tin đề bài từ submission
@@ -26,12 +28,12 @@ class WritingFeedbackPage extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: const BackButton(color: textMain),
-          title: const Text('Error', style: TextStyle(color: textMain)),
+          title: Text(t.writingFbErrorTitle, style: const TextStyle(color: textMain)),
         ),
-        body: const Center(
+        body: Center(
           child: Text(
-            'No feedback data found.',
-            style: TextStyle(color: Color(0xFF71717A)),
+            t.writingFbNoData,
+            style: const TextStyle(color: Color(0xFF71717A)),
           ),
         ),
       );
@@ -49,9 +51,9 @@ class WritingFeedbackPage extends StatelessWidget {
             icon: const Icon(Icons.close, color: textMain),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: const Text(
-            'Feedback Result',
-            style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
+          title: Text(
+            t.writingFbResultTitle,
+            style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
           ),
           centerTitle: true,
           bottom: PreferredSize(
@@ -66,11 +68,11 @@ class WritingFeedbackPage extends StatelessWidget {
                 indicatorColor: primaryColor,
                 indicatorSize: TabBarIndicatorSize.tab,
                 labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                tabs: const [
-                  Tab(text: 'Overview'),
-                  Tab(text: 'Details'),
-                  Tab(text: 'Rewrites'),
-                  Tab(text: 'Samples'),
+                tabs: [
+                  Tab(text: t.writingFbTabOverview),
+                  Tab(text: t.writingFbTabDetails),
+                  Tab(text: t.writingFbTabRewrites),
+                  Tab(text: t.writingFbTabSamples),
                 ],
               ),
             ),
@@ -92,9 +94,9 @@ class WritingFeedbackPage extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'Topic & Requirement',
-                                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain),
+                              Text(
+                                t.writingFbTopicRequirement,
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain),
                               ),
                               // Badge hiển thị Task Type
                               Container(
@@ -127,7 +129,7 @@ class WritingFeedbackPage extends StatelessWidget {
                             ),
                           // Nội dung câu hỏi
                           Text(
-                            prompt.text ?? 'No prompt content available.',
+                            prompt.text ?? t.writingFbNoPromptContent,
                             style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.5),
                           ),
                         ],
@@ -140,7 +142,7 @@ class WritingFeedbackPage extends StatelessWidget {
                   _ShadcnCard(
                     child: Column(
                       children: [
-                        const Text('Overall Band Score', style: TextStyle(fontSize: 13, color: Color(0xFF71717A), fontWeight: FontWeight.w500)),
+                        Text(t.writingFbOverallBand, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         Text(
                           (fb.overall ?? 0).toStringAsFixed(1),
@@ -154,15 +156,15 @@ class WritingFeedbackPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Subscores', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
+                        Text(t.writingFbSubscores, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
                         const SizedBox(height: 16),
-                        _ScoreRow(label: 'Task Response', score: fb.tr),
+                        _ScoreRow(label: t.writingFbCriterionTR, score: fb.tr),
                         const Divider(height: 24, color: Color(0xFFF4F4F5)),
-                        _ScoreRow(label: 'Coherence & Cohesion', score: fb.cc),
+                        _ScoreRow(label: t.writingFbCriterionCC, score: fb.cc),
                         const Divider(height: 24, color: Color(0xFFF4F4F5)),
-                        _ScoreRow(label: 'Lexical Resource', score: fb.lr),
+                        _ScoreRow(label: t.writingFbCriterionLR, score: fb.lr),
                         const Divider(height: 24, color: Color(0xFFF4F4F5)),
-                        _ScoreRow(label: 'Grammar Range', score: fb.gra),
+                        _ScoreRow(label: t.writingFbCriterionGRA, score: fb.gra),
                       ],
                     ),
                   ),
@@ -172,11 +174,11 @@ class WritingFeedbackPage extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.lightbulb_outline, size: 18, color: Color(0xFFF59E0B)),
-                              SizedBox(width: 8),
-                              Text('Key Improvement Tips', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
+                              const Icon(Icons.lightbulb_outline, size: 18, color: Color(0xFFF59E0B)),
+                              const SizedBox(width: 8),
+                              Text(t.writingFbKeyTips, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -193,13 +195,13 @@ class WritingFeedbackPage extends StatelessWidget {
             ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                _CriteriaCard(label: 'Task Response', score: fb.tr, bullets: fb.trBullets, note: fb.trNote),
+                _CriteriaCard(label: t.writingFbCriterionTR, score: fb.tr, bullets: fb.trBullets, note: fb.trNote),
                 const SizedBox(height: 16),
-                _CriteriaCard(label: 'Coherence & Cohesion', score: fb.cc, bullets: fb.ccBullets, note: fb.ccNote),
+                _CriteriaCard(label: t.writingFbCriterionCC, score: fb.cc, bullets: fb.ccBullets, note: fb.ccNote),
                 const SizedBox(height: 16),
-                _CriteriaCard(label: 'Lexical Resource', score: fb.lr, bullets: fb.lrBullets, note: fb.lrNote),
+                _CriteriaCard(label: t.writingFbCriterionLR, score: fb.lr, bullets: fb.lrBullets, note: fb.lrNote),
                 const SizedBox(height: 16),
-                _CriteriaCard(label: 'Grammar', score: fb.gra, bullets: fb.graBullets, note: fb.graNote),
+                _CriteriaCard(label: t.writingFbCriterionGrammar, score: fb.gra, bullets: fb.graBullets, note: fb.graNote),
               ],
             ),
 
@@ -209,14 +211,14 @@ class WritingFeedbackPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Detailed Correction',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B)),
+                  Text(
+                    t.writingFbDetailedCorrection,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B)),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Tap on highlighted text to see explanation.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                  Text(
+                    t.writingFbTapHighlighted,
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
                   ),
                   const SizedBox(height: 16),
 
@@ -228,7 +230,7 @@ class WritingFeedbackPage extends StatelessWidget {
                           // Nối các đoạn rewrite lại với nhau bằng \n\n
                           return fb.paragraphs!.map((p) => p.rewrite ?? '').join('\n\n\n');
                         }
-                        return 'No corrections available.';
+                        return t.writingFbNoCorrections;
                       })(),
                     ),
                   ),
@@ -241,10 +243,10 @@ class WritingFeedbackPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               children: [
                 if (fb.sampleMid != null)
-                  _SampleCard(title: 'Revised Version (Band 6.0-7.0)', content: fb.sampleMid!),
+                  _SampleCard(title: t.writingFbSampleMidTitle, content: fb.sampleMid!),
                 if (fb.sampleHigh != null) ...[
                   const SizedBox(height: 16),
-                  _SampleCard(title: 'Ideal Response (Band 8.0+)', content: fb.sampleHigh!),
+                  _SampleCard(title: t.writingFbSampleHighTitle, content: fb.sampleHigh!),
                 ]
               ],
             ),

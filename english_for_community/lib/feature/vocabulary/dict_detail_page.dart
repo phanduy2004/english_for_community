@@ -3,6 +3,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/repository/user_vocab_repository.dart';
 import '../../core/sqflite/dict_db.dart';
+import '../../core/locale/l10n_context.dart';
 
 class DictDetailPage extends StatefulWidget {
   final Entry entry;
@@ -54,6 +55,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Colors.white;
     const textMain = Color(0xFF09090B);
     const textMuted = Color(0xFF71717A);
@@ -72,12 +74,12 @@ class _DictDetailPageState extends State<DictDetailPage> {
         actions: widget.isGuest ? [] : [
           IconButton(
             icon: const Icon(Icons.school_rounded, color: Color(0xFF10B981)),
-            tooltip: 'Start Learning',
+            tooltip: t.dictTooltipStartLearning,
             onPressed: () => _startLearning(context),
           ),
           IconButton(
             icon: Icon(Icons.bookmark_border_rounded, color: Colors.amber[700]),
-            tooltip: 'Save word',
+            tooltip: t.dictTooltipSaveWord,
             onPressed: () => _saveWord(context),
           ),
           const SizedBox(width: 8),
@@ -145,7 +147,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Definitions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                  Text(t.dictDefinitions, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
                   const SizedBox(height: 16),
                   ...widget.entry.senses.asMap().entries.map((e) => _buildSenseItem(e.key + 1, e.value)),
 
@@ -153,7 +155,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
                     const SizedBox(height: 32),
                     const Divider(color: Color(0xFFE4E4E7)),
                     const SizedBox(height: 16),
-                    Text("See also", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.amber[800])),
+                    Text(t.dictSeeAlso, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.amber[800])),
                     const SizedBox(height: 8),
                     Wrap(
                       spacing: 8,
@@ -228,7 +230,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
     if (context.mounted) {
       result.fold(
             (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.message))),
-            (r) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Saved '${widget.entry.headword}'"))),
+            (r) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.wordSavedSnackbar(widget.entry.headword)))),
       );
     }
   }
@@ -239,7 +241,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
     if (context.mounted) {
       result.fold(
             (l) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l.message))),
-            (r) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Added '${widget.entry.headword}' to learning queue!"))),
+            (r) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.wordAddedToLearningQueue(widget.entry.headword)))),
       );
     }
   }

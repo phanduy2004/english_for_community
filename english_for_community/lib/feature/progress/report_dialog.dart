@@ -9,6 +9,7 @@ import '../../../core/get_it/get_it.dart';
 import 'bloc_report/report_bloc.dart';
 import 'bloc_report/report_event.dart';
 import 'bloc_report/report_state.dart';
+import '../../core/locale/l10n_context.dart';
 
 class ReportDialog extends StatefulWidget {
   const ReportDialog({super.key});
@@ -25,13 +26,15 @@ class _ReportDialogState extends State<ReportDialog> {
   final List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
-  // English Mapping
-  final Map<String, String> _reportTypes = {
-    'bug': 'Bug Report',
-    'feature': 'Feature Request',
-    'improvement': 'Improvement',
-    'other': 'Other'
-  };
+  Map<String, String> _reportTypesFor(BuildContext context) {
+    final t = context.l10n;
+    return {
+      'bug': t.reportTypeBug,
+      'feature': t.reportTypeFeature,
+      'improvement': t.reportTypeImprovement,
+      'other': t.reportTypeOther,
+    };
+  }
 
   @override
   void dispose() {
@@ -58,7 +61,7 @@ class _ReportDialogState extends State<ReportDialog> {
   Future<void> _submit(BuildContext context) async {
     // 1. Validation
     if (_titleController.text.trim().isEmpty || _descController.text.trim().isEmpty) {
-      _showToast(context, 'Please enter a title and description.', isError: true);
+      _showToast(context, context.l10n.reportFillTitleDescription, isError: true);
       return;
     }
 
@@ -122,11 +125,13 @@ class _ReportDialogState extends State<ReportDialog> {
             _showSuccessDialog(context);
           }
           if (state.status == ReportStatus.error) {
-            _showToast(context, state.errorMessage ?? 'Submission failed', isError: true);
+            _showToast(context, state.errorMessage ?? context.l10n.reportSubmissionFailed, isError: true);
           }
         },
         builder: (context, state) {
           final isLoading = state.status == ReportStatus.loading;
+          final t = context.l10n;
+          final reportTypes = _reportTypesFor(context);
 
           return Dialog(
             backgroundColor: Colors.white,
@@ -147,16 +152,16 @@ class _ReportDialogState extends State<ReportDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Flexible(
+                          Flexible(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Feedback & Support',
-                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)
+                                Text(t.reportDialogTitle,
+                                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)
                                 ),
-                                SizedBox(height: 6),
-                                Text('Let us know about an issue or suggestion.',
-                                    style: TextStyle(fontSize: 14, color: textMuted)
+                                const SizedBox(height: 6),
+                                Text(t.reportDialogSubtitle,
+                                    style: const TextStyle(fontSize: 14, color: textMuted)
                                 ),
                               ],
                             ),
@@ -174,31 +179,31 @@ class _ReportDialogState extends State<ReportDialog> {
                       const SizedBox(height: 24),
 
                       // --- Form Fields ---
-                      const _ShadcnLabel('Report Type'),
+                      _ShadcnLabel(t.reportTypeLabel),
                       _ShadcnDropdown(
                         value: _selectedType,
-                        items: _reportTypes,
+                        items: reportTypes,
                         onChanged: (val) => setState(() => _selectedType = val!),
                       ),
                       const SizedBox(height: 16),
 
-                      const _ShadcnLabel('Title'),
+                      _ShadcnLabel(t.reportTitleLabel),
                       _ShadcnInput(
                         controller: _titleController,
-                        hint: 'Brief summary of the issue',
+                        hint: t.reportTitleHint,
                       ),
                       const SizedBox(height: 16),
 
-                      const _ShadcnLabel('Description'),
+                      _ShadcnLabel(t.reportDescriptionLabel),
                       _ShadcnInput(
                         controller: _descController,
-                        hint: 'Please describe the details...',
+                        hint: t.reportDescriptionHint,
                         maxLines: 4,
                       ),
                       const SizedBox(height: 16),
 
-                      const _ShadcnLabel('Attachments (Optional)'),
-                      _buildImagePicker(),
+                      _ShadcnLabel(t.reportAttachmentsOptional),
+                      _buildImagePicker(context),
 
                       const SizedBox(height: 28),
 
@@ -217,7 +222,7 @@ class _ReportDialogState extends State<ReportDialog> {
                                 side: const BorderSide(color: Color(0xFFE4E4E7)),
                               ),
                             ),
-                            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w500)),
+                            child: Text(t.cancel, style: const TextStyle(fontWeight: FontWeight.w500)),
                           ),
                           const SizedBox(width: 12),
 
@@ -234,7 +239,7 @@ class _ReportDialogState extends State<ReportDialog> {
                             ),
                             child: isLoading
                                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Text('Submit Report', style: TextStyle(fontWeight: FontWeight.w600)),
+                                : Text(t.submitReport, style: const TextStyle(fontWeight: FontWeight.w600)),
                           ),
                         ],
                       ),
@@ -250,6 +255,7 @@ class _ReportDialogState extends State<ReportDialog> {
   }
 
   void _showSuccessDialog(BuildContext context) {
+    final t = context.l10n;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -266,11 +272,11 @@ class _ReportDialogState extends State<ReportDialog> {
               child: const Icon(Icons.check, color: Color(0xFF15803D), size: 32), // Green-700
             ),
             const SizedBox(height: 16),
-            const Text("Thank you!", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
+            Text(t.reportThankYou, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
             const SizedBox(height: 8),
-            const Text("We have received your report and will look into it shortly.",
+            Text(t.reportReceivedBody,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFF71717A))
+                style: const TextStyle(color: Color(0xFF71717A))
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -283,7 +289,7 @@ class _ReportDialogState extends State<ReportDialog> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                child: const Text("Close", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(t.close, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           ],
@@ -292,7 +298,8 @@ class _ReportDialogState extends State<ReportDialog> {
     );
   }
 
-  Widget _buildImagePicker() {
+  Widget _buildImagePicker(BuildContext context) {
+    final t = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -352,12 +359,12 @@ class _ReportDialogState extends State<ReportDialog> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: const Color(0xFFE4E4E7), style: BorderStyle.solid), // Dashed look simulated with solid light gray
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF71717A), size: 24),
-                SizedBox(height: 6),
-                Text("Click to upload screenshots", style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B))),
-                Text("Supported formats: JPEG, PNG", style: TextStyle(fontSize: 11, color: Color(0xFF71717A))),
+                const Icon(Icons.add_photo_alternate_outlined, color: Color(0xFF71717A), size: 24),
+                const SizedBox(height: 6),
+                Text(t.reportUploadScreenshots, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B))),
+                Text(t.reportSupportedFormats, style: const TextStyle(fontSize: 11, color: Color(0xFF71717A))),
               ],
             ),
           ),

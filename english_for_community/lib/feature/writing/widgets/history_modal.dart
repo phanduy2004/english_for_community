@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 // Tái sử dụng ErrorView từ common widgets nếu cần, hoặc import
 import 'writing_common_widgets.dart';
+import '../../../core/locale/l10n_context.dart';
 
 class HistoryModal extends StatelessWidget {
   final String topicName;
@@ -20,6 +21,7 @@ class HistoryModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: const BoxDecoration(
@@ -39,7 +41,7 @@ class HistoryModal extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Submission History', style: TextStyle(fontSize: 14, color: Color(0xFF71717A))),
+                      Text(t.submissionHistoryTitle, style: const TextStyle(fontSize: 14, color: Color(0xFF71717A))),
                       Text(topicName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF09090B))),
                     ],
                   ),
@@ -64,18 +66,18 @@ class HistoryModal extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                 }
                 if (state.historyStatus == WritingStatus.error) {
-                  return WritingErrorView(message: state.historyErrorMessage ?? 'Failed to load history');
+                  return WritingErrorView(message: state.historyErrorMessage ?? t.writingHistoryLoadFailed);
                 }
 
                 final list = state.historyList;
                 if (list.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFE4E4E7)),
-                        SizedBox(height: 12),
-                        Text('No history found for this topic.', style: TextStyle(color: Color(0xFF71717A))),
+                        const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFE4E4E7)),
+                        const SizedBox(height: 12),
+                        Text(t.writingNoHistoryForTopic, style: const TextStyle(color: Color(0xFF71717A))),
                       ],
                     ),
                   );
@@ -110,9 +112,10 @@ class HistoryItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final dateStr = submission.createdAt != null
         ? "${submission.createdAt!.day}/${submission.createdAt!.month}/${submission.createdAt!.year}"
-        : "Unknown date";
+        : t.dateUnknown;
 
     final score = submission.score ?? 0;
     // Màu sắc theo điểm số
@@ -154,7 +157,7 @@ class HistoryItemCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    submission.generatedPrompt?.title ?? "Writing Task",
+                    submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF09090B)),
@@ -168,7 +171,7 @@ class HistoryItemCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       const Icon(Icons.short_text, size: 14, color: Color(0xFF71717A)),
                       const SizedBox(width: 4),
-                      Text("${submission.wordCount ?? 0} words", style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
+                      Text(t.wordCountN(submission.wordCount ?? 0), style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
                     ],
                   )
                 ],

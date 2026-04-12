@@ -16,6 +16,8 @@ import '../../core/config/vapi_env_config.dart';
 import '../../core/datasource/vapi_config_remote_datasource.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/theme/app_color.dart' as T;
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 // --- 2. MODELS ---
 enum MessageRole { user, ai, system }
@@ -135,7 +137,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     if (pk.isEmpty || aid.isEmpty) {
       if (!mounted) return;
-      final hint = _vapiConfigErrorHint(remoteOutcome);
+      final hint = _vapiConfigErrorHint(remoteOutcome, context.l10n);
       setState(() {
         _vapiBootstrap = _VapiBootstrap.error;
         _vapiBootstrapError = hint;
@@ -155,7 +157,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     _messages.add(ChatMessage(
       id: 'sys_init',
-      text: 'Hello! Choose a voice and tap the microphone to start practicing English.',
+      text: '',
       role: MessageRole.system,
     ));
 
@@ -163,31 +165,21 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     setState(() => _vapiBootstrap = _VapiBootstrap.ready);
   }
 
-  String _vapiConfigErrorHint(VapiConfigFetchOutcome? o) {
+  String _vapiConfigErrorHint(VapiConfigFetchOutcome? o, AppLocalizations t) {
     final code = o?.statusCode;
     if (code == 401 || code == 403) {
-      return 'Không tải được cấu hình cuộc gọi AI (chưa xác thực).\n\n'
-          '• Đăng nhập trong app, rồi mở lại Free Speaking.\n'
-          '• Nếu vừa hết phiên, đăng xuất / đăng nhập lại.';
+      return t.vapiConfigHintAuth;
     }
     if (code == 503) {
-      return 'Server báo chưa cấu hình Vapi (503).\n\n'
-          '• Trong .env backend cần đúng tên: VAPI_PUBLIC_KEY và VAPI_ASSISTANT_ID (không dấu cách sau dấu =).\n'
-          '• Lưu .env và restart backend (npm run dev).';
+      return t.vapiConfigHint503;
     }
     if (code != null && code >= 400) {
-      return 'API cấu hình Vapi trả lỗi (HTTP $code).\n\n${o?.message ?? ''}';
+      return t.vapiConfigHintHttp(code, o?.message ?? '');
     }
     if (o?.message != null && (o!.publicKey == null || o.assistantId == null)) {
-      return 'Không lấy được cấu hình từ server (mạng / URL).\n\n'
-          '• Điện thoại và PC chạy Node cùng Wi‑Fi.\n'
-          '• Sửa IP trong lib/core/api/api_config.dart (_localLanIp) trùng IP máy bạn.\n'
-          '• Emulator Android: đặt isEmulator = true để dùng 10.0.2.2.\n\n'
-          'Chi tiết: ${o.message}';
+      return t.vapiConfigHintNetwork(o.message ?? '');
     }
-    return 'Chưa có public key / assistant id.\n\n'
-        '• Backend: thêm VAPI_PUBLIC_KEY và VAPI_ASSISTANT_ID vào .env, restart server.\n'
-        '• Hoặc build app: --dart-define=VAPI_PUBLIC_KEY=... --dart-define=VAPI_ASSISTANT_ID=...';
+    return t.vapiConfigHintMissingKeys;
   }
 
   void _onVapiEvent(VapiEvent event) {
@@ -195,7 +187,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     switch (event.type) {
       case 'error':
         final code = event.data?['code'] as String? ?? 'unknown';
-        final msg = event.data?['message'] as String? ?? 'Đã có lỗi xảy ra.';
+        final msg = event.data?['message'] as String? ?? context.l10n.genericLoadError;
         SpeakingTelemetry.logError(code);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
@@ -283,8 +275,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         await SpeakingTelemetry.logMicDenied();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cần quyền microphone để nói chuyện với AI. Hãy bật trong Cài đặt.'),
+            SnackBar(
+              content: Text(context.l10n.freeSpeakingMicDenied),
               behavior: SnackBarBehavior.floating,
             ),
           );
@@ -372,7 +364,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   void _showVoiceSelector() {
     if (_callStatus != VapiCallStatus.disconnected && _callStatus != VapiCallStatus.ended) {
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please end the call to change voice."))
+          SnackBar(content: Text(context.l10n.freeSpeakingEndCallToChangeVoice)),
       );
       return;
     }
@@ -381,16 +373,17 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       context: context,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) {
+      builder: (sheetContext) {
+        final st = sheetContext.l10n;
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text("Select AI Voice", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(st.freeSpeakingSelectVoiceTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               const Divider(height: 1, color: T.AppColors.outline),
               const SizedBox(height: 8),
@@ -432,6 +425,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     if (_vapiBootstrap == _VapiBootstrap.loading) {
       return Scaffold(
         backgroundColor: T.AppColors.surfaceCard,
@@ -443,15 +437,15 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
             icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
             onPressed: () => context.pop(),
           ),
-          title: Text('Free speaking', style: Theme.of(context).textTheme.titleMedium),
+          title: Text(t.freeSpeakingTitle, style: Theme.of(context).textTheme.titleMedium),
         ),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Đang tải cấu hình…', style: TextStyle(color: T.AppColors.textMuted, fontSize: 14)),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(t.freeSpeakingLoadingConfig, style: const TextStyle(color: T.AppColors.textMuted, fontSize: 14)),
             ],
           ),
         ),
@@ -469,7 +463,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
             icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
             onPressed: () => context.pop(),
           ),
-          title: Text('Free speaking', style: Theme.of(context).textTheme.titleMedium),
+          title: Text(t.freeSpeakingTitle, style: Theme.of(context).textTheme.titleMedium),
         ),
         body: Center(
           child: SingleChildScrollView(
@@ -480,7 +474,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 Icon(Icons.settings_ethernet, size: 48, color: T.AppColors.textMuted),
                 const SizedBox(height: 16),
                 Text(
-                  _vapiBootstrapError ?? 'Không tải được cấu hình.',
+                  _vapiBootstrapError ?? t.freeSpeakingConfigErrorShort,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: T.AppColors.textSecondary,
@@ -491,7 +485,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 FilledButton.icon(
                   onPressed: _bootstrapVapi,
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Thử lại'),
+                  label: Text(t.freeSpeakingRetry),
                 ),
               ],
             ),
@@ -539,7 +533,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 ),
               const SizedBox(width: 8),
               Text(
-                isConnecting ? "Connecting..." : (isConnected ? (_isAiSpeaking ? "AI Speaking" : "Online") : "Offline"),
+                isConnecting
+                    ? t.freeSpeakingStatusConnecting
+                    : (isConnected
+                        ? (_isAiSpeaking ? t.freeSpeakingStatusAiSpeaking : t.freeSpeakingStatusOnline)
+                        : t.freeSpeakingStatusOffline),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -630,8 +628,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                           style: const TextStyle(fontSize: 15, color: T.AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: isConnecting
-                                ? "Connecting..."
-                                : (isConnected ? "Type message..." : "Tap mic to connect"),
+                                ? t.freeSpeakingHintConnecting
+                                : (isConnected ? t.freeSpeakingHintTypeMessage : t.freeSpeakingHintTapMic),
                             hintStyle: const TextStyle(color: T.AppColors.textMuted, fontSize: 14),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -696,6 +694,8 @@ class _SystemHintBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayText =
+        message.id == 'sys_init' ? context.l10n.freeSpeakingWelcome : message.text;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
@@ -707,7 +707,7 @@ class _SystemHintBubble extends StatelessWidget {
             border: Border.all(color: T.AppColors.outline),
           ),
           child: Text(
-            message.text,
+            displayText,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: T.AppColors.textMuted,
@@ -816,7 +816,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _translatedText = "Lỗi dịch thuật";
+          _translatedText = context.l10n.translationFailed;
           _translationSourceText = text;
           _isTranslating = false;
         });

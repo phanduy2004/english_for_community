@@ -1,14 +1,25 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 // Import Bloc & Entity
 import '../../../../core/entity/notification_entity.dart';
 import 'bloc_noti/notification_bloc.dart';
 import 'bloc_noti/notification_event.dart';
 import 'bloc_noti/notification_state.dart';
+
+String formatNotificationTime(DateTime time, AppLocalizations t) {
+  final now = DateTime.now();
+  final diff = now.difference(time);
+  if (diff.inMinutes < 1) return t.timeJustNow;
+  if (diff.inMinutes < 60) return t.timeMinutesAgo(diff.inMinutes);
+  if (diff.inHours < 24) return t.timeHoursAgo(diff.inHours);
+  return DateFormat('dd/MM HH:mm').format(time);
+}
 
 class NotificationDialog extends StatefulWidget {
   const NotificationDialog({super.key});
@@ -50,69 +61,52 @@ class _NotificationDialogState extends State<NotificationDialog> {
     return currentScroll >= (maxScroll * 0.9);
   }
 
-  // 🔥 HANDLES NAVIGATION WHEN TAPPING AN ITEM
+  /// Điều hướng sau khi đóng dialog — lấy [GoRouter] trước [Navigator.pop] để không dùng
+  /// [BuildContext] của route đã gỡ sau pop.
   void _handleNavigation(BuildContext context, NotificationEntity item) {
-    // 1. Close Dialog first
+    final router = GoRouter.of(context);
     Navigator.of(context).pop();
 
     try {
       final Map<String, dynamic> data = item.data ?? {};
-      // Get type from Entity or from data map
-      final String type = item.type ?? data['type'] ?? '';
+      final String type = (data['type'] as String?) ?? item.type;
 
-      print("🚀 Notification Tap: Type=$type, Data=$data");
-
-      // --- CASE 1: LISTENING (Reply/Reaction) ---
       if (data.containsKey('listeningId')) {
-        final String listeningId = data['listeningId'];
-        final String? commentId = data['commentId'];
-        final String? cueId = data['cueId'];
-        final String audioUrl = data['audioUrl'] ?? '';
+        final String listeningId = '${data['listeningId']}';
+        final String? commentId = data['commentId']?.toString();
+        final String? cueId = data['cueId']?.toString();
+        final String audioUrl = data['audioUrl']?.toString() ?? '';
 
-        context.pushNamed(
+        router.pushNamed(
           'ListeningSkillsPage',
           pathParameters: {'listeningId': listeningId},
           extra: {
             'listeningId': listeningId,
             'audioUrl': audioUrl,
-            'targetCommentId': commentId, // Highlight comment
-            'cueId': cueId,               // Open correct Cue
-            'openDiscussion': true,       // Open Discussion tab
+            'targetCommentId': commentId,
+            'cueId': cueId,
+            'openDiscussion': true,
           },
         );
-      }
-
-      // --- CASE 2: REVIEW REMINDER -> Tab LEARNING (Index 1) ---
-      else if (type == 'REVIEW_REMINDER') {
-        print("👉 Navigating to Vocabulary -> Learning Tab");
-        context.pushNamed(
-            'VocabularyPage',
-            extra: {'initialTabIndex': 1} // 🔥 Tab 1: Learning
+      } else if (type == 'REVIEW_REMINDER') {
+        router.pushNamed(
+          'VocabularyPage',
+          extra: const {'initialTabIndex': 1},
+        );
+      } else if (type == 'DAILY_VOCAB' || type == 'DAILY_REMINDER' || data.containsKey('wordId')) {
+        router.pushNamed(
+          'VocabularyPage',
+          extra: const {'initialTabIndex': 0},
         );
       }
-
-      // --- CASE 3: DAILY VOCAB -> Tab RECENT (Index 0) ---
-      else if (type == 'DAILY_VOCAB' || type == 'DAILY_REMINDER' || data.containsKey('wordId')) {
-        print("👉 Navigating to Vocabulary -> Recent Tab");
-        context.pushNamed(
-            'VocabularyPage',
-            extra: {'initialTabIndex': 0} // 🔥 Tab 0: Recent
-        );
-      }
-
-      // --- CASE 4: PROGRESS NUDGE ---
-      else if (type == 'PROGRESS_NUDGE') {
-        // Option: Navigate to Home or Progress Page
-        // context.goNamed('HomePage');
-      }
-
-    } catch (e) {
-      print("❌ Error navigating from notification: $e");
+    } catch (e, st) {
+      debugPrint('Error navigating from notification: $e\n$st');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const borderColor = Color(0xFFE4E4E7);
     const primaryText = Color(0xFF09090B);
     const mutedText = Color(0xFF71717A);
@@ -138,9 +132,9 @@ class _NotificationDialogState extends State<NotificationDialog> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Notifications", // Translated
-                  style: TextStyle(
+                Text(
+                  t.notificationsTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: primaryText,
@@ -155,7 +149,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     child: Text(
-                      "Mark all as read", // Translated
+                      t.markAllRead,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -178,8 +172,31 @@ class _NotificationDialogState extends State<NotificationDialog> {
                     return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                   }
 
+                  if (state.status == NotificationStatus.failure && state.notifications.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            state.errorMessage ?? t.failedToLoadData,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: mutedText, fontSize: 14),
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () {
+                              context.read<NotificationBloc>().add(const NotificationLoadStarted(isRefresh: false));
+                            },
+                            child: Text(t.retry),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
                   if (state.notifications.isEmpty) {
-                    return const _EmptyState(primaryText: primaryText, mutedText: mutedText);
+                    return _EmptyState(primaryText: primaryText, mutedText: mutedText, l10n: t);
                   }
 
                   return ListView.separated(
@@ -208,6 +225,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                         primaryText: primaryText,
                         mutedText: mutedText,
                         bgHover: bgHover,
+                        l10n: t,
                         onTap: () {
                           // 1. Mark as read
                           context.read<NotificationBloc>().add(NotificationMarkRead(item.id));
@@ -237,7 +255,7 @@ class _NotificationDialogState extends State<NotificationDialog> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              child: const Text("Close", style: TextStyle(fontWeight: FontWeight.w500)), // Translated
+              child: Text(t.close, style: const TextStyle(fontWeight: FontWeight.w500)),
             ),
           ),
         ],
@@ -252,6 +270,7 @@ class _NotificationItem extends StatelessWidget {
   final Color primaryText;
   final Color mutedText;
   final Color bgHover;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   const _NotificationItem({
@@ -259,6 +278,7 @@ class _NotificationItem extends StatelessWidget {
     required this.primaryText,
     required this.mutedText,
     required this.bgHover,
+    required this.l10n,
     required this.onTap,
   });
 
@@ -334,7 +354,7 @@ class _NotificationItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _formatTime(item.createdAt),
+                      formatNotificationTime(item.createdAt, l10n),
                       style: TextStyle(fontSize: 12, color: mutedText, fontWeight: FontWeight.w500),
                     ),
                   ],
@@ -372,20 +392,13 @@ class _NotificationItem extends StatelessWidget {
     }
   }
 
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
-    if (diff.inMinutes < 1) return 'Just now'; // Translated
-    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago'; // Translated
-    if (diff.inHours < 24) return '${diff.inHours}h ago'; // Translated
-    return DateFormat('dd/MM HH:mm').format(time);
-  }
 }
 
 class _EmptyState extends StatelessWidget {
   final Color primaryText;
   final Color mutedText;
-  const _EmptyState({required this.primaryText, required this.mutedText});
+  final AppLocalizations l10n;
+  const _EmptyState({required this.primaryText, required this.mutedText, required this.l10n});
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -398,9 +411,9 @@ class _EmptyState extends StatelessWidget {
             child: Icon(Icons.notifications_off_outlined, size: 32, color: mutedText),
           ),
           const SizedBox(height: 16),
-          Text("No notifications yet", style: TextStyle(color: primaryText, fontWeight: FontWeight.w600)), // Translated
+          Text(l10n.notificationsEmptyTitle, style: TextStyle(color: primaryText, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text("You will receive notifications here.", style: TextStyle(color: mutedText, fontSize: 13)), // Translated
+          Text(l10n.notificationsEmptyBody, style: TextStyle(color: mutedText, fontSize: 13)),
         ],
       ),
     );

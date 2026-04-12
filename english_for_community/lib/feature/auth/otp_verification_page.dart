@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/locale/l10n_context.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -78,8 +79,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
     if (isLoading) return;
     final otp = _textController.text;
 
+    final t = context.l10n;
     if (otp.length < 6) {
-      _showShadcnDialog(context, title: 'Error', message: 'Please enter the 6-digit code.', isError: true);
+      _showShadcnDialog(context, title: t.errorTitle, message: t.otpSixDigitsRequired, isError: true);
       return;
     }
 
@@ -95,7 +97,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
     context.read<UserBloc>().add(ResendOtpEvent(email: widget.email));
 
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Resending code...')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.resendingCodeSnack)));
     startTimer();
   }
 
@@ -107,7 +109,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
         if (state.status == UserStatus.error && state.errorMessage != null) {
           _textController.clear();
           _focusNode.requestFocus();
-          _showShadcnDialog(context, title: 'Verification Failed', message: state.errorMessage!, isError: true);
+          _showShadcnDialog(context, title: context.l10n.verificationFailedTitle, message: state.errorMessage!, isError: true);
         }
 
         // Handle Success (Verification complete)
@@ -122,6 +124,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
       },
       builder: (context, state) {
         final isLoading = state.isFormLoading;
+        final t = context.l10n;
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -153,9 +156,9 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                       child: const Icon(Icons.lock_person_outlined, size: 32, color: accentCol),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
-                      'Enter Verification Code',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                    Text(
+                      t.enterVerificationCode,
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
                     ),
                     const SizedBox(height: 8),
                     RichText(
@@ -163,12 +166,12 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                       text: TextSpan(
                         style: const TextStyle(fontSize: 14, color: textMuted, height: 1.5),
                         children: [
-                          const TextSpan(text: 'A 6-digit code has been sent to\n'),
+                          TextSpan(text: t.otpSentPrefix),
                           TextSpan(
                             text: widget.email,
                             style: const TextStyle(fontWeight: FontWeight.w600, color: textMain),
                           ),
-                          const TextSpan(text: '. Please check your inbox.'),
+                          TextSpan(text: t.otpSentSuffix),
                         ],
                       ),
                     ),
@@ -197,7 +200,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                         ),
                         child: isLoading
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Text('Verify', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            : Text(t.verifyButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
                       ),
                     ),
 
@@ -207,14 +210,14 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Didn't receive the code? ", style: TextStyle(fontSize: 14, color: textMuted)),
+                        Text(t.didNotReceiveCode, style: const TextStyle(fontSize: 14, color: textMuted)),
                         _canResend
                             ? GestureDetector(
                           onTap: _onResend,
-                          child: const Text('Resend', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
+                          child: Text(t.resendAction, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
                         )
                             : Text(
-                          'Resend in $_start s',
+                          t.resendCooldown(_start),
                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMuted),
                         ),
                       ],
@@ -331,6 +334,7 @@ class _CustomOtpInputState extends State<_CustomOtpInput> {
 
 // Helper Dialog (Translated)
 void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
+  final t = context.l10n;
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -349,7 +353,7 @@ void _showShadcnDialog(BuildContext context, {required String title, required St
         SizedBox(width: double.infinity, child: OutlinedButton(
           onPressed: () => Navigator.pop(ctx),
           style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), side: const BorderSide(color: Color(0xFFE4E4E7)), foregroundColor: const Color(0xFF09090B)),
-          child: const Text('Close'),
+          child: Text(t.close),
         ))
       ],
     ),

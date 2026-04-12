@@ -1,4 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
@@ -22,15 +24,14 @@ class ListeningListPage extends StatefulWidget {
 
 class _ListeningListPageState extends State<ListeningListPage> {
   int _selectedFilterIndex = 0;
-  final List<String> _filters = const ['Beginner', 'Intermediate', 'Advanced'];
 
   String _getDifficultyForIndex(int index) {
-    switch (_filters[index]) {
-      case 'Beginner':
+    switch (index) {
+      case 0:
         return 'easy';
-      case 'Intermediate':
+      case 1:
         return 'medium';
-      case 'Advanced':
+      case 2:
         return 'hard';
       default:
         return 'easy';
@@ -39,6 +40,8 @@ class _ListeningListPageState extends State<ListeningListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
+    final filterLabels = [t.difficultyBeginner, t.difficultyIntermediate, t.difficultyAdvanced];
     const bgPage = Color(0xFFF9FAFB);
     const textMain = Color(0xFF09090B);
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -69,9 +72,9 @@ class _ListeningListPageState extends State<ListeningListPage> {
                 icon: const Icon(Icons.arrow_back, color: textMain),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
-              title: const Text(
-                'Listening Practice',
-                style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
+              title: Text(
+                t.listeningPracticeTitle,
+                style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
               ),
               centerTitle: true,
               actions: [
@@ -95,12 +98,12 @@ class _ListeningListPageState extends State<ListeningListPage> {
                         clipBehavior: Clip.none,
                         children: [
                           const SizedBox(height: 8),
-                          _buildHeader(context),
+                          _buildHeader(context, t),
                           const SizedBox(height: 20),
-                          _buildSearchBox(context, primaryColor),
+                          _buildSearchBox(context, primaryColor, t),
                           const SizedBox(height: 16),
                           _FilterRow(
-                            filters: _filters,
+                            filters: filterLabels,
                             selectedIndex: _selectedFilterIndex,
                             primaryColor: primaryColor,
                             onSelected: (i) {
@@ -123,7 +126,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
                                   );
                                 case ListeningStatus.error:
                                   return _ErrorView(
-                                    message: state.errorMessage ?? 'Something went wrong',
+                                    message: state.errorMessage ?? t.loadDataFailed,
                                     onRetry: refreshList, // Dùng hàm refreshList đã định nghĩa
                                   );
                                 case ListeningStatus.success:
@@ -136,6 +139,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
                                     itemCount: items.length,
                                     separatorBuilder: (_, __) => const SizedBox(height: 16),
                                     itemBuilder: (context, index) => _ListeningCard(
+                                      t: t,
                                       entity: items[index],
                                       primaryColor: primaryColor,
                                       onLessonFinished: refreshList, // Truyền callback refresh
@@ -160,7 +164,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, AppLocalizations t) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -185,9 +189,9 @@ class _ListeningListPageState extends State<ListeningListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Dictation Master',
-                  style: TextStyle(
+                Text(
+                  t.listeningHeaderTitle,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -195,7 +199,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Improve listening and spelling skills with short daily exercises.',
+                  t.listeningHeaderSubtitle,
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 13,
@@ -210,9 +214,9 @@ class _ListeningListPageState extends State<ListeningListPage> {
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
-                  child: const Text(
-                    'Premium Content',
-                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                  child: Text(
+                    t.listeningPremiumBadge,
+                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -232,7 +236,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
     );
   }
 
-  Widget _buildSearchBox(BuildContext context, Color primaryColor) {
+  Widget _buildSearchBox(BuildContext context, Color primaryColor, AppLocalizations t) {
     const borderColor = Color(0xFFE4E4E7);
     const textMuted = Color(0xFF71717A);
 
@@ -253,7 +257,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
         readOnly: true,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
-          hintText: 'Search lessons, topics, or ID...',
+          hintText: t.listeningSearchHint,
           hintStyle: const TextStyle(fontSize: 14, color: textMuted),
           prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
           border: InputBorder.none,
@@ -271,21 +275,23 @@ class _ListeningListPageState extends State<ListeningListPage> {
 }
 class _ListeningCard extends StatelessWidget {
   const _ListeningCard({
+    required this.t,
     required this.entity,
     required this.primaryColor,
     this.onLessonFinished,
   });
 
+  final AppLocalizations t;
   final ListeningEntity entity;
   final Color primaryColor;
   final VoidCallback? onLessonFinished;
 
   String _difficultyLabel(ListeningDifficulty? d) {
     switch (d) {
-      case ListeningDifficulty.easy: return 'Beginner';
-      case ListeningDifficulty.medium: return 'Intermediate';
-      case ListeningDifficulty.hard: return 'Advanced';
-      default: return 'Unknown';
+      case ListeningDifficulty.easy: return t.difficultyBeginner;
+      case ListeningDifficulty.medium: return t.difficultyIntermediate;
+      case ListeningDifficulty.hard: return t.difficultyAdvanced;
+      default: return t.unknownLevel;
     }
   }
 
@@ -309,7 +315,7 @@ class _ListeningCard extends StatelessWidget {
     final levelText = _difficultyLabel(entity.difficulty);
     final levelColor = _difficultyColor(entity.difficulty);
 
-    final progress = (entity.userProgress ?? 0.0).clamp(0.0, 1.0);
+    final progress = entity.userProgress.clamp(0.0, 1.0);
     final isCompleted = progress >= 0.99;
 
     return Container(
@@ -347,7 +353,7 @@ class _ListeningCard extends StatelessWidget {
                               _Badge(label: levelText, color: levelColor, filled: false),
                               if (isCompleted) ...[
                                 const SizedBox(width: 8),
-                                const _Badge(label: 'Completed', color: Color(0xFF059669), filled: true, bgColor: Color(0xFFECFDF5)),
+                                _Badge(label: t.completedBadge, color: Color(0xFF059669), filled: true, bgColor: Color(0xFFECFDF5)),
                               ]
                             ],
                           ),
@@ -362,11 +368,11 @@ class _ListeningCard extends StatelessWidget {
                             children: [
                               const Icon(Icons.format_list_bulleted, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              Text('$totalCues questions', style: const TextStyle(fontSize: 13, color: textMuted)),
+                              Text(t.questionsCount(totalCues), style: const TextStyle(fontSize: 13, color: textMuted)),
                               const SizedBox(width: 12),
                               const Icon(Icons.timer_outlined, size: 14, color: textMuted),
                               const SizedBox(width: 4),
-                              const Text('Dictation', style: TextStyle(fontSize: 13, color: textMuted)),
+                              Text(t.listeningDictation, style: const TextStyle(fontSize: 13, color: textMuted)),
                             ],
                           ),
                         ],
@@ -403,7 +409,7 @@ class _ListeningCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            'Progress: ${(progress * 100).toInt()}%',
+                            t.progressPercentLabel((progress * 100).toInt()),
                             style: const TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500),
                           ),
                         ],
@@ -426,7 +432,7 @@ class _ListeningCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                              label: const Text('Review', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              label: Text(t.reviewAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -442,7 +448,7 @@ class _ListeningCard extends StatelessWidget {
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                               ),
                               icon: const Icon(Icons.replay, size: 16),
-                              label: const Text('Retake', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                              label: Text(t.retakeAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
                             ),
                           ),
                         ],
@@ -460,7 +466,7 @@ class _ListeningCard extends StatelessWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                           ),
-                          child: const Text('Start'),
+                          child: Text(t.startAction),
                         ),
                       ),
                   ],
@@ -608,7 +614,7 @@ class _EmptyView extends StatelessWidget {
             child: const Icon(Icons.inbox_outlined, size: 40, color: textMuted),
           ),
           const SizedBox(height: 16),
-          const Text('No listening lessons found', style: TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(context.l10n.noListeningLessonsFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -623,6 +629,7 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 60),
@@ -640,7 +647,7 @@ class _ErrorView extends StatelessWidget {
                 side: const BorderSide(color: Color(0xFFE4E4E7)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Retry'),
+              child: Text(t.commonRetry),
             ),
           ],
         ),

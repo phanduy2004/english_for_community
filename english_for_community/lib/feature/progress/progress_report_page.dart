@@ -1,19 +1,17 @@
-import 'dart:math' as math;
-import 'dart:ui';
-
 import 'package:english_for_community/feature/progress/report_dialog.dart';
 import 'package:english_for_community/feature/progress/widgets/weekly_activity_bars_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:english_for_community/core/entity/progress_summary_entity.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
 import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
 import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/entity/leaderboard_entity.dart';
 import 'package:english_for_community/core/repository/user_repository.dart';
+
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class ProgressReportPage extends StatefulWidget {
   const ProgressReportPage({super.key});
@@ -36,11 +34,11 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 
-  String _fmtHhMm(int totalMinutes) {
-    if (totalMinutes < 0) return '0h 0m';
+  String _fmtHhMm(int totalMinutes, AppLocalizations t) {
+    if (totalMinutes < 0) return t.progressDurationHm(0, 0);
     final h = totalMinutes ~/ 60;
     final m = totalMinutes % 60;
-    return '${h}h ${m}m';
+    return t.progressDurationHm(h, m);
   }
 
   String _rangeToString(_Range range) {
@@ -51,11 +49,19 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     }
   }
 
-  String _rangeToLabel(_Range range) {
+  String _rangeToLabel(_Range range, AppLocalizations t) {
     switch (range) {
-      case _Range.day: return 'Daily';
-      case _Range.week: return 'Weekly';
-      case _Range.month: return 'Monthly';
+      case _Range.day: return t.progressFilterDay;
+      case _Range.week: return t.progressFilterWeek;
+      case _Range.month: return t.progressFilterMonth;
+    }
+  }
+
+  String _periodHeading(_Range range, AppLocalizations t) {
+    switch (range) {
+      case _Range.day: return t.progressPeriodToday;
+      case _Range.week: return t.progressPeriodThisWeek;
+      case _Range.month: return t.progressPeriodThisMonth;
     }
   }
 
@@ -99,6 +105,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   }
 
   void _showStatDetailDialog(ProgressBloc bloc, String statKey, _Range range) {
+    final t = context.l10n;
     showDialog(
         context: context,
         builder: (ctx) {
@@ -107,7 +114,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             child: StatDetailDialog(
               statKey: statKey,
               range: _rangeToDialogEnum(range),
-              rangeLabel: _rangeToLabel(range),
+              rangeLabel: _rangeToLabel(range, t),
             ),
           );
         }
@@ -115,6 +122,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   }
 
   void _showUserProfile(BuildContext context, String userId) {
+    final t = context.l10n;
     showDialog(
       context: context,
       builder: (context) {
@@ -129,12 +137,12 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
             if (snapshot.hasError) {
               return AlertDialog(
-                title: const Text('Error'),
-                content: const Text('Failed to load user profile.'),
+                title: Text(t.errorTitle),
+                content: Text(t.failedToLoadProfile),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
+                    child: Text(t.close),
                   ),
                 ],
               );
@@ -143,12 +151,12 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             if (snapshot.hasData) {
               return snapshot.data!.fold(
                     (failure) => AlertDialog(
-                  title: const Text('Error'),
+                  title: Text(t.errorTitle),
                   content: Text(failure.message),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
+                      child: Text(t.close),
                     )
                   ],
                 ),
@@ -183,6 +191,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     const bgPage = Color(0xFFF9FAFB);
     const borderCol = Color(0xFFE4E4E7);
     const textMain = Color(0xFF09090B);
@@ -202,13 +211,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             preferredSize: const Size.fromHeight(1),
             child: Container(color: borderCol, height: 1),
           ),
-          title: const Text(
-            'Learning Progress',
-            style: TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
+          title: Text(
+            t.learningProgressTitle,
+            style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
           ),
           actions: [
             IconButton(
-              tooltip: 'Report Issue',
+              tooltip: t.reportIssueTooltip,
               icon: const Icon(Icons.flag_outlined, color: textMain),
               onPressed: _openReportDialog,
             ),
@@ -221,10 +230,10 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 return const Center(child: CircularProgressIndicator(strokeWidth: 2));
               }
               if (state.status == ProgressStatus.error) {
-                return _buildErrorUI(context, state.errorMessage);
+                return _buildErrorUI(context, state.errorMessage, t);
               }
               if (state.summary != null) {
-                return _buildSuccessUI(context, state);
+                return _buildSuccessUI(context, state, t);
               }
               return const SizedBox.shrink();
             },
@@ -234,28 +243,28 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 
-  Widget _buildErrorUI(BuildContext context, String? message) {
+  Widget _buildErrorUI(BuildContext context, String? message, AppLocalizations t) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.error_outline, color: Colors.red, size: 48),
           const SizedBox(height: 16),
-          Text('Failed to load data', style: TextStyle(color: Colors.grey[900], fontWeight: FontWeight.w600)),
+          Text(t.failedToLoadData, style: TextStyle(color: Colors.grey[900], fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Text(message ?? 'Please try again later', style: TextStyle(color: Colors.grey[600])),
+          Text(message ?? t.pleaseTryAgainLater, style: TextStyle(color: Colors.grey[600])),
           const SizedBox(height: 24),
           OutlinedButton(
             onPressed: () => _onRefresh(context),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.black, side: const BorderSide(color: Colors.grey)),
-            child: const Text('Retry'),
+            child: Text(t.retry),
           )
         ],
       ),
     );
   }
 
-  Widget _buildSuccessUI(BuildContext context, ProgressState state) {
+  Widget _buildSuccessUI(BuildContext context, ProgressState state, AppLocalizations t) {
     final progressBloc = context.read<ProgressBloc>();
     final summary = state.summary!;
 
@@ -297,9 +306,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)),
+                    Text(t.progressOverview, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)),
                     const SizedBox(height: 4),
-                    const Text('Performance metrics', style: TextStyle(fontSize: 14, color: textMuted)),
+                    Text(t.progressPerformanceMetrics, style: const TextStyle(fontSize: 14, color: textMuted)),
                   ],
                 ),
                 Container(
@@ -310,9 +319,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   ),
                   child: Row(
                     children: [
-                      _FilterTab(label: 'Day', selected: _range == _Range.day, onTap: () => _onRangeSelected(context, _Range.day)),
-                      _FilterTab(label: 'Week', selected: _range == _Range.week, onTap: () => _onRangeSelected(context, _Range.week)),
-                      _FilterTab(label: 'Month', selected: _range == _Range.month, onTap: () => _onRangeSelected(context, _Range.month)),
+                      _FilterTab(label: t.progressFilterDay, selected: _range == _Range.day, onTap: () => _onRangeSelected(context, _Range.day)),
+                      _FilterTab(label: t.progressFilterWeek, selected: _range == _Range.week, onTap: () => _onRangeSelected(context, _Range.week)),
+                      _FilterTab(label: t.progressFilterMonth, selected: _range == _Range.month, onTap: () => _onRangeSelected(context, _Range.month)),
                     ],
                   ),
                 ),
@@ -330,13 +339,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _range == _Range.day ? 'Today' : (_range == _Range.week ? 'This Week' : 'This Month'),
+                            _periodHeading(_range, t),
                             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain),
                           ),
                           const SizedBox(height: 4),
                           // Hiển thị tổng số phút đã học
                           Text(
-                            _fmtHhMm(totalMinutesInActualRange),
+                            _fmtHhMm(totalMinutesInActualRange, t),
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
                           ),
                         ],
@@ -363,8 +372,8 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // Hiển thị mục tiêu tổng đã tính lại
-                      Text('Goal: ${_fmtHhMm(totalGoalMinutes)}', style: const TextStyle(fontSize: 12, color: textMuted)),
-                      Text('${(progress * 100).round()}% completed', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
+                      Text(t.progressGoalLine(_fmtHhMm(totalGoalMinutes, t)), style: const TextStyle(fontSize: 12, color: textMuted)),
+                      Text(t.progressPercentCompleted((progress * 100).round()), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
                     ],
                   ),
                 ],
@@ -372,7 +381,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             ),
             const SizedBox(height: 24),
 
-            const Text('Detailed Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+            Text(t.progressDetailedStats, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
             const SizedBox(height: 12),
             GridView.count(
               shrinkWrap: true,
@@ -384,32 +393,32 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               children: [
                 _StatBox(
                   icon: Icons.psychology, iconColor: const Color(0xFF8B5CF6),
-                  value: '${stats.vocabLearned}', label: 'Vocabulary',
+                  value: '${stats.vocabLearned}', label: t.progressStatVocabulary,
                   onTap: () => _showStatDetailDialog(progressBloc, 'vocab', _range),
                 ),
                 _StatBox(
                   icon: Icons.menu_book, iconColor: const Color(0xFF3B82F6),
-                  value: '${stats.readingAccuracy}%', label: 'Reading',
+                  value: '${stats.readingAccuracy}%', label: t.progressStatReading,
                   onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
                 ),
                 _StatBox(
                   icon: Icons.headphones, iconColor: const Color(0xFF22C55E),
-                  value: '${stats.dictationAccuracy}%', label: 'Listening',
+                  value: '${stats.dictationAccuracy}%', label: t.progressStatListening,
                   onTap: () => _showStatDetailDialog(progressBloc, 'dictation', _range),
                 ),
                 _StatBox(
                   icon: Icons.task_alt, iconColor: const Color(0xFFF97316),
-                  value: '${stats.lessonsCompleted}', label: 'Lessons',
+                  value: '${stats.lessonsCompleted}', label: t.progressStatLessons,
                   onTap: () => _showStatDetailDialog(progressBloc, 'lessons', _range),
                 ),
                 _StatBox(
                   icon: Icons.edit, iconColor: const Color(0xFFEC4899),
-                  value: stats.avgWritingScore.toStringAsFixed(1), label: 'Writing',
+                  value: stats.avgWritingScore.toStringAsFixed(1), label: t.progressStatWriting,
                   onTap: () => _showStatDetailDialog(progressBloc, 'writing', _range),
                 ),
                 _StatBox(
                   icon: Icons.mic, iconColor: const Color(0xFF14B8A6),
-                  value: '${stats.speakingAccuracy}%', label: 'Speaking',
+                  value: '${stats.speakingAccuracy}%', label: t.progressStatSpeaking,
                   onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
                 ),
               ],
@@ -419,7 +428,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Leaderboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+                Text(t.progressLeaderboard, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
 
               ],
             ),
@@ -427,7 +436,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
             _ShadcnCard(
               padding: EdgeInsets.zero,
-              child: _buildLeaderboardContent(state, borderColor),
+              child: _buildLeaderboardContent(state, borderColor, t),
             ),
 
             const SizedBox(height: 24),
@@ -438,7 +447,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
+                      Text(t.progressActivity, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
                       const Icon(Icons.bar_chart, color: Color(0xFF71717A), size: 20),
                     ],
                   ),
@@ -490,7 +499,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     );
   }
 
-  Widget _buildLeaderboardContent(ProgressState state, Color dividerColor) {
+  Widget _buildLeaderboardContent(ProgressState state, Color dividerColor, AppLocalizations t) {
     if (state.leaderboardStatus == LeaderboardStatus.loading) {
       return const Padding(
         padding: EdgeInsets.all(24.0),
@@ -501,15 +510,15 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     if (state.leaderboardStatus == LeaderboardStatus.error) {
       return Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(child: Text(state.errorMessage ?? 'Cannot load leaderboard', style: const TextStyle(fontSize: 12))),
+        child: Center(child: Text(state.errorMessage ?? t.leaderboardLoadFailed, style: const TextStyle(fontSize: 12))),
       );
     }
 
     final users = state.leaderboardUsers;
     if (users.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(24.0),
-        child: Center(child: Text('No leaderboard data available', style: TextStyle(color: Colors.grey))),
+      return Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Center(child: Text(t.leaderboardEmpty, style: const TextStyle(color: Colors.grey))),
       );
     }
 

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../../core/locale/l10n_context.dart';
 import 'bloc_ai/ai_chat_bloc.dart';
 import 'bloc_ai/ai_chat_event.dart';
 import 'bloc_ai/ai_chat_state.dart';
@@ -59,6 +60,7 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     // Hiệu ứng nền kính mờ (Glassmorphism)
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -105,8 +107,8 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('AI Assistant', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+                          children: [
+                            Text(t.aiAssistantTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
                           ],
                         ),
                       ],
@@ -132,12 +134,12 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
                     final isLoading = state.status == AiChatStatus.loading;
 
                     if (messages.isEmpty && !isLoading) {
-                      return const Center(
+                      return Center(
                         child: Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Text("Hãy hỏi tôi bất cứ điều gì về tiến độ học tập của bạn!",
+                          padding: const EdgeInsets.all(32.0),
+                          child: Text(t.aiAssistantEmptyPrompt,
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.black54)),
+                              style: const TextStyle(color: Colors.black54)),
                         ),
                       );
                     }
@@ -178,9 +180,9 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
                         child: TextField(
                           controller: _controller,
                           style: const TextStyle(fontSize: 14, color: textMain),
-                          decoration: const InputDecoration(
-                            hintText: 'Nhập câu hỏi...',
-                            hintStyle: TextStyle(color: textMuted, fontSize: 14),
+                          decoration: InputDecoration(
+                            hintText: t.aiChatPlaceholder,
+                            hintStyle: const TextStyle(color: textMuted, fontSize: 14),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           ),

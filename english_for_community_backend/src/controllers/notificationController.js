@@ -1,29 +1,17 @@
-import Notification from '../models/Notification.js';
+import { notificationService } from '../services/notificationService.js';
 
 const getNotifications = async (req, res) => {
   try {
     const userId = req.user.id;
-    const page = parseInt(req.query.page) || 1;
+    const page = parseInt(req.query.page, 10) || 1;
     const limit = 20;
 
-    // 1. Lấy danh sách (Mới nhất trước)
-    const notifications = await Notification.find({ recipientId: userId })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate('senderId', 'fullName avatarUrl');
-
-    // 2. Đếm số lượng chưa đọc (để hiện badge)
-    const unreadCount = await Notification.countDocuments({ recipientId: userId, isRead: false });
-
-    // 3. Check xem còn trang sau không
-    const totalDocs = await Notification.countDocuments({ recipientId: userId });
-    const hasMore = totalDocs > page * limit;
+    const result = await notificationService.listForUser(userId, page, limit);
 
     res.status(200).json({
-      data: notifications,
-      unreadCount,
-      pagination: { page, hasMore }
+      data: result.data,
+      unreadCount: result.unreadCount,
+      pagination: result.pagination,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -33,7 +21,12 @@ const getNotifications = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    await Notification.findByIdAndUpdate(id, { isRead: true });
+    const userId = req.user.id;
+
+    const updated = await notificationService.markOneAsReadForUser(userId, id);
+    if (!updated) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -43,7 +36,7 @@ const markAsRead = async (req, res) => {
 const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user.id;
-    await Notification.updateMany({ recipientId: userId, isRead: false }, { isRead: true });
+    await notificationService.markAllAsReadForUser(userId);
     res.status(200).json({ success: true });
   } catch (error) {
     res.status(500).json({ message: error.message });

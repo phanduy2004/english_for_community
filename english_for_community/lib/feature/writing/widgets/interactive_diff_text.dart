@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/locale/l10n_context.dart';
+
 class InteractiveDiffText extends StatelessWidget {
   final String text;
 
@@ -153,6 +155,7 @@ class _CuteReasonPopup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -181,9 +184,9 @@ class _CuteReasonPopup extends StatelessWidget {
                 child: const Icon(Icons.auto_fix_high, color: Color(0xFF3B82F6)),
               ),
               const SizedBox(width: 12),
-              const Text(
-                "AI Suggestion",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                t.writingAiSuggestionTitle,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -213,10 +216,9 @@ class _CuteReasonPopup extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Lý do
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
-            child: Text("Why needs correction?", style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
+            child: Text(t.writingWhyCorrection, style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
           ),
           const SizedBox(height: 8),
           Text(
@@ -237,7 +239,7 @@ class _CuteReasonPopup extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Got it"),
+              child: Text(t.writingGotIt),
             ),
           )
         ],
