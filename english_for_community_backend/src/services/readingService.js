@@ -8,7 +8,7 @@ import {updateGamificationStats} from "./gamificationService.js";
 const getAllReadings = async (userId, difficulty, page, limit) => {
   const skip = (page - 1) * limit;
 
-  const query = {};
+  const query = { _destroy: { $ne: true } };
   if (difficulty && difficulty !== 'all') {
     query.difficulty = difficulty;
   }
@@ -18,6 +18,14 @@ const getAllReadings = async (userId, difficulty, page, limit) => {
     .skip(skip)
     .limit(limit)
     .lean();
+  const readingIds = allReadings.map((r) => r._id);
+  const attemptsAgg = await ReadingAttempt.aggregate([
+    { $match: { readingId: { $in: readingIds } } },
+    { $group: { _id: '$readingId', attemptsCount: { $sum: 1 } } },
+  ]);
+  const attemptsMap = new Map(
+    attemptsAgg.map((item) => [item._id.toString(), item.attemptsCount]),
+  );
   const userProgress = await ReadingProgress.find({ userId }).lean();
   const progressMap = new Map();
   for (const progress of userProgress) {
@@ -28,6 +36,8 @@ const getAllReadings = async (userId, difficulty, page, limit) => {
     return {
       ...reading,
       progress: progress || null,
+      attemptsCount: attemptsMap.get(reading._id.toString()) ?? 0,
+      adminStatus: 'published',
     };
   });
   const totalPages = Math.ceil(totalDocs / limit);
@@ -89,8 +99,42 @@ const deleteReading = async (id) => {
   // Có thể cần xóa các dữ liệu liên quan (như Progress) nếu cần thiết
   // await ReadingProgress.deleteMany({ readingId: id });
 
-  return await Reading.findByIdAndDelete(id);
-};const getAttemptHistory = async (userId, readingId) => {
+  return await Reading.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: true, deletedAt: new Date() } },
+    { new: true }
+  );
+};
+
+const getDeletedReadings = async (page = 1, limit = 50) => {
+  const skip = (page - 1) * limit;
+  const query = { _destroy: true };
+  const totalDocs = await Reading.countDocuments(query);
+  const data = await Reading.find(query)
+    .sort({ deletedAt: -1, updatedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  return {
+    data,
+    pagination: {
+      total: totalDocs,
+      limit,
+      page,
+      totalPages: Math.ceil(totalDocs / limit),
+    },
+  };
+};
+
+const restoreReading = async (id) => {
+  return await Reading.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: false, deletedAt: null } },
+    { new: true }
+  );
+};
+
+const getAttemptHistory = async (userId, readingId) => {
   const history = await ReadingAttempt.find({ userId, readingId })
     .sort({ createdAt: -1 })
     .lean();
@@ -109,5 +153,7 @@ export const readingService = {
   submitAttempt,
   getAttemptHistory,
   getReadingById,
-  deleteReading
+  deleteReading,
+  getDeletedReadings,
+  restoreReading,
 };

@@ -49,16 +49,29 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Xác nhận xóa"),
-        content: const Text("Bạn có chắc chắn muốn xóa chủ đề này? Dữ liệu bài làm của học viên liên quan cũng có thể bị ảnh hưởng."),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+            SizedBox(width: 8),
+            Text("Delete writing topic?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          "This action can impact related learner submissions. You should only delete if the topic is invalid or duplicated.",
+          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Hủy")),
-          TextButton(
+          OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(ctx);
               context.read<AdminWritingBloc>().add(DeleteWritingTopicEvent(id));
             },
-            child: const Text("Xóa", style: TextStyle(color: Colors.red)),
+            child: const Text("Delete"),
           ),
         ],
       ),
@@ -69,6 +82,11 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
     await showDialog(
       context: context,
       builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
           child: Padding(
@@ -76,7 +94,19 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Deleted Writing Topics', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                Row(
+                  children: [
+                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const SizedBox(width: 8),
+                    const Text('Deleted Writing Topics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                const Text(
+                  'Restore deleted topics back to active content.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -112,13 +142,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                     },
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Close'),
-                  ),
-                ),
+                Align(alignment: Alignment.centerRight, child: OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close'))),
               ],
             ),
           ),
@@ -134,7 +158,16 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
       context: context,
       builder: (_) => StatefulBuilder(
         builder: (context, setLocalState) => AlertDialog(
-          title: Text('Approval Workflow - ${topic.name}'),
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          title: Row(
+            children: [
+              const Icon(Icons.verified_outlined, color: Colors.indigo, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Approval Workflow - ${topic.name}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700))),
+            ],
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -163,8 +196,12 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(context, selected), child: const Text('Apply')),
+            OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
+              onPressed: () => Navigator.pop(context, selected),
+              child: const Text('Apply'),
+            ),
           ],
         ),
       ),

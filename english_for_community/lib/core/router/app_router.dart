@@ -141,12 +141,7 @@ class AppRouter {
       if (userState.status == UserStatus.success) {
         final user = userState.userEntity;
         final role = user?.role ?? 'user';
-        final isAdminConsoleRole = <String>{
-          'admin',
-          'moderator',
-          'content_manager',
-          'support',
-        }.contains(role);
+        final isAdminConsoleRole = role == 'admin';
 
         // 🔥 ADMIN CHECK 🔥
         if (isAdminConsoleRole) {

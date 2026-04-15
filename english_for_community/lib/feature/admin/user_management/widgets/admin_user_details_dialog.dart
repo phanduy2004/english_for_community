@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/entity/user_entity.dart';
 import '../../../../core/get_it/get_it.dart';
 import '../../../../core/repository/user_repository.dart';
@@ -333,12 +334,85 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                   value: user.role.toUpperCase(),
                   valueColor: user.role == 'admin' ? Colors.red : Colors.blue,
                 ),
+                const Divider(height: 1, color: borderCol),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.swap_horiz, size: 18, color: textMuted),
+                      const SizedBox(width: 12),
+                      const Text('Change Role', style: TextStyle(fontSize: 13, color: textMuted)),
+                      const Spacer(),
+                      SizedBox(
+                        height: 32,
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            side: BorderSide(color: user.role == 'admin' ? Colors.orange : Colors.blue),
+                          ),
+                          onPressed: () => _confirmRoleChange(user),
+                          child: Text(
+                            user.role == 'admin' ? 'Demote to User' : 'Promote to Admin',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: user.role == 'admin' ? Colors.orange : Colors.blue),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmRoleChange(UserEntity user) async {
+    final newRole = user.role == 'admin' ? 'user' : 'admin';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          newRole == 'admin' ? 'Promote to Admin?' : 'Demote to User?',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          newRole == 'admin'
+              ? '${user.fullName} will have full admin access to the management console.'
+              : '${user.fullName} will lose admin access and be redirected to the user app.',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: newRole == 'admin' ? Colors.blue : Colors.orange,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(newRole == 'admin' ? 'Promote' : 'Demote'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await getIt<AdminRemoteDatasource>().promoteUser(userId: user.id, role: newRole);
+      if (!mounted) return;
+      setState(() {
+        _userFuture = getIt<UserRepository>().getUserById(widget.userId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${user.fullName} is now ${newRole.toUpperCase()}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   // --- HELPERS ---

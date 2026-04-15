@@ -116,27 +116,50 @@ class UserActionMenu extends StatelessWidget {
   }) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        content: Text(content),
-        actions: [
-          TextButton(
+      builder: (ctx) {
+        final destructive = confirmColor == Colors.red;
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+          contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          title: Row(
+            children: [
+              Icon(
+                destructive ? Icons.warning_amber_rounded : Icons.info_outline,
+                color: destructive ? Colors.red : confirmColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+            ],
+          ),
+          content: Text(content, style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.35)),
+          actions: [
+            OutlinedButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey))
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              onConfirm();
-            },
-            style: TextButton.styleFrom(foregroundColor: confirmColor),
-            child: Text(confirmText, style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
+                foregroundColor: const Color(0xFF0F172A),
+              ),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                onConfirm();
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: confirmColor,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(confirmText, style: const TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,15 +1,12 @@
-// src/middleware/auth.js
 import { verifyAccessToken, extractToken } from '../lib/jwt_token.js';
 import User from '../models/User.js';
-import RolePermission from '../models/RolePermission.js';
+import { ROLE_PERMISSIONS, ALL_KNOWN_PERMISSIONS } from '../constants/permissions.js';
 
-// 1. Middleware xác thực: Kiểm tra token có hợp lệ không?
 export const authenticate = async (req, res, next) => {
   const token = extractToken(req);
   if (!token) return res.status(401).json({ message: 'Authentication required' });
 
   const { valid, expired, userId } = verifyAccessToken(token);
-
   if (expired) return res.status(401).json({ message: 'Token expired' });
   if (!valid) return res.status(401).json({ message: 'Invalid token' });
 
@@ -18,7 +15,7 @@ export const authenticate = async (req, res, next) => {
     if (!user) return res.status(401).json({ message: 'User not found' });
     if (user._destroy) return res.status(403).json({ message: 'Account disabled' });
 
-    req.user = user; // Lưu toàn bộ user vào req để dùng ở bước sau
+    req.user = user;
     req.userId = user._id;
     next();
   } catch (e) {
@@ -26,59 +23,21 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-// 2. Middleware phân quyền: Kiểm tra User có phải Admin không?
-// (LƯU Ý: Hàm này phải đặt SAU hàm authenticate trong route)
 export const requireAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-
-  if (req.user.role === 'admin') {
-    next(); // Cho phép đi tiếp
-  } else {
-    return res.status(403).json({ message: 'Access denied. Admin role required.' });
-  }
+  if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+  if (req.user.role === 'admin') return next();
+  return res.status(403).json({ message: 'Access denied. Admin role required.' });
 };
 
-const ROLE_PERMISSIONS = {
-  admin: ['*'],
-  moderator: [
-    'reports.read',
-    'reports.update',
-    'reports.bulk_update',
-    'moderation.queue.read',
-    'users.read',
-    'users.restore',
-    'exports.read',
-  ],
-  content_manager: [
-    'content.read',
-    'content.update',
-    'content.version.read',
-    'content.version.rollback',
-    'content.approve',
-    'users.read',
-    'exports.read',
-  ],
-  support: [
-    'reports.read',
-    'reports.update',
-    'users.read',
-    'exports.read',
-  ],
-  user: [],
-};
-
-async function resolvePermissionsForRole(role) {
-  const dynamic = await RolePermission.findOne({ role, isActive: true }).lean();
-  if (dynamic && Array.isArray(dynamic.permissions)) return dynamic.permissions;
+function resolvePermissionsForRole(role) {
   return ROLE_PERMISSIONS[role] || [];
 }
 
-export const requirePermissions = (required = []) => async (req, res, next) => {
+export const requirePermissions = (required = []) => (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
   const userRole = req.user.role || 'user';
-  const granted = await resolvePermissionsForRole(userRole);
+  const granted = resolvePermissionsForRole(userRole);
+
   if (granted.includes('*')) return next();
 
   const requiredList = Array.isArray(required) ? required : [required];
@@ -89,20 +48,10 @@ export const requirePermissions = (required = []) => async (req, res, next) => {
   return next();
 };
 
-export const upsertRolePermissions = async (role, permissions = []) => {
-  if (!role) return null;
-  return RolePermission.findOneAndUpdate(
-    { role },
-    { $set: { permissions, isActive: true } },
-    { upsert: true, new: true }
-  );
-};
-
-export const getRolePermissions = async () => {
-  const dynamic = await RolePermission.find({ isActive: true }).lean();
-  const map = {};
-  dynamic.forEach((item) => {
-    map[item.role] = item.permissions || [];
-  });
-  return { defaults: ROLE_PERMISSIONS, dynamic: map };
+export const getRolePermissions = () => {
+  return {
+    roles: Object.keys(ROLE_PERMISSIONS),
+    defaults: ROLE_PERMISSIONS,
+    allPermissions: ALL_KNOWN_PERMISSIONS,
+  };
 };

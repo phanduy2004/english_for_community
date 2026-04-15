@@ -151,6 +151,29 @@ const adminDelete = async (req, res) => {
   }
 };
 
+const adminGetDeleted = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const result = await speakingService.getDeletedSpeakingSets(page, limit);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const adminRestore = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ message: 'Invalid ID' });
+    const result = await speakingService.restoreSpeakingSet(id);
+    if (!result) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json({ message: 'Restored', data: result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Đọc .env an toàn: trim + bỏ BOM; tránh giá trị rỗng do khoảng trắng sau dấu "=" trong .env
 const _envTrim = (key) => {
   const raw = process.env[key];
@@ -185,6 +208,8 @@ export const speakingController = {
     getDetail: adminGetDetail,
     create: adminCreate,
     update: adminUpdate,
-    delete: adminDelete
+    delete: adminDelete,
+    getDeleted: adminGetDeleted,
+    restore: adminRestore,
   }
 };

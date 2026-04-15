@@ -52,11 +52,13 @@ class ListeningCompEntity extends Equatable {
   final List<ListeningCompQuestionEntity> questions;
   final double userProgress;
   final int highScore;
+  final int attemptsCount;
+  final String adminStatus;
 
   const ListeningCompEntity({
     required this.id, required this.title, this.summary,required this.totalQuestions, required this.audioUrl, required this.transcript,
     required this.difficulty, required this.minutesToComplete, required this.questions,
-    this.userProgress = 0.0, this.highScore = 0,
+    this.userProgress = 0.0, this.highScore = 0, this.attemptsCount = 0, this.adminStatus = 'published',
   });
 
   factory ListeningCompEntity.fromJson(Map<String, dynamic> json) {
@@ -77,6 +79,8 @@ class ListeningCompEntity extends Equatable {
       minutesToComplete: json['minutesToComplete'] ?? 5,
       userProgress: (json['userProgress'] as num?)?.toDouble() ?? 0.0,
       highScore: (json['highScore'] as num?)?.toInt() ?? 0,
+      attemptsCount: (json['attemptsCount'] as num?)?.toInt() ?? 0,
+      adminStatus: (json['adminStatus'] ?? 'published').toString(),
       questions: questionsList,
     );
   }
@@ -84,7 +88,7 @@ class ListeningCompEntity extends Equatable {
   @override
   List<Object?> get props => [
     id, title, totalQuestions, summary, audioUrl, transcript,
-    difficulty, minutesToComplete, questions, userProgress, highScore
+    difficulty, minutesToComplete, questions, userProgress, highScore, attemptsCount, adminStatus
   ];
 }
 

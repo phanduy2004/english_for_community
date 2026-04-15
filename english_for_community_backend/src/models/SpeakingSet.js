@@ -49,7 +49,9 @@ const SpeakingSetSchema = new mongoose.Schema({
     index: true,
   },
   sentences: [SentenceSchema],
-});
+  _destroy: { type: Boolean, default: false, index: true },
+  deletedAt: { type: Date, default: null },
+}, { timestamps: true });
 
 const SpeakingSet = mongoose.model('SpeakingSet', SpeakingSetSchema);
 

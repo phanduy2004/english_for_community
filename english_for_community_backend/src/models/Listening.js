@@ -31,7 +31,9 @@ const ListeningSchema = new Schema(
     transcript: { type: String }, // Script gộp (nếu cần hiển thị full)
 
     // 3️⃣ Nhúng mảng Cues vào đây (thay vì table riêng)
-    cues: [CueSubSchema]
+    cues: [CueSubSchema],
+    _destroy: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

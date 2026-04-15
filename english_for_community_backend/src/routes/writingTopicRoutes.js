@@ -10,6 +10,7 @@ import {
   submitWritingTopicApproval, reviewWritingTopicApproval, getDeletedWritingTopics, restoreWritingTopic
 } from '../controllers/writingTopicController.js';
 import {authenticate, requirePermissions} from "../middleware/auth.js";
+import { Permission } from '../constants/permissions.js';
 
 const router = Router();
 
@@ -34,15 +35,15 @@ router.post('/:id/submit', submitForReview);
 router.delete('/submissions/:id', deleteSubmission);
 
 
-router.get('/admin/all', requirePermissions('content.read'), getAdminWritingTopics);
-router.get('/admin/deleted', requirePermissions('content.read'), getDeletedWritingTopics);
-router.post('/', requirePermissions('content.update'), createWritingTopic);
-router.post('/:id/submit-approval', requirePermissions('content.update'), submitWritingTopicApproval);
-router.post('/:id/review-approval', requirePermissions('content.approve'), reviewWritingTopicApproval);
-router.post('/:id/restore', requirePermissions('content.update'), restoreWritingTopic);
-router.get('/:id/versions', requirePermissions('content.version.read'), getWritingTopicVersions);
-router.post('/:id/versions/:versionId/rollback', requirePermissions('content.version.rollback'), rollbackWritingTopicVersion);
-router.get('/:id', requirePermissions('content.read'), getWritingTopicDetail);
-router.put('/:id', requirePermissions('content.update'), updateWritingTopic);
-router.delete('/:id', requirePermissions('content.update'), deleteWritingTopic);
+router.get('/admin/all', requirePermissions(Permission.CONTENT_READ), getAdminWritingTopics);
+router.get('/admin/deleted', requirePermissions(Permission.CONTENT_READ), getDeletedWritingTopics);
+router.post('/', requirePermissions(Permission.CONTENT_UPDATE), createWritingTopic);
+router.post('/:id/submit-approval', requirePermissions(Permission.CONTENT_UPDATE), submitWritingTopicApproval);
+router.post('/:id/review-approval', requirePermissions(Permission.CONTENT_APPROVE), reviewWritingTopicApproval);
+router.post('/:id/restore', requirePermissions(Permission.CONTENT_UPDATE), restoreWritingTopic);
+router.get('/:id/versions', requirePermissions(Permission.CONTENT_VERSION_READ), getWritingTopicVersions);
+router.post('/:id/versions/:versionId/rollback', requirePermissions(Permission.CONTENT_VERSION_ROLLBACK), rollbackWritingTopicVersion);
+router.get('/:id', requirePermissions(Permission.CONTENT_READ), getWritingTopicDetail);
+router.put('/:id', requirePermissions(Permission.CONTENT_UPDATE), updateWritingTopic);
+router.delete('/:id', requirePermissions(Permission.CONTENT_UPDATE), deleteWritingTopic);
 export default router;

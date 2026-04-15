@@ -124,6 +124,28 @@ const deleteReading = async (req, res) => {
     res.status(500).json({ message: 'Lỗi máy chủ: ' + err.message });
   }
 };
+
+const getDeletedReadings = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const result = await readingService.getDeletedReadings(page, limit);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi máy chủ: ' + err.message });
+  }
+};
+
+const restoreReading = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reading = await readingService.restoreReading(id);
+    if (!reading) return res.status(404).json({ message: 'Không tìm thấy bài đọc' });
+    res.status(200).json({ message: 'Khôi phục thành công', data: reading });
+  } catch (err) {
+    res.status(500).json({ message: 'Lỗi máy chủ: ' + err.message });
+  }
+};
 // ✍️ Export
 export const readingController = {
   getAllReadings,
@@ -131,5 +153,7 @@ export const readingController = {
   submitAttempt,
   getAttemptHistory,
   getReadingById,
-  deleteReading
+  deleteReading,
+  getDeletedReadings,
+  restoreReading,
 };
