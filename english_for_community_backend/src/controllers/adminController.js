@@ -1,7 +1,9 @@
 import { adminService } from '../services/adminService.js';
 import { getIO } from '../socket/socketManager.js';
 import { writeAdminAudit, listAdminAudits } from '../services/adminAuditService.js';
-import { getRolePermissions, upsertRolePermissions } from '../middleware/auth.js';
+import { getRolePermissions } from '../middleware/auth.js';
+import { VALID_ROLES } from '../constants/permissions.js';
+import User from '../models/User.js';
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -257,30 +259,50 @@ const exportCsv = async (req, res) => {
   }
 };
 
-const getPermissionMatrix = async (req, res) => {
+const getPermissionMatrix = (req, res) => {
   try {
-    const data = await getRolePermissions();
+    const data = getRolePermissions();
     return res.status(200).json(data);
   } catch (error) {
     return res.status(500).json({ message: 'Error', error: error.message });
   }
 };
 
-const updateRolePermissions = async (req, res) => {
+const promoteUser = async (req, res) => {
   try {
-    const { role, permissions = [] } = req.body;
-    const item = await upsertRolePermissions(role, permissions);
+    const { id } = req.params;
+    const { role } = req.body;
+
+    if (!role || !VALID_ROLES.includes(role)) {
+      return res.status(400).json({ message: `Invalid role. Allowed: ${VALID_ROLES.join(', ')}` });
+    }
+
+    const target = await User.findById(id);
+    if (!target) return res.status(404).json({ message: 'User not found' });
+    if (target._destroy) return res.status(400).json({ message: 'Cannot change role of deleted user' });
+
+    const oldRole = target.role;
+    if (oldRole === role) return res.status(200).json({ message: 'No change', user: target });
+
+    target.role = role;
+    await target.save();
+
     await writeAdminAudit({
       actorId: req.user?._id,
       actorRole: req.user?.role,
-      action: 'rbac.role_permissions.update',
-      targetType: 'role_permission',
-      targetId: role || 'unknown',
-      metadata: { permissionsCount: permissions.length },
+      action: 'user.role.update',
+      targetType: 'user',
+      targetId: id,
+      metadata: { oldRole, newRole: role },
       ip: req.ip,
       userAgent: req.get('user-agent') || '',
     });
-    return res.status(200).json(item);
+
+    if (role === 'user' && oldRole === 'admin') {
+      getIO().to(id).emit('force_logout', { reason: 'Your admin access has been revoked.' });
+    }
+
+    return res.status(200).json({ message: `Role updated: ${oldRole} → ${role}`, user: target });
   } catch (error) {
     return res.status(500).json({ message: 'Error', error: error.message });
   }
@@ -353,7 +375,7 @@ export default {
   getAuditLogs,
   exportCsv,
   getPermissionMatrix,
-  updateRolePermissions,
+  promoteUser,
   getActivities,
   getActivityDetail,
   getContentSummary,

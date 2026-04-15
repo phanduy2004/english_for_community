@@ -151,6 +151,28 @@ const deleteListening = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+const getDeletedListenings = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const result = await listeningService.getDeletedListenings(page, limit);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+const restoreListening = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await listeningService.restoreListening(id);
+    if (!result) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json({ message: 'Restored successfully', data: result });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 // 🔥 1. Lấy danh sách comment của 1 Cue (Thêm mới)
 const getCueComments = async (req, res) => {
   try {
@@ -337,6 +359,8 @@ export const listeningController = {
   createListening,
   adminUpdate,
   deleteListening,
+  getDeletedListenings,
+  restoreListening,
   postCueComment,
   getCueComments,
   reactToComment

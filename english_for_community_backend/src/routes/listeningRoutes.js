@@ -23,6 +23,8 @@ router.post('/submit', listeningController.submitAttempt);
 // 3. Lấy lịch sử làm bài (Gộp từ dictationRoutes cũ)
 // GET /api/listenings/attempts?listeningId=...
 router.get('/attempts', listeningController.getAttempts);
+router.get('/admin/deleted', requireAdmin, listeningController.getDeletedListenings);
+router.post('/:id/restore', requireAdmin, listeningController.restoreListening);
 
 // 4. Lấy chi tiết bài nghe
 // GET /api/listenings/:id

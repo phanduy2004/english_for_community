@@ -6,6 +6,8 @@ const router = express.Router();
 router.use(authenticate);
 
 router.get('/', readingController.getAllReadings);
+router.get('/admin/deleted', readingController.getDeletedReadings);
+router.post('/:id/restore', readingController.restoreReading);
 
 router.get('/history/:readingId', readingController.getAttemptHistory);
 router.post('/', readingController.createReading);

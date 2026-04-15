@@ -54,6 +54,8 @@ class ListeningEntity extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final double userProgress;
+  final int attemptsCount;
+  final String adminStatus;
   final List<CueEntity> cues; // 👈 Danh sách Cue đã được nhúng vào
 
   const ListeningEntity({
@@ -70,6 +72,8 @@ class ListeningEntity extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.userProgress = 0.0,
+    this.attemptsCount = 0,
+    this.adminStatus = 'published',
     this.cues = const [],
   });
 
@@ -98,6 +102,8 @@ class ListeningEntity extends Equatable {
       createdAt: _parseDate(json['createdAt']),
       updatedAt: _parseDate(json['updatedAt']),
       userProgress: (json['userProgress'] as num?)?.toDouble() ?? 0.0,
+      attemptsCount: (json['attemptsCount'] as num?)?.toInt() ?? 0,
+      adminStatus: (json['adminStatus'] ?? 'published').toString(),
 
       // 👇 Map mảng cues từ JSON
       cues: (json['cues'] as List<dynamic>?)
@@ -121,6 +127,8 @@ class ListeningEntity extends Equatable {
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
       'userProgress': userProgress,
+      'attemptsCount': attemptsCount,
+      'adminStatus': adminStatus,
       // 👇 Serialize mảng cues gửi lên backend
       'cues': cues.map((e) => e.toJson()).toList(),
     };

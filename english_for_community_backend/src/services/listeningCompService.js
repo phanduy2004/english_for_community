@@ -8,7 +8,7 @@ const getListeningById = async (id) => {
 };
 
 const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
-  const query = {};
+  const query = { _destroy: { $ne: true } };
 
   if (filters.difficulty) query.difficulty = filters.difficulty;
   if (filters.q) {
@@ -25,6 +25,14 @@ const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
     .skip(skip)
     .limit(limit)
     .lean();
+  const listeningIds = docs.map((d) => d._id);
+  const attemptsAgg = await ListeningCompAttempt.aggregate([
+    { $match: { listeningId: { $in: listeningIds } } },
+    { $group: { _id: '$listeningId', attemptsCount: { $sum: 1 } } },
+  ]);
+  const attemptsMap = new Map(
+    attemptsAgg.map((item) => [item._id.toString(), item.attemptsCount]),
+  );
 
   let data = docs;
 
@@ -64,8 +72,19 @@ const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
         transcript: undefined,
         userProgress: progress ? 1 : 0,
         highScore: progress ? progress.highScore : 0,
+        attemptsCount: attemptsMap.get(doc._id.toString()) ?? 0,
+        adminStatus: 'published',
       };
     });
+  } else {
+    data = docs.map((doc) => ({
+      ...doc,
+      totalQuestions: doc.questions ? doc.questions.length : 0,
+      questions: undefined,
+      transcript: undefined,
+      attemptsCount: attemptsMap.get(doc._id.toString()) ?? 0,
+      adminStatus: 'published',
+    }));
   }
 
   return {
@@ -177,10 +196,43 @@ const deleteListening = async (id) => {
     }
   }
 
-  return await ListeningComprehension.findByIdAndDelete(id);
+  return await ListeningComprehension.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: true, deletedAt: new Date() } },
+    { new: true }
+  );
+};
+
+const getDeletedListenings = async (page = 1, limit = 50) => {
+  const skip = (page - 1) * limit;
+  const query = { _destroy: true };
+  const totalDocs = await ListeningComprehension.countDocuments(query);
+  const data = await ListeningComprehension.find(query)
+    .sort({ deletedAt: -1, updatedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  return {
+    data,
+    pagination: {
+      total: totalDocs,
+      limit,
+      page,
+      totalPages: Math.ceil(totalDocs / limit),
+    },
+  };
+};
+
+const restoreListening = async (id) => {
+  return await ListeningComprehension.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: false, deletedAt: null } },
+    { new: true }
+  );
 };
 
 export const listeningCompService = {
   getListeningById, getAllListenings, getAttempts, submitAttempt,
   createListening, updateListening, deleteListening,
+  getDeletedListenings, restoreListening,
 };

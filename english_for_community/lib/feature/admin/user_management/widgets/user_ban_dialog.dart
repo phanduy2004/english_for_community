@@ -36,8 +36,17 @@ class _UserBanDialogState extends State<UserBanDialog> {
     return AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      title: Text('Ban Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: textMain)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+      contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      title: Row(
+        children: [
+          const Icon(Icons.gpp_bad_outlined, color: Color(0xFFDC2626), size: 20),
+          const SizedBox(width: 8),
+          Text('Ban Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: textMain)),
+        ],
+      ),
       content: SingleChildScrollView(
         child: SizedBox(
           width: 400,
@@ -139,7 +148,6 @@ class _UserBanDialogState extends State<UserBanDialog> {
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       actions: [
         OutlinedButton(
           onPressed: () => Navigator.pop(context),
@@ -153,7 +161,9 @@ class _UserBanDialogState extends State<UserBanDialog> {
         ElevatedButton(
           onPressed: () {
             if (_reasonController.text.trim().isEmpty) {
-              // Simple validation
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Please enter a reason before confirming ban.')),
+              );
               return;
             }
 

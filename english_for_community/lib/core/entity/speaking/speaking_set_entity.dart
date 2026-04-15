@@ -9,6 +9,8 @@ class SpeakingSetEntity extends Equatable {
   final String mode; // 👇 THÊM TRƯỜNG NÀY (Backend yêu cầu)
   final List<SentenceEntity> sentences;
   final int totalSentences; // Helper để hiện UI
+  final int attemptsCount;
+  final String adminStatus;
 
   const SpeakingSetEntity({
     required this.id,
@@ -18,6 +20,8 @@ class SpeakingSetEntity extends Equatable {
     required this.mode,
     required this.sentences,
     this.totalSentences = 0,
+    this.attemptsCount = 0,
+    this.adminStatus = 'published',
   });
 
   factory SpeakingSetEntity.fromJson(Map<String, dynamic> json) {
@@ -39,6 +43,8 @@ class SpeakingSetEntity extends Equatable {
       mode: (json['mode'] as String?) ?? 'readAloud', // Default mode
       sentences: sentencesList,
       totalSentences: (json['totalSentences'] as num?)?.toInt() ?? sentencesList.length,
+      attemptsCount: (json['attemptsCount'] as num?)?.toInt() ?? 0,
+      adminStatus: (json['adminStatus'] ?? 'published').toString(),
     );
   }
 
@@ -46,7 +52,8 @@ class SpeakingSetEntity extends Equatable {
   factory SpeakingSetEntity.empty() {
     return const SpeakingSetEntity(
         id: '', title: '', description: '',
-        level: 'Beginner', mode: 'readAloud', sentences: []
+        level: 'Beginner', mode: 'readAloud', sentences: [],
+        attemptsCount: 0, adminStatus: 'published'
     );
   }
 
@@ -56,6 +63,8 @@ class SpeakingSetEntity extends Equatable {
       'description': description,
       'level': level,
       'mode': mode,
+      'attemptsCount': attemptsCount,
+      'adminStatus': adminStatus,
       // Map key đúng với backend (phonetic_script) trong SentenceEntity.toJson
       'sentences': sentences.map((e) => e.toJson()).toList(),
     };
@@ -72,6 +81,8 @@ class SpeakingSetEntity extends Equatable {
     String? level,
     String? mode,
     List<SentenceEntity>? sentences,
+    int? attemptsCount,
+    String? adminStatus,
   }) {
     return SpeakingSetEntity(
       id: id ?? this.id,
@@ -81,9 +92,11 @@ class SpeakingSetEntity extends Equatable {
       mode: mode ?? this.mode,
       sentences: sentences ?? this.sentences,
       totalSentences: sentences?.length ?? this.totalSentences,
+      attemptsCount: attemptsCount ?? this.attemptsCount,
+      adminStatus: adminStatus ?? this.adminStatus,
     );
   }
 
   @override
-  List<Object?> get props => [id, title, description, level, mode, sentences];
+  List<Object?> get props => [id, title, description, level, mode, sentences, attemptsCount, adminStatus];
 }

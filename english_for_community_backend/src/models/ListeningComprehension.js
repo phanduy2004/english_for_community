@@ -27,7 +27,9 @@ const ListeningComprehensionSchema = new Schema(
     imageUrl: { type: String },
     minutesToComplete: { type: Number, default: 5 },
 
-    questions: [QuestionSubSchema]
+    questions: [QuestionSubSchema],
+    _destroy: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

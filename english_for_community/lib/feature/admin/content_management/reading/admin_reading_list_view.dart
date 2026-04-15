@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 // 👇 Import GetIt để lấy Dependency (Repository/Bloc)
+import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../../core/get_it/get_it.dart';
 import '../../../../../core/entity/reading/reading_entity.dart';
 import '../content_widgets.dart';
@@ -45,6 +46,7 @@ class _AdminReadingListBody extends StatefulWidget {
 
 class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
   final TextEditingController _searchCtrl = TextEditingController();
+  final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
 
   @override
   void initState() {
@@ -95,6 +97,14 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
             preferredSize: const Size.fromHeight(1),
             child: Container(color: kBorder, height: 1)),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4.0),
+            child: IconButton(
+              icon: const Icon(Icons.restore_from_trash_outlined, color: kTextMain),
+              tooltip: 'Trash',
+              onPressed: _openDeletedReadingsSheet,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
@@ -201,22 +211,108 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Xác nhận xóa"),
-        content: const Text("Bạn có chắc chắn muốn xóa bài đọc này không? Hành động này không thể hoàn tác."),
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+            SizedBox(width: 8),
+            Text("Delete reading lesson?", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        content: const Text(
+          "This action cannot be undone.",
+          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+        ),
         actions: [
-          TextButton(
+          OutlinedButton(
             onPressed: () => Navigator.pop(ctx), // Đóng dialog
-            child: const Text("Hủy"),
+            child: const Text("Cancel"),
           ),
-          TextButton(
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () {
               Navigator.pop(ctx); // Đóng dialog trước
               // Gọi Event Xóa
               context.read<AdminReadingBloc>().add(DeleteReadingEvent(id));
             },
-            child: const Text("Xóa", style: TextStyle(color: Colors.red)),
+            child: const Text("Delete"),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openDeletedReadingsSheet() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFE2E8F0)),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const SizedBox(width: 8),
+                    const Text('Deleted Reading Lessons', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+                    const Spacer(),
+                    IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _adminRemote.getDeletedReadings(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final data = snapshot.data!;
+                      if (data.isEmpty) return const Center(child: Text('Trash is empty'));
+                      return ListView.separated(
+                        itemCount: data.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, index) {
+                          final item = data[index];
+                          final id = (item['_id'] ?? item['id'] ?? '').toString();
+                          final title = (item['title'] ?? 'Untitled').toString();
+                          return ListTile(
+                            title: Text(title),
+                            subtitle: Text((item['difficulty'] ?? '').toString()),
+                            trailing: OutlinedButton(
+                              onPressed: () async {
+                                await _adminRemote.restoreReading(id);
+                                if (!mounted) return;
+                                Navigator.pop(ctx);
+                                _fetchData();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Reading restored')),
+                                );
+                              },
+                              child: const Text('Restore'),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -257,9 +353,33 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                     Text(reading.title,
                         style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain),
                         maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 4),
-                    Text("${reading.difficulty?.name.toUpperCase() ?? 'UNKNOWN'} • ${reading.minutesToRead} mins",
-                        style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _MetaBadge(
+                          text: reading.difficulty?.name.toUpperCase() ?? 'UNKNOWN',
+                          color: Colors.blue.shade50,
+                          textColor: Colors.blue.shade700,
+                        ),
+                        _MetaBadge(
+                          text: '${reading.minutesToRead} mins',
+                          color: Colors.purple.shade50,
+                          textColor: Colors.purple.shade700,
+                        ),
+                        _MetaBadge(
+                          text: '${reading.attemptsCount} submissions',
+                          color: Colors.orange.shade50,
+                          textColor: Colors.orange.shade800,
+                        ),
+                        _MetaBadge(
+                          text: reading.adminStatus,
+                          color: Colors.green.shade50,
+                          textColor: Colors.green.shade700,
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -280,6 +400,29 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
           ),
         );
       },
+    );
+  }
+}
+
+class _MetaBadge extends StatelessWidget {
+  const _MetaBadge({
+    required this.text,
+    required this.color,
+    required this.textColor,
+  });
+  final String text;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
+      ),
     );
   }
 }

@@ -20,6 +20,8 @@ router.post('/submit', listeningCompController.submitAttempt);
 
 // Lấy lịch sử làm bài của 1 bài nghe cụ thể
 router.get('/attempts', listeningCompController.getAttempts);
+router.get('/admin/deleted', requireAdmin, listeningCompController.getDeletedListenings);
+router.post('/:id/restore', requireAdmin, listeningCompController.restoreListening);
 
 // Lấy chi tiết 1 bài nghe (kèm câu hỏi) - Lưu ý: Các route có /:id luôn để ở cuối nhóm
 router.get('/:id', listeningCompController.getListeningById);

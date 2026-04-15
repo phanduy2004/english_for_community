@@ -139,7 +139,30 @@ const deleteListening = async (req, res) => {
   }
 };
 
+const getDeletedListenings = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const result = await listeningCompService.getDeletedListenings(page, limit);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+const restoreListening = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await listeningCompService.restoreListening(id);
+    if (!result) return res.status(404).json({ message: 'Not found' });
+    res.status(200).json({ message: 'Restored successfully', data: result });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 export const listeningCompController = {
   getAllListenings, getListeningById, submitAttempt, getAttempts,
-  createListening, adminUpdate, deleteListening
+  createListening, adminUpdate, deleteListening,
+  getDeletedListenings, restoreListening,
 };

@@ -158,15 +158,15 @@ class AdminRemoteDatasource {
     return Map<String, dynamic>.from(response.data as Map);
   }
 
-  Future<Map<String, dynamic>> updatePermissionMatrix({
+  Future<UserEntity> promoteUser({
+    required String userId,
     required String role,
-    required List<String> permissions,
   }) async {
-    final response = await dio.put(
-      'admin/permission-matrix',
-      data: {'role': role, 'permissions': permissions},
+    final response = await dio.patch(
+      'admin/users/$userId/role',
+      data: {'role': role},
     );
-    return Map<String, dynamic>.from(response.data as Map);
+    return UserEntity.fromJson(response.data['user']);
   }
 
   Future<String> exportCsvPreview({
@@ -213,5 +213,69 @@ class AdminRemoteDatasource {
 
   Future<void> restoreWritingTopic(String topicId) async {
     await dio.post('/writing/$topicId/restore');
+  }
+
+  Future<List<Map<String, dynamic>>> getDeletedReadings({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final res = await dio.get(
+      '/readings/admin/deleted',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final list = (res.data['data'] as List<dynamic>? ?? const []);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> restoreReading(String readingId) async {
+    await dio.post('/readings/$readingId/restore');
+  }
+
+  Future<List<Map<String, dynamic>>> getDeletedListenings({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final res = await dio.get(
+      '/listenings/admin/deleted',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final list = (res.data['data'] as List<dynamic>? ?? const []);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> restoreListening(String listeningId) async {
+    await dio.post('/listenings/$listeningId/restore');
+  }
+
+  Future<List<Map<String, dynamic>>> getDeletedListeningComprehensions({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final res = await dio.get(
+      '/listening-comp/admin/deleted',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final list = (res.data['data'] as List<dynamic>? ?? const []);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> restoreListeningComprehension(String id) async {
+    await dio.post('/listening-comp/$id/restore');
+  }
+
+  Future<List<Map<String, dynamic>>> getDeletedSpeakingSets({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final res = await dio.get(
+      '/speaking/admin/deleted',
+      queryParameters: {'page': page, 'limit': limit},
+    );
+    final list = (res.data['data'] as List<dynamic>? ?? const []);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<void> restoreSpeakingSet(String id) async {
+    await dio.post('/speaking/admin/$id/restore');
   }
 }

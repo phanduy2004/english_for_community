@@ -9,7 +9,9 @@ router.get('/sets/:setId', authenticate, speakingController.getSpeakingSetDetail
 router.post('/submit', authenticate, speakingController.submitAttempt);
 // 👇 Admin Routes (Mới)
 router.get('/admin/list', authenticate, speakingController.admin.getList);
+router.get('/admin/deleted', authenticate, speakingController.admin.getDeleted);
 router.get('/admin/:id', authenticate, speakingController.admin.getDetail);
+router.post('/admin/:id/restore', authenticate, speakingController.admin.restore);
 router.post('/admin', authenticate, speakingController.admin.create);
 router.put('/admin/:id', authenticate, speakingController.admin.update);
 router.delete('/admin/:id', authenticate, speakingController.admin.delete);

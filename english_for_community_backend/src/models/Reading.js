@@ -35,7 +35,9 @@ const ReadingSchema = new Schema(
     difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'easy' },
     imageUrl: String,
     minutesToRead: { type: Number, default: 5 },
-    questions: [QuestionSubSchema]
+    questions: [QuestionSubSchema],
+    _destroy: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -25,7 +25,7 @@ const getListeningById = async (id) => {
 // 2. GET LIST
 // ============================================================
 const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
-  const query = {};
+  const query = { _destroy: { $ne: true } };
 
   if (filters.difficulty) {
     query.difficulty = filters.difficulty; // ✅ Áp dụng lọc theo độ khó
@@ -48,6 +48,14 @@ const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
     .skip(skip)
     .limit(limit)
     .lean();
+  const listeningIds = docs.map((d) => d._id);
+  const attemptsAgg = await DictationAttempt.aggregate([
+    { $match: { listeningId: { $in: listeningIds } } },
+    { $group: { _id: '$listeningId', attemptsCount: { $sum: 1 } } },
+  ]);
+  const attemptsMap = new Map(
+    attemptsAgg.map((item) => [item._id.toString(), item.attemptsCount]),
+  );
 
   let data = docs;
   if (userId) {
@@ -65,6 +73,14 @@ const getAllListenings = async (userId, filters, page = 1, limit = 10) => {
       ...doc,
       userProgress: progressMap.get(doc._id.toString()) || 0,
       isCompleted: (progressMap.get(doc._id.toString()) || 0) >= 1,
+      attemptsCount: attemptsMap.get(doc._id.toString()) ?? 0,
+      adminStatus: 'published',
+    }));
+  } else {
+    data = docs.map((doc) => ({
+      ...doc,
+      attemptsCount: attemptsMap.get(doc._id.toString()) ?? 0,
+      adminStatus: 'published',
     }));
   }
 
@@ -321,7 +337,40 @@ const deleteListening = async (id) => {
     }
   }
 
-  return await Listening.findByIdAndDelete(id);
+  return await Listening.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: true, deletedAt: new Date() } },
+    { new: true }
+  );
+};
+
+const getDeletedListenings = async (page = 1, limit = 50) => {
+  const skip = (page - 1) * limit;
+  const query = { _destroy: true };
+  const totalDocs = await Listening.countDocuments(query);
+  const data = await Listening.find(query)
+    .select('-cues.textNorm -cues.text')
+    .sort({ deletedAt: -1, updatedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  return {
+    data,
+    pagination: {
+      total: totalDocs,
+      limit,
+      page,
+      totalPages: Math.ceil(totalDocs / limit),
+    },
+  };
+};
+
+const restoreListening = async (id) => {
+  return await Listening.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: false, deletedAt: null } },
+    { new: true }
+  );
 };
 
 export const listeningService = {
@@ -332,4 +381,6 @@ export const listeningService = {
   createListening,
   updateListening,
   deleteListening,
+  getDeletedListenings,
+  restoreListening,
 };

@@ -44,6 +44,8 @@ class ReadingEntity extends Equatable {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final ReadingProgressEntity? progress;
+  final int attemptsCount;
+  final String adminStatus;
 
   const ReadingEntity({
     required this.id,
@@ -58,6 +60,8 @@ class ReadingEntity extends Equatable {
     this.createdAt,
     this.updatedAt,
     this.progress,
+    this.attemptsCount = 0,
+    this.adminStatus = 'published',
   });
 
   factory ReadingEntity.fromJson(Map<String, dynamic> json) {
@@ -85,6 +89,8 @@ class ReadingEntity extends Equatable {
       progress: json['progress'] != null
           ? ReadingProgressEntity.fromJson(json['progress'] as Map<String, dynamic>)
           : null,
+      attemptsCount: (json['attemptsCount'] as num?)?.toInt() ?? 0,
+      adminStatus: (json['adminStatus'] ?? 'published').toString(),
     );
   }
 
@@ -108,6 +114,8 @@ class ReadingEntity extends Equatable {
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
     'progress': progress?.toJson(),
+    'attemptsCount': attemptsCount,
+    'adminStatus': adminStatus,
   };
 }
 class ReadingQuestionEntity extends Equatable {

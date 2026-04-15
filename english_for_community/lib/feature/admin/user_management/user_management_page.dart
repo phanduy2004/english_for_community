@@ -123,6 +123,11 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
       context: context,
       builder: (ctx) {
         return Dialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
             child: Padding(
@@ -130,7 +135,23 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Deleted Users', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+                  Row(
+                    children: [
+                      const Icon(Icons.restore_from_trash_outlined, size: 20, color: Color(0xFF475569)),
+                      const SizedBox(width: 8),
+                      const Text('Deleted Users', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        icon: const Icon(Icons.close),
+                        splashRadius: 20,
+                      ),
+                    ],
+                  ),
+                  const Text(
+                    'Restore user accounts that were soft-deleted.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
                   const SizedBox(height: 12),
                   Expanded(
                     child: FutureBuilder(
@@ -175,8 +196,11 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                   ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton(
+                    child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      ),
                       child: const Text('Close'),
                     ),
                   ),

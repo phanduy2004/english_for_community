@@ -10,7 +10,7 @@ const getSetsWithProgress = async (userId, filters, options) => {
   const { mode, level } = filters;
   const { page, limit } = options;
   const skip = (page - 1) * limit;
-  const matchConditions = {};
+  const matchConditions = { _destroy: { $ne: true } };
   if (mode) {
     matchConditions.mode = mode;
   }
@@ -145,7 +145,7 @@ const getSetById = async (setId, userId) => {
 
   const aggregation = [
     {
-      $match: { _id: setObjectId }
+      $match: { _id: setObjectId, _destroy: { $ne: true } }
     },
     {
       $lookup: {
@@ -343,7 +343,7 @@ const submitAttempt = async (userId, data) => {
 // 1. Admin List: Phân trang
 const getAdminList = async (page, limit, level) => {
   const skip = (page - 1) * limit;
-  const query = {};
+  const query = { _destroy: { $ne: true } };
   if (level && level !== 'all') {
     // Map level từ flutter (lowercase) sang backend (Capitalized) nếu cần
     // Ví dụ: 'beginner' -> 'Beginner'
@@ -359,6 +359,14 @@ const getAdminList = async (page, limit, level) => {
     .skip(skip)
     .limit(limit)
     .lean();
+  const speakingSetIds = data.map((item) => item._id.toString());
+  const attemptsAgg = await SpeakingAttempt.aggregate([
+    { $match: { speakingSetId: { $in: speakingSetIds } } },
+    { $group: { _id: '$speakingSetId', attemptsCount: { $sum: 1 } } },
+  ]);
+  const attemptsMap = new Map(
+    attemptsAgg.map((item) => [item._id.toString(), item.attemptsCount]),
+  );
 
   const totalPages = Math.ceil(totalDocs / limit);
 
@@ -366,7 +374,9 @@ const getAdminList = async (page, limit, level) => {
     data: data.map(item => ({
       ...item,
       id: item._id.toString(), // Convert _id -> id cho Flutter
-      totalSentences: item.sentences ? item.sentences.length : 0
+      totalSentences: item.sentences ? item.sentences.length : 0,
+      attemptsCount: attemptsMap.get(item._id.toString()) ?? 0,
+      adminStatus: 'published',
     })),
     pagination: { total: totalDocs, limit, page, totalPages }
   };
@@ -396,7 +406,34 @@ const updateSpeakingSet = async (id, payload) => {
 
 // 5. Admin Delete
 const deleteSpeakingSet = async (id) => {
-  return await SpeakingSet.findByIdAndDelete(id);
+  return await SpeakingSet.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: true, deletedAt: new Date() } },
+    { new: true }
+  );
+};
+
+const getDeletedSpeakingSets = async (page = 1, limit = 50) => {
+  const skip = (page - 1) * limit;
+  const query = { _destroy: true };
+  const totalDocs = await SpeakingSet.countDocuments(query);
+  const data = await SpeakingSet.find(query)
+    .sort({ deletedAt: -1, updatedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+  return {
+    data: data.map((item) => ({ ...item, id: item._id.toString() })),
+    pagination: { total: totalDocs, limit, page, totalPages: Math.ceil(totalDocs / limit) },
+  };
+};
+
+const restoreSpeakingSet = async (id) => {
+  return await SpeakingSet.findByIdAndUpdate(
+    id,
+    { $set: { _destroy: false, deletedAt: null } },
+    { new: true }
+  );
 };
 export const speakingService = {
   getSetsWithProgress,
@@ -406,5 +443,7 @@ export const speakingService = {
   getAdminDetail,
   createSpeakingSet,
   updateSpeakingSet,
-  deleteSpeakingSet
+  deleteSpeakingSet,
+  getDeletedSpeakingSets,
+  restoreSpeakingSet,
 };

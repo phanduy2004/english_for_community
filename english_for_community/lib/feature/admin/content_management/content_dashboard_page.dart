@@ -124,10 +124,25 @@ class ContentDashboardPage extends StatelessWidget {
         return AlertDialog(
           backgroundColor: kWhite,
           surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text(
-            'Chọn dạng bài Listening',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kTextMain),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          titlePadding: const EdgeInsets.fromLTRB(20, 16, 14, 8),
+          contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          title: Row(
+            children: [
+              const Icon(Icons.headphones_outlined, size: 20, color: Color(0xFF8B5CF6)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Listening Content Type',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: kTextMain),
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.pop(ctx),
+                icon: const Icon(Icons.close, size: 20),
+                splashRadius: 18,
+              ),
+            ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
