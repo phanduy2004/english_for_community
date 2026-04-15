@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:pretty_diff_text/pretty_diff_text.dart';
 
 import '../../../core/locale/l10n_context.dart';
 
 class InteractiveDiffText extends StatelessWidget {
   final String text;
+  final String? originalText;
 
-  const InteractiveDiffText({super.key, required this.text});
+  const InteractiveDiffText({super.key, required this.text, this.originalText});
+
+  String _normalizeForDiff(String source) {
+    return source
+        .replaceAll('\\n', '\n')
+        .replaceAll(RegExp(r'[ \t]+'), ' ')
+        .trim();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,6 +23,7 @@ class InteractiveDiffText extends StatelessWidget {
     final regex = RegExp(r'\{\{(.*?)\|\|(.*?)(?:\|\|(.*?))?\}\}');
     List<InlineSpan> spans = [];
     int lastMatchEnd = 0;
+    bool hasValidCorrectionToken = false;
 
     // Duyệt qua tất cả các lỗi tìm thấy trong chuỗi
     for (final Match match in regex.allMatches(text)) {
@@ -42,6 +52,7 @@ class InteractiveDiffText extends StatelessWidget {
         continue; // Bỏ qua, chạy vòng lặp tiếp theo
       }
       // 3. Thêm Widget tương tác (Lỗi)
+      hasValidCorrectionToken = true;
       spans.add(WidgetSpan(
         alignment: PlaceholderAlignment.middle,
         child: _ErrorToken(
@@ -66,9 +77,29 @@ class InteractiveDiffText extends StatelessWidget {
       ));
     }
 
-    // Nếu không có lỗi nào, trả về text thường
-    if (spans.isEmpty) {
-      return Text(text, style: const TextStyle(fontSize: 15, height: 1.6));
+    // Nếu không có token sửa hợp lệ, fallback sang diff trực tiếp giữa bài gốc và bài rewrite.
+    // Trường hợp backend trả token lỗi format/không hữu dụng thì vẫn có highlight đỏ/xanh.
+    if (!hasValidCorrectionToken) {
+      final oldText = _normalizeForDiff(originalText ?? '');
+      final newText = _normalizeForDiff(text);
+      if (oldText.isNotEmpty && newText.isNotEmpty && oldText != newText) {
+        return PrettyDiffText(
+          oldText: oldText,
+          newText: newText,
+          defaultTextStyle: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF09090B)),
+          addedTextStyle: const TextStyle(
+            backgroundColor: Color(0xFFDCFCE7),
+            color: Color(0xFF14532D),
+            fontWeight: FontWeight.w600,
+          ),
+          deletedTextStyle: const TextStyle(
+            backgroundColor: Color(0xFFFEE2E2),
+            color: Color(0xFF991B1B),
+            decoration: TextDecoration.lineThrough,
+          ),
+        );
+      }
+      return Text(newText, style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF09090B)));
     }
 
     return RichText(

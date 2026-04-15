@@ -20,14 +20,15 @@ export const geminiTools = [
       {
         name: "get_learning_history_period",
         description:
-          "Giống get_learning_history nhưng server tự tính ngày theo múi giờ user: today | week (7 ngày gần nhất) | month (từ mùng 1 đến hôm nay). Luôn ưu tiên tool này khi user hỏi tuần này/tháng này/hôm nay.",
+          "Giống get_learning_history nhưng server tự tính ngày theo múi giờ user: today | week (7 ngày gần nhất tính đến hôm nay) | last_week (tuần dương lịch trước: Thứ Hai–Chủ nhật, KHÔNG gồm tuần hiện tại) | month (từ mùng 1 đến hôm nay). Với \"tuần trước / last week\" bắt buộc dùng last_week, không dùng week.",
         parameters: {
           type: "OBJECT",
           properties: {
             range: {
               type: "STRING",
-              enum: ["today", "week", "month"],
-              description: "today = hôm nay; week = 7 ngày tính đến hôm nay; month = tháng hiện tại",
+              enum: ["today", "week", "last_week", "month"],
+              description:
+                "today = hôm nay; week = 7 ngày lùi từ hôm nay (rolling); last_week = tuần dương lịch trước (Thứ Hai–Chủ nhật); month = tháng hiện tại",
             },
           },
         },
@@ -177,8 +178,8 @@ export const geminiTools = [
             },
             range: {
               type: "STRING",
-              enum: ["today", "day", "week", "month"],
-              description: "today/day = hôm nay; week = 7 ngày; month = từ mùng 1 (timezone user). Mặc định: week"
+              enum: ["today", "day", "week", "last_week", "month"],
+              description: "today/day = hôm nay; week = 7 ngày lùi đến hôm nay; last_week = tuần dương lịch trước; month = từ mùng 1 (timezone user). Mặc định: week"
             }
           },
           required: ["skill"]
@@ -233,8 +234,8 @@ export const geminiTools = [
           properties: {
             range: {
               type: "STRING",
-              enum: ["today", "day", "week", "month"],
-              description: "today/day = hôm nay; week/month theo timezone user (mặc định: week)"
+              enum: ["today", "day", "week", "last_week", "month"],
+              description: "today/day = hôm nay; week = 7 ngày; last_week = tuần dương lịch trước; month theo timezone user (mặc định: week)"
             }
           }
         },

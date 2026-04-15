@@ -24,8 +24,26 @@ class ListeningCompListPage extends StatefulWidget {
 class _ListeningCompListPageState extends State<ListeningCompListPage> {
   int _selectedFilterIndex = 0;
   static const List<String> _difficultyApiKeys = ['easy', 'medium', 'hard'];
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   String _getDifficultyForIndex(int index) => _difficultyApiKeys[index];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +121,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                                 );
                               }
 
-                              final items = state.listData;
+                              final items = state.listData.where((item) => _matchesPrefix(item.title, _searchQuery)).toList();
                               if (items.isEmpty && state.status == CompListStatus.success) {
                                 return _EmptyView(message: t.listeningCompEmpty);
                               }
@@ -190,7 +208,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
         border: Border.all(color: borderColor),
       ),
       child: TextField(
-        readOnly: true,
+        controller: _searchController,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: t.listeningCompSearchHint,
@@ -199,9 +217,24 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           isDense: true,
+          suffixIcon: _searchQuery.trim().isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 16, color: textMuted),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
         ),
       ),
     );
+  }
+
+  bool _matchesPrefix(String source, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) return true;
+    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 

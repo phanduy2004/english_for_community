@@ -10,6 +10,7 @@ import '../../../core/get_it/get_it.dart';
 import '../../auth/bloc/user_bloc.dart';
 import '../../auth/bloc/user_event.dart';
 import '../content_management/content_dashboard_page.dart';
+import '../ops_center/admin_ops_center_page.dart';
 import '../report_management/report_management_page.dart';
 import '../submission_managerment/activity_history_page.dart';
 import '../user_management/user_management_page.dart';
@@ -122,8 +123,6 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
             builder: (context, constraints) {
               // Xác định breakpoint (ví dụ: > 900px là màn hình to)
               final bool isWideScreen = constraints.maxWidth > 900;
-              final double contentWidth = constraints.maxWidth;
-
               // Grid Metrics: 4 cột trên Web, 2 cột trên Mobile
               final int crossAxisCount = isWideScreen ? 4 : 2;
               // Tỉ lệ khung hình thẻ metric để trông đẹp hơn trên web
@@ -218,6 +217,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 Expanded(child: _buildReportLink()),
                                 const SizedBox(width: 12),
                                 Expanded(child: _buildUsersLink()),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildOpsLink()),
                               ],
                             )
                           else
@@ -232,6 +233,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                     Expanded(child: _buildUsersLink()),
                                   ],
                                 ),
+                                const SizedBox(height: 12),
+                                _buildOpsLink(),
                               ],
                             ),
 
@@ -386,7 +389,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       title: 'Reports',
       subtitle: 'Issue feedback',
       color: const Color(0xFFF59E0B),
-      onTap: () {},
+      onTap: () => context.pushNamed(ReportManagementPage.routeName),
     );
   }
 
@@ -397,6 +400,16 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       subtitle: 'User list',
       color: const Color(0xFF10B981),
       onTap: () => context.pushNamed(UserManagementPage.routeName),
+    );
+  }
+
+  Widget _buildOpsLink() {
+    return _ManagementTile(
+      icon: Icons.tune_outlined,
+      title: 'Ops Center',
+      subtitle: 'Moderation, export, permissions',
+      color: const Color(0xFF7C3AED),
+      onTap: () => context.pushNamed(AdminOpsCenterPage.routeName),
     );
   }
 

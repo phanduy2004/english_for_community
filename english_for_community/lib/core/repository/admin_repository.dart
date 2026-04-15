@@ -19,7 +19,8 @@ abstract class AdminRepository {
   Future<Either<Failure, PaginatedResponse<ReportEntity>>> getReports({
     int page = 1,
     int limit = 20,
-    String? status
+    String? status,
+    String? search,
   });
 
   Future<Either<Failure, ReportEntity>> getReportDetail(String id);
@@ -39,4 +40,6 @@ abstract class AdminRepository {
   });
 
   Future<Either<Failure, void>> deleteUser(String userId);
+
+  Future<Either<Failure, Map<String, int>>> getContentSummary();
 }

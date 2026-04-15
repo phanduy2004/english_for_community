@@ -17,6 +17,88 @@ const cleanJson = (text) => {
   return match ? match[2].trim() : text.trim();
 };
 
+const countCorrectionTags = (text = "") => {
+  const matches = text.match(/\{\{.*?\|\|.*?\|\|.*?\}\}/g);
+  return matches ? matches.length : 0;
+};
+
+const needsRewriteRepair = (feedback = {}) => {
+  const paragraphs = Array.isArray(feedback.paragraphs) ? feedback.paragraphs : [];
+  if (!paragraphs.length) return true;
+
+  // Nếu phần lớn paragraph không có tag sửa, coi như model không tuân thủ.
+  const tagCounts = paragraphs.map((p) => countCorrectionTags(p?.rewrite || ""));
+  const withTags = tagCounts.filter((n) => n > 0).length;
+
+  // Trường hợp rất dễ xảy ra ở log của bạn: model chỉ paraphrase/summarize, không có inline correction tags.
+  return withTags < Math.max(1, Math.ceil(paragraphs.length / 2));
+};
+
+const repairParagraphRewrites = async (essayText, feedback, taskType) => {
+  const safeFeedback = feedback || {};
+  const paragraphs = Array.isArray(safeFeedback.paragraphs) ? safeFeedback.paragraphs : [];
+
+  const systemContent = `
+You are a strict IELTS correction formatter.
+Your ONLY task is to repair "paragraphs[].rewrite" so each rewrite:
+1) keeps the original paragraph content as much as possible,
+2) only edits real mistakes,
+3) marks every edit with EXACT inline token format: {{old||new||reason_in_Vietnamese}}.
+
+CRITICAL:
+- Do NOT summarize.
+- Do NOT omit sentences from the original paragraph.
+- Keep rewrite in ENGLISH.
+- Keep reason in VIETNAMESE (very short).
+- Output JSON only.
+`;
+
+  const userContent = `
+TaskType: ${taskType}
+
+Original essay:
+${essayText}
+
+Current feedback paragraphs:
+${JSON.stringify(paragraphs, null, 2)}
+
+Return JSON:
+{
+  "paragraphs": [
+    { "title": "...", "comment": "...", "rewrite": "..." }
+  ]
+}
+
+Rules:
+- Keep title/comment unchanged.
+- Rewrite must preserve full paragraph meaning and coverage (no shortening).
+- Any changed/deleted/inserted wording must be represented by {{old||new||reason}} tokens.
+`;
+
+  const completion = await groq.chat.completions.create({
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "user", content: userContent },
+    ],
+    model: MODEL_NAME,
+    temperature: 0,
+    response_format: { type: "json_object" },
+  });
+
+  const repairedJson = JSON.parse(cleanJson(completion.choices[0].message.content));
+  const repairedParagraphs = Array.isArray(repairedJson?.paragraphs) ? repairedJson.paragraphs : [];
+  if (!repairedParagraphs.length) return safeFeedback;
+
+  return {
+    ...safeFeedback,
+    paragraphs: repairedParagraphs.map((p, idx) => ({
+      title: p?.title ?? paragraphs[idx]?.title ?? "",
+      comment: p?.comment ?? paragraphs[idx]?.comment ?? "",
+      rewrite: p?.rewrite ?? paragraphs[idx]?.rewrite ?? "",
+    })),
+  };
+};
+
 export const aiService = {
   MODEL_NAME: GROQ_MODEL_NAME,
   // --- 1. LOGIC TẠO ĐỀ (Giữ nguyên) ---
@@ -100,6 +182,8 @@ Format Output: JSON Object (Tuyệt đối không dùng Markdown, chỉ trả v�
 - Output CHUẨN (BẮT BUỘC): "It is accessible {{sand||and||Lỗi chính tả dư chữ s}} convenient. It {{nows allows||now allows||Sai ngữ pháp}} users to learn."
 
 - BẮT BUỘC PHẢI TRẢ VỀ TOÀN BỘ ĐOẠN VĂN GỐC. Chép y nguyên các câu đúng, và CHỈ dùng tag ở những chữ bị sai.
+- ƯU TIÊN PHÁT HIỆN LỖI CHÍNH TẢ / GÕ NHẦM (ví dụ: "alternastives", "tsshey", "ffor") và BẮT BUỘC gắn tag sửa.
+- KHÔNG được xóa câu chỉ vì câu đúng; chỉ sửa lỗi thực sự.
 
 === 3. QUY ĐỊNH VỀ BÀI MẪU (SAMPLES) - QUAN TRỌNG ===
 - **sampleMid (Band 7.0-8.0):** Viết lại bài của user (giữ ý tưởng chính) thành một bài luận hoàn chỉnh, sửa hết lỗi, flow trôi chảy.
@@ -198,7 +282,17 @@ Nếu bài làm quá ngắn hoặc spam, hãy trả về JSON với điểm 0 v�
       });
 
       const content = completion.choices[0].message.content;
-      const jsonStr = cleanJson(content);const hehe = JSON.parse(jsonStr);
+      const jsonStr = cleanJson(content);
+      let hehe = JSON.parse(jsonStr);
+
+      // Guardrail: nếu model không tuân thủ rewrite-tag format, chạy pass repair.
+      if (needsRewriteRepair(hehe)) {
+        try {
+          hehe = await repairParagraphRewrites(essayText, hehe, taskType);
+        } catch (repairError) {
+          console.error("AI rewrite repair failed:", repairError?.message || repairError);
+        }
+      }
 
       console.log(`User Login: ${JSON.stringify(hehe, null, 2)}`);
 // 3. Trả về biến đã parse, KHÔNG parse lại lần 2

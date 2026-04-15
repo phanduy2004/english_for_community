@@ -5,6 +5,7 @@ class WritingTopicEntity extends Equatable {
   final String id;              // _id / id
   final String name;
   final bool isActive;
+  final String approvalStatus;
   final AiConfig? aiConfig;
   final TopicStats? stats;
   final DateTime? createdAt;
@@ -14,6 +15,7 @@ class WritingTopicEntity extends Equatable {
     required this.id,
     required this.name,
     this.isActive = true,
+    this.approvalStatus = 'published',
     this.aiConfig,
     this.stats,
     this.createdAt,
@@ -29,6 +31,7 @@ class WritingTopicEntity extends Equatable {
       id: _id,
       name: (json['name'] ?? '') as String,
       isActive: (json['isActive'] as bool?) ?? true,
+      approvalStatus: (json['approvalStatus'] ?? 'published') as String,
       aiConfig: json['aiConfig'] != null ? AiConfig.fromJson(json['aiConfig'] as Map<String, dynamic>) : null,
       stats: json['stats'] != null ? TopicStats.fromJson(json['stats'] as Map<String, dynamic>) : null,
       createdAt: _parseDate(json['createdAt']),
@@ -40,6 +43,7 @@ class WritingTopicEntity extends Equatable {
     'id': id,
     'name': name,
     'isActive': isActive,
+    'approvalStatus': approvalStatus,
     'aiConfig': aiConfig?.toJson(),
     'stats': stats?.toJson(),
     'createdAt': createdAt?.toIso8601String(),
@@ -55,7 +59,7 @@ class WritingTopicEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, isActive, aiConfig, stats, createdAt, updatedAt];
+  List<Object?> get props => [id, name, isActive, approvalStatus, aiConfig, stats, createdAt, updatedAt];
 }
 
 class AiConfig extends Equatable {
