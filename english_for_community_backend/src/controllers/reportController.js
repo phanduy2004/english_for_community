@@ -1,4 +1,5 @@
 import * as reportService from '../services/reportService.js';
+import { writeAdminAudit } from '../services/adminAuditService.js';
 
 const createReport = async (req, res) => {
   try {
@@ -16,8 +17,8 @@ const createReport = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
-    const result = await reportService.listReports({ page, limit, status });
+    const { page = 1, limit = 20, status, search } = req.query;
+    const result = await reportService.listReports({ page, limit, status, search });
     res.status(200).json(result);
   } catch (error) {
     console.error('Get Reports Error:', error);
@@ -49,6 +50,16 @@ const updateReportStatus = async (req, res) => {
     if (result.error) {
       return res.status(result.error.status).json({ message: result.error.message });
     }
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'report.status.update',
+      targetType: 'report',
+      targetId: id,
+      metadata: { status },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
 
     res.status(200).json({
       message: 'Cập nhật trạng thái thành công',

@@ -67,9 +67,27 @@ class _SpeakingHubView extends StatefulWidget {
 
 class _SpeakingHubViewState extends State<_SpeakingHubView> {
   int _selectedFilterIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   /// Backend expects English level names.
   static const _apiLevels = ['Beginner', 'Intermediate', 'Advanced'];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   void _fetchData() {
     final selectedLevel = _apiLevels[_selectedFilterIndex];
@@ -155,16 +173,17 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                           );
                         }
                         if (state.status == SpeakingStatus.success) {
-                          if (state.sets.isEmpty) return const _EmptyView();
+                          final sets = state.sets.where((set) => _matchesPrefix(set.title, _searchQuery)).toList();
+                          if (sets.isEmpty) return const _EmptyView();
 
                           return ListView.separated(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: state.sets.length,
+                            itemCount: sets.length,
                             separatorBuilder: (_, __) => const SizedBox(height: 16),
                             itemBuilder: (context, index) {
                               return _LessonCard(
-                                set: state.sets[index],
+                                set: sets[index],
                                 levelApi: _apiLevels[_selectedFilterIndex],
                                 levelLabel: levels[_selectedFilterIndex],
                                 primaryColor: primaryColor,
@@ -278,7 +297,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
         ],
       ),
       child: TextField(
-        readOnly: true,
+        controller: _searchController,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: t.searchTopicHint,
@@ -291,10 +310,24 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: primaryColor, width: 1.5),
           ),
+          suffixIcon: _searchQuery.trim().isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 16, color: textMuted),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
         ),
-        onTap: () {},
       ),
     );
+  }
+
+  bool _matchesPrefix(String source, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) return true;
+    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 

@@ -32,6 +32,7 @@ class _ReportManagementView extends StatefulWidget {
 class _ReportManagementViewState extends State<_ReportManagementView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
 
   // Shadcn Palette
   final bgPage = const Color(0xFFF8FAFC);
@@ -62,13 +63,24 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
       case 2: status = 'resolved'; break;
       case 3: status = 'rejected'; break;
     }
-    context.read<AdminBloc>().add(GetReportsEvent(status: status, page: 1, limit: 20));
+    context.read<AdminBloc>().add(GetReportsEvent(
+      status: status,
+      page: 1,
+      limit: 20,
+      search: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
+    ));
+  }
+
+  void _onSearchChanged(String _) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 400), _fetchReports);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _searchController.dispose();
+    _debounce?.cancel();
     super.dispose();
   }
 
@@ -131,6 +143,7 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
               ),
               child: TextField(
                 controller: _searchController,
+                onChanged: _onSearchChanged,
                 style: TextStyle(color: textMain, fontSize: 13),
                 decoration: InputDecoration(
                   hintText: 'Search by title or sender...',

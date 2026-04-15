@@ -1,7 +1,9 @@
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_bloc.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_state.dart';
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
+import 'package:english_for_community/feature/writing/writing_task_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -118,6 +120,7 @@ class HistoryItemCard extends StatelessWidget {
         : t.dateUnknown;
 
     final score = submission.score ?? 0;
+    final isDraft = submission.status.toLowerCase() == 'draft';
     // Màu sắc theo điểm số
     final color = score >= 7.0 ? const Color(0xFF16A34A) : (score >= 5.0 ? const Color(0xFFEA580C) : const Color(0xFFDC2626));
     final bg = score >= 7.0 ? const Color(0xFFDCFCE7) : (score >= 5.0 ? const Color(0xFFFFEDD5) : const Color(0xFFFEE2E2));
@@ -126,6 +129,23 @@ class HistoryItemCard extends StatelessWidget {
       onTap: () {
         // Đóng modal rồi mở trang chi tiết
         Navigator.pop(context);
+        final isDraft = submission.status.toLowerCase() == 'draft';
+        if (isDraft) {
+          final topic = WritingTopicEntity(
+            id: submission.topicId,
+            name: submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
+          );
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => WritingTaskPage(
+                topic: topic,
+                selectedTaskType: submission.generatedPrompt?.taskType ?? 'Discussion',
+                userId: submission.userId,
+              ),
+            ),
+          );
+          return;
+        }
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => WritingFeedbackPage(submission: submission),
@@ -156,11 +176,36 @@ class HistoryItemCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF09090B)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF09090B)),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: isDraft ? const Color(0xFFFFF7ED) : const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isDraft ? const Color(0xFFFFEDD5) : const Color(0xFFBBF7D0),
+                          ),
+                        ),
+                        child: Text(
+                          isDraft ? 'Draft' : 'Reviewed',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: isDraft ? const Color(0xFFC2410C) : const Color(0xFF15803D),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Row(
@@ -177,7 +222,10 @@ class HistoryItemCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Color(0xFFE4E4E7)),
+            Icon(
+              isDraft ? Icons.play_arrow_rounded : Icons.chevron_right,
+              color: const Color(0xFFE4E4E7),
+            ),
           ],
         ),
       ),

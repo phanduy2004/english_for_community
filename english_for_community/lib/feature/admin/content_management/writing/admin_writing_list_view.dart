@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/get_it/get_it.dart';
+import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/entity/writing_topic_entity.dart';
 // Đảm bảo file này tồn tại và chứa ShadcnCard, SectionHeader, etc.
 import '../content_widgets.dart';
@@ -31,6 +32,7 @@ class _AdminWritingListBody extends StatefulWidget {
 
 class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
   final TextEditingController _searchCtrl = TextEditingController();
+  final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
 
   void _openEditor(BuildContext context, String? id) async {
     await context.pushNamed(
@@ -63,6 +65,127 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
     );
   }
 
+  Future<void> _openDeletedTopicsSheet() async {
+    await showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Deleted Writing Topics', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: FutureBuilder<List<Map<String, dynamic>>>(
+                    future: _adminRemote.getDeletedWritingTopics(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      final data = snapshot.data!;
+                      if (data.isEmpty) return const Center(child: Text('Trash is empty'));
+                      return ListView.separated(
+                        itemCount: data.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (_, index) {
+                          final item = data[index];
+                          final id = (item['_id'] ?? item['id'] ?? '').toString();
+                          final name = (item['name'] ?? 'Untitled').toString();
+                          return ListTile(
+                            title: Text(name),
+                            trailing: OutlinedButton(
+                              onPressed: () async {
+                                await _adminRemote.restoreWritingTopic(id);
+                                if (!mounted) return;
+                                Navigator.pop(ctx);
+                                context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Topic restored')),
+                                );
+                              },
+                              child: const Text('Restore'),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showApprovalAction(WritingTopicEntity topic) async {
+    String selected = 'approved';
+    final noteCtrl = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (context, setLocalState) => AlertDialog(
+          title: Text('Approval Workflow - ${topic.name}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: selected,
+                decoration: const InputDecoration(
+                  labelText: 'Action',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'submit', child: Text('Submit for approval')),
+                  DropdownMenuItem(value: 'approved', child: Text('Approve / Publish')),
+                  DropdownMenuItem(value: 'rejected', child: Text('Reject')),
+                ],
+                onChanged: (v) => setLocalState(() => selected = v ?? 'approved'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: noteCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  hintText: 'Optional note',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            FilledButton(onPressed: () => Navigator.pop(context, selected), child: const Text('Apply')),
+          ],
+        ),
+      ),
+    );
+    if (result == null) return;
+    if (result == 'submit') {
+      await _adminRemote.submitWritingTopicApproval(topic.id);
+    } else {
+      await _adminRemote.reviewWritingTopicApproval(
+        topicId: topic.id,
+        decision: result,
+        reviewNote: noteCtrl.text.trim().isEmpty ? null : noteCtrl.text.trim(),
+      );
+    }
+    if (!mounted) return;
+    context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Workflow updated')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const kBgPage = Color(0xFFF9FAFB);
@@ -86,6 +209,14 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             preferredSize: const Size.fromHeight(1),
             child: Container(color: kBorder, height: 1)),
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4.0),
+            child: IconButton(
+              icon: const Icon(Icons.restore_from_trash_outlined, color: kTextMain),
+              tooltip: 'Trash',
+              onPressed: _openDeletedTopicsSheet,
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
@@ -191,6 +322,11 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                   children: [
                     _SmallBadge(text: level, color: Colors.blue.shade50, textColor: Colors.blue.shade700),
                     _SmallBadge(text: "$taskCount task types", color: Colors.purple.shade50, textColor: Colors.purple.shade700),
+                    _SmallBadge(
+                      text: topic.approvalStatus,
+                      color: Colors.orange.shade50,
+                      textColor: Colors.orange.shade800,
+                    ),
                   ],
                 )
               ],
@@ -208,6 +344,10 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
           const SizedBox(width: 16),
 
           // Delete Btn
+          IconButton(
+            icon: const Icon(Icons.verified_outlined, color: Colors.indigo, size: 20),
+            onPressed: () => _showApprovalAction(topic),
+          ),
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
             onPressed: () => _confirmDelete(context, topic.id),

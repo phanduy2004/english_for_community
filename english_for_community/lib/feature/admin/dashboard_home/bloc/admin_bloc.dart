@@ -50,7 +50,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
     // Gọi Repository (Repository trả về Either<Failure, PaginatedResponse<ReportEntity>>)
     final result = await adminRepository.getReports(
-      page: event.page, limit: event.limit, status: event.status,
+      page: event.page, limit: event.limit, status: event.status, search: event.search,
     );
 
     result.fold(

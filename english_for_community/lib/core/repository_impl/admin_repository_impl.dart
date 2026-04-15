@@ -60,12 +60,14 @@ class AdminRepositoryImpl implements AdminRepository {
     int page = 1,
     int limit = 20,
     String? status,
+    String? search,
   }) async {
     try {
       final result = await reportRemoteDatasource.getReports(
         page: page,
         limit: limit,
         status: status,
+        search: search,
       );
       return Right(result);
     } on DioException catch (e) {
@@ -137,6 +139,18 @@ class AdminRepositoryImpl implements AdminRepository {
       return Left(UserFailure(message: _handleDioError(e)));
     } catch (e) {
       return Left(UserFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, int>>> getContentSummary() async {
+    try {
+      final result = await adminRemoteDatasource.getContentSummary();
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _handleDioError(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
     }
   }
 }

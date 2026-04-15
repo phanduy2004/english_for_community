@@ -8,7 +8,7 @@ import {
   getUserDetailsForAdmin, changePassword, updateFcmToken
 } from '../controllers/userController.js';
 import { getMyActivities, getMyActivityDetail } from '../controllers/userActivityController.js';
-import { authenticate } from '../middleware/auth.js';
+import { authenticate, requirePermissions } from '../middleware/auth.js';
 import uploadCloud from "../config/cloudinary.js";
 
 const router = express.Router();
@@ -22,7 +22,7 @@ router.get('/profile', getProfile);
 router.put('/profile', uploadCloud.single('avatar'), updateProfile);
 router.delete('/profile', deleteAccount);
 router.get('/:id/public', getPublicProfile);
-router.get('/:id/admin-details', getUserDetailsForAdmin);
+router.get('/:id/admin-details', requirePermissions('users.read'), getUserDetailsForAdmin);
 router.post('/change-password', changePassword);
 router.post('/fcm-token', updateFcmToken);
 export default router;

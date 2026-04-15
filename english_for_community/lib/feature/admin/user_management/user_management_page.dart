@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:english_for_community/core/entity/user_entity.dart';
 import 'package:english_for_community/feature/admin/user_management/widgets/user_card..dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 
+import '../../../core/datasource/admin_remote_datasource.dart';
 import '../../../core/get_it/get_it.dart';
 import '../../../core/socket/socket_service.dart';
 import '../dashboard_home/bloc/admin_bloc.dart';
@@ -118,6 +117,78 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     });
   }
 
+  Future<void> _openDeletedUsersSheet() async {
+    final datasource = getIt<AdminRemoteDatasource>();
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Deleted Users', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20)),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: FutureBuilder(
+                      future: datasource.getDeletedUsers(page: 1, limit: 50),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final users = snapshot.data!.data;
+                        if (users.isEmpty) {
+                          return const Center(child: Text('Trash is empty'));
+                        }
+                        return ListView.separated(
+                          itemCount: users.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (_, index) {
+                            final u = users[index];
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: (u.avatarUrl ?? '').isNotEmpty ? NetworkImage(u.avatarUrl!) : null,
+                                child: (u.avatarUrl ?? '').isEmpty ? const Icon(Icons.person_outline) : null,
+                              ),
+                              title: Text(u.fullName),
+                              subtitle: Text(u.email),
+                              trailing: OutlinedButton(
+                                onPressed: () async {
+                                  await datasource.restoreUser(u.id);
+                                  if (!mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Restored ${u.fullName}')),
+                                  );
+                                  Navigator.pop(ctx);
+                                  _fetchUsers();
+                                },
+                                child: const Text('Restore'),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -139,6 +210,13 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('User Management', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 16)),
+        actions: [
+          IconButton(
+            tooltip: 'Trash',
+            onPressed: _openDeletedUsersSheet,
+            icon: const Icon(Icons.restore_from_trash_outlined),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
           child: Container(
@@ -224,7 +302,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off_rounded, size: 48, color: textMuted.withOpacity(0.5)),
+          Icon(Icons.search_off_rounded, size: 48, color: textMuted.withValues(alpha: 0.5)),
           const SizedBox(height: 12),
           Text("No users found", style: TextStyle(color: textMuted, fontSize: 14)),
         ],

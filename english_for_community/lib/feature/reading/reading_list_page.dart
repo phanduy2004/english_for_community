@@ -24,6 +24,24 @@ class ReadingListPage extends StatefulWidget {
 
 class _ReadingListPageState extends State<ReadingListPage> {
   String _selectedDifficulty = 'easy';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +98,8 @@ class _ReadingListPageState extends State<ReadingListPage> {
                           _buildHeader(context, t),
                           const SizedBox(height: 24),
                           _buildFilterRow(blocContext, primaryColor, t),
+                          const SizedBox(height: 16),
+                          _buildSearchBox(primaryColor, t),
                           const SizedBox(height: 20),
                           BlocBuilder<ReadingBloc, ReadingState>(
                             builder: (context, state) {
@@ -96,21 +116,23 @@ class _ReadingListPageState extends State<ReadingListPage> {
                                 );
                               }
 
-                              if (state.readings.isEmpty) {
+                              final readings = state.readings.where((item) => _matchesPrefix(item.title, _searchQuery)).toList();
+
+                              if (readings.isEmpty) {
                                 return const _EmptyView();
                               }
 
                               return ListView.separated(
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
-                                itemCount: state.readings.length,
+                                itemCount: readings.length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 16),
                                 itemBuilder: (context, index) => _ReadingCard(
                                   t: t,
-                                  reading: state.readings[index],
+                                  reading: readings[index],
                                   primaryColor: primaryColor,
                                   // 🔥 ĐÃ SỬA: onAction giờ nhận tham số bool isRetake
-                                  onAction: (isRetake) => _handleAction(context, blocContext, state.readings[index], isRetake: isRetake),
+                                  onAction: (isRetake) => _handleAction(context, blocContext, readings[index], isRetake: isRetake),
                                 ),
                               );
                             },
@@ -280,6 +302,53 @@ class _ReadingListPageState extends State<ReadingListPage> {
         }).toList(),
       ),
     );
+  }
+
+  Widget _buildSearchBox(Color primaryColor, AppLocalizations t) {
+    const borderColor = Color(0xFFE4E4E7);
+    const textMuted = Color(0xFF71717A);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(fontSize: 14),
+        decoration: InputDecoration(
+          hintText: t.searchTopicHint,
+          hintStyle: const TextStyle(fontSize: 14, color: textMuted),
+          prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+          isDense: true,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: primaryColor, width: 1.5),
+          ),
+          suffixIcon: _searchQuery.trim().isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 16, color: textMuted),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
+        ),
+      ),
+    );
+  }
+
+  bool _matchesPrefix(String source, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) return true;
+    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 

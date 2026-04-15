@@ -6,9 +6,10 @@ import {
   submitForReview,
   updateDraft,
   getTopicSubmissions, getAdminWritingTopics, createWritingTopic, getWritingTopicDetail, updateWritingTopic,
-  deleteWritingTopic, deleteSubmission // 1️⃣ Import hàm mới
+  deleteWritingTopic, deleteSubmission, getWritingTopicVersions, rollbackWritingTopicVersion,
+  submitWritingTopicApproval, reviewWritingTopicApproval, getDeletedWritingTopics, restoreWritingTopic
 } from '../controllers/writingTopicController.js';
-import {authenticate, requireAdmin} from "../middleware/auth.js";
+import {authenticate, requirePermissions} from "../middleware/auth.js";
 
 const router = Router();
 
@@ -33,9 +34,15 @@ router.post('/:id/submit', submitForReview);
 router.delete('/submissions/:id', deleteSubmission);
 
 
-router.get('/admin/all',requireAdmin, getAdminWritingTopics); // Lấy list cho admin
-router.post('/', requireAdmin,createWritingTopic);            // Tạo mới
-router.get('/:id', requireAdmin,getWritingTopicDetail);       // Lấy chi tiết (đặt sau /admin/all để tránh conflict route)
-router.put('/:id',requireAdmin, updateWritingTopic);          // Sửa
-router.delete('/:id',requireAdmin, deleteWritingTopic);
+router.get('/admin/all', requirePermissions('content.read'), getAdminWritingTopics);
+router.get('/admin/deleted', requirePermissions('content.read'), getDeletedWritingTopics);
+router.post('/', requirePermissions('content.update'), createWritingTopic);
+router.post('/:id/submit-approval', requirePermissions('content.update'), submitWritingTopicApproval);
+router.post('/:id/review-approval', requirePermissions('content.approve'), reviewWritingTopicApproval);
+router.post('/:id/restore', requirePermissions('content.update'), restoreWritingTopic);
+router.get('/:id/versions', requirePermissions('content.version.read'), getWritingTopicVersions);
+router.post('/:id/versions/:versionId/rollback', requirePermissions('content.version.rollback'), rollbackWritingTopicVersion);
+router.get('/:id', requirePermissions('content.read'), getWritingTopicDetail);
+router.put('/:id', requirePermissions('content.update'), updateWritingTopic);
+router.delete('/:id', requirePermissions('content.update'), deleteWritingTopic);
 export default router;

@@ -221,19 +221,26 @@ class WritingFeedbackPage extends StatelessWidget {
                     style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
                   ),
                   const SizedBox(height: 16),
-
-                  _ShadcnCard(
-                    child: InteractiveDiffText(
-                      text: (() {
-                        final fb = submission.feedback;
-                        if (fb != null && fb.paragraphs != null && fb.paragraphs!.isNotEmpty) {
-                          // Nối các đoạn rewrite lại với nhau bằng \n\n
-                          return fb.paragraphs!.map((p) => p.rewrite ?? '').join('\n\n\n');
-                        }
-                        return t.writingFbNoCorrections;
-                      })(),
+                  if (fb.paragraphs != null && fb.paragraphs!.isNotEmpty)
+                    ...fb.paragraphs!
+                        .where((p) => (p.rewrite ?? '').trim().isNotEmpty)
+                        .map((p) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _RewriteParagraphCard(
+                                title: (p.title ?? '').trim(),
+                                comment: (p.comment ?? '').trim(),
+                                rewrite: (p.rewrite ?? '').trim(),
+                                originalEssay: submission.content,
+                              ),
+                            ))
+                        .toList()
+                  else
+                    _ShadcnCard(
+                      child: InteractiveDiffText(
+                        text: t.writingFbNoCorrections,
+                        originalText: submission.content,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -451,6 +458,132 @@ class _SampleCard extends StatelessWidget {
               ),
             );
           }).toList(),
+        ],
+      ),
+    );
+  }
+}
+
+class _RewriteParagraphCard extends StatelessWidget {
+  final String title;
+  final String comment;
+  final String rewrite;
+  final String originalEssay;
+
+  const _RewriteParagraphCard({
+    required this.title,
+    required this.comment,
+    required this.rewrite,
+    required this.originalEssay,
+  });
+
+  List<String> _extractParagraphs(String text) {
+    final normalized = text.replaceAll('\r\n', '\n').replaceAll('\\n', '\n').trim();
+    if (normalized.isEmpty) return const <String>[];
+    final byBlankLines = normalized
+        .split(RegExp(r'\n\s*\n'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (byBlankLines.length > 1) return byBlankLines;
+    return normalized
+        .split(RegExp(r'(?<=[\.\!\?])\s+(?=[A-Z])'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  Set<String> _tokenize(String value) {
+    return value
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
+        .split(RegExp(r'\s+'))
+        .where((w) => w.length >= 3)
+        .toSet();
+  }
+
+  double _similarity(String a, String b) {
+    final sa = _tokenize(a);
+    final sb = _tokenize(b);
+    if (sa.isEmpty || sb.isEmpty) return 0;
+    final inter = sa.intersection(sb).length.toDouble();
+    final union = sa.union(sb).length.toDouble();
+    return union == 0 ? 0 : inter / union;
+  }
+
+  String _findBestMatch(String rewriteParagraph, String sourceEssay) {
+    final candidates = _extractParagraphs(sourceEssay);
+    if (candidates.isEmpty) return sourceEssay;
+    String best = candidates.first;
+    double bestScore = -1;
+    for (final c in candidates) {
+      final s = _similarity(rewriteParagraph, c);
+      if (s > bestScore) {
+        bestScore = s;
+        best = c;
+      }
+    }
+    return best;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final matchedOriginal = _findBestMatch(rewrite, originalEssay);
+    final hasToken = RegExp(r'\{\{.*?\|\|.*?\|\|.*?\}\}').hasMatch(rewrite);
+    return _ShadcnCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (title.isNotEmpty)
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF71717A)),
+                  ),
+                ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: hasToken ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: hasToken ? const Color(0xFFBBF7D0) : const Color(0xFFBFDBFE),
+                  ),
+                ),
+                child: Text(
+                  hasToken ? 'Smart Tokens' : 'Auto Diff',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: hasToken ? const Color(0xFF166534) : const Color(0xFF1D4ED8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              comment,
+              style: const TextStyle(fontSize: 13, color: Color(0xFF52525B), height: 1.4),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAFAFA),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: const Color(0xFFE4E4E7)),
+            ),
+            child: InteractiveDiffText(
+              text: rewrite,
+              originalText: matchedOriginal,
+            ),
+          ),
         ],
       ),
     );
