@@ -25,8 +25,9 @@ class GetReportsEvent extends AdminEvent {
   final int page;
   final int limit;
   final String? status;
+  final String? search;
 
-  GetReportsEvent({this.page = 1, this.limit = 20, this.status});
+  GetReportsEvent({this.page = 1, this.limit = 20, this.status, this.search});
 }
 
 class UpdateReportStatusEvent extends AdminEvent {

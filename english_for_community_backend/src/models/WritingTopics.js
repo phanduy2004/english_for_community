@@ -14,6 +14,19 @@ const WritingTopicSchema = new mongoose.Schema(
   {
     name:     { type: String, required: true },                  // "Art", "Technology", ...
     isActive: { type: Boolean, default: true },
+    approvalStatus: {
+      type: String,
+      enum: ['draft', 'pending_review', 'approved', 'published', 'rejected'],
+      default: 'published',
+      index: true,
+    },
+    approval: {
+      submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      submittedAt: { type: Date, default: null },
+      reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+      reviewedAt: { type: Date, default: null },
+      reviewNote: { type: String, default: '' },
+    },
     // cấu hình để GEN đề khi user bấm vào topic
     aiConfig: {
       language:        { type: String, default: 'vi-VN' },

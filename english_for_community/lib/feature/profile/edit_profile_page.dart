@@ -244,7 +244,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     _ColorfulInput(
                       icon: Icons.person_rounded,
                       iconColor: Colors.blue,
-                      label: t.labelFullName,
+                       label: t.labelFullName,
                       controller: _fullNameController,
                       onChanged: (_) => _markDirty(),
                       validator: (v) => v!.isEmpty ? t.fieldRequired : null,

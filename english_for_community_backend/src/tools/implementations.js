@@ -25,6 +25,26 @@ const formatScore = (val) => (val === undefined || val === null) ? 'N/A' : val;
 const formatPercent = (val) => Math.round(val * 100) + '%';
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id); // 🔥 NEW: Validate ID
 
+/** Thứ Hai = 0 … Chủ nhật = 6 (theo lịch trong timezone user). */
+const mondayOffsetFromYmd = (ymd, tz) => {
+  const r = utcRangeForCalendarDate(ymd, tz);
+  if (!r) return 0;
+  const t = r.start.getTime() + 12 * 3600000;
+  const short = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(new Date(t));
+  const map = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+  const key = short.slice(0, 3);
+  return map[key] !== undefined ? map[key] : 0;
+};
+
+/** Thứ Hai–Chủ nhật của tuần dương lịch liền trước tuần hiện tại (không gồm hôm nay / tuần này). */
+const lastFullCalendarWeekYmd = (todayYmd, tz) => {
+  const off = mondayOffsetFromYmd(todayYmd, tz);
+  const mondayThisWeek = addCalendarDays(todayYmd, -off);
+  const mondayLastWeek = addCalendarDays(mondayThisWeek, -7);
+  const sundayLastWeek = addCalendarDays(mondayLastWeek, 6);
+  return { startDate: mondayLastWeek, endDate: sundayLastWeek };
+};
+
 /** Khoảng YYYY-MM-DD theo timezone user (không dùng giờ máy chủ). */
 const resolveZonedRangeYmd = async (userId, range) => {
   const user = await User.findById(userId).select('timezone').lean();
@@ -41,6 +61,10 @@ const resolveZonedRangeYmd = async (userId, range) => {
       timezone: tz,
       todayYmd,
     };
+  }
+  if (range === 'last_week') {
+    const { startDate, endDate } = lastFullCalendarWeekYmd(todayYmd, tz);
+    return { startDate, endDate, timezone: tz, todayYmd };
   }
   if (range === 'month') {
     return {
@@ -60,6 +84,7 @@ const resolveZonedRangeYmd = async (userId, range) => {
 
 const normalizePeriodArg = (range) => {
   if (range === 'today') return 'day';
+  if (range === 'last_week') return 'last_week';
   if (range === 'day' || range === 'week' || range === 'month') return range;
   return 'week';
 };
@@ -549,7 +574,7 @@ export const toolImplementations = {
   // ========================================
   analyze_weaknesses: async (userId, args) => {
     const { range = 'week' } = args;
-    const period = range === 'today' ? 'day' : (range === 'day' || range === 'week' || range === 'month' ? range : 'week');
+    const period = normalizePeriodArg(range);
     console.log(`🛠️ Tool: analyze_weaknesses (${period})`);
 
     const user = await User.findById(userId).select('timezone dailyMinutes').lean();

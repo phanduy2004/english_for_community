@@ -164,6 +164,12 @@ export const getProfile = async (req, res) => {
     const now = new Date();
     const todayStr = now.toLocaleDateString('en-CA', { timeZone: userTimezone });
 
+    const yesterdayStr = (() => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - 1);
+      return d.toLocaleDateString('en-CA', { timeZone: userTimezone });
+    })();
+
     const dailyRecord = await UserDailyProgress.findOne({
       userId: user._id,
       date: todayStr
@@ -178,9 +184,19 @@ export const getProfile = async (req, res) => {
         (dailyRecord.lessonsCompleted?.speaking || 0) +
         (dailyRecord.lessonsCompleted?.writing || 0);
     }
+
+    // Streak chỉ còn hợp lệ nếu lần học cuối là hôm nay hoặc hôm qua.
+    // Nếu bỏ lỡ ít nhất 1 ngày, streak phải hiển thị là 0.
+    const lastStreakDateStr = user.dailyProgressDate || null;
+    const effectiveStreak =
+      lastStreakDateStr === todayStr || lastStreakDateStr === yesterdayStr
+        ? (user.currentStreak || 0)
+        : 0;
+
     const responseUser = {
       ...user,
       dailyActivityProgress: todayLessonsCompleted,
+      currentStreak: effectiveStreak,
     };
 
     res.status(200).json(responseUser);

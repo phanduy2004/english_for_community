@@ -1,5 +1,7 @@
 import { adminService } from '../services/adminService.js';
 import { getIO } from '../socket/socketManager.js';
+import { writeAdminAudit, listAdminAudits } from '../services/adminAuditService.js';
+import { getRolePermissions, upsertRolePermissions } from '../middleware/auth.js';
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -44,6 +46,16 @@ const updateReportStatus = async (req, res) => {
     const { status, adminResponse } = req.body;
 
     const report = await adminService.updateReportStatus(id, status, adminResponse);
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'report.status.update',
+      targetType: 'report',
+      targetId: id,
+      metadata: { status, adminResponse },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
     res.status(200).json({ message: 'Report updated successfully', report });
   } catch (error) {
     if (error.message === 'Report not found') return res.status(404).json({ message: error.message });
@@ -57,6 +69,16 @@ const banUser = async (req, res) => {
     const { banType, durationInHours, reason } = req.body;
 
     const result = await adminService.updateUserBanStatus(id, banType, durationInHours, reason);
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'user.ban.update',
+      targetType: 'user',
+      targetId: id,
+      metadata: { banType, durationInHours, reason },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
 
     // --- XỬ LÝ SOCKET Ở CONTROLLER ---
     if (result.banType !== 'unban') {
@@ -78,6 +100,16 @@ const deleteUser = async (req, res) => {
     const { id } = req.params;
 
     await adminService.deleteUser(id);
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'user.soft_delete',
+      targetType: 'user',
+      targetId: id,
+      metadata: {},
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
 
     // Xử lý socket
     getIO().to(id).emit('force_logout', { reason: 'Tài khoản đã bị xóa.' });
@@ -86,6 +118,171 @@ const deleteUser = async (req, res) => {
   } catch (error) {
     if (error.message === 'User not found') return res.status(404).json({ message: error.message });
     res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const getDeletedUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const { search } = req.query;
+    const data = await adminService.listDeletedUsers(page, limit, search);
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const restoreUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await adminService.restoreUser(id);
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'user.restore',
+      targetType: 'user',
+      targetId: id,
+      metadata: {},
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
+    res.status(200).json({ message: 'User restored', user });
+  } catch (error) {
+    if (error.message === 'User not found') return res.status(404).json({ message: error.message });
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const bulkBanUsers = async (req, res) => {
+  try {
+    const { userIds = [], banType, durationInHours, reason } = req.body;
+    const result = await adminService.bulkBanUsers({ userIds, banType, durationInHours, reason });
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'user.bulk_ban',
+      targetType: 'user',
+      targetId: 'bulk',
+      metadata: { userIdsCount: userIds.length, banType, durationInHours, reason },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
+    res.status(200).json({ message: 'Bulk user ban updated', ...result });
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const bulkDeleteUsers = async (req, res) => {
+  try {
+    const { userIds = [] } = req.body;
+    const result = await adminService.bulkDeleteUsers({ userIds });
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'user.bulk_soft_delete',
+      targetType: 'user',
+      targetId: 'bulk',
+      metadata: { userIdsCount: userIds.length },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
+    res.status(200).json({ message: 'Bulk user soft delete done', ...result });
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const bulkUpdateReports = async (req, res) => {
+  try {
+    const { reportIds = [], status, adminResponse } = req.body;
+    const result = await adminService.bulkUpdateReports({ reportIds, status, adminResponse });
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'report.bulk_status.update',
+      targetType: 'report',
+      targetId: 'bulk',
+      metadata: { reportIdsCount: reportIds.length, status },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
+    res.status(200).json({ message: 'Bulk report status updated', ...result });
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const getModerationQueue = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const slaHours = parseInt(req.query.slaHours) || 24;
+    const result = await adminService.getModerationQueue({ page, limit, slaHours });
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const getAuditLogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, action, targetType, actorId } = req.query;
+    const result = await listAdminAudits({ page, limit, action, targetType, actorId });
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const exportCsv = async (req, res) => {
+  try {
+    const { resource = 'users', onlyDeleted = 'false' } = req.query;
+    let csv = '';
+    if (resource === 'users') {
+      csv = await adminService.exportUsersCsv({ onlyDeleted: onlyDeleted === 'true' });
+    } else if (resource === 'reports') {
+      csv = await adminService.exportReportsCsv();
+    } else if (resource === 'audit_logs') {
+      csv = await adminService.exportAuditLogsCsv();
+    } else {
+      return res.status(400).json({ message: 'Unsupported resource' });
+    }
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${resource}.csv"`);
+    return res.status(200).send(csv);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const getPermissionMatrix = async (req, res) => {
+  try {
+    const data = await getRolePermissions();
+    return res.status(200).json(data);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error', error: error.message });
+  }
+};
+
+const updateRolePermissions = async (req, res) => {
+  try {
+    const { role, permissions = [] } = req.body;
+    const item = await upsertRolePermissions(role, permissions);
+    await writeAdminAudit({
+      actorId: req.user?._id,
+      actorRole: req.user?.role,
+      action: 'rbac.role_permissions.update',
+      targetType: 'role_permission',
+      targetId: role || 'unknown',
+      metadata: { permissionsCount: permissions.length },
+      ip: req.ip,
+      userAgent: req.get('user-agent') || '',
+    });
+    return res.status(200).json(item);
+  } catch (error) {
+    return res.status(500).json({ message: 'Error', error: error.message });
   }
 };
 
@@ -102,6 +299,16 @@ const getActivities = async (req, res) => {
     });
   } catch (error) {
     console.error('Admin Activity List Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+const getContentSummary = async (req, res) => {
+  try {
+    const data = await adminService.getContentSummary();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error('Admin Content Summary Error:', error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -137,6 +344,17 @@ export default {
   updateReportStatus,
   banUser,
   deleteUser,
+  getDeletedUsers,
+  restoreUser,
+  bulkBanUsers,
+  bulkDeleteUsers,
+  bulkUpdateReports,
+  getModerationQueue,
+  getAuditLogs,
+  exportCsv,
+  getPermissionMatrix,
+  updateRolePermissions,
   getActivities,
-  getActivityDetail
+  getActivityDetail,
+  getContentSummary,
 };

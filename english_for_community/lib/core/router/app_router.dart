@@ -40,13 +40,14 @@ import '../../feature/onboarding_page.dart';
 // --- ADMIN PAGES ---
 import '../../feature/admin/dashboard_home/admin_dashboard.dart';
 import '../../feature/admin/user_management/user_management_page.dart';
+import '../../feature/admin/ops_center/admin_ops_center_page.dart';
 // 👇 IMPORT CÁC PAGE QUẢN LÝ NỘI DUNG MỚI
 import '../../feature/admin/content_management/content_dashboard_page.dart';
 import '../../feature/home/home_page.dart';
 import '../../feature/profile/my_exercise_history/my_exercise_history_page.dart';
 import '../../feature/profile/profile_page.dart';
 import '../../feature/profile/edit_profile_page.dart';
-import '../../feature/progress/progress_report_page.dart' hide AdminDashboardPage;
+import '../../feature/progress/progress_report_page.dart';
 
 // Reading
 import '../../feature/reading/reading_list_page.dart';
@@ -139,9 +140,16 @@ class AppRouter {
       // 3. Đã đăng nhập
       if (userState.status == UserStatus.success) {
         final user = userState.userEntity;
+        final role = user?.role ?? 'user';
+        final isAdminConsoleRole = <String>{
+          'admin',
+          'moderator',
+          'content_manager',
+          'support',
+        }.contains(role);
 
         // 🔥 ADMIN CHECK 🔥
-        if (user?.role == 'admin') {
+        if (isAdminConsoleRole) {
           // Nếu Admin đang ở trang Login/Splash -> Vào Dashboard
           if (publicRoutes.contains(location) || location == SplashPage.routePath) {
             return AdminDashboardPage.routePath;
@@ -182,6 +190,11 @@ class AppRouter {
         path: '/admin-dashboard',
         name: AdminDashboardPage.routeName,
         builder: (context, state) => const AdminDashboardPage(),
+      ),
+      GoRoute(
+        path: AdminOpsCenterPage.routePath,
+        name: AdminOpsCenterPage.routeName,
+        builder: (context, state) => const AdminOpsCenterPage(),
       ),
       GoRoute(
         path: '/admin/users',
