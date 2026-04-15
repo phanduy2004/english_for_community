@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // Đảm bảo import đúng các file entity/bloc của dự án bạn
@@ -10,6 +12,7 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import '../../core/locale/l10n_context.dart';
+import '../auth/bloc/user_bloc.dart';
 
 // --- 1. ĐỊNH NGHĨA MÀU SẮC (Theme Local) ---
 class _Colors {
@@ -25,6 +28,7 @@ class _Colors {
 class WritingTaskPage extends StatelessWidget {
   final WritingTopicEntity topic;
   final String selectedTaskType;
+  final String? userId;
   final Widget Function(BuildContext, WritingTaskState, String?, ValueChanged<String?>)? promptBuilder;
   final Widget Function(BuildContext, TextEditingController, ValueChanged<String>)? editorBuilder;
   final Widget Function(BuildContext, int, bool, VoidCallback)? bottomBarBuilder;
@@ -33,6 +37,7 @@ class WritingTaskPage extends StatelessWidget {
     super.key,
     required this.topic,
     required this.selectedTaskType,
+    this.userId,
     this.promptBuilder,
     this.editorBuilder,
     this.bottomBarBuilder,
@@ -40,14 +45,28 @@ class WritingTaskPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const userId = "USER_ID_HIEN_TAI_CUA_BAN"; // TODO: Thay bằng User ID thật
+    final resolvedUserId = userId ?? _tryResolveUserIdFromBloc(context);
+    if (resolvedUserId == null || resolvedUserId.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Text(
+              context.l10n.commonError,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
 
     return BlocProvider(
       create: (_) => WritingTaskBloc(
         writingRepository: getIt<WritingRepository>(),
       )..add(GeneratePromptAndStartTask(
         topic: topic,
-        userId: userId,
+        userId: resolvedUserId,
         taskType: selectedTaskType,
       )),
       child: WritingTaskView(
@@ -57,6 +76,14 @@ class WritingTaskPage extends StatelessWidget {
         bottomBarBuilder: bottomBarBuilder,
       ),
     );
+  }
+
+  String? _tryResolveUserIdFromBloc(BuildContext context) {
+    try {
+      return BlocProvider.of<UserBloc>(context).state.userEntity?.id;
+    } catch (_) {
+      return null;
+    }
   }
 }
 
@@ -79,6 +106,9 @@ class WritingTaskView extends StatefulWidget {
 }
 
 class _WritingTaskViewState extends State<WritingTaskView> {
+  static const int _minimumSubmitWords = 50;
+  static const Duration _autoSaveDebounce = Duration(seconds: 4);
+
   final _text = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final FocusNode _focusNode = FocusNode();
@@ -88,24 +118,53 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   bool _isDirty = false;
   late final Stopwatch _writingStopwatch;
   bool _hasShownResumeDialog = false;
+  bool _isAutoSaving = false;
+  bool _shouldCloseAfterSave = false;
+  Timer? _autoSaveTimer;
+  Timer? _savedStatusTicker;
+  DateTime? _lastAutoSavedAt;
+  String _lastAutoSavedContent = '';
+  bool _isProgrammaticEdit = false;
+  TextEditingValue _lastEditingValue = const TextEditingValue();
+  final List<TextEditingValue> _undoStack = <TextEditingValue>[];
+  final List<TextEditingValue> _redoStack = <TextEditingValue>[];
 
   @override
   void initState() {
     super.initState();
     _taskType = widget.initialTaskType;
     _writingStopwatch = Stopwatch()..start();
+    _lastEditingValue = _text.value;
 
     _text.addListener(() {
+      if (!_isProgrammaticEdit && _text.value != _lastEditingValue) {
+        _undoStack.add(_lastEditingValue);
+        if (_undoStack.length > 120) {
+          _undoStack.removeAt(0);
+        }
+        _redoStack.clear();
+        _lastEditingValue = _text.value;
+      }
       final t = _text.text;
       setState(() {
         _wordCount = t.trim().isEmpty ? 0 : t.trim().split(RegExp(r'\s+')).length;
         if (_wordCount > 0) _isDirty = true;
       });
+      _scheduleAutoSave();
+    });
+
+    _savedStatusTicker = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (!mounted) return;
+      if (_lastAutoSavedAt != null) {
+        setState(() {});
+      }
     });
   }
 
   @override
   void dispose() {
+    _autoSaveTimer?.cancel();
+    _savedStatusTicker?.cancel();
     _text.dispose();
     _scrollController.dispose();
     _focusNode.dispose();
@@ -123,6 +182,12 @@ class _WritingTaskViewState extends State<WritingTaskView> {
 
   void _submit(WritingTaskState s) {
     if (s.submission == null || _taskType == null) return;
+    if (!_canSubmitNow) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please write at least $_minimumSubmitWords words before submitting.')),
+      );
+      return;
+    }
     FocusScope.of(context).unfocus();
     final durationInSeconds = _writingStopwatch.elapsed.inSeconds;
     context.read<WritingTaskBloc>().add(
@@ -182,12 +247,102 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     }
     if (shouldSave == true) {
       if (mounted) {
+        _shouldCloseAfterSave = true;
         context.read<WritingTaskBloc>().add(SaveDraftEvent(
           submissionId: state.submission!.id,
           content: _text.text,
         ));
       }
     }
+  }
+
+  bool get _canSubmitNow => _wordCount >= _minimumSubmitWords;
+
+  String? get _savedLabel {
+    final last = _lastAutoSavedAt;
+    if (last == null) return null;
+    final elapsed = DateTime.now().difference(last);
+    if (elapsed.inSeconds < 10) return 'Saved just now';
+    if (elapsed.inSeconds < 60) return 'Saved ${elapsed.inSeconds}s ago';
+    if (elapsed.inMinutes < 60) return 'Saved ${elapsed.inMinutes}m ago';
+    return 'Saved';
+  }
+
+  String? _resolveUserId() {
+    try {
+      return BlocProvider.of<UserBloc>(context).state.userEntity?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _scheduleAutoSave() {
+    final blocState = context.read<WritingTaskBloc>().state;
+    final submissionId = blocState.submission?.id;
+    final text = _text.text.trim();
+    if (submissionId == null || submissionId.isEmpty) return;
+    if (!_isDirty || text.isEmpty) return;
+    if (blocState.status == WritingTaskStatus.submitting) return;
+    if (text == _lastAutoSavedContent.trim()) return;
+
+    _autoSaveTimer?.cancel();
+    _autoSaveTimer = Timer(_autoSaveDebounce, () {
+      if (!mounted) return;
+      setState(() => _isAutoSaving = true);
+      context.read<WritingTaskBloc>().add(
+            SaveDraftEvent(
+              submissionId: submissionId,
+              content: _text.text,
+            ),
+          );
+    });
+  }
+
+  void _insertAtCursor(String insertion) {
+    final value = _text.value;
+    final selection = value.selection;
+    if (!selection.isValid) {
+      _applyEditingValue(
+        TextEditingValue(
+          text: value.text + insertion,
+          selection: TextSelection.collapsed(offset: value.text.length + insertion.length),
+        ),
+      );
+      return;
+    }
+    final start = selection.start;
+    final end = selection.end;
+    final newText = value.text.replaceRange(start, end, insertion);
+    final newOffset = start + insertion.length;
+    _applyEditingValue(
+      TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newOffset),
+      ),
+    );
+  }
+
+  void _applyEditingValue(TextEditingValue next) {
+    _isProgrammaticEdit = true;
+    _text.value = next;
+    _lastEditingValue = next;
+    _isProgrammaticEdit = false;
+  }
+
+  void _undo() {
+    if (_undoStack.isEmpty) return;
+    final current = _text.value;
+    final prev = _undoStack.removeLast();
+    _redoStack.add(current);
+    _applyEditingValue(prev);
+  }
+
+  void _redo() {
+    if (_redoStack.isEmpty) return;
+    final current = _text.value;
+    final next = _redoStack.removeLast();
+    _undoStack.add(current);
+    _applyEditingValue(next);
   }
 
   void _showResumeConflictDialog(BuildContext context, String serverTaskType, String submissionId, String oldContent) {
@@ -214,7 +369,8 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               Navigator.pop(ctx);
               final currentState = context.read<WritingTaskBloc>().state;
               if (currentState.topic != null) {
-                const userId = "USER_ID_HIEN_TAI_CUA_BAN";
+                final userId = _resolveUserId();
+                if (userId == null || userId.isEmpty) return;
                 context.read<WritingTaskBloc>().add(DiscardDraftAndStartNew(
                   oldSubmissionId: submissionId,
                   topic: currentState.topic!,
@@ -305,14 +461,21 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               }
             }
             if (state.status == WritingTaskStatus.savedSuccess) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.writingDraftSavedSnack)));
-              Navigator.of(context).pop();
+              _lastAutoSavedContent = _text.text;
+              _lastAutoSavedAt = DateTime.now();
+              _isAutoSaving = false;
+              if (_shouldCloseAfterSave) {
+                _shouldCloseAfterSave = false;
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.writingDraftSavedSnack)));
+                Navigator.of(context).pop();
+              }
             }
             if (state.status == WritingTaskStatus.success && state.submission != null) {
               _writingStopwatch.stop();
               Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)));
             }
             if (state.status == WritingTaskStatus.error) {
+              _isAutoSaving = false;
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? context.l10n.genericLoadError)));
             }
           },
@@ -360,6 +523,16 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                               focusNode: _focusNode,
                               readOnly: isSubmitting,
                             ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                              child: _EditorQuickToolbar(
+                                onUndo: _undoStack.isEmpty ? null : _undo,
+                                onRedo: _redoStack.isEmpty ? null : _redo,
+                                onInsertPeriod: () => _insertAtCursor('. '),
+                                onInsertComma: () => _insertAtCursor(', '),
+                                onInsertNewLine: () => _insertAtCursor('\n'),
+                              ),
+                            ),
 
                             // C. Spacer
                             SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 300 : 100),
@@ -374,7 +547,11 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                       ? widget.bottomBarBuilder!(context, _wordCount, isSubmitting, () => _submit(state))
                       : _ClassicBottomBar(
                     wordCount: _wordCount,
+                    minWords: _minimumSubmitWords,
                     busy: isSubmitting,
+                    canSubmit: _canSubmitNow,
+                    isAutoSaving: _isAutoSaving,
+                    savedLabel: _savedLabel,
                     onSubmit: () => _submit(state),
                   ),
                 ],
@@ -496,14 +673,27 @@ class _Editor extends StatelessWidget {
 // 3. Bottom Bar (Layout Cũ: Ngang + Nút Submit)
 class _ClassicBottomBar extends StatelessWidget {
   final int wordCount;
+  final int minWords;
   final bool busy;
+  final bool canSubmit;
+  final bool isAutoSaving;
+  final String? savedLabel;
   final VoidCallback onSubmit;
 
-  const _ClassicBottomBar({required this.wordCount, required this.busy, required this.onSubmit});
+  const _ClassicBottomBar({
+    required this.wordCount,
+    required this.minWords,
+    required this.busy,
+    required this.canSubmit,
+    required this.isAutoSaving,
+    required this.savedLabel,
+    required this.onSubmit,
+  });
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final progress = (wordCount / minWords).clamp(0.0, 1.0);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
@@ -511,35 +701,138 @@ class _ClassicBottomBar extends StatelessWidget {
         border: Border(top: BorderSide(color: _Colors.border)),
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              t.wordCountN(wordCount),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: wordCount < 150 ? Colors.orange : _Colors.textMuted,
-              ),
+            Row(
+              children: [
+                Text(
+                  '${t.wordCountN(wordCount)}  ($minWords+)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: canSubmit ? _Colors.textMuted : Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (isAutoSaving)
+                  const Text(
+                    'Saving...',
+                    style: TextStyle(fontSize: 12, color: _Colors.textMuted),
+                  )
+                else if (savedLabel != null)
+                  Text(
+                    savedLabel!,
+                    style: const TextStyle(fontSize: 12, color: _Colors.textMuted),
+                  ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: busy || !canSubmit ? null : onSubmit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _Colors.primary,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: busy
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Text(t.writingSubmitEssay, style: const TextStyle(fontWeight: FontWeight.w600)),
+                ),
+              ],
             ),
-
-            const Spacer(),
-
-            ElevatedButton(
-              onPressed: busy ? null : onSubmit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _Colors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6,
+                backgroundColor: const Color(0xFFF4F4F5),
+                color: canSubmit ? const Color(0xFF16A34A) : const Color(0xFFF59E0B),
               ),
-              child: busy
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Text(t.writingSubmitEssay, style: const TextStyle(fontWeight: FontWeight.w600)),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditorQuickToolbar extends StatelessWidget {
+  final VoidCallback? onUndo;
+  final VoidCallback? onRedo;
+  final VoidCallback onInsertPeriod;
+  final VoidCallback onInsertComma;
+  final VoidCallback onInsertNewLine;
+
+  const _EditorQuickToolbar({
+    required this.onUndo,
+    required this.onRedo,
+    required this.onInsertPeriod,
+    required this.onInsertComma,
+    required this.onInsertNewLine,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _QuickToolButton(icon: Icons.undo_rounded, label: 'Undo', onTap: onUndo),
+          const SizedBox(width: 8),
+          _QuickToolButton(icon: Icons.redo_rounded, label: 'Redo', onTap: onRedo),
+          const SizedBox(width: 8),
+          _QuickTextButton(text: '. ', onTap: onInsertPeriod),
+          const SizedBox(width: 8),
+          _QuickTextButton(text: ', ', onTap: onInsertComma),
+          const SizedBox(width: 8),
+          _QuickTextButton(text: 'New line', onTap: onInsertNewLine),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickToolButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _QuickToolButton({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onTap != null;
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: enabled ? const Color(0xFFE4E4E7) : const Color(0xFFF4F4F5)),
+        foregroundColor: enabled ? const Color(0xFF09090B) : const Color(0xFFA1A1AA),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      icon: Icon(icon, size: 16),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+}
+
+class _QuickTextButton extends StatelessWidget {
+  final String text;
+  final VoidCallback onTap;
+
+  const _QuickTextButton({required this.text, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFE4E4E7)),
+        foregroundColor: const Color(0xFF09090B),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+      child: Text(text, style: const TextStyle(fontSize: 12)),
     );
   }
 }

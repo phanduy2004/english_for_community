@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/get_it/get_it.dart';
+import '../../../../core/datasource/admin_remote_datasource.dart';
 import 'content_widgets.dart';
 
 class ContentDashboardPage extends StatelessWidget {
@@ -52,44 +54,55 @@ class ContentDashboardPage extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   Expanded(
-                    child: GridView.count(
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      childAspectRatio: childAspectRatio,
-                      children: [
-                        _SkillCard(
-                          title: 'Writing',
-                          count: 15,
-                          color: const Color(0xFFEF4444),
-                          icon: Icons.edit_note,
-                          onTap: () => _navToList(context, 'writing'),
-                        ),
-                        _SkillCard(
-                          title: 'Speaking',
-                          count: 8,
-                          color: const Color(0xFF3B82F6),
-                          icon: Icons.mic_none,
-                          onTap: () => _navToList(context, 'speaking'),
-                        ),
-                        _SkillCard(
-                          title: 'Reading',
-                          count: 5,
-                          color: const Color(0xFFF59E0B),
-                          icon: Icons.menu_book,
-                          onTap: () => _navToList(context, 'reading'),
-                        ),
-                        _SkillCard(
-                          title: 'Listening',
-                          count: 12,
-                          color: const Color(0xFF8B5CF6),
-                          icon: Icons.headphones,
-                          // 🔥 ĐỔI SỰ KIỆN ONTAP Ở ĐÂY: Mở dialog thay vì chuyển trang ngay
-                          onTap: () => _showListeningTypeDialog(context),
-                        ),
-                      ],
+                    child: FutureBuilder<Map<String, int>>(
+                      future: getIt<AdminRemoteDatasource>().getContentSummary(),
+                      builder: (context, snapshot) {
+                        final counts = snapshot.data ??
+                            const {
+                              'writing': 0,
+                              'speaking': 0,
+                              'reading': 0,
+                              'listening': 0,
+                            };
+                        return GridView.count(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: childAspectRatio,
+                          children: [
+                            _SkillCard(
+                              title: 'Writing',
+                              count: counts['writing'] ?? 0,
+                              color: const Color(0xFFEF4444),
+                              icon: Icons.edit_note,
+                              onTap: () => _navToList(context, 'writing'),
+                            ),
+                            _SkillCard(
+                              title: 'Speaking',
+                              count: counts['speaking'] ?? 0,
+                              color: const Color(0xFF3B82F6),
+                              icon: Icons.mic_none,
+                              onTap: () => _navToList(context, 'speaking'),
+                            ),
+                            _SkillCard(
+                              title: 'Reading',
+                              count: counts['reading'] ?? 0,
+                              color: const Color(0xFFF59E0B),
+                              icon: Icons.menu_book,
+                              onTap: () => _navToList(context, 'reading'),
+                            ),
+                            _SkillCard(
+                              title: 'Listening',
+                              count: counts['listening'] ?? 0,
+                              color: const Color(0xFF8B5CF6),
+                              icon: Icons.headphones,
+                              onTap: () => _showListeningTypeDialog(context),
+                            ),
+                          ],
+                        );
+                      },
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

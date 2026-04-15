@@ -46,11 +46,13 @@ class ReportRemoteDatasource {
     required int page,
     required int limit,
     String? status,
+    String? search,
   }) async {
     final response = await dio.get('reports', queryParameters: {
       'page': page,
       'limit': limit,
       if (status != null) 'status': status,
+      if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
     });
 
     // Sử dụng factory fromJson của PaginatedResponse

@@ -391,7 +391,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
                 // Lọc theo Text
                 if (_searchQuery.isNotEmpty) {
                   topics = topics.where((t) =>
-                      t.name.toLowerCase().contains(_searchQuery.toLowerCase())
+                      t.name.trimLeft().toLowerCase().startsWith(_searchQuery.trim().toLowerCase())
                   ).toList();
                 }
 

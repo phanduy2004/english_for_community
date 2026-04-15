@@ -24,6 +24,24 @@ class ListeningListPage extends StatefulWidget {
 
 class _ListeningListPageState extends State<ListeningListPage> {
   int _selectedFilterIndex = 0;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   String _getDifficultyForIndex(int index) {
     switch (index) {
@@ -130,7 +148,8 @@ class _ListeningListPageState extends State<ListeningListPage> {
                                     onRetry: refreshList, // Dùng hàm refreshList đã định nghĩa
                                   );
                                 case ListeningStatus.success:
-                                  final items = state.listListeningEntity ?? const <ListeningEntity>[];
+                                  final allItems = state.listListeningEntity ?? const <ListeningEntity>[];
+                                  final items = allItems.where((item) => _matchesPrefix(item.title, _searchQuery)).toList();
                                   if (items.isEmpty) return const _EmptyView();
 
                                   return ListView.separated(
@@ -254,7 +273,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
         ],
       ),
       child: TextField(
-        readOnly: true,
+        controller: _searchController,
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: t.listeningSearchHint,
@@ -267,10 +286,24 @@ class _ListeningListPageState extends State<ListeningListPage> {
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: primaryColor, width: 1.5),
           ),
+          suffixIcon: _searchQuery.trim().isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close, size: 16, color: textMuted),
+                  onPressed: () {
+                    _searchController.clear();
+                    FocusScope.of(context).unfocus();
+                  },
+                )
+              : null,
         ),
-        onTap: () {},
       ),
     );
+  }
+
+  bool _matchesPrefix(String source, String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    if (normalizedQuery.isEmpty) return true;
+    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 class _ListeningCard extends StatelessWidget {
