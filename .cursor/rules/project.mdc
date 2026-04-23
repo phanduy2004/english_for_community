@@ -1,0 +1,477 @@
+---
+alwaysApply: true
+---
+# English for Community — Project Context
+
+> AI-powered English communication learning platform.
+> This document is the **single source of truth** for any AI agent working in this codebase.
+
+---
+
+## 1. Project Overview
+
+| Field | Value |
+|---|---|
+| **Project name** | English for Community (E4C) |
+| **Goal** | A comprehensive English learning platform focusing on 4 core skills (Listening, Speaking, Reading, Writing) + Vocabulary, powered by AI assistance |
+| **Target users** | Vietnamese learners (primary), international users (secondary) |
+| **Platforms** | Android, iOS (Flutter), Web-ready backend |
+| **Monorepo** | `english_for_community/` (Flutter app) + `english_for_community_backend/` (Node.js API) |
+
+---
+
+## 2. Tech Stack & Dependencies
+
+### 2.1 Frontend — Flutter
+
+| Category | Technology |
+|---|---|
+| **Language** | Dart (SDK ≥ 3.3.0) |
+| **Framework** | Flutter (Material 3) |
+| **State Management** | `flutter_bloc` ^9.1.1 (primary), `provider` ^6.1.5 (locale only) |
+| **DI** | `get_it` ^7.7.0 (Service Locator) |
+| **Routing** | `go_router` ^14.2.7 (declarative, redirect-based auth guard) |
+| **Networking** | `dio` ^5.7.0 + custom JWT interceptor with auto-refresh |
+| **Realtime** | `socket_io_client` ^2.0.3 |
+| **Auth** | `firebase_auth`, `google_sign_in`, JWT (access + refresh token) |
+| **Storage** | `flutter_secure_storage` (tokens), `shared_preferences` (settings), `sqflite` (local dict DB) |
+| **Notifications** | `firebase_messaging`, `flutter_local_notifications` |
+| **AI Features** | `google_generative_ai` ^0.4.1, `vapi` ^0.1.0 (voice AI) |
+| **Audio** | `just_audio`, `audioplayers`, `speech_to_text`, `flutter_tts` |
+| **UI Extras** | `forui`, `flutter_animate`, `fl_chart`, `flutter_svg`, `cached_network_image`, `flutter_markdown` |
+| **Localization** | ARB-based (`lib/l10n/`), supports `en` & `vi`, generated via `flutter gen-l10n` |
+| **Fonts** | Lexend (primary), NotoSans (fallback) |
+| **Serialization** | Manual `fromJson`/`toJson` on Entity classes (no code-gen at runtime) |
+
+### 2.2 Backend — Node.js
+
+| Category | Technology |
+|---|---|
+| **Runtime** | Node.js (ES Modules — `"type": "module"`) |
+| **Framework** | Express ^4.21.2 |
+| **Database** | MongoDB via `mongoose` ^8.10.0 |
+| **Auth** | JWT (`jsonwebtoken`), `bcrypt` for password hashing |
+| **Realtime** | `socket.io` ^4.8.1 |
+| **AI** | `@google/generative-ai`, `openai`, `groq-sdk` |
+| **File upload** | `multer` + `cloudinary` |
+| **Validation** | `zod` ^4.1.11 |
+| **Email** | `nodemailer` |
+| **Push notifications** | `firebase-admin` |
+| **Scheduled jobs** | `node-cron` |
+
+---
+
+## 3. Directory Structure
+
+### 3.1 Flutter App (`english_for_community/lib/`)
+
+```
+lib/
+├── main.dart                          # Entry point: Firebase init, DI setup, runApp
+├── firebase_options.dart              # Firebase config (auto-generated)
+│
+├── core/                              # Shared infrastructure (domain-agnostic)
+│   ├── api/
+│   │   ├── api_client.dart            # Dio factory (public vs authorized)
+│   │   ├── api_config.dart            # Base URL switcher (local/render)
+│   │   ├── app_jwt_interceptor.dart   # Auto-refresh JWT interceptor
+│   │   └── token_storage.dart         # Secure storage for access/refresh tokens
+│   │
+│   ├── model/
+│   │   ├── either.dart                # Custom Either<L,R> (Left = Failure, Right = Success)
+│   │   └── failure.dart               # Abstract Failure + domain-specific subclasses
+│   │
+│   ├── entity/                        # Domain entities (immutable, Equatable)
+│   │   ├── user_entity.dart
+│   │   ├── speaking/                  # Grouped by feature domain
+│   │   ├── reading/
+│   │   └── ...
+│   │
+│   ├── datasource/                    # Remote/Local data access (Dio calls, sqflite)
+│   │   ├── auth_remote_datasource.dart
+│   │   ├── speaking_remote_datasource.dart
+│   │   ├── dictionary_local_datasource.dart
+│   │   └── ...
+│   │
+│   ├── repository/                    # Abstract repository interfaces
+│   │   ├── auth_repository.dart       # Returns Either<Failure, T>
+│   │   └── ...
+│   │
+│   ├── repository_impl/              # Concrete implementations (catch errors → Left)
+│   │   ├── auth_repository_impl.dart
+│   │   └── ...
+│   │
+│   ├── get_it/
+│   │   └── get_it.dart               # DI container: registers ApiClient → DataSources → Repos → BLoCs
+│   │
+│   ├── router/
+│   │   └── app_router.dart           # GoRouter config with role-based redirect (admin vs user)
+│   │
+│   ├── socket/
+│   │   ├── socket_service.dart        # Socket.IO client + auto-reconnect
+│   │   ├── socket_lifecycle_manager.dart  # Widget-level socket management
+│   │   └── handlers/                  # Part files for socket event handlers
+│   │
+│   ├── theme/
+│   │   ├── app_theme.dart            # Material 3 ThemeData builder
+│   │   ├── app_color.dart            # AppColors (teal/emerald palette)
+│   │   ├── app_fonts.dart            # Font family constants
+│   │   └── app_typography.dart       # Text style presets
+│   │
+│   ├── locale/
+│   │   ├── app_locale_controller.dart # ChangeNotifier for EN/VI switching
+│   │   └── l10n_context.dart         # Extension for easy localization access
+│   │
+│   ├── ui/                           # Reusable UI components
+│   │   ├── widget/                   # AppCard, AppSkeleton, NavigationBar, etc.
+│   │   ├── animation/
+│   │   └── interactive/
+│   │
+│   ├── sqflite/                      # Local SQLite (dictionary DB, notifications)
+│   ├── notification/                 # Local notification service
+│   ├── analytics/                    # Speaking telemetry, Firebase Analytics
+│   ├── config/                       # VAPI env config
+│   └── dtos/                         # Data Transfer Objects (pagination, etc.)
+│
+├── feature/                          # Feature modules (vertical slices)
+│   ├── auth/
+│   │   ├── login_page.dart
+│   │   ├── register_page.dart
+│   │   ├── forgot_password_page.dart
+│   │   ├── otp_verification_page.dart
+│   │   ├── reset_password_page.dart
+│   │   └── bloc/
+│   │       ├── user_bloc.dart        # Global auth BLoC (singleton via GetIt)
+│   │       ├── user_event.dart
+│   │       └── user_state.dart
+│   │
+│   ├── home/
+│   │   ├── home_page.dart            # Main hub for students
+│   │   ├── ai_assistant_dialog.dart
+│   │   ├── bloc_ai/                  # AI chat BLoC
+│   │   ├── bloc_noti/                # Notification BLoC
+│   │   └── widgets/
+│   │
+│   ├── listening/                    # Listening Dictation
+│   │   ├── list_listening/           # List page + BLoC
+│   │   ├── listening_skill/          # Skills page (cue/comment) + BLoC
+│   │   └── widget/
+│   │
+│   ├── listening_comp/               # Listening Comprehension (MCQ)
+│   │   ├── listening_comp_page.dart
+│   │   ├── listening_comp_list_page.dart
+│   │   ├── bloc/
+│   │   └── bloc_list/
+│   │
+│   ├── speaking/
+│   │   ├── speaking_hub_page.dart    # Mode selection (readAloud, etc.)
+│   │   ├── speaking_skills_page.dart
+│   │   ├── free_speaking_page.dart
+│   │   ├── bloc/                     # SpeakingBloc (list sets)
+│   │   ├── speaking_lesson_bloc/     # Lesson execution BLoC
+│   │   ├── vapi/                     # VAPI voice AI service
+│   │   └── widget/
+│   │
+│   ├── reading/
+│   │   ├── reading_list_page.dart
+│   │   ├── reading_detail_page.dart
+│   │   ├── bloc/                     # ReadingBloc
+│   │   └── reading_attempt_bloc/     # Attempt submission BLoC
+│   │
+│   ├── writing/
+│   │   ├── writing_topics_page.dart
+│   │   ├── bloc/                     # WritingBloc (topics list)
+│   │   ├── writing_task_bloc/        # Task execution BLoC
+│   │   └── widgets/
+│   │
+│   ├── vocabulary/
+│   │   ├── vocabulary_home_page.dart
+│   │   ├── dict_demo_page.dart       # Dictionary search
+│   │   ├── dict_detail_page.dart
+│   │   ├── review_session_page.dart  # SRS review
+│   │   ├── bloc/                     # VocabularyBloc
+│   │   └── bloc_review/              # ReviewBloc
+│   │
+│   ├── progress/
+│   │   ├── progress_report_page.dart
+│   │   ├── bloc/                     # ProgressBloc
+│   │   ├── bloc_report/              # ReportBloc
+│   │   └── widgets/
+│   │
+│   ├── profile/
+│   │   ├── profile_page.dart
+│   │   ├── edit_profile_page.dart
+│   │   └── my_exercise_history/      # Exercise history BLoC
+│   │
+│   ├── admin/                        # Admin console (role = 'admin')
+│   │   ├── dashboard_home/           # Admin dashboard + BLoC
+│   │   ├── user_management/          # User CRUD
+│   │   ├── content_management/       # CRUD for all 5 skills
+│   │   │   ├── reading/
+│   │   │   ├── listening/
+│   │   │   ├── listening_comp/
+│   │   │   ├── speaking/
+│   │   │   └── writing/
+│   │   ├── submission_managerment/   # Review student submissions
+│   │   ├── report_management/        # User reports moderation
+│   │   └── ops_center/               # Admin operations center
+│   │
+│   └── onboarding_page.dart
+│
+└── l10n/                             # Localization
+    ├── app_en.arb                    # English strings
+    ├── app_vi.arb                    # Vietnamese strings
+    └── generated/                    # Auto-generated localization delegates
+```
+
+### 3.2 Backend (`english_for_community_backend/`)
+
+```
+├── server.js                    # Entry: MongoDB connect, HTTP + Socket.IO init
+├── app.js                       # Express app: middleware + route mounting
+│
+└── src/
+    ├── config/
+    │   ├── cloudinary.js        # Cloudinary upload config (multer)
+    │   └── firebase.js          # Firebase Admin SDK init
+    │
+    ├── middleware/
+    │   ├── auth.js              # authenticate, requireAdmin, requirePermissions
+    │   └── verifyTokenSocket.js # Socket.IO auth middleware
+    │
+    ├── constants/
+    │   └── permissions.js       # RBAC permission definitions
+    │
+    ├── lib/
+    │   └── jwt_token.js         # JWT sign/verify helpers
+    │
+    ├── models/                  # Mongoose schemas (22 models)
+    │   ├── User.js              # Core user model (roles, OTP, gamification)
+    │   ├── Listening.js, ListeningComprehension.js
+    │   ├── SpeakingSet.js, SpeakingAttempt.js, SpeakingEnrollment.js
+    │   ├── Reading.js, ReadingAttempt.js, ReadingProgress.js
+    │   ├── WritingTopics.js, WritingSubmission.js, WritingTopicVersion.js
+    │   ├── Word.js, DictationAttempt.js
+    │   ├── Enrollment.js, UserDailyProgress.js
+    │   ├── CueComment.js
+    │   ├── Notification.js, Report.js
+    │   ├── AdminAuditLog.js, RolePermission.js
+    │   └── ...
+    │
+    ├── routes/                  # Express routers (13 route files)
+    │   ├── authRoutes.js        → /api/auth
+    │   ├── userRoutes.js        → /api/users
+    │   ├── listeningRoutes.js   → /api/listening
+    │   ├── listeningCompRoutes.js → /api/listening-comp
+    │   ├── speakingRoutes.js    → /api/speaking
+    │   ├── readingRoutes.js     → /api/reading
+    │   ├── writingTopicRoutes.js → /api/writing
+    │   ├── vocabRoutes.js       → /api/vocab
+    │   ├── progressRoutes.js    → /api/progress
+    │   ├── chatRoutes.js        → /api/chat
+    │   ├── adminRoutes.js       → /api/admin
+    │   ├── reportRoutes.js      → /api/reports
+    │   └── notificationRoutes.js → /api/notifications
+    │
+    ├── controllers/             # Request handlers (thin: validate → call service → respond)
+    │   ├── authController.js
+    │   ├── userController.js
+    │   ├── speakingController.js
+    │   ├── writingTopicController.js
+    │   ├── chatController.js
+    │   ├── adminController.js
+    │   └── ...
+    │
+    ├── services/                # Business logic layer
+    │   ├── authService.js       # Register, login, OTP, JWT management
+    │   ├── aiService.js         # Generative AI integration
+    │   ├── aiContextService.js  # AI context building
+    │   ├── speakingService.js
+    │   ├── readingService.js
+    │   ├── writingTopicService.js
+    │   ├── listeningService.js
+    │   ├── listeningCompService.js
+    │   ├── vocabularyService.js
+    │   ├── progressService.js
+    │   ├── gamificationService.js  # Points, streaks, levels
+    │   ├── historyService.js
+    │   ├── reportService.js
+    │   ├── adminAuditService.js
+    │   ├── chatService.js
+    │   ├── cueService.js
+    │   └── dictationService.js
+    │
+    ├── socket/
+    │   └── socketManager.js     # Socket.IO init + event handlers (rooms, status)
+    │
+    ├── jobs/
+    │   └── smartNotificationJob.js  # node-cron scheduled push notifications
+    │
+    ├── tools/
+    │   └── definitions.js       # AI tool/function definitions
+    │
+    ├── seeds/                   # DB seeders
+    ├── scripts/                 # Migration scripts
+    └── untils/
+        └── sendMailUtil.js      # Nodemailer helper
+```
+
+---
+
+## 4. Architecture
+
+### 4.1 Flutter — Layered Architecture (Clean-ish)
+
+```
+┌─────────────────────────────────────────────────────┐
+│  UI Layer (Pages / Widgets)                         │
+│  - Feature pages consume BLoC states                │
+│  - Uses BlocProvider / BlocBuilder / BlocListener   │
+└──────────────────────┬──────────────────────────────┘
+                       │ dispatches Events
+┌──────────────────────▼──────────────────────────────┐
+│  BLoC Layer (Business Logic)                        │
+│  - One BLoC per feature concern                     │
+│  - Calls Repository methods                         │
+│  - Handles Either.fold() → emit success/error state │
+└──────────────────────┬──────────────────────────────┘
+                       │ calls
+┌──────────────────────▼──────────────────────────────┐
+│  Repository Layer (Abstract → Impl)                 │
+│  - Abstract: defines contract (returns Either)      │
+│  - Impl: try-catch around Datasource calls          │
+│  - DioException → domain Failure (Left)             │
+│  - Success → domain Entity (Right)                  │
+└──────────────────────┬──────────────────────────────┘
+                       │ calls
+┌──────────────────────▼──────────────────────────────┐
+│  Datasource Layer (Remote / Local)                  │
+│  - Remote: Dio HTTP calls, returns raw entities     │
+│  - Local: sqflite, SharedPreferences                │
+└─────────────────────────────────────────────────────┘
+```
+
+**Data flow**: `UI → Event → BLoC → Repository → Datasource → API/DB → Entity → State → UI`
+
+### 4.2 Backend — MVC + Service Layer
+
+```
+Request → Route → (Middleware: auth/permissions) → Controller → Service → Model/DB → Response
+```
+
+- **Controllers** are thin: parse request, call service, format response.
+- **Services** contain all business logic (validation, AI calls, DB operations).
+- **Models** are Mongoose schemas with transforms and indexes.
+
+---
+
+## 5. Development Rules
+
+### 5.1 General
+
+- **Language**: All code identifiers in English. Comments can be Vietnamese for complex logic.
+- **No hardcoded strings**: UI text must go through `AppLocalizations` (ARB files).
+- **No hardcoded URLs/keys**: Use `ApiConfig` for URLs, environment variables for secrets.
+- **No `print()` in production**: Use proper logging (print is acceptable during debug).
+
+### 5.2 Flutter Rules
+
+1. **State Management**: Always use BLoC pattern. Never use `setState` for business logic. `setState` is only for ephemeral UI state (animations, form fields).
+2. **Error Handling**: Repositories MUST wrap datasource calls in try-catch. Return `Either<Failure, T>`. Never throw exceptions past the Repository layer.
+3. **Dependency Injection**: All datasources, repositories, and BLoCs MUST be registered in `core/get_it/get_it.dart`. Use constructor injection.
+4. **Entities**: Domain entities extend `Equatable`. Include `fromJson`, `toJson`, `copyWith`, and a `factory empty()` constructor.
+5. **Naming**:
+   - Files: `snake_case.dart`
+   - Classes: `PascalCase`
+   - Variables/functions: `camelCase`
+   - BLoC files: `{feature}_bloc.dart`, `{feature}_event.dart`, `{feature}_state.dart`
+   - Entity files: `{name}_entity.dart`
+   - Repository: `{name}_repository.dart` (abstract) / `{name}_repository_impl.dart` (concrete)
+   - Datasource: `{name}_remote_datasource.dart` / `{name}_local_datasource.dart`
+6. **Routing**: All routes defined in `core/router/app_router.dart`. Each page exposes `static const routePath` and `static const routeName`.
+7. **Theme**: Use `AppColors`, `AppFonts`, `AppTheme` from `core/theme/`. Never hardcode colors/fonts.
+8. **Localization**: Access via `AppLocalizations.of(context)` or the `l10n_context.dart` extension. Supported locales: `en`, `vi`.
+
+### 5.3 Backend Rules
+
+1. **ES Modules**: All files use `import/export` syntax (not `require`). Package type is `"module"`.
+2. **Controller pattern**: Controllers are thin objects exporting named functions. They catch service errors and respond with appropriate HTTP status codes.
+3. **Service layer**: All business logic lives in services. Controllers NEVER access models directly.
+4. **Auth middleware**: Use `authenticate` for logged-in routes, `requireAdmin` for admin-only, `requirePermissions([...])` for granular RBAC.
+5. **Error handling**: Services throw errors with `statusCode` property. Controllers use `getStatusCode(err)` helper.
+6. **Model transforms**: Mongoose `toJSON` transforms hide sensitive fields (`password`, `refreshToken`, OTP fields).
+7. **Naming**:
+   - Files: `camelCase.js`
+   - Models: `PascalCase.js` (e.g., `User.js`, `SpeakingSet.js`)
+   - Routes: `{name}Routes.js`
+   - Controllers: `{name}Controller.js`
+   - Services: `{name}Service.js`
+
+---
+
+## 6. Preferred Patterns
+
+### 6.1 Flutter Patterns
+
+| Pattern | Usage |
+|---|---|
+| **BLoC** | Primary state management. Event-driven, unidirectional data flow. |
+| **Repository Pattern** | Abstract interface → concrete impl. Decouples BLoC from data source. |
+| **Either / Functional Error Handling** | Custom `Either<Failure, T>` with `fold()`. No exceptions in BLoC layer. |
+| **Service Locator (GetIt)** | Single registration point. Singletons for auth BLoC & socket. Factories for feature BLoCs. |
+| **GoRouter redirect** | Centralized auth guard with role-based routing (admin vs user). |
+| **Socket Lifecycle Manager** | Widget wrapping entire app tree for socket connect/disconnect based on auth state. |
+| **Part files** | Socket handlers split via Dart `part`/`part of` for organization. |
+
+### 6.2 Backend Patterns
+
+| Pattern | Usage |
+|---|---|
+| **MVC + Service Layer** | Route → Controller (thin) → Service (logic) → Model |
+| **RBAC middleware** | Role-based access with permission arrays per role |
+| **JWT dual-token** | Access token (short-lived) + Refresh token (stored in DB) |
+| **OTP with TTL index** | MongoDB TTL auto-deletes unverified signup users after 10 min |
+| **Socket rooms** | User rooms (1:1 notifications), admin_room (broadcast), listening_room (collaboration) |
+| **Zod validation** | Input validation using Zod schemas in services |
+
+---
+
+## 7. API Convention
+
+- **Base path**: `/api/{resource}`
+- **Auth endpoints**: `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, etc.
+- **CRUD resources**: `/api/{resource}` (GET list), `/api/{resource}/:id` (GET detail), POST/PUT/DELETE
+- **Admin endpoints**: `/api/{resource}/admin/list`, `/api/{resource}/admin/:id`
+- **Pagination response**: `{ data: [...], pagination: { page, limit, totalDocs, totalPages, hasNextPage } }`
+- **Error response**: `{ message: "Human-readable error" }`
+
+---
+
+## 8. Key Domain Features
+
+| Feature | Description |
+|---|---|
+| **Listening Dictation** | Audio playback → user fills gaps → backend scores |
+| **Listening Comprehension** | Full audio + MCQ questions → scoring |
+| **Speaking** | Read-aloud / free-speaking → STT + AI scoring (pronunciation, fluency, accuracy) |
+| **Reading** | Passages with exercises → AI feedback on comprehension |
+| **Writing** | Topic-based writing → AI evaluation (grammar, structure, vocabulary) |
+| **Vocabulary** | Personal word bank + SRS (Spaced Repetition) review sessions |
+| **Dictionary** | Offline SQLite dictionary (`assets/db/dictionary.db`) |
+| **AI Chat** | AI assistant for learning help (Gemini / OpenAI / Groq) |
+| **Progress & Gamification** | Daily goals, streaks, points, levels, leaderboard |
+| **Notifications** | Push (FCM) + local + smart scheduled reminders |
+| **Admin Console** | Full CMS: user management, content CRUD, submission review, reports, analytics |
+
+---
+
+## 9. Important Notes
+
+- **Cursor AI preferred**: This project is optimized for AI-assisted development with Cursor.
+- **Firebase**: Used for Auth (Google Sign-In), Cloud Messaging (FCM), and Analytics. NOT used as primary database.
+- **MongoDB Atlas**: Primary database. All data stored in MongoDB.
+- **Cloudinary**: Image/file storage (avatars, audio files).
+- **Deployment**: Backend deployed on Render (`english-for-community.onrender.com`). Toggle `_useLocal` in `ApiConfig` for dev.
+- **Socket.IO**: Used for real-time features (online status, notifications, collaborative comments).
+- **Localization**: Always add new strings to BOTH `app_en.arb` AND `app_vi.arb`.
+- **VAPI**: Voice AI service for free speaking practice. Config in `core/config/vapi_env_config.dart`.
