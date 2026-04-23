@@ -1,0 +1,873 @@
+{
+  "@@locale": "en",
+  "profileAndSettings": "Profile & Settings",
+  "learningPreferences": "LEARNING PREFERENCES",
+  "dailyTimeGoal": "Daily Time Goal",
+  "dailyLessonGoal": "Daily Lesson Goal",
+  "dailyReminder": "Daily Reminder",
+  "reminderTime": "Reminder Time",
+  "minutesShort": "{mins} mins",
+  "@minutesShort": {
+    "placeholders": {
+      "mins": {"type": "int"}
+    }
+  },
+  "lessonsShort": "{n} lessons",
+  "@lessonsShort": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "setDailyTimeGoal": "Set Daily Time Goal",
+  "minutesPerDayOption": "{mins} minutes / day",
+  "@minutesPerDayOption": {
+    "placeholders": {
+      "mins": {"type": "int"}
+    }
+  },
+  "setDailyLessonGoal": "Set Daily Lesson Goal",
+  "lessonsPerDayOption": "{n} lessons / day",
+  "@lessonsPerDayOption": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "progress": "PROGRESS",
+  "exerciseHistory": "Exercise history",
+  "exerciseHistorySubtitle": "Past attempts by skill",
+  "generalSettings": "GENERAL SETTINGS",
+  "appLanguage": "App Language",
+  "timezone": "Timezone",
+  "accountAndSecurity": "ACCOUNT & SECURITY",
+  "changePassword": "Change Password",
+  "exportData": "Export Data",
+  "exportDataSubtitle": "Download learning history",
+  "signOut": "Sign Out",
+  "deleteAccount": "Delete Account",
+  "deleteAccountTitle": "Delete Account?",
+  "deleteAccountBody": "This action cannot be undone. All data will be deleted.",
+  "cancel": "Cancel",
+  "deletePermanently": "Delete Permanently",
+  "member": "Member",
+  "admin": "Admin",
+  "selectAppLanguage": "Choose app language",
+  "languageEnglish": "English",
+  "languageVietnamese": "Vietnamese",
+  "appLanguageFootnote": "Interface language (saved on this device)",
+  "navHome": "Home",
+  "navProgress": "Progress",
+  "navProfile": "Profile",
+  "loginWelcomeBack": "Welcome Back!",
+  "loginSubtitle": "Enter your details to continue.",
+  "labelEmail": "Email",
+  "labelPassword": "Password",
+  "hintEmail": "name@example.com",
+  "hintPassword": "Enter password...",
+  "rememberMe": "Remember me",
+  "forgotPasswordLink": "Forgot password?",
+  "signIn": "Sign In",
+  "orDivider": "OR",
+  "continueWithGoogle": "Continue with Google",
+  "noAccountPrompt": "Don't have an account? ",
+  "signUp": "Sign Up",
+  "dictionary": "Dictionary",
+  "close": "Close",
+  "missingInfo": "Missing Info",
+  "enterEmailPassword": "Enter email and password.",
+  "loginFailed": "Login Failed",
+  "errorTitle": "Error",
+  "fillRequiredFields": "Please fill in all required fields (*).",
+  "passwordErrorTitle": "Password Error",
+  "passwordMismatch": "Confirmation password does not match.",
+  "registerTitle": "Create Account",
+  "otpVerifyTitle": "Verify Email",
+  "forgotPasswordTitle": "Forgot Password",
+  "resetPasswordTitle": "Reset Password",
+  "commonRetry": "Retry",
+  "loading": "Loading...",
+  "practiceFallbackTitle": "Practice",
+  "barrierDismiss": "Dismiss",
+  "weeklyActivity": "Weekly activity",
+  "sameChartBadge": "same chart as Progress",
+  "couldNotLoadStudyChart": "Could not load study chart",
+  "weeklySummaryLine": "{minutes} this week · {done} / {goal} lessons today",
+  "@weeklySummaryLine": {
+    "placeholders": {
+      "minutes": {"type": "String"},
+      "done": {"type": "int"},
+      "goal": {"type": "int"}
+    }
+  },
+  "viewProgress": "View progress",
+  "onboardingSkip": "Skip",
+  "onboardingSlide1Title": "Personalized Learning Path",
+  "onboardingSlide1Subtitle": "A plan tailored to your goals, CEFR level, and schedule.",
+  "onboardingSlide2Title": "AI Tutor for Speaking & Writing",
+  "onboardingSlide2Subtitle": "Realtime pronunciation feedback & rubric-based review.",
+  "onboardingSlide3Title": "Stay Motivated with Rewards",
+  "onboardingSlide3Subtitle": "Streaks, XP, and badges keep you engaged daily.",
+  "getStarted": "Get Started",
+  "signInAction": "Sign in",
+  "readingPracticeTitle": "Reading Practice",
+  "speakingModeReadAloud": "Read Aloud",
+  "speakingModeShadowing": "Shadowing",
+  "speakingModePronunciation": "Pronunciation",
+  "speakingModeFreeSpeaking": "Free Speaking",
+  "difficultyBeginner": "Beginner",
+  "difficultyIntermediate": "Intermediate",
+  "difficultyAdvanced": "Advanced",
+  "sentenceIndex": "Sentence {current} / {total}",
+  "@sentenceIndex": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "finishPractice": "Finish",
+  "nextSentence": "Next sentence",
+  "microNotReady": "Microphone / speech recognition is not ready. Grant permission and try again.",
+  "tryAgain": "Try again",
+  "microInfoBanner": "Micro / speech recognition is not ready. Grant permission and try again.",
+  "sampleListen": "Sample",
+  "sampleListenSub": "Listen",
+  "yourTurn": "Your turn",
+  "yourTurnSub": "Your speech",
+  "listeningForSpeech": "Listening… Tap the red button to stop and score.",
+  "submittingAnalysis": "Sending and analyzing…",
+  "tapMicToRecord": "Tap the mic, read the sentence aloud, then tap again to stop.",
+  "yourSpeechSection": "YOUR SPEECH",
+  "transcriptPlaceholder": "Will appear here when you speak…",
+  "accuracyLabel": "Accuracy",
+  "levelLabel": "Beginner",
+  "speakingPracticeTitle": "Speaking practice",
+  "socketSessionEnded": "Session ended. Please sign in again.",
+  "socketKicked": "You were signed out from another device.",
+  "adminRetry": "Retry",
+  "adminDashboard": "Admin dashboard",
+  "filterEasy": "easy",
+  "filterMedium": "medium",
+  "filterHard": "hard",
+  "vocabularyTitle": "Vocabulary",
+  "listeningTitle": "Listening",
+  "writingTitle": "Writing",
+  "progressReportTitle": "Progress",
+  "exerciseHistoryTitle": "Exercise history",
+  "editProfileTitle": "Edit profile",
+  "changePasswordTitle": "Change password",
+  "notificationsTitle": "Notifications",
+  "aiAssistantTitle": "AI Assistant",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "search": "Search",
+  "noData": "No data",
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "next": "Next",
+  "back": "Back",
+  "done": "Done",
+  "accountSuspended": "Account Suspended",
+  "sessionTerminated": "Your session has been terminated.",
+  "reasonLabel": "Reason:",
+  "adminConsoleTitle": "Admin Console",
+  "superAdminRole": "Super Admin",
+  "managementSection": "Management",
+  "contentManagerTile": "Content Manager",
+  "contentManagerSub": "Tasks, Reading & Listening editor",
+  "reportsMenuTitle": "Reports",
+  "reportsMenuSub": "Issue feedback",
+  "usersMenuTitle": "Users",
+  "usersMenuSub": "User list",
+  "submissionsMetric": "Submissions",
+  "aiCostMetric": "AI Cost (Est)",
+  "reportsMetric": "Reports",
+  "activeUsersMetric": "Active Users",
+  "activityChart": "Activity Chart",
+  "swipeToView": "Swipe to view",
+  "appTagline": "Master English with AI-powered learning",
+  "alreadyHaveAccount": "Already have an account? ",
+  "continueAction": "Continue",
+  "appNameBrand": "LearnLingo",
+  "streakDays": "{n} day streak",
+  "@streakDays": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "fullProgressStats": "Full progress & stats",
+  "noStudyWeek": "No study minutes this week yet — start a lesson!",
+  "speakingDescReadAloud": "Read text passages clearly.",
+  "speakingDescShadowing": "Listen and repeat instantly.",
+  "speakingDescPronunciation": "Practice syllable precision.",
+  "speakingDescFreeSpeaking": "Chat freely about any topic.",
+  "speakingSelectModeTitle": "Select Practice Mode",
+  "speakingSelectModeSubtitle": "Choose a method to start your speaking journey.",
+  "speakingMasteryTitle": "Speaking Mastery",
+  "speakingMasterySubtitle": "Practice pronunciation and fluency with AI feedback.",
+  "aiPoweredBadge": "AI Powered",
+  "searchTopicHint": "Search topic, ID…",
+  "loadDataFailed": "Failed to load data",
+  "noSpeakingLessonsFound": "No speaking lessons found",
+  "bestScoreLabel": "Best Score",
+  "noAttemptsYet": "No attempts",
+  "reviewAction": "Review",
+  "retakeAction": "Retake",
+  "resumeAction": "Resume",
+  "startAction": "Start",
+  "percentDone": "{pct}% done",
+  "@percentDone": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+  "lessonMetaLine": "{n} sentences · Topic: {topic}",
+  "@lessonMetaLine": {
+    "placeholders": {
+      "n": {"type": "int"},
+      "topic": {"type": "String"}
+    }
+  },
+  "topicDailyLife": "Daily Life",
+  "settings": "Settings",
+  "speechNotAvailableSnack": "Speech recognition is not available. Grant microphone permission and (on iOS) Speech Recognition.",
+  "micOpenFailedSnack": "Could not open the microphone. On Android you need Google's recognition service; try installing or updating the Google app and English language.",
+  "micStartError": "Error starting microphone: {error}",
+  "@micStartError": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "listeningPracticeTitle": "Listening Practice",
+  "listeningHeaderTitle": "Dictation Master",
+  "listeningHeaderSubtitle": "Improve listening and spelling skills with short daily exercises.",
+  "listeningPremiumBadge": "Premium Content",
+  "listeningSearchHint": "Search lessons, topics, or ID…",
+  "listeningDictation": "Dictation",
+  "noReadingArticlesFound": "No reading articles found",
+  "noListeningLessonsFound": "No listening lessons found",
+  "questionsCount": "{n} questions",
+  "@questionsCount": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "progressPercentLabel": "Progress: {pct}%",
+  "@progressPercentLabel": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+  "completedBadge": "Completed",
+  "readingSkillsHeaderTitle": "Reading Skills",
+  "readingSkillsHeaderSubtitle": "Improve comprehension and vocabulary with curated articles.",
+  "readingDailyArticlesBadge": "Daily Articles",
+  "couldNotLoadExerciseHistory": "Could not load exercise history",
+  "skillTabAll": "All",
+  "skillTabReading": "Reading",
+  "skillTabListening": "Listening",
+  "skillTabSpeaking": "Speaking",
+  "skillTabWriting": "Writing",
+  "historyEmptyRangeTitle": "No exercises in this range",
+  "historyEmptyRangeHint": "Try another date range or skill tab",
+  "dateRangeLabel": "Date range",
+  "readingScorePercent": "Score: {score}%",
+  "@readingScorePercent": {
+    "placeholders": {
+      "score": {"type": "String"}
+    }
+  },
+  "readingMinutesShort": "{n} min",
+  "@readingMinutesShort": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "readingQuizCount": "{n} quiz",
+  "@readingQuizCount": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "unknownLevel": "Unknown",
+  "registerHeroTitle": "Create Your Account",
+  "registerHeroSubtitle": "Fill in the details to start your journey.",
+  "labelFullName": "Full Name *",
+  "hintFullName": "John Doe",
+  "labelUsername": "Username *",
+  "hintUsername": "username123",
+  "labelPhone": "Phone Number",
+  "hintPhoneShort": "0912…",
+  "labelDateOfBirth": "Date of Birth",
+  "hintDatePlaceholder": "DD/MM/YYYY",
+  "labelConfirmPassword": "Confirm Password *",
+  "hintPasswordMask": "••••••",
+  "registerButton": "Register",
+  "registrationFailedTitle": "Registration Failed",
+  "enterEmailRequired": "Please enter your email.",
+  "otpSixDigitsRequired": "Please enter the 6-digit code.",
+  "forgotHeroTitle": "Reset Your Password",
+  "forgotHeroSubtitle": "Enter your email to receive a verification code.",
+  "sendButton": "Send",
+  "enterVerificationCode": "Enter Verification Code",
+  "otpSentPrefix": "A 6-digit code has been sent to\n",
+  "otpSentSuffix": ". Please check your inbox.",
+  "resendCooldown": "Resend in {seconds} s",
+  "@resendCooldown": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "verifyButton": "Verify",
+  "verificationFailedTitle": "Verification Failed",
+  "resendingCodeSnack": "Resending code…",
+  "otpSentEmailSnack": "OTP sent to your email.",
+  "didNotReceiveCode": "Didn't receive the code? ",
+  "resendAction": "Resend",
+  "setNewPasswordTitle": "Set New Password",
+  "setNewPasswordSubtitle": "Enter a new password for your account.",
+  "labelNewPassword": "New Password",
+  "hintEnterNewPassword": "Enter new password…",
+  "labelConfirmNewPassword": "Confirm New Password",
+  "hintConfirmNewPassword": "Confirm new password…",
+  "resetPasswordButton": "Reset Password",
+  "resetFailedTitle": "Reset Failed",
+  "enterBothPasswords": "Please enter both passwords.",
+  "passwordsDoNotMatchShort": "Passwords do not match.",
+  "passwordMinSixChars": "Password must be at least 6 characters.",
+  "homeNoData": "No data available",
+  "homeGreeting": "Hi, {name} 👋",
+  "@homeGreeting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "homeReadySubtitle": "Ready to continue learning?",
+  "homeDailyGoal": "Daily Goal",
+  "homeDailyLessonsLine": "{done} / {goal} lessons completed",
+  "@homeDailyLessonsLine": {
+    "placeholders": {
+      "done": {"type": "int"},
+      "goal": {"type": "int"}
+    }
+  },
+  "homeTodaysLessons": "Today's Lessons",
+  "homeSeeAll": "See all",
+  "homeShowLess": "Show less",
+  "homeLessonListeningTitle": "Listening Practice",
+  "homeLessonListeningSubtitle": "Daily conversations • 15 min",
+  "homeLessonReadingTitle": "Reading Comprehension",
+  "homeLessonReadingSubtitle": "Short stories • 20 min",
+  "homeLessonVocabTitle": "Vocabulary Builder",
+  "homeLessonVocabSubtitle": "New words • 10 min",
+  "homeLessonSpeakingTitle": "Speaking Practice",
+  "homeLessonSpeakingSubtitle": "Pronunciation • 25 min",
+  "homeLessonWritingTitle": "Writing Practice",
+  "homeLessonWritingSubtitle": "Select a topic • 15 min",
+  "homeQuickAccess": "Quick Access",
+  "homeQuickFavorites": "Favorites",
+  "homeQuickFlashcards": "Flashcards",
+  "homeQuickStats": "Stats",
+  "statStreak": "Streak",
+  "statPoints": "Points",
+  "statLevelLabel": "Level",
+  "homeLoadFailed": "Unable to load data",
+  "homePleaseSignIn": "Please sign in",
+  "markAllRead": "Mark all as read",
+  "timeJustNow": "Just now",
+  "timeMinutesAgo": "{n}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "timeHoursAgo": "{n}h ago",
+  "@timeHoursAgo": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "notificationsEmptyTitle": "No notifications yet",
+  "notificationsEmptyBody": "You will receive notifications here.",
+  "aiAssistantEmptyPrompt": "Ask me anything about your learning progress.",
+  "aiChatPlaceholder": "Type a question…",
+  "listeningChooseSubtitle": "Choose how you want to train your ear today.",
+  "listeningModeComprehensionTitle": "Comprehension",
+  "listeningModeDictationTileDesc": "Listen and type exactly what you hear.",
+  "listeningModeComprehensionDesc": "Listen to audio and answer multiple choice questions.",
+  "vocabReviewSessionTitle": "Review Session",
+  "tapToSeeMeaning": "Tap to see meaning",
+  "showAnswerButton": "Show Answer",
+  "srsHard": "Hard",
+  "srsGood": "Good",
+  "srsEasy": "Easy",
+  "vocabSessionCompleteTitle": "Session complete!",
+  "vocabSessionCompleteBody": "You've reviewed all words for now.",
+  "backToHome": "Back to Home",
+  "genericLoadError": "Something went wrong",
+  "changePasswordSubtitle": "Update your password to keep your account secure.",
+  "labelCurrentPassword": "Current Password",
+  "hintCurrentPassword": "Enter current password",
+  "hintReenterNewPassword": "Re-enter new password",
+  "fillAllFields": "Please fill in all fields",
+  "newPasswordMismatchToast": "New passwords do not match",
+  "saveChanges": "Save Changes",
+  "learningProgressTitle": "Learning Progress",
+  "reportIssueTooltip": "Report issue",
+  "failedToLoadProfile": "Failed to load user profile.",
+  "failedToLoadData": "Failed to load data",
+  "pleaseTryAgainLater": "Please try again later",
+  "retry": "Retry",
+  "progressOverview": "Overview",
+  "progressPerformanceMetrics": "Performance metrics",
+  "progressFilterDay": "Day",
+  "progressFilterWeek": "Week",
+  "progressFilterMonth": "Month",
+  "progressPeriodToday": "Today",
+  "progressPeriodThisWeek": "This Week",
+  "progressPeriodThisMonth": "This Month",
+  "progressDurationHm": "{h}h {m}m",
+  "@progressDurationHm": {
+    "placeholders": {
+      "h": {"type": "int"},
+      "m": {"type": "int"}
+    }
+  },
+  "progressGoalLine": "Goal: {time}",
+  "@progressGoalLine": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "progressPercentCompleted": "{pct}% completed",
+  "@progressPercentCompleted": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+  "progressDetailedStats": "Detailed stats",
+  "progressStatVocabulary": "Vocabulary",
+  "progressStatReading": "Reading",
+  "progressStatListening": "Listening",
+  "progressStatLessons": "Lessons",
+  "progressStatWriting": "Writing",
+  "progressStatSpeaking": "Speaking",
+  "progressLeaderboard": "Leaderboard",
+  "progressActivity": "Activity",
+  "leaderboardLoadFailed": "Cannot load leaderboard",
+  "leaderboardEmpty": "No leaderboard data available",
+  "statDetailVocab": "Vocabulary detail",
+  "statDetailReading": "Reading attempts detail",
+  "statDetailDictation": "Listening / dictation detail",
+  "statDetailSpeaking": "Speaking practice detail",
+  "statDetailWriting": "Writing submissions detail",
+  "statDetailLessons": "Lessons completed detail",
+  "statDetailGeneric": "Progress detail",
+  "statDetailPeriodLog": "Showing {period} log.",
+  "@statDetailPeriodLog": {
+    "placeholders": {
+      "period": {"type": "String"}
+    }
+  },
+  "statDetailReadingSubtitle": "Accuracy: {score}% · {date}",
+  "@statDetailReadingSubtitle": {
+    "placeholders": {
+      "score": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "statDetailScoreDateSubtitle": "Score: {score}% · {date}",
+  "@statDetailScoreDateSubtitle": {
+    "placeholders": {
+      "score": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "statDetailWritingSubtitle": "Band score: {score} · {date}",
+  "@statDetailWritingSubtitle": {
+    "placeholders": {
+      "score": {"type": "String"},
+      "date": {"type": "String"}
+    }
+  },
+  "statDetailDateOnly": "{date}",
+  "statDetailDateLine": "Date: {date}",
+  "@statDetailDateLine": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "statDetailLessonsGroupOther": "Other",
+  "statDetailNoData": "No data found.",
+  "reportDialogTitle": "Feedback & support",
+  "reportDialogSubtitle": "Let us know about an issue or suggestion.",
+  "reportTypeLabel": "Report type",
+  "reportTypeBug": "Bug report",
+  "reportTypeFeature": "Feature request",
+  "reportTypeImprovement": "Improvement",
+  "reportTypeOther": "Other",
+  "reportTitleLabel": "Title",
+  "reportTitleHint": "Brief summary of the issue",
+  "reportDescriptionLabel": "Description",
+  "reportDescriptionHint": "Please describe the details…",
+  "reportAttachmentsOptional": "Attachments (optional)",
+  "submitReport": "Submit report",
+  "reportFillTitleDescription": "Please enter a title and description.",
+  "reportSubmissionFailed": "Submission failed",
+  "reportThankYou": "Thank you!",
+  "reportReceivedBody": "We have received your report and will look into it shortly.",
+  "reportUploadScreenshots": "Tap to upload screenshots",
+  "reportSupportedFormats": "Supported formats: JPEG, PNG",
+  "vocabularyScreenTitle": "Vocabulary",
+  "vocabTutorialTooltip": "Tutorial",
+  "vocabSearchDictionaryTooltip": "Search dictionary",
+  "vocabTabRecently": "Recently",
+  "vocabTabLearning": "Learning",
+  "vocabTabSaved": "Saved",
+  "vocabReviewNowFab": "Review now",
+  "vocabNoRecentWords": "No words looked up recently.",
+  "vocabLearningEmpty": "Start learning to build your deck.",
+  "vocabSavedEmpty": "Bookmark words to verify later.",
+  "vocabErrorWithMessage": "Error: {message}",
+  "@vocabErrorWithMessage": {
+    "placeholders": {
+      "message": {"type": "String"}
+    }
+  },
+  "vocabNoDetailsForWord": "No details found for \"{word}\"",
+  "@vocabNoDetailsForWord": {
+    "placeholders": {
+      "word": {"type": "String"}
+    }
+  },
+  "vocabUnknownError": "Unknown error",
+  "vocabReviewNowBadge": "Review now",
+  "vocabReviewOnDate": "Review: {date}",
+  "@vocabReviewOnDate": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "vocabLevelShort": "Lv.{level}",
+  "@vocabLevelShort": {
+    "placeholders": {
+      "level": {"type": "int"}
+    }
+  },
+  "wordNoDefinition": "No definition",
+  "wordUnknownType": "Unknown type",
+  "editProfileTitle": "Edit profile",
+  "profileUpdatedSuccess": "Profile updated successfully",
+  "sectionPublicInfo": "Public info",
+  "sectionPrivateDetails": "Private details",
+  "sectionSystemInfo": "System info",
+  "labelBio": "Bio",
+  "hintBio": "Tell us about yourself…",
+  "labelGender": "Gender",
+  "genderMale": "Male",
+  "genderFemale": "Female",
+  "genderOther": "Other",
+  "labelBirthday": "Birthday",
+  "hintSelectDate": "Select date",
+  "labelRole": "Role",
+  "labelUserId": "User ID",
+  "labelEmail": "Email",
+  "fieldRequired": "Required",
+  "copiedToClipboard": "Copied",
+  "selectPlaceholder": "Select",
+  "dictQuickSearchTitle": "Quick search",
+  "dictDictionaryTitle": "Dictionary",
+  "dictSearchHint": "Search words (e.g. serendipity)…",
+  "dictStartTyping": "Start typing to search",
+  "dictNoResults": "No results found",
+  "dictDefinitions": "Definitions",
+  "dictSeeAlso": "See also",
+  "dictTooltipStartLearning": "Start learning",
+  "dictTooltipSaveWord": "Save word",
+  "wordSavedSnackbar": "Saved \"{word}\"",
+  "@wordSavedSnackbar": {
+    "placeholders": {
+      "word": {"type": "String"}
+    }
+  },
+  "wordAddedToLearningQueue": "Added \"{word}\" to your learning queue!",
+  "@wordAddedToLearningQueue": {
+    "placeholders": {
+      "word": {"type": "String"}
+    }
+  },
+  "dictNoDefinitionAvailable": "No definition available",
+  "accountSuspendedTitle": "Account suspended",
+  "accountSessionTerminated": "Your session has been terminated.",
+  "suspensionReasonLabel": "Reason:",
+  "agreeAndLogout": "Agree & sign out",
+  "submissionHistoryTitle": "Submission history",
+  "writingHistoryLoadFailed": "Could not load history",
+  "writingNoHistoryForTopic": "No submissions for this topic yet.",
+  "dateUnknown": "Unknown date",
+  "writingTaskDefaultTitle": "Writing task",
+  "wordCountN": "{n} words",
+  "@wordCountN": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "listeningSentenceNumber": "Sentence {n}",
+  "@listeningSentenceNumber": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "dictationCheckButton": "Check",
+  "dictationNextButton": "Next",
+  "dictationFinishButton": "Finish",
+  "dictationTypeWhatYouHearHint": "Type what you hear…",
+  "meaningLabel": "Meaning:",
+  "quizTimeUpSubmitting": "Time's up! Submitting your answers…",
+  "translationFailed": "Translation failed.",
+  "commonOk": "OK",
+  "commonError": "Something went wrong",
+  "commonClose": "Close",
+  "commonDone": "Done",
+  "listeningCompLoadError": "Could not load this lesson.",
+  "listeningCompTabTranscript": "Transcript",
+  "listeningCompTranslateToggle": "Translate",
+  "listeningCompQuestionNumber": "Question {n}",
+  "@listeningCompQuestionNumber": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "listeningCompHintSeekSeconds": "Listen to the segment with the answer ({seconds}s)",
+  "@listeningCompHintSeekSeconds": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "listeningCompTranscriptLocked": "Transcript locked",
+  "listeningCompTranscriptLockedHint": "Submit your answers first to unlock the full audio transcript.",
+  "listeningCompTranscriptOriginal": "Original (English)",
+  "listeningCompTranscriptTranslation": "Translation (Vietnamese)",
+  "readingQuizResultTitle": "Result",
+  "readingQuizResultSummary": "Correct: {correct} / {total}\nScore: {scorePct}%",
+  "@readingQuizResultSummary": {
+    "placeholders": {
+      "correct": {"type": "int"},
+      "total": {"type": "int"},
+      "scorePct": {"type": "int"}
+    }
+  },
+  "readingTabArticle": "Article",
+  "readingTabQuestionsCount": "Questions ({n})",
+  "@readingTabQuestionsCount": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "readingSubmitAnswers": "Submit answers",
+  "readingNoQuestionsAvailable": "No questions available.",
+  "readingFeedbackExplanation": "Explanation",
+  "readingFeedbackLocationParagraph": "• Location: Paragraph {n}",
+  "@readingFeedbackLocationParagraph": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "readingFeedbackKeySentence": "• Key sentence: \"{sentence}\"",
+  "@readingFeedbackKeySentence": {
+    "placeholders": {
+      "sentence": {"type": "String"}
+    }
+  },
+  "readingShowTranslation": "Show translation",
+  "readingHideTranslation": "Hide translation",
+  "readingSubmissionFailed": "Submission failed",
+  "readingReviewMode": "Review mode",
+  "readingReviewingWithScore": "Reviewing (score: {pct}%)",
+  "@readingReviewingWithScore": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+  "listeningSkillsPracticeTitle": "Practice",
+  "listeningSkillsHeaderTitle": "Listening task",
+  "listeningSkillsTabPractice": "Practice",
+  "listeningSkillsTabDiscuss": "Discuss",
+  "dictationSnackCorrect": "Correct!",
+  "dictationSnackTryAgain": "Try again",
+  "writingFbErrorTitle": "Error",
+  "writingFbNoData": "No feedback data found.",
+  "writingFbResultTitle": "Feedback result",
+  "writingFbTabOverview": "Overview",
+  "writingFbTabDetails": "Details",
+  "writingFbTabRewrites": "Rewrites",
+  "writingFbTabSamples": "Samples",
+  "writingFbTopicRequirement": "Topic & requirement",
+  "writingFbNoPromptContent": "No prompt content available.",
+  "writingFbOverallBand": "Overall band score",
+  "writingFbSubscores": "Subscores",
+  "writingFbCriterionTR": "Task response",
+  "writingFbCriterionCC": "Coherence & cohesion",
+  "writingFbCriterionLR": "Lexical resource",
+  "writingFbCriterionGRA": "Grammar range",
+  "writingFbCriterionGrammar": "Grammar",
+  "writingFbKeyTips": "Key improvement tips",
+  "writingFbDetailedCorrection": "Detailed correction",
+  "writingFbTapHighlighted": "Tap highlighted text to see an explanation.",
+  "writingFbNoCorrections": "No corrections available.",
+  "writingFbSampleMidTitle": "Revised version (Band 6.0–7.0)",
+  "writingFbSampleHighTitle": "Ideal response (Band 8.0+)",
+  "writingInstructionHowTo": "How to write: {title}",
+  "@writingInstructionHowTo": {
+    "placeholders": {
+      "title": {"type": "String"}
+    }
+  },
+  "writingInstructionSubtitle": "Quick guide & structure",
+  "writingInstructionGotIt": "Got it, let's write!",
+  "writingInstructionWhatIsIt": "What is it?",
+  "writingInstructionSuggestedStructure": "Suggested structure",
+  "writingInstructionKeyTipsSection": "Key tips",
+  "listeningAutoPlayNext": "Auto-play next",
+  "discussionsEmpty": "No discussions yet",
+  "replyingToUser": "Replying to {user}",
+  "@replyingToUser": {
+    "placeholders": {
+      "user": {"type": "String"}
+    }
+  },
+  "commentHintReply": "Write a reply…",
+  "commentHintAsk": "Ask a question…",
+  "writingSaveDraftTitle": "Save draft?",
+  "writingSaveDraftMessage": "Do you want to save your changes?",
+  "writingDiscardButton": "Discard",
+  "writingResumeTitle": "Resume writing?",
+  "writingResumeMessage": "We found an unfinished draft. Continue where you left off?",
+  "writingStartNewButton": "Start new",
+  "writingResumeButton": "Resume",
+  "writingInstructionsTooltip": "Instructions",
+  "writingPreparingTask": "Preparing task…",
+  "writingDraftSavedSnack": "Draft saved.",
+  "writingTopicFallback": "Topic",
+  "writingPromptTapCollapse": "Tap to collapse",
+  "writingPromptTapExpand": "Tap to expand prompt",
+  "writingEditorHint": "Start writing your essay here…",
+  "writingSubmitEssay": "Submit essay",
+  "writingNoTopicsFound": "No writing topics found",
+  "listeningCueProgress": "{done} / {total} completed",
+  "@listeningCueProgress": {
+    "placeholders": {
+      "done": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "writingSelectTaskType": "Select task type",
+  "writingForTopic": "For topic: \"{name}\"",
+  "@writingForTopic": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "writingSearchTopicsHint": "Search topics…",
+  "writingHeaderEssayTitle": "Essay writing",
+  "writingHeaderEssaySubtitle": "Practice organizing ideas and building strong arguments.",
+  "writingAiFeedbackBadge": "AI feedback",
+  "writingSearchTopicsTasksHint": "Search topics, tasks…",
+  "writingTaskDescOpinion": "Express your personal view",
+  "writingTaskDescDiscuss": "Analyze multiple perspectives",
+  "writingTaskDescProblemSolution": "Identify issues and fixes",
+  "writingTaskDescAdvantages": "Weigh pros and cons",
+  "writingTaskDescGeneral": "General writing practice",
+  "writingSubmissionsCount": "{n} essays",
+  "@writingSubmissionsCount": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "writingAiSuggestionTitle": "AI suggestion",
+  "writingWhyCorrection": "Why this correction?",
+  "writingGotIt": "Got it",
+  "wordDetailsNotFound": "Could not find word details.",
+  "listeningCompTitle": "Listening comprehension",
+  "listeningCompSubtitle": "Listen to the audio and answer multiple choice questions.",
+  "listeningCompSearchHint": "Search topics, IDs…",
+  "difficultyBeginner": "Beginner",
+  "difficultyIntermediate": "Intermediate",
+  "difficultyAdvanced": "Advanced",
+  "listeningCompQuestionCount": "{n} questions",
+  "@listeningCompQuestionCount": {
+    "placeholders": {
+      "n": {"type": "int"}
+    }
+  },
+  "listeningCompHighScore": "High score: {pct}%",
+  "@listeningCompHighScore": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
+  "listeningCompNotStarted": "Not started yet",
+  "listeningCompReview": "Review",
+  "listeningCompRetake": "Retake",
+  "listeningCompStart": "Start",
+  "listeningCompEmpty": "No listening lessons found",
+  "discussionReply": "Reply",
+  "discussionReactTooltip": "React",
+  "reactionLike": "Like",
+  "reactionLove": "Love",
+  "reactionHaha": "Haha",
+  "reactionWow": "Wow",
+  "reactionSad": "Sad",
+  "reactionAngry": "Angry",
+  "freeSpeakingTitle": "Free speaking",
+  "freeSpeakingLoadingConfig": "Loading setup…",
+  "freeSpeakingRetry": "Retry",
+  "freeSpeakingMicDenied": "Microphone access is required to talk to the AI. Enable it in Settings.",
+  "freeSpeakingEndCallToChangeVoice": "End the call to change voice.",
+  "freeSpeakingSelectVoiceTitle": "Select AI voice",
+  "freeSpeakingWelcome": "Hello! Choose a voice and tap the microphone to practice English.",
+  "freeSpeakingConfigErrorShort": "Could not load calling setup.",
+  "freeSpeakingStatusConnecting": "Connecting…",
+  "freeSpeakingStatusOnline": "Online",
+  "freeSpeakingStatusOffline": "Offline",
+  "freeSpeakingStatusAiSpeaking": "AI speaking",
+  "freeSpeakingHintConnecting": "Connecting…",
+  "freeSpeakingHintTypeMessage": "Type a message…",
+  "freeSpeakingHintTapMic": "Tap the mic to connect",
+  "vapiConfigHintAuth": "Could not load AI calling config (not authenticated).\n\n• Sign in to the app, then open Free Speaking again.\n• If your session expired, sign out and sign back in.",
+  "vapiConfigHint503": "Server reports Vapi is not configured (503).\n\n• In backend .env set VAPI_PUBLIC_KEY and VAPI_ASSISTANT_ID (no spaces after =).\n• Save .env and restart the backend.",
+  "vapiConfigHintHttp": "Vapi config API returned an error (HTTP {code}).\n\n{detail}",
+  "@vapiConfigHintHttp": {
+    "placeholders": {
+      "code": {"type": "int"},
+      "detail": {"type": "String"}
+    }
+  },
+  "vapiConfigHintNetwork": "Could not load config from the server (network / URL).\n\n• Phone and PC on the same Wi‑Fi.\n• Set the IP in api_config.dart to your machine.\n• Android emulator: use 10.0.2.2.\n\nDetail: {detail}",
+  "@vapiConfigHintNetwork": {
+    "placeholders": {
+      "detail": {"type": "String"}
+    }
+  },
+  "vapiConfigHintMissingKeys": "Missing public key or assistant id.\n\n• Backend: add VAPI_PUBLIC_KEY and VAPI_ASSISTANT_ID to .env and restart.\n• Or build with --dart-define=VAPI_PUBLIC_KEY=… --dart-define=VAPI_ASSISTANT_ID=…",
+  "vocabTutorialSlide1Title": "Welcome to Vocabulary",
+  "vocabTutorialSlide1a": "Build a solid vocabulary using ",
+  "vocabTutorialSlide1b": "Spaced Repetition",
+  "vocabTutorialSlide1c": ".",
+  "vocabTutorialSlide2Title": "Search & save",
+  "vocabTutorialSlide2a": "Look up words quickly. Tap ",
+  "vocabTutorialSlide2SaveLabel": "Save",
+  "vocabTutorialSlide2b": " to bookmark, or tap ",
+  "vocabTutorialSlide2LearnLabel": "Learn",
+  "vocabTutorialSlide2c": " to start studying.",
+  "vocabTutorialSlide3Title": "Smart scheduling",
+  "vocabTutorialSlide3a": "Based on your study history, the ",
+  "vocabTutorialSlide3b": "server",
+  "vocabTutorialSlide3c": " automatically calculates your ",
+  "vocabTutorialSlide3d": "forgetting curve",
+  "vocabTutorialSlide3e": " so you're reminded right before you're about to forget.",
+  "vocabTutorialSlide4Title": "Review every day",
+  "vocabTutorialSlide4a": "When a word is due, tap ",
+  "vocabTutorialSlide4c": ". Rate recall (Hard / Good / Easy) to optimize your schedule.",
+  "vocabTutorialLetsGo": "Let's go"
+}
