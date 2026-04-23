@@ -26,6 +26,12 @@ jobs:
           channel: stable
 
       - run: flutter pub get
+      - name: Ensure dictionary asset exists for web CI
+        run: |
+          mkdir -p assets/db
+          if [ ! -f assets/db/dictionary.db ]; then
+            echo "CI placeholder dictionary asset" > assets/db/dictionary.db
+          fi
       - run: flutter build web --release
 
       - uses: FirebaseExtended/action-hosting-deploy@v0
