@@ -57,6 +57,7 @@ english_for_community/build/
 # Local configuration file (chứa đường dẫn SDK trên máy bạn)
 android/local.properties
 english_for_community/android/local.properties
+english_for_community/assets/db/dictionary.db
 
 # Gradle cache & build
 .gradle/
