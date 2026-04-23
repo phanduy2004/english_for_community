@@ -25,5 +25,5 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_TOKEN }} # Dùng Token cho đơn giản
-          projectId: first-flutter-1ccf4
+          projectId: english4community-4c654
           channelId: live
