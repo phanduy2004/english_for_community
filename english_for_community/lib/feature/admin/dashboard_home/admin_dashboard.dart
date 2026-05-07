@@ -222,39 +222,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                   color: textMain)),
                           const SizedBox(height: 12),
 
-                          // Trên Web: Hiển thị 1 hàng ngang 3 mục. Mobile: Dọc
-                          if (isWideScreen)
-                            Row(
-                              children: [
-                                Expanded(child: _buildContentManagerLink()),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildReportLink()),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildUsersLink()),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildOpsLink()),
-                                const SizedBox(width: 12),
-                                Expanded(child: _buildReleaseManagerLink()),
-                              ],
-                            )
-                          else
-                            Column(
-                              children: [
-                                _buildContentManagerLink(),
-                                const SizedBox(height: 12),
-                                Row(
-                                  children: [
-                                    Expanded(child: _buildReportLink()),
-                                    const SizedBox(width: 12),
-                                    Expanded(child: _buildUsersLink()),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                _buildOpsLink(),
-                                const SizedBox(height: 12),
-                                _buildReleaseManagerLink(),
-                              ],
-                            ),
+                          _buildManagementSection(constraints.maxWidth),
 
                           const SizedBox(height: 40),
                         ],
@@ -409,6 +377,39 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildManagementSection(double availableWidth) {
+    final tiles = <Widget>[
+      _buildContentManagerLink(),
+      _buildReportLink(),
+      _buildUsersLink(),
+      _buildOpsLink(),
+      _buildReleaseManagerLink(),
+    ];
+
+    const spacing = 12.0;
+    final columns = switch (availableWidth) {
+      >= 1500 => 5,
+      >= 1200 => 4,
+      >= 900 => 3,
+      >= 640 => 2,
+      _ => 1,
+    };
+
+    final cardWidth =
+        columns == 1 ? availableWidth : (availableWidth - (columns - 1) * spacing) / columns;
+
+    return Wrap(
+      spacing: spacing,
+      runSpacing: spacing,
+      children: tiles
+          .map((tile) => SizedBox(
+                width: cardWidth,
+                child: tile,
+              ))
+          .toList(),
     );
   }
 
