@@ -869,5 +869,10 @@
   "vocabTutorialSlide4Title": "Review every day",
   "vocabTutorialSlide4a": "When a word is due, tap ",
   "vocabTutorialSlide4c": ". Rate recall (Hard / Good / Easy) to optimize your schedule.",
-  "vocabTutorialLetsGo": "Let's go"
+  "vocabTutorialLetsGo": "Let's go",
+  "updateAvailableTitle": "Update available",
+  "forceUpdateTitle": "Update required",
+  "updateAvailableBody": "A new app version is available. Please update for the best experience.",
+  "updateNowButton": "Update now",
+  "updateLaterButton": "Later"
 }

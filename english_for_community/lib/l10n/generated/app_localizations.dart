@@ -3649,6 +3649,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Let\'s go'**
   String get vocabTutorialLetsGo;
+
+  /// No description provided for @updateAvailableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update available'**
+  String get updateAvailableTitle;
+
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @updateAvailableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A new app version is available. Please update for the best experience.'**
+  String get updateAvailableBody;
+
+  /// No description provided for @updateNowButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update now'**
+  String get updateNowButton;
+
+  /// No description provided for @updateLaterButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Later'**
+  String get updateLaterButton;
 }
 
 class _AppLocalizationsDelegate

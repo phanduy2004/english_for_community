@@ -16,6 +16,8 @@ import 'core/socket/socket_lifecycle_manager.dart';
 
 import 'feature/auth/bloc/user_bloc.dart';
 import 'feature/auth/bloc/user_event.dart';
+import 'feature/app_update/bloc/app_update_bloc.dart';
+import 'feature/app_update/app_update_guard.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
@@ -45,7 +47,8 @@ class MyApp extends StatelessWidget {
               // ✅ Báo cho BLoC kiểm tra auth ngay khi app khởi động
               // UserBloc sẽ phát ra state, và SocketLifecycleManager sẽ lắng nghe state này
               value: getIt<UserBloc>()..add(CheckAuthStatusEvent()),
-            )
+            ),
+            BlocProvider.value(value: getIt<AppUpdateBloc>()),
           ],
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
@@ -63,18 +66,20 @@ class MyApp extends StatelessWidget {
 
             // 🔥 QUAN TRỌNG: Tích hợp SocketLifecycleManager vào Builder 🔥
             builder: (context, child) {
-          final brightness = MediaQuery.platformBrightnessOf(context);
-          final fTheme = (brightness == Brightness.dark)
-              ? FThemes.zinc.dark
-              : FThemes.zinc.light;
+              final brightness = MediaQuery.platformBrightnessOf(context);
+              final fTheme = (brightness == Brightness.dark)
+                  ? FThemes.zinc.dark
+                  : FThemes.zinc.light;
 
-          // Bọc App bằng SocketLifecycleManager để nó tồn tại xuyên suốt
-          // Nó sẽ tự động connect/disconnect socket dựa trên UserBloc
-          // Và lắng nghe sự kiện "Force Logout" toàn cục
-              return SocketLifecycleManager(
-                child: FAnimatedTheme(
-                  data: fTheme,
-                  child: child ?? const SizedBox.shrink(),
+              // Bọc App bằng SocketLifecycleManager để nó tồn tại xuyên suốt
+              // Nó sẽ tự động connect/disconnect socket dựa trên UserBloc
+              // Và lắng nghe sự kiện "Force Logout" toàn cục
+              return AppUpdateGuard(
+                child: SocketLifecycleManager(
+                  child: FAnimatedTheme(
+                    data: fTheme,
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               );
             },

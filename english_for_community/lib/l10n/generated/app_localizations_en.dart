@@ -1926,4 +1926,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get vocabTutorialLetsGo => 'Let\'s go';
+
+  @override
+  String get updateAvailableTitle => 'Update available';
+
+  @override
+  String get forceUpdateTitle => 'Update required';
+
+  @override
+  String get updateAvailableBody =>
+      'A new app version is available. Please update for the best experience.';
+
+  @override
+  String get updateNowButton => 'Update now';
+
+  @override
+  String get updateLaterButton => 'Later';
 }

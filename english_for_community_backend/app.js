@@ -14,6 +14,8 @@ import adminRoutes from "./src/routes/adminRoutes.js";
 import reportRoutes from "./src/routes/reportRoutes.js";
 import notificationRoutes from "./src/routes/notificationRoutes.js";
 import listeningCompRoutes from "./src/routes/listeningCompRoutes.js";
+import appVersionRoutes from "./src/routes/appVersionRoutes.js";
+import adminAppReleaseRoutes from "./src/routes/adminAppReleaseRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -32,6 +34,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/listening-comp', listeningCompRoutes);
+app.use('/api/app', appVersionRoutes);
+app.use('/api/admin/app-releases', adminAppReleaseRoutes);
 
 
 export default app;

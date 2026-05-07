@@ -764,5 +764,10 @@
   "vocabTutorialSlide4Title": "Ôn tập mỗi ngày",
   "vocabTutorialSlide4a": "Khi đến hạn, nhấn ",
   "vocabTutorialSlide4c": ". Đánh giá mức độ nhớ (Khó / Tốt / Dễ) để tối ưu lịch học.",
-  "vocabTutorialLetsGo": "Bắt đầu"
+  "vocabTutorialLetsGo": "Bắt đầu",
+  "updateAvailableTitle": "Có bản cập nhật mới",
+  "forceUpdateTitle": "Yêu cầu cập nhật ứng dụng",
+  "updateAvailableBody": "Đã có phiên bản mới của ứng dụng. Hãy cập nhật để có trải nghiệm tốt nhất.",
+  "updateNowButton": "Cập nhật ngay",
+  "updateLaterButton": "Để sau"
 }
