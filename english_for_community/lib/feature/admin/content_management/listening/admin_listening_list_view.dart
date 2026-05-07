@@ -52,7 +52,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
     );
 
     if (mounted) {
-      // ✅ Refresh listd sTẠI ĐÂY là an toàn nhất
+      // ✅ Refresh listd sTẠdI ĐÂY là an toàn nhất
       context.read<AdminListeningBloc>().add(
         const GetAdminListeningListEvent(limit: 9999, page: 1),
       );
