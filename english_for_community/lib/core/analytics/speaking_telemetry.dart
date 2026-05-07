@@ -1,6 +1,6 @@
 import 'package:firebase_analytics/firebase_analytics.dart';
 
-/// Sự kiện Free Speaking — đo trên thiết bị thật qua Firebase Analytics (DebugView / BQ export).
+/// Sự kiện Free Speakdding — đo trên thiết bị thật qua Firebase Analytics (DebugView / BQ export).
 abstract final class SpeakingTelemetry {
   static final FirebaseAnalytics _a = FirebaseAnalytics.instance;
 
