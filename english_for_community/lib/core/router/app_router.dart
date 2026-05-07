@@ -41,6 +41,7 @@ import '../../feature/onboarding_page.dart';
 import '../../feature/admin/dashboard_home/admin_dashboard.dart';
 import '../../feature/admin/user_management/user_management_page.dart';
 import '../../feature/admin/ops_center/admin_ops_center_page.dart';
+import '../../feature/admin/release_management/release_management_page.dart';
 // 👇 IMPORT CÁC PAGE QUẢN LÝ NỘI DUNG MỚI
 import '../../feature/admin/content_management/content_dashboard_page.dart';
 import '../../feature/home/home_page.dart';
@@ -120,7 +121,8 @@ class AppRouter {
         RegisterPage.routePath,
         OtpVerificationPage.routePath,
         OnboardingPage.routePath,
-        ForgotPasswordPage.routePath, // 🔥 NEW: Add Forgot Password to public routes
+        ForgotPasswordPage
+            .routePath, // 🔥 NEW: Add Forgot Password to public routes
         ResetPasswordPage.routePath,
         '/dictionary-search',
         '/dictionary-detail',
@@ -128,7 +130,8 @@ class AppRouter {
 
       // 1. Đang load thông tin user -> Splash
       if (userState.status == UserStatus.initial ||
-          (userState.status == UserStatus.loading && userState.userEntity == null)) {
+          (userState.status == UserStatus.loading &&
+              userState.userEntity == null)) {
         return location == SplashPage.routePath ? null : SplashPage.routePath;
       }
 
@@ -146,7 +149,8 @@ class AppRouter {
         // 🔥 ADMIN CHECK 🔥
         if (isAdminConsoleRole) {
           // Nếu Admin đang ở trang Login/Splash -> Vào Dashboard
-          if (publicRoutes.contains(location) || location == SplashPage.routePath) {
+          if (publicRoutes.contains(location) ||
+              location == SplashPage.routePath) {
             return AdminDashboardPage.routePath;
           }
           // Chặn Admin vào Home của User thường (nếu muốn)
@@ -157,9 +161,11 @@ class AppRouter {
         // 🟢 USER THƯỜNG
         else {
           // Chặn User thường truy cập các route bắt đầu bằng '/admin'
-          final isDictionaryRoute = location.startsWith('/dictionary'); // Kiểm tra xem có phải route từ điển không
+          final isDictionaryRoute = location.startsWith(
+              '/dictionary'); // Kiểm tra xem có phải route từ điển không
 
-          if ((publicRoutes.contains(location) && !isDictionaryRoute) || // 👈 THÊM ĐIỀU KIỆN NÀY
+          if ((publicRoutes.contains(location) &&
+                  !isDictionaryRoute) || // 👈 THÊM ĐIỀU KIỆN NÀY
               location == SplashPage.routePath ||
               location.contains('/admin')) {
             return HomePage.routePath;
@@ -190,6 +196,11 @@ class AppRouter {
         path: AdminOpsCenterPage.routePath,
         name: AdminOpsCenterPage.routeName,
         builder: (context, state) => const AdminOpsCenterPage(),
+      ),
+      GoRoute(
+        path: ReleaseManagementPage.routePath,
+        name: ReleaseManagementPage.routeName,
+        builder: (context, state) => const ReleaseManagementPage(),
       ),
       GoRoute(
         path: '/admin/users',
@@ -229,18 +240,15 @@ class AppRouter {
               // 👇 KIỂM TRA & TRẢ VỀ MÀN HÌNH TƯƠNG ỨNG
               if (type == 'reading') {
                 return const AdminReadingListView(skillType: 'reading');
-              }
-              else if (type == 'listening') {
+              } else if (type == 'listening') {
                 return const AdminListeningListView();
               }
               // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
               else if (type == 'listening-comp') {
                 return const AdminListeningCompListPage();
-              }
-              else if (type == 'speaking') {
+              } else if (type == 'speaking') {
                 return const AdminSpeakingListView();
-              }
-              else if (type == 'writing') {
+              } else if (type == 'writing') {
                 return const AdminWritingListView();
               }
               return Scaffold(body: Center(child: Text("Unknown type: $type")));
@@ -258,18 +266,15 @@ class AppRouter {
 
                   if (type == 'reading') {
                     return ReadingEditorPage(id: id);
-                  }
-                  else if (type == 'listening') {
+                  } else if (type == 'listening') {
                     return ListeningEditorPage(id: id);
                   }
                   // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
                   else if (type == 'listening-comp') {
                     return ListeningCompEditorPage(id: id);
-                  }
-                  else if (type == 'speaking') {
+                  } else if (type == 'speaking') {
                     return SpeakingEditorPage(id: id);
-                  }
-                  else if (type == 'writing') {
+                  } else if (type == 'writing') {
                     return WritingTopicEditorPage(id: id);
                   }
                   return Scaffold(body: Center(child: Text("Error: $type")));
@@ -311,7 +316,8 @@ class AppRouter {
         path: ResetPasswordPage.routePath,
         name: ResetPasswordPage.routeName,
         builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};  // Safer cast
+          final extra =
+              state.extra as Map<String, dynamic>? ?? {}; // Safer cast
           final email = extra['email'] as String? ?? '';
           final otp = extra['otp'] as String? ?? '';
           return ResetPasswordPage(email: email, otp: otp);
@@ -363,7 +369,9 @@ class AppRouter {
         path: '/listening-comp/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'];
-          if (id == null) return const Scaffold(body: Center(child: Text('Error: Missing ID')));
+          if (id == null)
+            return const Scaffold(
+                body: Center(child: Text('Error: Missing ID')));
 
           // 🔥 LẤY CỜ TỪ URL (QUERY PARAMETERS)
           final isRetakeStr = state.uri.queryParameters['isRetake'];
@@ -406,8 +414,10 @@ class AppRouter {
           final targetCueId = extra?['cueId'];
           return BlocProvider<CueBloc>(
             create: (context) => getIt<CueBloc>()
-              ..add(LoadCuesAndAttempts(listeningId: listeningId,
-                initialCueId: targetCueId)), // Load dữ liệu ngay khi vào trang
+              ..add(LoadCuesAndAttempts(
+                  listeningId: listeningId,
+                  initialCueId:
+                      targetCueId)), // Load dữ liệu ngay khi vào trang
             child: ListeningSkillsPage(
               listeningId: listeningId,
               audioUrl: audioUrl,
@@ -477,7 +487,8 @@ class AppRouter {
           // 🛡️ CÁCH FIX AN TOÀN: Kiểm tra kiểu dữ liệu trước khi dùng
 
           // Trường hợp 1: Code mới (Truyền Map để kèm biến isGuest)
-          if (extra is Map<String, dynamic>) { // Hoặc kiểm tra 'is Map'
+          if (extra is Map<String, dynamic>) {
+            // Hoặc kiểm tra 'is Map'
             entry = extra['entry'] as Entry?;
             isGuest = extra['isGuest'] as bool? ?? false;
           }
@@ -507,7 +518,7 @@ class AppRouter {
         builder: (context, state) {
           final modeName = state.pathParameters['modeName'];
           final mode = SpeakingMode.values.firstWhere(
-                (e) => e.name == modeName,
+            (e) => e.name == modeName,
             orElse: () => SpeakingMode.readAloud,
           );
           return SpeakingHubPage(mode: mode);
@@ -518,7 +529,9 @@ class AppRouter {
         path: '/speaking-skills/:setId',
         builder: (context, state) {
           final setId = state.pathParameters['setId'];
-          if (setId == null) return const Scaffold(body: Center(child: Text('Error: Missing ID')));
+          if (setId == null)
+            return const Scaffold(
+                body: Center(child: Text('Error: Missing ID')));
 
           // 🔥 BẮT CỜ isRetake TỪ URL
           final isRetakeStr = state.uri.queryParameters['isRetake'];

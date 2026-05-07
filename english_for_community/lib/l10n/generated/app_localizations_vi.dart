@@ -1920,4 +1920,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get vocabTutorialLetsGo => 'Bắt đầu';
+
+  @override
+  String get updateAvailableTitle => 'Có bản cập nhật mới';
+
+  @override
+  String get forceUpdateTitle => 'Yêu cầu cập nhật ứng dụng';
+
+  @override
+  String get updateAvailableBody =>
+      'Đã có phiên bản mới của ứng dụng. Hãy cập nhật để có trải nghiệm tốt nhất.';
+
+  @override
+  String get updateNowButton => 'Cập nhật ngay';
+
+  @override
+  String get updateLaterButton => 'Để sau';
 }

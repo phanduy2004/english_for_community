@@ -11,6 +11,7 @@ import '../../auth/bloc/user_bloc.dart';
 import '../../auth/bloc/user_event.dart';
 import '../content_management/content_dashboard_page.dart';
 import '../ops_center/admin_ops_center_page.dart';
+import '../release_management/release_management_page.dart';
 import '../report_management/report_management_page.dart';
 import '../submission_managerment/activity_history_page.dart';
 import '../user_management/user_management_page.dart';
@@ -30,7 +31,8 @@ class AdminDashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<AdminBloc>()..add(GetDashboardStatsEvent(range: 'week')),
+      create: (_) =>
+          getIt<AdminBloc>()..add(GetDashboardStatsEvent(range: 'week')),
       child: const _AdminDashboardView(),
     );
   }
@@ -93,7 +95,9 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         listener: (context, state) {
           if (state.status == AdminStatus.error && state.errorMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage!), backgroundColor: Colors.red),
+              SnackBar(
+                  content: Text(state.errorMessage!),
+                  backgroundColor: Colors.red),
             );
           }
           if (state.status == AdminStatus.success) {
@@ -102,13 +106,16 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         },
         builder: (context, state) {
           if (state.status == AdminStatus.loading && state.stats == null) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+            return const Center(
+                child: CircularProgressIndicator(strokeWidth: 2));
           }
 
           if (state.stats == null) {
             return Center(
               child: OutlinedButton.icon(
-                onPressed: () => context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name)),
+                onPressed: () => context
+                    .read<AdminBloc>()
+                    .add(GetDashboardStatsEvent(range: _selectedRange.name)),
                 icon: const Icon(Icons.refresh),
                 label: const Text("Retry"),
               ),
@@ -130,7 +137,9 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  context.read<AdminBloc>().add(GetDashboardStatsEvent(range: _selectedRange.name));
+                  context
+                      .read<AdminBloc>()
+                      .add(GetDashboardStatsEvent(range: _selectedRange.name));
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -162,7 +171,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 subLabel: metrics.submissions.trendLabel ?? '',
                                 icon: Icons.layers_outlined,
                                 accentColor: colSpeaking,
-                                onTap: () => context.pushNamed(ActivityHistoryPage.routeName),
+                                onTap: () => context
+                                    .pushNamed(ActivityHistoryPage.routeName),
                               ),
                               _MetricCard(
                                 title: 'AI Cost (Est)',
@@ -179,7 +189,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 subLabel: "Pending",
                                 icon: Icons.flag_outlined,
                                 accentColor: const Color(0xFFF43F5E),
-                                onTap: () => context.pushNamed(ReportManagementPage.routeName),
+                                onTap: () => context
+                                    .pushNamed(ReportManagementPage.routeName),
                               ),
                               _MetricCard(
                                 title: 'Active Users',
@@ -190,8 +201,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 accentColor: const Color(0xFF10B981),
                                 onTap: () => context.pushNamed(
                                     UserManagementPage.routeName,
-                                    queryParameters: {'filter': 'today'}
-                                ),
+                                    queryParameters: {'filter': 'today'}),
                               ),
                             ],
                           ),
@@ -205,7 +215,11 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           const SizedBox(height: 24),
 
                           // --- MANAGEMENT LINKS (Responsive) ---
-                          Text('Management', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
+                          Text('Management',
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: textMain)),
                           const SizedBox(height: 12),
 
                           // Trên Web: Hiển thị 1 hàng ngang 3 mục. Mobile: Dọc
@@ -219,6 +233,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 Expanded(child: _buildUsersLink()),
                                 const SizedBox(width: 12),
                                 Expanded(child: _buildOpsLink()),
+                                const SizedBox(width: 12),
+                                Expanded(child: _buildReleaseManagerLink()),
                               ],
                             )
                           else
@@ -235,6 +251,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                                 ),
                                 const SizedBox(height: 12),
                                 _buildOpsLink(),
+                                const SizedBox(height: 12),
+                                _buildReleaseManagerLink(),
                               ],
                             ),
 
@@ -266,12 +284,14 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           children: [
             Text(
               DateFormat('EEEE, d MMMM').format(DateTime.now()),
-              style: TextStyle(color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: textMuted, fontSize: 13, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 4),
             Text(
               'Overview',
-              style: TextStyle(color: textMain, fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: textMain, fontSize: 24, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -285,9 +305,18 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _FilterTab(label: 'Day', selected: _selectedRange == _AdminRange.day, onTap: () => _onRangeChanged(_AdminRange.day)),
-              _FilterTab(label: 'Week', selected: _selectedRange == _AdminRange.week, onTap: () => _onRangeChanged(_AdminRange.week)),
-              _FilterTab(label: 'Month', selected: _selectedRange == _AdminRange.month, onTap: () => _onRangeChanged(_AdminRange.month)),
+              _FilterTab(
+                  label: 'Day',
+                  selected: _selectedRange == _AdminRange.day,
+                  onTap: () => _onRangeChanged(_AdminRange.day)),
+              _FilterTab(
+                  label: 'Week',
+                  selected: _selectedRange == _AdminRange.week,
+                  onTap: () => _onRangeChanged(_AdminRange.week)),
+              _FilterTab(
+                  label: 'Month',
+                  selected: _selectedRange == _AdminRange.month,
+                  onTap: () => _onRangeChanged(_AdminRange.month)),
             ],
           ),
         ),
@@ -308,7 +337,10 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Activity Chart',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: textMain)),
                   const SizedBox(height: 4),
                   Text(
                     _getChartSubtitle(),
@@ -318,9 +350,13 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
               ),
               if (_selectedRange != _AdminRange.week)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(4)),
-                  child: Text("Swipe to view", style: TextStyle(fontSize: 10, color: textMuted)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(4)),
+                  child: Text("Swipe to view",
+                      style: TextStyle(fontSize: 10, color: textMuted)),
                 )
             ],
           ),
@@ -329,9 +365,12 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _LegendItem(color: colWriting, label: "Writing"), const SizedBox(width: 16),
-                _LegendItem(color: colSpeaking, label: "Speaking"), const SizedBox(width: 16),
-                _LegendItem(color: colReading, label: "Reading"), const SizedBox(width: 16),
+                _LegendItem(color: colWriting, label: "Writing"),
+                const SizedBox(width: 16),
+                _LegendItem(color: colSpeaking, label: "Speaking"),
+                const SizedBox(width: 16),
+                _LegendItem(color: colReading, label: "Reading"),
+                const SizedBox(width: 16),
                 _LegendItem(color: colDictation, label: "Dictation"),
               ],
             ),
@@ -351,7 +390,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
               }
 
               // Tính chiều rộng tổng của chart
-              final double chartWidth = (dataCount * itemWidth).clamp(boxConstraints.maxWidth, 5000.0);
+              final double chartWidth = (dataCount * itemWidth)
+                  .clamp(boxConstraints.maxWidth, 5000.0);
 
               return SingleChildScrollView(
                 controller: _scrollController,
@@ -413,13 +453,26 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
     );
   }
 
+  Widget _buildReleaseManagerLink() {
+    return _ManagementTile(
+      icon: Icons.system_update_alt_outlined,
+      title: 'Release Manager',
+      subtitle: 'Approve / schedule / publish app updates',
+      color: const Color(0xFF0EA5E9),
+      onTap: () => context.pushNamed(ReleaseManagementPage.routeName),
+    );
+  }
+
   // ... (Giữ nguyên các hàm logic chart cũ: _getChartSubtitle, _buildBarChart, _calculateMaxY, _calculateInterval, _makeRod, _buildAppBar) ...
 
   String _getChartSubtitle() {
     switch (_selectedRange) {
-      case _AdminRange.day: return 'Today (Hourly: 0h - 23h)';
-      case _AdminRange.week: return 'This Week (Starts Mon)';
-      case _AdminRange.month: return 'Last 30 Days';
+      case _AdminRange.day:
+        return 'Today (Hourly: 0h - 23h)';
+      case _AdminRange.week:
+        return 'This Week (Starts Mon)';
+      case _AdminRange.month:
+        return 'Last 30 Days';
     }
   }
 
@@ -430,10 +483,16 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
     final double maxY = _calculateMaxY(chartData);
 
     for (int i = 0; i < dataLength; i++) {
-      final double w = (i < chartData.writing.length) ? chartData.writing[i].toDouble() : 0;
-      final double s = (i < chartData.speaking.length) ? chartData.speaking[i].toDouble() : 0;
-      final double r = (i < chartData.reading.length) ? chartData.reading[i].toDouble() : 0;
-      final double d = (i < chartData.dictation.length) ? chartData.dictation[i].toDouble() : 0;
+      final double w =
+          (i < chartData.writing.length) ? chartData.writing[i].toDouble() : 0;
+      final double s = (i < chartData.speaking.length)
+          ? chartData.speaking[i].toDouble()
+          : 0;
+      final double r =
+          (i < chartData.reading.length) ? chartData.reading[i].toDouble() : 0;
+      final double d = (i < chartData.dictation.length)
+          ? chartData.dictation[i].toDouble()
+          : 0;
 
       barGroups.add(
         BarChartGroupData(
@@ -457,7 +516,8 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           show: true,
           drawVerticalLine: false,
           horizontalInterval: _calculateInterval(maxY),
-          getDrawingHorizontalLine: (value) => FlLine(color: borderCol, strokeWidth: 1, dashArray: [5, 5]),
+          getDrawingHorizontalLine: (value) =>
+              FlLine(color: borderCol, strokeWidth: 1, dashArray: [5, 5]),
         ),
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -465,22 +525,25 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                   showTitles: true,
                   reservedSize: 28,
                   interval: _calculateInterval(maxY),
-                  getTitlesWidget: (val, meta) => Text(val.toInt().toString(), style: TextStyle(color: textMuted, fontSize: 10))
-              )
-          ),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  getTitlesWidget: (val, meta) => Text(val.toInt().toString(),
+                      style: TextStyle(color: textMuted, fontSize: 10)))),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 30,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() >= 0 && value.toInt() < chartData.labels.length) {
+                if (value.toInt() >= 0 &&
+                    value.toInt() < chartData.labels.length) {
                   final label = chartData.labels[value.toInt()];
                   String displayLabel = label;
                   try {
                     if (_selectedRange == _AdminRange.day) {
-                      if (label.contains(':')) displayLabel = "${int.parse(label.split(':')[0])}h";
+                      if (label.contains(':'))
+                        displayLabel = "${int.parse(label.split(':')[0])}h";
                     } else {
                       final date = DateTime.parse(label);
                       displayLabel = DateFormat('dd/MM').format(date);
@@ -488,7 +551,11 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                   } catch (_) {}
                   return Padding(
                     padding: const EdgeInsets.only(top: 8.0),
-                    child: Text(displayLabel, style: TextStyle(color: textMuted, fontSize: 10, fontWeight: FontWeight.w600)),
+                    child: Text(displayLabel,
+                        style: TextStyle(
+                            color: textMuted,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600)),
                   );
                 }
                 return const SizedBox.shrink();
@@ -500,27 +567,41 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         barGroups: barGroups,
         barTouchData: BarTouchData(
             touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (group) => const Color(0xFF1E293B),
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                String skill = '';
-                switch (rodIndex) { case 0: skill = 'Write'; break; case 1: skill = 'Speak'; break; case 2: skill = 'Read'; break; case 3: skill = 'Dict'; break; }
-                return BarTooltipItem(
-                    '$skill: ${(rod.toY).toInt()}',
-                    const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)
-                );
-              },
-            )
-        ),
+          getTooltipColor: (group) => const Color(0xFF1E293B),
+          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+            String skill = '';
+            switch (rodIndex) {
+              case 0:
+                skill = 'Write';
+                break;
+              case 1:
+                skill = 'Speak';
+                break;
+              case 2:
+                skill = 'Read';
+                break;
+              case 3:
+                skill = 'Dict';
+                break;
+            }
+            return BarTooltipItem(
+                '$skill: ${(rod.toY).toInt()}',
+                const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold));
+          },
+        )),
       ),
     );
   }
 
   double _calculateMaxY(ChartData data) {
     double maxVal = 0;
-    for(var v in data.writing) if(v > maxVal) maxVal = v.toDouble();
-    for(var v in data.speaking) if(v > maxVal) maxVal = v.toDouble();
-    for(var v in data.reading) if(v > maxVal) maxVal = v.toDouble();
-    for(var v in data.dictation) if(v > maxVal) maxVal = v.toDouble();
+    for (var v in data.writing) if (v > maxVal) maxVal = v.toDouble();
+    for (var v in data.speaking) if (v > maxVal) maxVal = v.toDouble();
+    for (var v in data.reading) if (v > maxVal) maxVal = v.toDouble();
+    for (var v in data.dictation) if (v > maxVal) maxVal = v.toDouble();
     if (maxVal == 0) return 5;
     return maxVal * 1.2;
   }
@@ -539,10 +620,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       width: 6,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
       backDrawRodData: BackgroundBarChartRodData(
-          show: true,
-          toY: maxY,
-          color: const Color(0xFFF1F5F9)
-      ),
+          show: true, toY: maxY, color: const Color(0xFFF1F5F9)),
     );
   }
 
@@ -556,23 +634,39 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: textMain, borderRadius: BorderRadius.circular(10)),
-            child: const Icon(Icons.admin_panel_settings, color: Colors.white, size: 20),
+            decoration: BoxDecoration(
+                color: textMain, borderRadius: BorderRadius.circular(10)),
+            child: const Icon(Icons.admin_panel_settings,
+                color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Admin Console', style: TextStyle(color: textMain, fontSize: 16, fontWeight: FontWeight.w700)),
-              const Text('Super Admin', style: TextStyle(color: Colors.grey, fontSize: 10, fontWeight: FontWeight.w400)),
+              Text('Admin Console',
+                  style: TextStyle(
+                      color: textMain,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700)),
+              const Text('Super Admin',
+                  style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w400)),
             ],
           ),
         ],
       ),
-      bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: borderCol, height: 1)),
+      bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: borderCol, height: 1)),
       actions: [
-        IconButton(onPressed: () {}, icon: Icon(Icons.notifications_outlined, color: textMuted)),
-        IconButton(onPressed: _handleLogout, icon: Icon(Icons.logout, color: textMuted)),
+        IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.notifications_outlined, color: textMuted)),
+        IconButton(
+            onPressed: _handleLogout,
+            icon: Icon(Icons.logout, color: textMuted)),
         const SizedBox(width: 12),
       ],
     );
@@ -586,7 +680,8 @@ class _FilterTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _FilterTab({required this.label, required this.selected, required this.onTap});
+  const _FilterTab(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -620,9 +715,17 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+        Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+                color: color, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B))),
       ],
     );
   }
@@ -656,18 +759,41 @@ class _MetricCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Flexible(child: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis)),
+            Flexible(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B)),
+                    overflow: TextOverflow.ellipsis)),
             Icon(icon, size: 18, color: accentColor),
           ]),
           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: isAlert ? const Color(0xFFE11D48) : const Color(0xFF0F172A))),
+            Text(value,
+                style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
+                    color: isAlert
+                        ? const Color(0xFFE11D48)
+                        : const Color(0xFF0F172A))),
             const SizedBox(height: 4),
             Row(children: [
               if (trend.isNotEmpty) ...[
-                Text(trend, style: TextStyle(fontSize: 11, color: isAlert ? const Color(0xFFE11D48) : const Color(0xFF16A34A), fontWeight: FontWeight.bold)),
+                Text(trend,
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: isAlert
+                            ? const Color(0xFFE11D48)
+                            : const Color(0xFF16A34A),
+                        fontWeight: FontWeight.bold)),
                 const SizedBox(width: 4),
               ],
-              Flexible(child: Text(subLabel, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              Flexible(
+                  child: Text(subLabel,
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF94A3B8)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis)),
             ]),
           ])
         ],
@@ -682,7 +808,12 @@ class _ManagementTile extends StatelessWidget {
   final String title, subtitle;
   final VoidCallback onTap;
 
-  const _ManagementTile({required this.icon, required this.color, required this.title, required this.subtitle, required this.onTap});
+  const _ManagementTile(
+      {required this.icon,
+      required this.color,
+      required this.title,
+      required this.subtitle,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -692,8 +823,12 @@ class _ManagementTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 42, height: 42,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10), border: Border.all(color: color.withOpacity(0.2))),
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: color.withOpacity(0.2))),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 16),
@@ -702,9 +837,17 @@ class _ManagementTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A))),
                 const SizedBox(height: 2),
-                Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                Text(subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF64748B))),
               ],
             ),
           ),
@@ -725,9 +868,15 @@ class _ShadcnCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF0F172A).withOpacity(0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Material(
         color: Colors.transparent,

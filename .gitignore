@@ -80,3 +80,12 @@ english_for_community/ios/Pods/
 *.perspectivev3"english_for_community/assets/db/dictionary.db" 
 # Firebase Admin SDK credentials
 english_for_community_backend/firebase-service-account.json
+
+# ==========================
+# 4. Tài liệu tạm / xuất từ DOCX
+# ==========================
+.tmp_docx_extract/
+~$*.docx
+*.extracted.txt
+*.fixed.txt
+*.docx

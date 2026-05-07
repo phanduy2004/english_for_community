@@ -37,10 +37,8 @@ class AdminRemoteDatasource {
     final response = await dio.get('admin/users', queryParameters: query);
 
     return PaginatedResponse.fromJson(
-        response.data,
-            (json) => UserEntity.fromJson(json),
-        dataKey: 'users'
-    );
+        response.data, (json) => UserEntity.fromJson(json),
+        dataKey: 'users');
   }
 
   Future<PaginatedResponse<ReportEntity>> getReports({
@@ -54,15 +52,14 @@ class AdminRemoteDatasource {
       'limit': limit,
     };
     if (status != null) query['status'] = status;
-    if (search != null && search.trim().isNotEmpty) query['search'] = search.trim();
+    if (search != null && search.trim().isNotEmpty)
+      query['search'] = search.trim();
 
     final response = await dio.get('admin/reports', queryParameters: query);
 
     return PaginatedResponse.fromJson(
-        response.data,
-            (json) => ReportEntity.fromJson(json),
-        dataKey: 'reports'
-    );
+        response.data, (json) => ReportEntity.fromJson(json),
+        dataKey: 'reports');
   }
 
   Future<Map<String, int>> getContentSummary() async {
@@ -74,7 +71,8 @@ class AdminRemoteDatasource {
       'listening': (raw['listening'] as num?)?.toInt() ?? 0,
       'speaking': (raw['speaking'] as num?)?.toInt() ?? 0,
       'listeningDictation': (raw['listeningDictation'] as num?)?.toInt() ?? 0,
-      'listeningComprehension': (raw['listeningComprehension'] as num?)?.toInt() ?? 0,
+      'listeningComprehension':
+          (raw['listeningComprehension'] as num?)?.toInt() ?? 0,
     };
   }
 
@@ -126,8 +124,10 @@ class AdminRemoteDatasource {
       'page': page,
       'limit': limit,
     };
-    if (search != null && search.trim().isNotEmpty) query['search'] = search.trim();
-    final response = await dio.get('admin/users/deleted', queryParameters: query);
+    if (search != null && search.trim().isNotEmpty)
+      query['search'] = search.trim();
+    final response =
+        await dio.get('admin/users/deleted', queryParameters: query);
     return PaginatedResponse.fromJson(
       response.data,
       (json) => UserEntity.fromJson(json),
@@ -195,7 +195,10 @@ class AdminRemoteDatasource {
   }) async {
     await dio.post(
       '/writing/$topicId/review-approval',
-      data: {'decision': decision, if (reviewNote != null) 'reviewNote': reviewNote},
+      data: {
+        'decision': decision,
+        if (reviewNote != null) 'reviewNote': reviewNote
+      },
     );
   }
 
@@ -277,5 +280,43 @@ class AdminRemoteDatasource {
 
   Future<void> restoreSpeakingSet(String id) async {
     await dio.post('/speaking/admin/$id/restore');
+  }
+
+  Future<List<Map<String, dynamic>>> getAppReleases({
+    String? status,
+    String? platform,
+    String? environment,
+    int page = 1,
+    int limit = 50,
+  }) async {
+    final response = await dio.get(
+      'admin/app-releases',
+      queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (status != null) 'status': status,
+        if (platform != null) 'platform': platform,
+        if (environment != null) 'environment': environment,
+      },
+    );
+    final list = (response.data['data'] as List<dynamic>? ?? const []);
+    return list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  Future<Map<String, dynamic>> releaseAction({
+    required String action,
+    required String releaseId,
+    Map<String, dynamic>? payload,
+  }) async {
+    if (action == 'publish-due-run') {
+      final res = await dio.post('admin/app-releases/publish-due/run');
+      return Map<String, dynamic>.from(res.data as Map);
+    }
+
+    final res = await dio.post(
+      'admin/app-releases/$releaseId/$action',
+      data: payload ?? const {},
+    );
+    return Map<String, dynamic>.from(res.data as Map);
   }
 }
