@@ -10,6 +10,9 @@ on:
       - "english_for_community/pubspec.yaml"
       - "english_for_community/pubspec.lock"
 
+permissions:
+  contents: write
+
 jobs:
   build-candidate:
     runs-on: ubuntu-latest
@@ -137,47 +140,40 @@ jobs:
           path: english_for_community/build/app/outputs/flutter-apk/app-release.apk
 
       # Public HTTPS URL for in-app "Cập nhật ngay" (không cần CH Play).
-      # Cloudinary: tạo Upload preset — Signing mode: Unsigned, Resource type: Raw.
-      - name: Upload APK to Cloudinary (downloadUrl for users)
+      # Host APK on GitHub Release asset (free, no extra storage billing setup).
+      - name: Upload APK to GitHub Release (downloadUrl for users)
         id: apk_host
         env:
-          CLD_CLOUD: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-          CLD_PRESET: ${{ secrets.CLOUDINARY_APK_UPLOAD_PRESET }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           VERSION_CODE: ${{ steps.version.outputs.version_code }}
         run: |
           set -e
-          if [ -z "$CLD_CLOUD" ] || [ -z "$CLD_PRESET" ]; then
-            echo "::error::Thiếu CLOUDINARY_CLOUD_NAME hoặc CLOUDINARY_APK_UPLOAD_PRESET. Tạo preset Raw (unsigned) trên Cloudinary và thêm vào GitHub Secrets."
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "::error::Missing GITHUB_TOKEN in workflow environment."
             exit 1
           fi
           APK_PATH="english_for_community/build/app/outputs/flutter-apk/app-release.apk"
-          HTTP_CODE=$(curl -sS -o /tmp/cloudinary_upload_response.txt -w "%{http_code}" -X POST "https://api.cloudinary.com/v1_1/${CLD_CLOUD}/raw/upload" \
-            -F "file=@${APK_PATH}" \
-            -F "upload_preset=${CLD_PRESET}" \
-            -F "public_id=e4c-android-v${VERSION_NAME}_${VERSION_CODE}" \
-            -F "unique_filename=false" \
-            -F "overwrite=true")
+          ASSET_NAME="e4c-android-v${VERSION_NAME}_${VERSION_CODE}.apk"
+          TAG="auto-v${VERSION_NAME}-build${VERSION_CODE}"
+          RELEASE_TITLE="Auto APK v${VERSION_NAME} (${VERSION_CODE})"
 
-          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
-            echo "::error::Cloudinary upload failed with HTTP ${HTTP_CODE}"
-            cat /tmp/cloudinary_upload_response.txt
+          if ! command -v gh >/dev/null 2>&1; then
+            echo "::error::GitHub CLI (gh) is not available on runner."
             exit 1
           fi
 
-          if ! jq -e . >/dev/null 2>&1 /tmp/cloudinary_upload_response.txt; then
-            echo "::error::Cloudinary trả về non-JSON response. Kiểm tra lại CLOUDINARY_CLOUD_NAME / upload preset."
-            cat /tmp/cloudinary_upload_response.txt
-            exit 1
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} already exists."
+          else
+            gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes "Auto build from main (${GITHUB_SHA})" --prerelease
           fi
 
-          jq . /tmp/cloudinary_upload_response.txt
-          DOWNLOAD_URL=$(jq -r '.secure_url // empty' /tmp/cloudinary_upload_response.txt)
-          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
-            echo "::error::Cloudinary upload failed (no secure_url)."
-            cat /tmp/cloudinary_upload_response.txt
-            exit 1
-          fi
+          gh release upload "${TAG}" "${APK_PATH}#${ASSET_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
+
+          DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET_NAME}"
+          echo "GitHub Release upload success: ${ASSET_NAME}"
           echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
 
       - name: Create release candidate in backend
@@ -194,7 +190,7 @@ jobs:
           fi
 
           if [ -z "$DOWNLOAD_URL" ]; then
-            echo "Missing DOWNLOAD_URL from Cloudinary step"
+            echo "Missing DOWNLOAD_URL from GitHub Release step"
             exit 1
           fi
 
