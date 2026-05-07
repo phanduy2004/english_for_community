@@ -3697,6 +3697,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not open the update link.'**
   String get updateLinkOpenFailed;
+
+  /// No description provided for @appVersionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'App version'**
+  String get appVersionLabel;
 }
 
 class _AppLocalizationsDelegate

@@ -1953,4 +1953,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateLinkOpenFailed => 'Could not open the update link.';
+
+  @override
+  String get appVersionLabel => 'App version';
 }

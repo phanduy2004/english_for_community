@@ -28,6 +28,15 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final userState = context.read<UserBloc>().state;
+      if (userState.status == UserStatus.success) {
+        context
+            .read<AppUpdateBloc>()
+            .add(AppUpdateCheckRequested(forceRefresh: true));
+      }
+    });
   }
 
   @override
