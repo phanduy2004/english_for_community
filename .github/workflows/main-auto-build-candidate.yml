@@ -152,16 +152,30 @@ jobs:
             exit 1
           fi
           APK_PATH="english_for_community/build/app/outputs/flutter-apk/app-release.apk"
-          RESPONSE=$(curl -sS -X POST "https://api.cloudinary.com/v1_1/${CLD_CLOUD}/raw/upload" \
+          HTTP_CODE=$(curl -sS -o /tmp/cloudinary_upload_response.txt -w "%{http_code}" -X POST "https://api.cloudinary.com/v1_1/${CLD_CLOUD}/raw/upload" \
             -F "file=@${APK_PATH}" \
             -F "upload_preset=${CLD_PRESET}" \
             -F "public_id=e4c-android-v${VERSION_NAME}_${VERSION_CODE}" \
             -F "unique_filename=false" \
             -F "overwrite=true")
-          echo "$RESPONSE" | jq .
-          DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.secure_url // empty')
+
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            echo "::error::Cloudinary upload failed with HTTP ${HTTP_CODE}"
+            cat /tmp/cloudinary_upload_response.txt
+            exit 1
+          fi
+
+          if ! jq -e . >/dev/null 2>&1 /tmp/cloudinary_upload_response.txt; then
+            echo "::error::Cloudinary trả về non-JSON response. Kiểm tra lại CLOUDINARY_CLOUD_NAME / upload preset."
+            cat /tmp/cloudinary_upload_response.txt
+            exit 1
+          fi
+
+          jq . /tmp/cloudinary_upload_response.txt
+          DOWNLOAD_URL=$(jq -r '.secure_url // empty' /tmp/cloudinary_upload_response.txt)
           if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
             echo "::error::Cloudinary upload failed (no secure_url)."
+            cat /tmp/cloudinary_upload_response.txt
             exit 1
           fi
           echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
