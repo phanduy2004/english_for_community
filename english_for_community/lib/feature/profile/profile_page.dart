@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/locale/app_locale_controller.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -25,6 +26,22 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  String _appVersionLabel = '-';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _appVersionLabel = '${info.version} (+${info.buildNumber})';
+    });
+  }
+
   // --- NAVIGATION ---
   void _goEditProfile() {
     context.pushNamed('EditProfilePage').then((_) {
@@ -367,6 +384,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         title: t.appLanguage,
                         value: localeCtrl.locale.languageCode == 'vi' ? t.languageVietnamese : t.languageEnglish,
                         onTap: () => _showAppLanguagePicker(context),
+                      ),
+                      const _Divider(),
+                      _SettingsTile(
+                        icon: Icons.info_outline,
+                        title: t.appVersionLabel,
+                        value: _appVersionLabel,
                       ),
                       const _Divider(),
                       _SettingsTile(icon: Icons.public, title: t.timezone, value: user.timezone ?? 'GMT+7', onTap: () {}),

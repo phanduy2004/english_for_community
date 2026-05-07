@@ -778,5 +778,6 @@
     }
   },
   "updateDialogWhatsNewTitle": "Có gì mới",
-  "updateLinkOpenFailed": "Không mở được liên kết cập nhật."
+  "updateLinkOpenFailed": "Không mở được liên kết cập nhật.",
+  "appVersionLabel": "Phiên bản ứng dụng"
 }

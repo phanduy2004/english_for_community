@@ -883,5 +883,6 @@
     }
   },
   "updateDialogWhatsNewTitle": "What is new",
-  "updateLinkOpenFailed": "Could not open the update link."
+  "updateLinkOpenFailed": "Could not open the update link.",
+  "appVersionLabel": "App version"
 }

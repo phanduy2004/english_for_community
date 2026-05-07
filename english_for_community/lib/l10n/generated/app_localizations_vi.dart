@@ -1947,4 +1947,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get updateLinkOpenFailed => 'Không mở được liên kết cập nhật.';
+
+  @override
+  String get appVersionLabel => 'Phiên bản ứng dụng';
 }
