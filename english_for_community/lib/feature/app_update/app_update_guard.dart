@@ -41,7 +41,9 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
     if (state == AppLifecycleState.resumed) {
       final userState = context.read<UserBloc>().state;
       if (userState.status == UserStatus.success) {
-        context.read<AppUpdateBloc>().add(AppUpdateCheckRequested());
+        context
+            .read<AppUpdateBloc>()
+            .add(AppUpdateCheckRequested(forceRefresh: true));
       }
     }
   }

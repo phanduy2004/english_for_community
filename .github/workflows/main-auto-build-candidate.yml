@@ -129,9 +129,9 @@ jobs:
           storeFile=release-key.jks
           EOF
 
-      - name: Build APK (release, arm64-v8a only)
+      - name: Build APK (release, universal multi-ABI)
         working-directory: english_for_community
-        run: flutter build apk --release --target-platform android-arm64
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -156,6 +156,7 @@ jobs:
           fi
           APK_PATH="english_for_community/build/app/outputs/flutter-apk/app-release.apk"
           ASSET_NAME="e4c-android-v${VERSION_NAME}_${VERSION_CODE}.apk"
+          ASSET_PATH="/tmp/${ASSET_NAME}"
           TAG="auto-v${VERSION_NAME}-build${VERSION_CODE}"
           RELEASE_TITLE="Auto APK v${VERSION_NAME} (${VERSION_CODE})"
 
@@ -170,7 +171,8 @@ jobs:
             gh release create "${TAG}" --repo "${GITHUB_REPOSITORY}" --title "${RELEASE_TITLE}" --notes "Auto build from main (${GITHUB_SHA})" --prerelease
           fi
 
-          gh release upload "${TAG}" "${APK_PATH}#${ASSET_NAME}" --repo "${GITHUB_REPOSITORY}" --clobber
+          cp "${APK_PATH}" "${ASSET_PATH}"
+          gh release upload "${TAG}" "${ASSET_PATH}" --repo "${GITHUB_REPOSITORY}" --clobber
 
           DOWNLOAD_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET_NAME}"
           echo "GitHub Release upload success: ${ASSET_NAME}"
