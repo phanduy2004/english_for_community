@@ -3679,6 +3679,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Later'**
   String get updateLaterButton;
+
+  /// No description provided for @updateDialogVersionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (+{code})'**
+  String updateDialogVersionLine(String name, int code);
+
+  /// No description provided for @updateDialogWhatsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What is new'**
+  String get updateDialogWhatsNewTitle;
+
+  /// No description provided for @updateLinkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the update link.'**
+  String get updateLinkOpenFailed;
 }
 
 class _AppLocalizationsDelegate

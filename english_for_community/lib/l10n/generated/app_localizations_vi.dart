@@ -1936,4 +1936,15 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get updateLaterButton => 'Để sau';
+
+  @override
+  String updateDialogVersionLine(String name, int code) {
+    return '$name (+$code)';
+  }
+
+  @override
+  String get updateDialogWhatsNewTitle => 'Có gì mới';
+
+  @override
+  String get updateLinkOpenFailed => 'Không mở được liên kết cập nhật.';
 }

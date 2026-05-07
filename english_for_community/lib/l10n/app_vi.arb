@@ -769,5 +769,14 @@
   "forceUpdateTitle": "Yêu cầu cập nhật ứng dụng",
   "updateAvailableBody": "Đã có phiên bản mới của ứng dụng. Hãy cập nhật để có trải nghiệm tốt nhất.",
   "updateNowButton": "Cập nhật ngay",
-  "updateLaterButton": "Để sau"
+  "updateLaterButton": "Để sau",
+  "updateDialogVersionLine": "{name} (+{code})",
+  "@updateDialogVersionLine": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "code": { "type": "int" }
+    }
+  },
+  "updateDialogWhatsNewTitle": "Có gì mới",
+  "updateLinkOpenFailed": "Không mở được liên kết cập nhật."
 }

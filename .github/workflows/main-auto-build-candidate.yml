@@ -34,6 +34,53 @@ jobs:
         working-directory: english_for_community
         run: flutter pub get
 
+      - name: Auto bump app version for CI build
+        id: version
+        working-directory: english_for_community
+        env:
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          VERSION_LINE=$(awk -F': ' '/^version:/ {print $2}' pubspec.yaml)
+          if [ -z "$VERSION_LINE" ]; then
+            echo "Cannot read version from pubspec.yaml"
+            exit 1
+          fi
+
+          BASE_VERSION_NAME=${VERSION_LINE%%+*}
+          BASE_VERSION_CODE=${VERSION_LINE##*+}
+          if ! [[ "$BASE_VERSION_CODE" =~ ^[0-9]+$ ]]; then
+            echo "Invalid versionCode in pubspec.yaml: $BASE_VERSION_CODE"
+            exit 1
+          fi
+
+          # Keep versionName stable, generate unique monotonically increasing
+          # versionCode per CI run to avoid candidate/version collisions.
+          NEW_VERSION_NAME="$BASE_VERSION_NAME"
+          NEW_VERSION_CODE=$((BASE_VERSION_CODE + GITHUB_RUN_NUMBER))
+          export NEW_VERSION_NAME
+          export NEW_VERSION_CODE
+
+          python - <<'PY'
+from pathlib import Path
+import os
+import re
+
+path = Path("pubspec.yaml")
+text = path.read_text(encoding="utf-8")
+name = os.environ["NEW_VERSION_NAME"]
+code = os.environ["NEW_VERSION_CODE"]
+new_line = f"version: {name}+{code}"
+updated = re.sub(r"^version:\s*.+$", new_line, text, count=1, flags=re.MULTILINE)
+if updated == text:
+    raise SystemExit("Could not update version line in pubspec.yaml")
+path.write_text(updated, encoding="utf-8")
+PY
+
+          echo "version_name=${NEW_VERSION_NAME}" >> $GITHUB_OUTPUT
+          echo "version_code=${NEW_VERSION_CODE}" >> $GITHUB_OUTPUT
+          echo "Using CI build version: ${NEW_VERSION_NAME}+${NEW_VERSION_CODE}"
+        shell: bash
+
       - name: Prepare dictionary asset for CI
         working-directory: english_for_community
         run: |
@@ -79,19 +126,9 @@ jobs:
           storeFile=release-key.jks
           EOF
 
-      - name: Build APK (release)
+      - name: Build APK (release, arm64-v8a only)
         working-directory: english_for_community
-        run: flutter build apk --release
-
-      - name: Read app version metadata
-        id: version
-        working-directory: english_for_community
-        run: |
-          VERSION_LINE=$(awk -F': ' '/^version:/ {print $2}' pubspec.yaml)
-          VERSION_NAME=${VERSION_LINE%%+*}
-          VERSION_CODE=${VERSION_LINE##*+}
-          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+        run: flutter build apk --release --target-platform android-arm64
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -99,19 +136,54 @@ jobs:
           name: e4c-android-v${{ steps.version.outputs.version_name }}+${{ steps.version.outputs.version_code }}.apk
           path: english_for_community/build/app/outputs/flutter-apk/app-release.apk
 
+      # Public HTTPS URL for in-app "Cập nhật ngay" (không cần CH Play).
+      # Cloudinary: tạo Upload preset — Signing mode: Unsigned, Resource type: Raw.
+      - name: Upload APK to Cloudinary (downloadUrl for users)
+        id: apk_host
+        env:
+          CLD_CLOUD: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLD_PRESET: ${{ secrets.CLOUDINARY_APK_UPLOAD_PRESET }}
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+        run: |
+          set -e
+          if [ -z "$CLD_CLOUD" ] || [ -z "$CLD_PRESET" ]; then
+            echo "::error::Thiếu CLOUDINARY_CLOUD_NAME hoặc CLOUDINARY_APK_UPLOAD_PRESET. Tạo preset Raw (unsigned) trên Cloudinary và thêm vào GitHub Secrets."
+            exit 1
+          fi
+          APK_PATH="english_for_community/build/app/outputs/flutter-apk/app-release.apk"
+          RESPONSE=$(curl -sS -X POST "https://api.cloudinary.com/v1_1/${CLD_CLOUD}/raw/upload" \
+            -F "file=@${APK_PATH}" \
+            -F "upload_preset=${CLD_PRESET}" \
+            -F "public_id=e4c-android-v${VERSION_NAME}_${VERSION_CODE}" \
+            -F "unique_filename=false" \
+            -F "overwrite=true")
+          echo "$RESPONSE" | jq .
+          DOWNLOAD_URL=$(echo "$RESPONSE" | jq -r '.secure_url // empty')
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "::error::Cloudinary upload failed (no secure_url)."
+            exit 1
+          fi
+          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
+
       - name: Create release candidate in backend
         env:
           BACKEND_BASE_URL: ${{ secrets.BACKEND_BASE_URL }}
           CI_RELEASE_TOKEN: ${{ secrets.CI_RELEASE_TOKEN }}
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          DOWNLOAD_URL: ${{ steps.apk_host.outputs.download_url }}
         run: |
           if [ -z "$BACKEND_BASE_URL" ] || [ -z "$CI_RELEASE_TOKEN" ]; then
             echo "Missing BACKEND_BASE_URL or CI_RELEASE_TOKEN secret"
             exit 1
           fi
 
-          ARTIFACT_NAME="e4c-android-v${VERSION_NAME}+${VERSION_CODE}.apk"
+          if [ -z "$DOWNLOAD_URL" ]; then
+            echo "Missing DOWNLOAD_URL from Cloudinary step"
+            exit 1
+          fi
+
           CHANGELOG="Auto candidate from main commit ${GITHUB_SHA}"
           RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
@@ -130,6 +202,7 @@ jobs:
               \"gitBranch\": \"${GITHUB_REF_NAME}\",
               \"ciRunId\": \"${GITHUB_RUN_ID}\",
               \"artifactUrlApk\": \"${RUN_URL}\",
+              \"downloadUrl\": \"${DOWNLOAD_URL}\",
               \"changelog\": \"${CHANGELOG}\"
             }")
 

@@ -25,9 +25,11 @@ class AppUpdateInfoEntity extends Equatable {
 
   bool get hasUpdate => status != AppUpdateStatus.upToDate;
 
+  /// Ưu tiên link tải trực tiếp (APK) — phù hợp khi không dùng CH Play.
+  /// [storeUrl] chỉ dùng khi không có [downloadUrl].
   String? get updateUrl {
-    if (storeUrl != null && storeUrl!.isNotEmpty) return storeUrl;
     if (downloadUrl != null && downloadUrl!.isNotEmpty) return downloadUrl;
+    if (storeUrl != null && storeUrl!.isNotEmpty) return storeUrl;
     return null;
   }
 
