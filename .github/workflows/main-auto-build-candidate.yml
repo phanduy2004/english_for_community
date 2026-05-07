@@ -34,6 +34,26 @@ jobs:
         working-directory: english_for_community
         run: flutter pub get
 
+      - name: Prepare dictionary asset for CI
+        working-directory: english_for_community
+        run: |
+          if [ -f assets/db/dictionary.db ]; then
+            echo "dictionary.db found."
+            exit 0
+          fi
+
+          if [ -f assets/db/dictionary.rar ]; then
+            echo "dictionary.db missing, extracting from dictionary.rar..."
+            sudo apt-get update
+            sudo apt-get install -y unar
+            unar -f -o assets/db assets/db/dictionary.rar
+          fi
+
+          if [ ! -f assets/db/dictionary.db ]; then
+            echo "Missing dictionary asset. Need assets/db/dictionary.db or assets/db/dictionary.rar"
+            exit 1
+          fi
+
       - name: Run tests
         working-directory: english_for_community
         run: flutter test

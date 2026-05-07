@@ -57,6 +57,7 @@ english_for_community/build/
 # Local configuration file (chứa đường dẫn SDK trên máy bạn)
 android/local.properties
 english_for_community/android/local.properties
+# Dictionary DB runtime (quá nặng, build từ dictionary.rar trong CI)
 english_for_community/assets/db/dictionary.db
 
 # Gradle cache & build
@@ -77,7 +78,7 @@ english_for_community/ios/Pods/
 *.mode2v3
 *.moved-aside
 *.pbxuser
-*.perspectivev3"english_for_community/assets/db/dictionary.db" 
+*.perspectivev3
 # Firebase Admin SDK credentials
 english_for_community_backend/firebase-service-account.json
 
