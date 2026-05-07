@@ -61,20 +61,20 @@ jobs:
           export NEW_VERSION_CODE
 
           python - <<'PY'
-from pathlib import Path
-import os
-import re
+          from pathlib import Path
+          import os
+          import re
 
-path = Path("pubspec.yaml")
-text = path.read_text(encoding="utf-8")
-name = os.environ["NEW_VERSION_NAME"]
-code = os.environ["NEW_VERSION_CODE"]
-new_line = f"version: {name}+{code}"
-updated = re.sub(r"^version:\s*.+$", new_line, text, count=1, flags=re.MULTILINE)
-if updated == text:
-    raise SystemExit("Could not update version line in pubspec.yaml")
-path.write_text(updated, encoding="utf-8")
-PY
+          path = Path("pubspec.yaml")
+          text = path.read_text(encoding="utf-8")
+          name = os.environ["NEW_VERSION_NAME"]
+          code = os.environ["NEW_VERSION_CODE"]
+          new_line = f"version: {name}+{code}"
+          updated = re.sub(r"^version:\s*.+$", new_line, text, count=1, flags=re.MULTILINE)
+          if updated == text:
+              raise SystemExit("Could not update version line in pubspec.yaml")
+          path.write_text(updated, encoding="utf-8")
+          PY
 
           echo "version_name=${NEW_VERSION_NAME}" >> $GITHUB_OUTPUT
           echo "version_code=${NEW_VERSION_CODE}" >> $GITHUB_OUTPUT
