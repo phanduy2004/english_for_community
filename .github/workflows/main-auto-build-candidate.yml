@@ -1,0 +1,113 @@
+name: Main Auto Build Candidate
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "english_for_community/lib/**"
+      - "english_for_community/android/**"
+      - "english_for_community/pubspec.yaml"
+      - "english_for_community/pubspec.lock"
+
+jobs:
+  build-candidate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        working-directory: english_for_community
+        run: flutter pub get
+
+      - name: Run tests
+        working-directory: english_for_community
+        run: flutter test
+
+      - name: Decode Android keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEY_ALIAS" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_PASSWORD" ]; then
+            echo "Missing Android signing secrets"
+            exit 1
+          fi
+
+          mkdir -p english_for_community/android/app
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > english_for_community/android/app/release-key.jks
+          cat > english_for_community/android/key.properties <<EOF
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          storeFile=release-key.jks
+          EOF
+
+      - name: Build APK (release)
+        working-directory: english_for_community
+        run: flutter build apk --release
+
+      - name: Read app version metadata
+        id: version
+        working-directory: english_for_community
+        run: |
+          VERSION_LINE=$(awk -F': ' '/^version:/ {print $2}' pubspec.yaml)
+          VERSION_NAME=${VERSION_LINE%%+*}
+          VERSION_CODE=${VERSION_LINE##*+}
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: e4c-android-v${{ steps.version.outputs.version_name }}+${{ steps.version.outputs.version_code }}.apk
+          path: english_for_community/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create release candidate in backend
+        env:
+          BACKEND_BASE_URL: ${{ secrets.BACKEND_BASE_URL }}
+          CI_RELEASE_TOKEN: ${{ secrets.CI_RELEASE_TOKEN }}
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
+        run: |
+          if [ -z "$BACKEND_BASE_URL" ] || [ -z "$CI_RELEASE_TOKEN" ]; then
+            echo "Missing BACKEND_BASE_URL or CI_RELEASE_TOKEN secret"
+            exit 1
+          fi
+
+          ARTIFACT_NAME="e4c-android-v${VERSION_NAME}+${VERSION_CODE}.apk"
+          CHANGELOG="Auto candidate from main commit ${GITHUB_SHA}"
+
+          curl -sS -X POST "${BACKEND_BASE_URL}/api/app/releases/ci-candidates" \
+            -H "Content-Type: application/json" \
+            -H "x-ci-token: ${CI_RELEASE_TOKEN}" \
+            --data "{
+              \"platform\": \"android\",
+              \"environment\": \"production\",
+              \"versionName\": \"${VERSION_NAME}\",
+              \"versionCode\": ${VERSION_CODE},
+              \"minSupportedVersionCode\": ${VERSION_CODE},
+              \"updateType\": \"soft\",
+              \"buildSource\": \"main\",
+              \"gitSha\": \"${GITHUB_SHA}\",
+              \"gitBranch\": \"${GITHUB_REF_NAME}\",
+              \"ciRunId\": \"${GITHUB_RUN_ID}\",
+              \"artifactUrlApk\": \"artifact://${ARTIFACT_NAME}\",
+              \"changelog\": \"${CHANGELOG}\"
+            }"
