@@ -1942,4 +1942,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateLaterButton => 'Later';
+
+  @override
+  String updateDialogVersionLine(String name, int code) {
+    return '$name (+$code)';
+  }
+
+  @override
+  String get updateDialogWhatsNewTitle => 'What is new';
+
+  @override
+  String get updateLinkOpenFailed => 'Could not open the update link.';
 }
