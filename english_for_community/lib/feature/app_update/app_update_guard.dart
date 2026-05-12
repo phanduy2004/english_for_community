@@ -30,12 +30,11 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final userState = context.read<UserBloc>().state;
-      if (userState.status == UserStatus.success) {
-        context
-            .read<AppUpdateBloc>()
-            .add(AppUpdateCheckRequested(forceRefresh: true));
-      }
+      // Version-check là API public: phải chạy cả khi chưa đăng nhập để soft/force
+      // update vẫn hiện trên splash/login.
+      context
+          .read<AppUpdateBloc>()
+          .add(AppUpdateCheckRequested(forceRefresh: true));
     });
   }
 
@@ -48,12 +47,10 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      final userState = context.read<UserBloc>().state;
-      if (userState.status == UserStatus.success) {
-        context
-            .read<AppUpdateBloc>()
-            .add(AppUpdateCheckRequested(forceRefresh: true));
-      }
+      if (!mounted) return;
+      context
+          .read<AppUpdateBloc>()
+          .add(AppUpdateCheckRequested(forceRefresh: true));
     }
   }
 
@@ -62,13 +59,14 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
     return MultiBlocListener(
       listeners: [
         BlocListener<UserBloc, UserState>(
-          listenWhen: (prev, next) => prev.status != next.status,
+          listenWhen: (prev, next) =>
+              prev.status != next.status &&
+              (next.status == UserStatus.success ||
+                  next.status == UserStatus.unauthenticated),
           listener: (context, state) {
-            if (state.status == UserStatus.success) {
-              context
-                  .read<AppUpdateBloc>()
-                  .add(AppUpdateCheckRequested(forceRefresh: true));
-            }
+            context
+                .read<AppUpdateBloc>()
+                .add(AppUpdateCheckRequested(forceRefresh: true));
           },
         ),
         BlocListener<AppUpdateBloc, AppUpdateState>(
