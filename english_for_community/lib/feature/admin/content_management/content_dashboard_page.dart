@@ -16,7 +16,7 @@ class ContentDashboardPage extends StatelessWidget {
       backgroundColor: kBgPage,
       appBar: AppBar(
         backgroundColor: kWhite,
-        surfaceTintColor: Colors.transparent, // Fix màu ám khi scroll
+        surfaceTintColor: Colors.transparent, // Fdix màu ám khi scroll
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: kTextMain),
