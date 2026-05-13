@@ -31,7 +31,7 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       // Version-check là API public: phải chạy cả khi chưa đăng nhập để soft/force
-      // update vẫn hiện trên splash/login.
+      // update vẫn hiện trên splasdh/login.
       context
           .read<AppUpdateBloc>()
           .add(AppUpdateCheckRequested(forceRefresh: true));
