@@ -1,0 +1,234 @@
+[
+  {
+    "kind": "mcq_single",
+    "prompt": "Choose the correct form of the verb: She _____ to school every morning.",
+    "options": [
+      "go",
+      "goes",
+      "going",
+      "gone"
+    ],
+    "correctOptionIndexes": [1],
+    "points": 1
+  },
+  {
+    "kind": "mcq_single",
+    "prompt": "Which sentence uses the Present Perfect correctly?",
+    "options": [
+      "I have saw that movie yesterday.",
+      "She has finished her homework already.",
+      "They have went to Paris last year.",
+      "He have worked here for two years."
+    ],
+    "correctOptionIndexes": [1],
+    "points": 1
+  },
+  {
+    "kind": "mcq_single",
+    "prompt": "Choose the correct article: _____ sun rises in the east.",
+    "options": [
+      "A",
+      "An",
+      "The",
+      "(no article)"
+    ],
+    "correctOptionIndexes": [2],
+    "points": 1
+  },
+  {
+    "kind": "mcq_single",
+    "prompt": "What is the correct comparative form of 'good'?",
+    "options": [
+      "more good",
+      "gooder",
+      "better",
+      "best"
+    ],
+    "correctOptionIndexes": [2],
+    "points": 1
+  },
+  {
+    "kind": "mcq_multi",
+    "prompt": "Which of the following sentences are grammatically correct? (Select all that apply)",
+    "options": [
+      "He doesn't like coffee.",
+      "She don't understand the question.",
+      "They aren't coming to the party.",
+      "We doesn't need more help."
+    ],
+    "correctOptionIndexes": [0, 2],
+    "points": 2
+  },
+  {
+    "kind": "mcq_multi",
+    "prompt": "Which words can be used to introduce a conditional clause? (Select all that apply)",
+    "options": [
+      "if",
+      "but",
+      "unless",
+      "provided that"
+    ],
+    "correctOptionIndexes": [0, 2, 3],
+    "points": 2
+  },
+  {
+    "kind": "grammar_cloze",
+    "passage": "Last week, my family {{0}} on a trip to Da Lat. We {{1}} there by car, which {{2}} about six hours. The weather {{3}} cold and beautiful.",
+    "blanks": [
+      {
+        "blankId": "0",
+        "acceptedAnswers": ["went", "traveled", "went on"]
+      },
+      {
+        "blankId": "1",
+        "acceptedAnswers": ["traveled", "went", "drove"]
+      },
+      {
+        "blankId": "2",
+        "acceptedAnswers": ["took", "took us"]
+      },
+      {
+        "blankId": "3",
+        "acceptedAnswers": ["was", "felt"]
+      }
+    ],
+    "points": 4
+  },
+  {
+    "kind": "grammar_cloze",
+    "passage": "English {{0}} a global language. Millions of people {{1}} it as their first language, while billions more {{2}} it as a second or foreign language. Learning English {{3}} many career opportunities.",
+    "blanks": [
+      {
+        "blankId": "0",
+        "acceptedAnswers": ["is"]
+      },
+      {
+        "blankId": "1",
+        "acceptedAnswers": ["use", "speak", "have"]
+      },
+      {
+        "blankId": "2",
+        "acceptedAnswers": ["learn", "study", "use", "speak"]
+      },
+      {
+        "blankId": "3",
+        "acceptedAnswers": ["opens", "creates", "provides", "offers"]
+      }
+    ],
+    "points": 4
+  },
+  {
+    "kind": "grammar_gap",
+    "textBefore": "She has been learning",
+    "textAfter": "for five years and can speak it fluently now.",
+    "blanks": [
+      {
+        "blankId": "0",
+        "acceptedAnswers": ["English", "english"]
+      }
+    ],
+    "points": 1
+  },
+  {
+    "kind": "grammar_gap",
+    "textBefore": "If I had studied harder,",
+    "textAfter": "the exam.",
+    "blanks": [
+      {
+        "blankId": "0",
+        "acceptedAnswers": ["I would have passed", "I would have passed"]
+      }
+    ],
+    "points": 1
+  },
+  {
+    "kind": "grammar_gap",
+    "textBefore": "By the time he arrived,",
+    "textAfter": "already.",
+    "blanks": [
+      {
+        "blankId": "0",
+        "acceptedAnswers": ["we had finished", "the meeting had finished", "it had ended"]
+      }
+    ],
+    "points": 1
+  },
+  {
+    "kind": "grammar_matching",
+    "leftItems": [
+      { "id": "l0", "text": "Simple Past" },
+      { "id": "l1", "text": "Present Perfect" },
+      { "id": "l2", "text": "Past Continuous" },
+      { "id": "l3", "text": "Past Perfect" }
+    ],
+    "rightItems": [
+      { "id": "r0", "text": "I had already eaten when she called." },
+      { "id": "r1", "text": "She was reading when I arrived." },
+      { "id": "r2", "text": "I visited Paris last summer." },
+      { "id": "r3", "text": "He has lived here for ten years." }
+    ],
+    "correctPairs": [
+      ["l0", "r2"],
+      ["l1", "r3"],
+      ["l2", "r1"],
+      ["l3", "r0"]
+    ],
+    "points": 4
+  },
+  {
+    "kind": "grammar_matching",
+    "leftItems": [
+      { "id": "l0", "text": "although" },
+      { "id": "l1", "text": "therefore" },
+      { "id": "l2", "text": "however" },
+      { "id": "l3", "text": "moreover" }
+    ],
+    "rightItems": [
+      { "id": "r0", "text": "adds extra information" },
+      { "id": "r1", "text": "shows contrast (within a sentence)" },
+      { "id": "r2", "text": "shows contrast (between sentences)" },
+      { "id": "r3", "text": "shows result or consequence" }
+    ],
+    "correctPairs": [
+      ["l0", "r1"],
+      ["l1", "r3"],
+      ["l2", "r2"],
+      ["l3", "r0"]
+    ],
+    "points": 4
+  },
+  {
+    "kind": "grammar_reorder",
+    "fragments": [
+      "Despite the heavy rain,",
+      "she decided",
+      "to walk home",
+      "without an umbrella."
+    ],
+    "correctOrder": [0, 1, 2, 3],
+    "points": 2
+  },
+  {
+    "kind": "grammar_reorder",
+    "fragments": [
+      "Not only",
+      "did he win the competition,",
+      "but he also",
+      "broke the world record."
+    ],
+    "correctOrder": [0, 1, 2, 3],
+    "points": 2
+  },
+  {
+    "kind": "grammar_reorder",
+    "fragments": [
+      "The report",
+      "that the manager submitted",
+      "was rejected",
+      "by the board of directors",
+      "due to insufficient data."
+    ],
+    "correctOrder": [0, 1, 2, 3, 4],
+    "points": 2
+  }
+]

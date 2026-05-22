@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:english_for_community/core/datasource/user_remote_datasource.dart';
 import 'package:english_for_community/core/entity/user_entity.dart';
 import 'package:english_for_community/core/model/either.dart';
@@ -91,7 +91,7 @@ class UserRepositoryImpl implements UserRepository {
     String? phone,
     DateTime? dateOfBirth,
     String? bio,
-    File? avatarFile, // Chỉ nhận File
+    XFile? avatarFile,
     String? goal,
     String? cefr,
     int? dailyMinutes,

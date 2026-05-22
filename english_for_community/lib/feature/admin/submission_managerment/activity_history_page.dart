@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/submission_managerment/widget/user_dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -151,20 +155,11 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: kBgPage,
-      appBar: AppBar(
-        title: const Text('Activity Log', style: TextStyle(fontWeight: FontWeight.w700, color: kTextMain, fontSize: 16)),
-        backgroundColor: kWhite,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kTextMain),
-          onPressed: () => context.pop(),
-        ),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: kBorder, height: 1)),
-      ),
+    final l10n = context.l10n;
+    return AdminPageScaffold(
+      title: l10n.adminActivityHistoryTitle,
+      scrollable: false,
+      maxWidth: AdminWebUi.contentMaxTable,
       body: BlocConsumer<HistoryBloc, HistoryState>(
         listener: (context, state) {
           if (state.status == HistoryStatus.error) {
@@ -240,7 +235,7 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
                 child: state.status == HistoryStatus.loading
                     ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                     : filteredList.isEmpty
-                    ? _buildEmptyState()
+                    ? AdminEmptyState(message: l10n.noData, icon: Icons.history_outlined)
                     : ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: filteredList.length,

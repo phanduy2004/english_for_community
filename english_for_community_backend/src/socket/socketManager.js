@@ -1,5 +1,9 @@
 import { Server } from 'socket.io';
 import User from '../models/User.js';
+import ExamSession from '../models/ExamSession.js';
+import ExamAttempt from '../models/ExamAttempt.js';
+import { verifyAccessToken } from '../lib/jwt_token.js';
+import { teacherExamAssignmentService } from '../services/teacherExamAssignmentService.js';
 
 let io;
 
@@ -58,6 +62,127 @@ export const initSocket = (httpServer) => {
       socket.leave(roomName);
       console.log(`🔇 Socket ${socket.id} left room: ${roomName}`);
     });
+
+    socket.on('exam_register', (payload) => {
+      const token = typeof payload === 'string' ? payload : payload?.accessToken;
+      const v = verifyAccessToken(token || '');
+      if (!v.valid || !v.userId) {
+        socket.emit('exam_register_error', { message: 'Invalid or expired token' });
+        socket.examUserId = null;
+        return;
+      }
+      socket.examUserId = v.userId;
+      socket.emit('exam_registered', { ok: true });
+    });
+
+    socket.on('join_exam_session', async ({ sessionId } = {}) => {
+      try {
+        if (!socket.examUserId) {
+          socket.emit('exam_session_error', { message: 'Register exam token first (exam_register)' });
+          return;
+        }
+        if (!sessionId) {
+          socket.emit('exam_session_error', { message: 'sessionId required' });
+          return;
+        }
+        const session = await ExamSession.findById(sessionId).populate('assignmentId');
+        if (!session) {
+          socket.emit('exam_session_error', { message: 'Session not found' });
+          return;
+        }
+        const leader = session.leaderTeacherId.toString() === String(socket.examUserId);
+        if (!leader) {
+          await teacherExamAssignmentService.assertStudentEntitled(
+            socket.examUserId,
+            session.assignmentId._id.toString()
+          );
+        }
+        socket.join(`examSession_${sessionId}`);
+        socket.emit('exam_session_joined', { sessionId });
+        const { examSessionService } = await import('../services/examSessionService.js');
+        await examSessionService.emitSessionStateBroadcast(sessionId);
+      } catch (e) {
+        socket.emit('exam_session_error', { message: e.message || 'Join failed' });
+      }
+    });
+
+    const cleanupExamLeave = async (sessionId, userId) => {
+      if (!sessionId || !userId) return;
+      const sid = sessionId.toString();
+      const uid = userId.toString();
+      const { examSessionService } = await import('../services/examSessionService.js');
+      await examSessionService.removeParticipantFromSession(sid, uid);
+      await examSessionService.emitSessionStateBroadcast(sid);
+    };
+
+    socket.on('exam_session_set_ready', async ({ sessionId, ready } = {}) => {
+      try {
+        if (!socket.examUserId) {
+          socket.emit('exam_session_error', { message: 'Register exam token first (exam_register)' });
+          return;
+        }
+        if (!sessionId) {
+          socket.emit('exam_session_error', { message: 'sessionId required' });
+          return;
+        }
+        const { examSessionService } = await import('../services/examSessionService.js');
+        await examSessionService.setParticipantReady(socket.examUserId, sessionId, ready === true);
+      } catch (e) {
+        socket.emit('exam_session_error', { message: e.message || 'Ready update failed' });
+      }
+    });
+
+    socket.on('join_exam_assignment_progress', async ({ assignmentId } = {}) => {
+      try {
+        if (!socket.examUserId) {
+          socket.emit('exam_session_error', { message: 'Register exam token first (exam_register)' });
+          return;
+        }
+        if (!assignmentId) {
+          socket.emit('exam_session_error', { message: 'assignmentId required' });
+          return;
+        }
+        await teacherExamAssignmentService.assertTeacherOwnsAssignment(socket.examUserId, assignmentId);
+        socket.join(`examAssignment_${assignmentId}`);
+        socket.emit('exam_assignment_progress_joined', { assignmentId });
+      } catch (e) {
+        socket.emit('exam_session_error', { message: e.message || 'Join failed' });
+      }
+    });
+
+    socket.on('leave_exam_assignment_progress', ({ assignmentId } = {}) => {
+      if (!assignmentId) return;
+      socket.leave(`examAssignment_${assignmentId}`);
+    });
+
+    socket.on('exam_live_view_sync', async ({ attemptId, sessionId, liveView } = {}) => {
+      try {
+        if (!socket.examUserId) {
+          socket.emit('exam_session_error', { message: 'Register exam token first (exam_register)' });
+          return;
+        }
+        if (!attemptId) {
+          socket.emit('exam_session_error', { message: 'attemptId required' });
+          return;
+        }
+        const { examLiveMonitorService } = await import('../services/examLiveMonitorService.js');
+        await examLiveMonitorService.syncLiveViewForStudent(
+          socket.examUserId,
+          attemptId,
+          liveView && typeof liveView === 'object' ? liveView : {}
+        );
+      } catch (e) {
+        socket.emit('exam_session_error', { message: e.message || 'Live view sync failed' });
+      }
+    });
+
+    socket.on('leave_exam_session', async ({ sessionId } = {}) => {
+      if (!sessionId) return;
+      const sid = sessionId.toString();
+      socket.leave(`examSession_${sid}`);
+      if (!socket.examUserId) return;
+      await cleanupExamLeave(sid, socket.examUserId);
+    });
     // 4. Disconnect (Mất mạng / Kill App)
     socket.on('disconnect', async (reason) => {
       console.log(`❌ Disconnected: ${socket.id} | Reason: ${reason}`);
@@ -66,6 +191,18 @@ export const initSocket = (httpServer) => {
       if (socket.userId) {
         console.log(`📉 Setting Offline (Connection lost): ${socket.userId}`);
         await updateUserStatus(socket.userId, false);
+      }
+
+      // If a student left the realtime exam tab without explicitly calling `leave_exam_session`,
+      // remove them from roster and void their attempt.
+      if (socket.examUserId) {
+        const rooms = [...socket.rooms].filter((r) => String(r).startsWith('examSession_'));
+        const sessionIds = rooms.map((r) => String(r).replace('examSession_', ''));
+        if (sessionIds.length > 0) {
+          for (const sid of sessionIds) {
+            await cleanupExamLeave(sid, socket.examUserId);
+          }
+        }
       }
     });
   });

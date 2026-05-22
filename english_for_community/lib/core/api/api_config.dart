@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiConfig {
@@ -20,7 +22,7 @@ class ApiConfig {
   /// 👉 CÁCH 1: CHỈNH TAY (Khuyên dùng khi Dev)
   /// - true: Dùng Local (192.168...) để code cho nhanh.
   /// - false: Dùng Server Render (https...) để test giống người dùng thật.
-  static const bool _useLocal = false;
+  static const bool _useLocal = true;
 
   /// 👉 CÁCH 2: TỰ ĐỘNG (Nâng cao)
   /// Nếu đang chạy Debug (F5) thì dùng Local, còn Build ra file APK thì tự dùng Server.
@@ -31,8 +33,26 @@ class ApiConfig {
   // 3. LOGIC XỬ LÝ (Không cần sửa gì ở dưới này)
   // ============================================================
 
+  /// Android emulator → host machine is [emulatorHost] (10.0.2.2), not LAN IP.
+  static bool _androidUsesEmulatorHost = false;
+
+  /// Gọi trong `main()` trước `setup()` để nhận diện máy ảo / máy thật.
   static Future<void> init() async {
-    // Không cần logic phức tạp nữa
+    if (kIsWeb || !_useLocal || !Platform.isAndroid) return;
+    try {
+      final android = await DeviceInfoPlugin().androidInfo;
+      _androidUsesEmulatorHost = !android.isPhysicalDevice;
+      if (kDebugMode) {
+        debugPrint(
+          '[ApiConfig] Android ${android.isPhysicalDevice ? "device" : "emulator"} '
+          '→ ${_androidUsesEmulatorHost ? "10.0.2.2" : _localLanIp}:$_localPort',
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('[ApiConfig] device check failed, using LAN IP: $e');
+      }
+    }
   }
 
   static String get Base_URL {
@@ -47,14 +67,9 @@ class ApiConfig {
       return 'http://localhost:$_localPort/';
     }
 
-    // 2. Android: Cần xử lý riêng cho Emulator
+    // 2. Android: emulator → 10.0.2.2 (host PC); máy thật → IP LAN
     if (Platform.isAndroid) {
-      // Nếu chạy trên máy ảo Android (Emulator) -> Dùng 10.0.2.2
-      // Nếu chạy trên điện thoại thật -> Dùng IP LAN
-      // (Cách đơn giản để check emulator là check model, hoặc cứ mặc định dùng LAN IP nếu test máy thật là chính)
-      const bool isEmulator = false; // Đổi thành true nếu bạn code bằng Máy ảo Android Studio
-
-      return isEmulator
+      return _androidUsesEmulatorHost
           ? 'http://10.0.2.2:$_localPort/'
           : 'http://$_localLanIp:$_localPort/';
     }

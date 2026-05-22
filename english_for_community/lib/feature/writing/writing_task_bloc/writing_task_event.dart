@@ -11,15 +11,20 @@ class GeneratePromptAndStartTask extends WritingTaskEvent {
   final WritingTopicEntity topic;
   final String userId;
   final String taskType;
+  final bool freshStart;
+  /// When set, skips AI generation and uses this teacher-assigned prompt instead.
+  final Map<String, dynamic>? fixedPrompt;
 
   const GeneratePromptAndStartTask({
     required this.topic,
     required this.userId,
     required this.taskType,
+    this.freshStart = false,
+    this.fixedPrompt,
   });
 
   @override
-  List<Object> get props => [topic, userId, taskType];
+  List<Object> get props => [topic, userId, taskType, freshStart];
 }
 
 class DiscardDraftAndStartNew extends WritingTaskEvent {

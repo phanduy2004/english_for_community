@@ -7,6 +7,9 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed": "node src/seeds/userSeeder.js",
+    "seed:teacher": "node src/seeds/seedTeacher.js",
+    "seed:teacher-hoangdong": "node src/seeds/seedTeacherHoangDongData.js",
+    "migrate:cms": "node src/scripts/migrateCmsContent.js",
     "test": "node --test"
   },
   "keywords": [],
@@ -21,6 +24,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.5.1",
     "firebase-admin": "^13.6.0",
     "groq-sdk": "^0.37.0",
     "jsonwebtoken": "^9.0.2",

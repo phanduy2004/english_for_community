@@ -50,6 +50,8 @@ extension SocketUserHandler on SocketService {
       } finally {
         _isInitialized = false;
         _currentUserId = null; // Reset user khi logout chủ động
+        _examAccessToken = null;
+        _currentExamSessionId = null;
       }
     }
   }

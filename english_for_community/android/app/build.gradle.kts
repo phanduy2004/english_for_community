@@ -72,4 +72,9 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    // Align androidx.window with Flutter embedding (foldable / window layout).
+    // Avoids ClassNotFoundException for SidecarInterface on some emulators / API levels.
+    val windowVersion = "1.3.0"
+    implementation("androidx.window:window:$windowVersion")
+    implementation("androidx.window:window-java:$windowVersion")
 }

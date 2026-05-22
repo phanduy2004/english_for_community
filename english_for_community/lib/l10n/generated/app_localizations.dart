@@ -926,6 +926,120 @@ abstract class AppLocalizations {
   /// **'Admin Console'**
   String get adminConsoleTitle;
 
+  /// No description provided for @adminShellAppName.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin'**
+  String get adminShellAppName;
+
+  /// No description provided for @adminShellNavGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get adminShellNavGroup;
+
+  /// No description provided for @adminShellOpsGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Operations'**
+  String get adminShellOpsGroup;
+
+  /// No description provided for @adminShellContentGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get adminShellContentGroup;
+
+  /// No description provided for @adminShellDesktopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a desktop browser'**
+  String get adminShellDesktopTitle;
+
+  /// No description provided for @adminShellDesktopBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The admin console is optimized for screens 768px and wider. Open this page on a laptop or desktop for the best experience.'**
+  String get adminShellDesktopBody;
+
+  /// No description provided for @adminShellCollapseSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse sidebar'**
+  String get adminShellCollapseSidebar;
+
+  /// No description provided for @adminShellExpandSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand sidebar'**
+  String get adminShellExpandSidebar;
+
+  /// No description provided for @adminNavSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get adminNavSubmissions;
+
+  /// No description provided for @adminNavOps.
+  ///
+  /// In en, this message translates to:
+  /// **'Ops center'**
+  String get adminNavOps;
+
+  /// No description provided for @adminNavReleases.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases'**
+  String get adminNavReleases;
+
+  /// No description provided for @adminOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get adminOverviewTitle;
+
+  /// No description provided for @adminUserManagementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'User management'**
+  String get adminUserManagementTitle;
+
+  /// No description provided for @adminReportManagementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report management'**
+  String get adminReportManagementTitle;
+
+  /// No description provided for @adminActivityHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission history'**
+  String get adminActivityHistoryTitle;
+
+  /// No description provided for @adminSearchUsersHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or email…'**
+  String get adminSearchUsersHint;
+
+  /// No description provided for @adminSearchReportsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by title or sender…'**
+  String get adminSearchReportsHint;
+
+  /// No description provided for @adminNoUsersFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No users found'**
+  String get adminNoUsersFound;
+
+  /// No description provided for @adminNoReportsFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No reports in this status'**
+  String get adminNoReportsFound;
+
   /// No description provided for @superAdminRole.
   ///
   /// In en, this message translates to:
@@ -2672,6 +2786,12 @@ abstract class AppLocalizations {
   /// **'Next'**
   String get dictationNextButton;
 
+  /// No description provided for @dictationSaveContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save & continue'**
+  String get dictationSaveContinue;
+
   /// No description provided for @dictationFinishButton.
   ///
   /// In en, this message translates to:
@@ -3703,6 +3823,4773 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'App version'**
   String get appVersionLabel;
+
+  /// No description provided for @profileTeacherSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes & teaching'**
+  String get profileTeacherSectionTitle;
+
+  /// No description provided for @profileStudentClassesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My classes'**
+  String get profileStudentClassesTitle;
+
+  /// No description provided for @profileStudentClassesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a class with an invite code'**
+  String get profileStudentClassesSubtitle;
+
+  /// No description provided for @profileTeacherHubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher hub'**
+  String get profileTeacherHubTitle;
+
+  /// No description provided for @profileTeacherHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classrooms and exams'**
+  String get profileTeacherHubSubtitle;
+
+  /// No description provided for @profileApplyTeacherTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply to teach'**
+  String get profileApplyTeacherTitle;
+
+  /// No description provided for @profileApplyTeacherSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit a request for a teacher account'**
+  String get profileApplyTeacherSubtitle;
+
+  /// No description provided for @teacherApplyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Become a teacher'**
+  String get teacherApplyTitle;
+
+  /// No description provided for @teacherApplySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us briefly about your teaching background. An admin will review your request.'**
+  String get teacherApplySubtitle;
+
+  /// No description provided for @teacherApplyBioLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio'**
+  String get teacherApplyBioLabel;
+
+  /// No description provided for @teacherApplyOrgLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'School or organization (optional)'**
+  String get teacherApplyOrgLabel;
+
+  /// No description provided for @teacherApplySubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit application'**
+  String get teacherApplySubmit;
+
+  /// No description provided for @teacherApplySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Application submitted'**
+  String get teacherApplySubmitted;
+
+  /// No description provided for @teacherDashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher hub'**
+  String get teacherDashboardTitle;
+
+  /// No description provided for @teacherNavDashboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard'**
+  String get teacherNavDashboard;
+
+  /// No description provided for @teacherNavExams.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam bank'**
+  String get teacherNavExams;
+
+  /// No description provided for @teacherShellAppName.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get teacherShellAppName;
+
+  /// No description provided for @teacherShellNavGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get teacherShellNavGroup;
+
+  /// No description provided for @teacherShellDesktopTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a desktop browser'**
+  String get teacherShellDesktopTitle;
+
+  /// No description provided for @teacherShellDesktopBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The teacher workspace is optimized for screens 768px and wider. Open this page on a laptop or desktop for the best experience.'**
+  String get teacherShellDesktopBody;
+
+  /// No description provided for @teacherShellCollapseSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse sidebar'**
+  String get teacherShellCollapseSidebar;
+
+  /// No description provided for @teacherShellExpandSidebar.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand sidebar'**
+  String get teacherShellExpandSidebar;
+
+  /// No description provided for @teacherAccountMenuTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & settings'**
+  String get teacherAccountMenuTitle;
+
+  /// No description provided for @teacherAccountRoleTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get teacherAccountRoleTeacher;
+
+  /// No description provided for @teacherAccountSectionAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get teacherAccountSectionAbout;
+
+  /// No description provided for @teacherAccountOpenMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Account menu'**
+  String get teacherAccountOpenMenu;
+
+  /// No description provided for @teacherAccountEditProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your name, avatar, and contact details.'**
+  String get teacherAccountEditProfileSubtitle;
+
+  /// No description provided for @teacherDashboardGreeting.
+  ///
+  /// In en, this message translates to:
+  /// **'Hello, {name}'**
+  String teacherDashboardGreeting(String name);
+
+  /// No description provided for @teacherDashboardTodayMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'Today · {time}'**
+  String teacherDashboardTodayMeta(String time);
+
+  /// No description provided for @teacherDashboardActionNewExam.
+  ///
+  /// In en, this message translates to:
+  /// **'New exam'**
+  String get teacherDashboardActionNewExam;
+
+  /// No description provided for @teacherClassFab.
+  ///
+  /// In en, this message translates to:
+  /// **'New class'**
+  String get teacherClassFab;
+
+  /// No description provided for @teacherClassCreateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create classroom'**
+  String get teacherClassCreateTitle;
+
+  /// No description provided for @teacherClassNameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class name'**
+  String get teacherClassNameLabel;
+
+  /// No description provided for @teacherClassCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom created'**
+  String get teacherClassCreated;
+
+  /// No description provided for @teacherMyClassrooms.
+  ///
+  /// In en, this message translates to:
+  /// **'My classrooms'**
+  String get teacherMyClassrooms;
+
+  /// No description provided for @teacherNoClassrooms.
+  ///
+  /// In en, this message translates to:
+  /// **'No classrooms yet. Create one with the + button.'**
+  String get teacherNoClassrooms;
+
+  /// No description provided for @teacherInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get teacherInviteCode;
+
+  /// No description provided for @teacherClassroomDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom'**
+  String get teacherClassroomDetailTitle;
+
+  /// No description provided for @teacherNoExams.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a sample exam from the Teacher hub first.'**
+  String get teacherNoExams;
+
+  /// No description provided for @teacherAssignmentCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam assigned to this class'**
+  String get teacherAssignmentCreated;
+
+  /// No description provided for @teacherAssignFirstExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign latest exam to this class'**
+  String get teacherAssignFirstExam;
+
+  /// No description provided for @teacherClassroomMemberCountActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} students in this class'**
+  String teacherClassroomMemberCountActive(int count);
+
+  /// No description provided for @teacherClassroomMemberCountPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} awaiting approval'**
+  String teacherClassroomMemberCountPending(int count);
+
+  /// No description provided for @teacherAssignExamToClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign exam to this class'**
+  String get teacherAssignExamToClass;
+
+  /// No description provided for @teacherPickExamToAssign.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a published exam'**
+  String get teacherPickExamToAssign;
+
+  /// No description provided for @teacherNoPublishedExams.
+  ///
+  /// In en, this message translates to:
+  /// **'No published exams yet. Publish an exam under My exams first.'**
+  String get teacherNoPublishedExams;
+
+  /// No description provided for @copyInviteCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite code'**
+  String get copyInviteCode;
+
+  /// No description provided for @adminTeacherApplicationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher applications'**
+  String get adminTeacherApplicationsTitle;
+
+  /// No description provided for @adminTeacherApplicationsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review pending requests'**
+  String get adminTeacherApplicationsSubtitle;
+
+  /// No description provided for @adminTeacherApplicationsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No applications in this state.'**
+  String get adminTeacherApplicationsEmpty;
+
+  /// No description provided for @adminTeacherApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get adminTeacherApprove;
+
+  /// No description provided for @adminTeacherReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get adminTeacherReject;
+
+  /// No description provided for @adminTeacherRejectReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason for rejection'**
+  String get adminTeacherRejectReason;
+
+  /// No description provided for @studentClassesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My classes'**
+  String get studentClassesTitle;
+
+  /// No description provided for @studentClassesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a class to see only assignments from that class.'**
+  String get studentClassesSubtitle;
+
+  /// No description provided for @studentJoinClassTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with invite code'**
+  String get studentJoinClassTitle;
+
+  /// No description provided for @studentJoinClassSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the code from your teacher. Assignments will appear inside each class.'**
+  String get studentJoinClassSubtitle;
+
+  /// No description provided for @studentInviteCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get studentInviteCodeLabel;
+
+  /// No description provided for @studentJoinClassButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get studentJoinClassButton;
+
+  /// No description provided for @studentJoinClassSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined classroom'**
+  String get studentJoinClassSuccess;
+
+  /// No description provided for @studentMyClassesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your classrooms'**
+  String get studentMyClassesTitle;
+
+  /// No description provided for @studentNoClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'You are not in any class yet.'**
+  String get studentNoClasses;
+
+  /// No description provided for @studentClassOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open class'**
+  String get studentClassOpen;
+
+  /// No description provided for @studentClassAssignmentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No assignments} one{1 assignment} other{{count} assignments}}'**
+  String studentClassAssignmentsCount(int count);
+
+  /// No description provided for @studentClassLiveCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 live} other{{count} live}}'**
+  String studentClassLiveCount(int count);
+
+  /// No description provided for @studentClassDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom'**
+  String get studentClassDetailTitle;
+
+  /// No description provided for @studentClassDetailAssignmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Class assignments'**
+  String get studentClassDetailAssignmentsTitle;
+
+  /// No description provided for @studentClassDetailAssignmentsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Only assignments from this classroom are shown here.'**
+  String get studentClassDetailAssignmentsSubtitle;
+
+  /// No description provided for @studentClassNoAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'This class does not have any assignments yet.'**
+  String get studentClassNoAssignments;
+
+  /// No description provided for @studentClassAssignmentNotYetOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Not open yet — check the schedule from your teacher.'**
+  String get studentClassAssignmentNotYetOpen;
+
+  /// No description provided for @studentClassAssignmentClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This assignment window has closed.'**
+  String get studentClassAssignmentClosed;
+
+  /// No description provided for @studentClassInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Class information'**
+  String get studentClassInfoTitle;
+
+  /// No description provided for @studentClassMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 active student} other{{count} active students}}'**
+  String studentClassMemberCount(int count);
+
+  /// No description provided for @studentClassJoinPolicyOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open join'**
+  String get studentClassJoinPolicyOpen;
+
+  /// No description provided for @studentClassJoinPolicyApproval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approval required'**
+  String get studentClassJoinPolicyApproval;
+
+  /// No description provided for @studentClassCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String studentClassCreatedAt(String date);
+
+  /// No description provided for @studentClassUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated {date}'**
+  String studentClassUpdatedAt(String date);
+
+  /// No description provided for @studentClassScheduleDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String studentClassScheduleDue(String date);
+
+  /// No description provided for @studentClassScheduleWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'{opens} – {closes}'**
+  String studentClassScheduleWindow(String opens, String closes);
+
+  /// No description provided for @studentClassPublicJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join public exam'**
+  String get studentClassPublicJoin;
+
+  /// No description provided for @studentClassTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher: {name}'**
+  String studentClassTeacher(String name);
+
+  /// No description provided for @studentClassNoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'No description for this class.'**
+  String get studentClassNoDescription;
+
+  /// No description provided for @teacherClassDetailAssignmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Class assignments'**
+  String get teacherClassDetailAssignmentsTitle;
+
+  /// No description provided for @teacherClassDetailAssignmentsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exams assigned to this class — schedule, format, and student progress.'**
+  String get teacherClassDetailAssignmentsSubtitle;
+
+  /// No description provided for @teacherClassDetailActiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Active assignments'**
+  String get teacherClassDetailActiveTitle;
+
+  /// No description provided for @teacherClassDetailActiveSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open sessions and assignments students can still take.'**
+  String get teacherClassDetailActiveSubtitle;
+
+  /// No description provided for @teacherClassDetailHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Session history'**
+  String get teacherClassDetailHistoryTitle;
+
+  /// No description provided for @teacherClassDetailHistorySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live exams whose latest session has ended.'**
+  String get teacherClassDetailHistorySubtitle;
+
+  /// No description provided for @teacherClassHistoryOpenGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get teacherClassHistoryOpenGrading;
+
+  /// No description provided for @teacherClassHistorySessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'Last session ended: {date}'**
+  String teacherClassHistorySessionEnded(String date);
+
+  /// No description provided for @teacherClassNoAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'No exams assigned to this class yet.'**
+  String get teacherClassNoAssignments;
+
+  /// No description provided for @teacherClassNoHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No ended live sessions for this class yet.'**
+  String get teacherClassNoHistory;
+
+  /// No description provided for @teacherClassTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get teacherClassTabOverview;
+
+  /// No description provided for @teacherClassTabAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get teacherClassTabAssignments;
+
+  /// No description provided for @teacherClassTabMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get teacherClassTabMembers;
+
+  /// No description provided for @teacherClassTabSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get teacherClassTabSettings;
+
+  /// No description provided for @teacherClassMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get teacherClassMembersEmpty;
+
+  /// No description provided for @teacherClassMemberRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get teacherClassMemberRemove;
+
+  /// No description provided for @teacherClassMemberRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this student from the class?'**
+  String get teacherClassMemberRemoveConfirm;
+
+  /// No description provided for @teacherClassMemberStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending approval'**
+  String get teacherClassMemberStatusPending;
+
+  /// No description provided for @teacherClassSaveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get teacherClassSaveSettings;
+
+  /// No description provided for @teacherClassSettingsSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom updated'**
+  String get teacherClassSettingsSaved;
+
+  /// No description provided for @teacherClassRotateInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Rotate invite code'**
+  String get teacherClassRotateInvite;
+
+  /// No description provided for @teacherClassRotateInviteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a new invite code? The old code will stop working.'**
+  String get teacherClassRotateInviteConfirm;
+
+  /// No description provided for @teacherClassArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive class'**
+  String get teacherClassArchive;
+
+  /// No description provided for @teacherClassArchiveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this class? Students will no longer see new assignments here.'**
+  String get teacherClassArchiveConfirm;
+
+  /// No description provided for @teacherClassArchivedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Class archived'**
+  String get teacherClassArchivedMessage;
+
+  /// No description provided for @teacherExamArchive.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive exam'**
+  String get teacherExamArchive;
+
+  /// No description provided for @teacherExamArchiveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Archive this exam? You cannot assign archived exams.'**
+  String get teacherExamArchiveConfirm;
+
+  /// No description provided for @teacherExamArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam archived'**
+  String get teacherExamArchived;
+
+  /// No description provided for @teacherExamDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete permanently'**
+  String get teacherExamDelete;
+
+  /// No description provided for @teacherExamDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this exam permanently? All assignments without submitted work will be removed. This cannot be undone.'**
+  String get teacherExamDeleteConfirm;
+
+  /// No description provided for @teacherExamDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam deleted'**
+  String get teacherExamDeleted;
+
+  /// No description provided for @teacherExamRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore exam'**
+  String get teacherExamRestore;
+
+  /// No description provided for @teacherExamRestoreConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this exam from archive?'**
+  String get teacherExamRestoreConfirm;
+
+  /// No description provided for @teacherExamRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam restored'**
+  String get teacherExamRestored;
+
+  /// No description provided for @teacherExamsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get teacherExamsFilterAll;
+
+  /// No description provided for @teacherExamsFilterDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get teacherExamsFilterDraft;
+
+  /// No description provided for @teacherExamsFilterPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get teacherExamsFilterPublished;
+
+  /// No description provided for @teacherExamsFilterArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get teacherExamsFilterArchived;
+
+  /// No description provided for @teacherExamsFilterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No exams in this filter.'**
+  String get teacherExamsFilterEmpty;
+
+  /// No description provided for @teacherExamPublishConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish this exam so you can assign it to classes?'**
+  String get teacherExamPublishConfirm;
+
+  /// No description provided for @teacherExamMoreActions.
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get teacherExamMoreActions;
+
+  /// No description provided for @teacherAssignmentDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete assignment'**
+  String get teacherAssignmentDelete;
+
+  /// No description provided for @teacherAssignmentDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete this assignment? Only allowed if no student has submitted yet.'**
+  String get teacherAssignmentDeleteConfirm;
+
+  /// No description provided for @teacherAssignmentDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment deleted'**
+  String get teacherAssignmentDeleted;
+
+  /// No description provided for @teacherAssignmentClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close assignment'**
+  String get teacherAssignmentClose;
+
+  /// No description provided for @teacherAssignmentCloseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close this assignment? Students can no longer start new attempts.'**
+  String get teacherAssignmentCloseConfirm;
+
+  /// No description provided for @teacherAssignmentClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment closed'**
+  String get teacherAssignmentClosed;
+
+  /// No description provided for @teacherAssignmentAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'Audience'**
+  String get teacherAssignmentAudience;
+
+  /// No description provided for @teacherAssignmentAudienceClassroom.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom'**
+  String get teacherAssignmentAudienceClassroom;
+
+  /// No description provided for @teacherAssignmentAudiencePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public link'**
+  String get teacherAssignmentAudiencePublic;
+
+  /// No description provided for @teacherAssignmentPublicMaxUsesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Max uses (optional)'**
+  String get teacherAssignmentPublicMaxUsesHint;
+
+  /// No description provided for @teacherAssignmentPublicExpiresHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick expiry (optional)'**
+  String get teacherAssignmentPublicExpiresHint;
+
+  /// No description provided for @teacherAssignmentPublicTokenTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Public join token'**
+  String get teacherAssignmentPublicTokenTitle;
+
+  /// No description provided for @teacherAssignmentPublicTokenBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this token with students. They paste it in “Join public exam” (or your shared instructions).'**
+  String get teacherAssignmentPublicTokenBody;
+
+  /// No description provided for @dashboardPublicCopyToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy token'**
+  String get dashboardPublicCopyToken;
+
+  /// No description provided for @dashboardPublicTokenCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Token copied'**
+  String get dashboardPublicTokenCopied;
+
+  /// No description provided for @dashboardPublicRotateLink.
+  ///
+  /// In en, this message translates to:
+  /// **'New link'**
+  String get dashboardPublicRotateLink;
+
+  /// No description provided for @dashboardPublicRotateConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a new public token? Old links will stop working.'**
+  String get dashboardPublicRotateConfirm;
+
+  /// No description provided for @dashboardPublicCloseLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Close link'**
+  String get dashboardPublicCloseLink;
+
+  /// No description provided for @dashboardPublicCloseConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Close this public assignment? New participants cannot start.'**
+  String get dashboardPublicCloseConfirm;
+
+  /// No description provided for @teacherApplyStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application is pending review.'**
+  String get teacherApplyStatusPending;
+
+  /// No description provided for @teacherApplyStatusApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'You are approved as a teacher. Open the teacher hub from your profile.'**
+  String get teacherApplyStatusApproved;
+
+  /// No description provided for @teacherApplyStatusRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Your application was rejected.'**
+  String get teacherApplyStatusRejected;
+
+  /// No description provided for @teacherApplyStatusWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'You withdrew your application. You can submit a new one.'**
+  String get teacherApplyStatusWithdrawn;
+
+  /// No description provided for @teacherApplyStatusNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No application yet — tell us about yourself below.'**
+  String get teacherApplyStatusNone;
+
+  /// No description provided for @teacherApplyRejectReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Note from reviewer'**
+  String get teacherApplyRejectReason;
+
+  /// No description provided for @teacherApplyWithdraw.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw application'**
+  String get teacherApplyWithdraw;
+
+  /// No description provided for @teacherApplyWithdrawConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw your pending application?'**
+  String get teacherApplyWithdrawConfirm;
+
+  /// No description provided for @teacherApplyGoToHub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open teacher hub'**
+  String get teacherApplyGoToHub;
+
+  /// No description provided for @homeQuickMyClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get homeQuickMyClasses;
+
+  /// No description provided for @homeQuickPublicExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Public exam'**
+  String get homeQuickPublicExam;
+
+  /// No description provided for @studentJoinClassByTokenLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link token'**
+  String get studentJoinClassByTokenLabel;
+
+  /// No description provided for @studentJoinClassByTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the long token from your teacher’s class link'**
+  String get studentJoinClassByTokenHint;
+
+  /// No description provided for @studentJoinClassByTokenButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with link'**
+  String get studentJoinClassByTokenButton;
+
+  /// No description provided for @studentExamsHubTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Public exam join'**
+  String get studentExamsHubTitle;
+
+  /// No description provided for @studentExamsHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Class assignments stay inside each class. Use this screen only when you have a public exam token from your teacher.'**
+  String get studentExamsHubSubtitle;
+
+  /// No description provided for @studentExamTimeRemainingHM.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String studentExamTimeRemainingHM(int hours, int minutes);
+
+  /// No description provided for @studentExamTimeRemainingMS.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m {seconds}s'**
+  String studentExamTimeRemainingMS(int minutes, int seconds);
+
+  /// No description provided for @studentExamTimeRemainingS.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s'**
+  String studentExamTimeRemainingS(int seconds);
+
+  /// No description provided for @studentExamRunnerLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load this exam.'**
+  String get studentExamRunnerLoadFailed;
+
+  /// No description provided for @teacherMobileWorkspaceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher hub'**
+  String get teacherMobileWorkspaceTitle;
+
+  /// No description provided for @teacherMobileWorkspaceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the tabs below for quick navigation. For complex exam editing, a wider screen is recommended.'**
+  String get teacherMobileWorkspaceBody;
+
+  /// No description provided for @teacherClassOverviewMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{students} students · {policy}'**
+  String teacherClassOverviewMeta(int students, String policy);
+
+  /// No description provided for @teacherClassStatActiveAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get teacherClassStatActiveAssignments;
+
+  /// No description provided for @teacherClassStatHistoryAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get teacherClassStatHistoryAssignments;
+
+  /// No description provided for @teacherClassStatStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get teacherClassStatStudents;
+
+  /// No description provided for @teacherClassStatPendingMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending join'**
+  String get teacherClassStatPendingMembers;
+
+  /// No description provided for @teacherClassCreatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get teacherClassCreatedLabel;
+
+  /// No description provided for @teacherClassUpdatedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated'**
+  String get teacherClassUpdatedLabel;
+
+  /// No description provided for @teacherClassInviteCardHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this code so students can join the class.'**
+  String get teacherClassInviteCardHint;
+
+  /// No description provided for @teacherClassRecentAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent assignments'**
+  String get teacherClassRecentAssignments;
+
+  /// No description provided for @teacherClassViewAllAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'View all assignments'**
+  String get teacherClassViewAllAssignments;
+
+  /// No description provided for @teacherClassSettingsAbout.
+  ///
+  /// In en, this message translates to:
+  /// **'About this class'**
+  String get teacherClassSettingsAbout;
+
+  /// No description provided for @teacherClassSettingsJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Join settings'**
+  String get teacherClassSettingsJoin;
+
+  /// No description provided for @teacherClassAssignExamCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign an exam'**
+  String get teacherClassAssignExamCta;
+
+  /// No description provided for @examCardFormatClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic exam'**
+  String get examCardFormatClassic;
+
+  /// No description provided for @examCardFormatIntegrated.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrated 4 skills'**
+  String get examCardFormatIntegrated;
+
+  /// No description provided for @examCardFormatSkills.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills + Grammar'**
+  String get examCardFormatSkills;
+
+  /// No description provided for @examCardScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get examCardScheduleTitle;
+
+  /// No description provided for @examCardExamInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam details'**
+  String get examCardExamInfoTitle;
+
+  /// No description provided for @examCardQuestionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions'**
+  String examCardQuestionsCount(int count);
+
+  /// No description provided for @examCardPointsMax.
+  ///
+  /// In en, this message translates to:
+  /// **'Max {points} pts'**
+  String examCardPointsMax(int points);
+
+  /// No description provided for @examCardGrammarSkillsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{grammar} grammar · {skills} skill parts'**
+  String examCardGrammarSkillsCount(int grammar, int skills);
+
+  /// No description provided for @examCardAssignedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned {date}'**
+  String examCardAssignedAt(String date);
+
+  /// No description provided for @examCardRoomCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Room code: {code}'**
+  String examCardRoomCode(String code);
+
+  /// No description provided for @examCardOpensAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens {date}'**
+  String examCardOpensAt(String date);
+
+  /// No description provided for @examCardClosesAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes {date}'**
+  String examCardClosesAt(String date);
+
+  /// No description provided for @examCardSessionStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Session started {date}'**
+  String examCardSessionStarted(String date);
+
+  /// No description provided for @examCardStatusLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Lobby open — waiting to go live'**
+  String get examCardStatusLobby;
+
+  /// No description provided for @examCardStatusLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live now'**
+  String get examCardStatusLive;
+
+  /// No description provided for @examCardMyAttemptInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'You have a draft in progress'**
+  String get examCardMyAttemptInProgress;
+
+  /// No description provided for @examCardMyAttemptSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted — results pending'**
+  String get examCardMyAttemptSubmitted;
+
+  /// No description provided for @examCardMyAttemptVoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempt voided'**
+  String get examCardMyAttemptVoid;
+
+  /// No description provided for @examCardMyAttemptScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {awarded} / {max}'**
+  String examCardMyAttemptScore(num awarded, num max);
+
+  /// No description provided for @examCardTeacherNoAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'No student attempts yet'**
+  String get examCardTeacherNoAttempts;
+
+  /// No description provided for @examCardTeacherAttemptsSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{submitted} submitted · {inProgress} in progress · {total} total'**
+  String examCardTeacherAttemptsSummary(
+      int submitted, int inProgress, int total);
+
+  /// No description provided for @examCardManageSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Open session'**
+  String get examCardManageSession;
+
+  /// No description provided for @studentExamsPageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments from your classes are listed inside each class. Use a public link only when your teacher shared one.'**
+  String get studentExamsPageSubtitle;
+
+  /// No description provided for @studentExamsGoToClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to my classes'**
+  String get studentExamsGoToClasses;
+
+  /// No description provided for @studentExamsMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Exams'**
+  String get studentExamsMenu;
+
+  /// No description provided for @studentExamsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Available exams'**
+  String get studentExamsTitle;
+
+  /// No description provided for @studentNoExams.
+  ///
+  /// In en, this message translates to:
+  /// **'No exams available for your classes.'**
+  String get studentNoExams;
+
+  /// No description provided for @studentExamStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get studentExamStart;
+
+  /// No description provided for @studentExamUnknownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get studentExamUnknownTitle;
+
+  /// No description provided for @studentExamRunnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get studentExamRunnerTitle;
+
+  /// No description provided for @studentExamSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit answers'**
+  String get studentExamSubmit;
+
+  /// No description provided for @studentExamSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get studentExamSubmitted;
+
+  /// No description provided for @studentExamScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get studentExamScore;
+
+  /// No description provided for @studentExamQuestionProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {current} of {total}'**
+  String studentExamQuestionProgress(int current, int total);
+
+  /// No description provided for @studentExamPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get studentExamPrevious;
+
+  /// No description provided for @studentExamNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get studentExamNext;
+
+  /// No description provided for @studentExamItemUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This question type cannot be answered in the app yet. Skip or contact your teacher.'**
+  String get studentExamItemUnsupported;
+
+  /// No description provided for @studentExamEssayPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your answer here…'**
+  String get studentExamEssayPlaceholder;
+
+  /// No description provided for @studentExamScoreTotals.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {earned} / {max}'**
+  String studentExamScoreTotals(Object earned, Object max);
+
+  /// No description provided for @studentExamNoQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'This exam has no questions you can answer here yet.'**
+  String get studentExamNoQuestions;
+
+  /// No description provided for @examModeSelfPaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-paced'**
+  String get examModeSelfPaced;
+
+  /// No description provided for @examModeScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get examModeScheduled;
+
+  /// No description provided for @examModeRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'Live session'**
+  String get examModeRealtime;
+
+  /// No description provided for @examOpenLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter lobby'**
+  String get examOpenLobby;
+
+  /// No description provided for @examWaitingForTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the teacher to start'**
+  String get examWaitingForTeacher;
+
+  /// No description provided for @examCardLiveSessionEnded.
+  ///
+  /// In en, this message translates to:
+  /// **'The teacher has ended this live session.'**
+  String get examCardLiveSessionEnded;
+
+  /// No description provided for @examCardLiveSessionEndedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended: {date}'**
+  String examCardLiveSessionEndedAt(String date);
+
+  /// No description provided for @examCardViewMySubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'View my submission'**
+  String get examCardViewMySubmission;
+
+  /// No description provided for @examSessionEndedByTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'The teacher ended this live session. Your answers were saved.'**
+  String get examSessionEndedByTeacher;
+
+  /// No description provided for @examJoinByLinkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join with public link'**
+  String get examJoinByLinkTitle;
+
+  /// No description provided for @examJoinByLinkHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the token from your teacher'**
+  String get examJoinByLinkHint;
+
+  /// No description provided for @examJoinPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview'**
+  String get examJoinPreview;
+
+  /// No description provided for @examJoinStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exam'**
+  String get examJoinStart;
+
+  /// No description provided for @examSessionRoomCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Room code'**
+  String get examSessionRoomCode;
+
+  /// No description provided for @examSessionGo.
+  ///
+  /// In en, this message translates to:
+  /// **'Open exam'**
+  String get examSessionGo;
+
+  /// No description provided for @studentExamLeaveRealtimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this exam?'**
+  String get studentExamLeaveRealtimeTitle;
+
+  /// No description provided for @studentExamLeaveRealtimeMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'If you leave now, you cannot return to this live exam. Your attempt will be closed.'**
+  String get studentExamLeaveRealtimeMessage;
+
+  /// No description provided for @studentExamLeaveRealtimeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave exam'**
+  String get studentExamLeaveRealtimeConfirm;
+
+  /// No description provided for @studentExamLeaveRealtimeCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep working'**
+  String get studentExamLeaveRealtimeCancel;
+
+  /// No description provided for @studentExamVoluntaryExitBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You left this exam and cannot re-enter.'**
+  String get studentExamVoluntaryExitBlocked;
+
+  /// No description provided for @studentExamCannotRejoinAfterLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'You cannot rejoin this exam after leaving.'**
+  String get studentExamCannotRejoinAfterLeave;
+
+  /// No description provided for @teacherExamSessionLeavePageHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving this page does not end the exam for students. End the session here when you are ready to finish.'**
+  String get teacherExamSessionLeavePageHint;
+
+  /// No description provided for @teacherAssignmentsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get teacherAssignmentsSection;
+
+  /// No description provided for @teacherNoAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'No assignments yet.'**
+  String get teacherNoAssignments;
+
+  /// No description provided for @teacherDashboardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes, exams, and grading in one calm workspace.'**
+  String get teacherDashboardSubtitle;
+
+  /// No description provided for @teacherDashboardOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get teacherDashboardOverview;
+
+  /// No description provided for @teacherDashboardStatClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'Classes'**
+  String get teacherDashboardStatClasses;
+
+  /// No description provided for @teacherDashboardStatAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get teacherDashboardStatAssignments;
+
+  /// No description provided for @teacherDashboardStatLiveModes.
+  ///
+  /// In en, this message translates to:
+  /// **'Live mode'**
+  String get teacherDashboardStatLiveModes;
+
+  /// No description provided for @teacherDashboardStatDraftExams.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft exams'**
+  String get teacherDashboardStatDraftExams;
+
+  /// No description provided for @teacherDashboardStatPublishedExams.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get teacherDashboardStatPublishedExams;
+
+  /// No description provided for @teacherDashboardStatNeedsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs action'**
+  String get teacherDashboardStatNeedsAction;
+
+  /// No description provided for @teacherDashboardShortcuts.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortcuts'**
+  String get teacherDashboardShortcuts;
+
+  /// No description provided for @teacherDashboardShortcutExamBank.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam bank'**
+  String get teacherDashboardShortcutExamBank;
+
+  /// No description provided for @teacherDashboardShortcutNewSkillsExam.
+  ///
+  /// In en, this message translates to:
+  /// **'New skills exam'**
+  String get teacherDashboardShortcutNewSkillsExam;
+
+  /// No description provided for @teacherDashboardShortcutOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get teacherDashboardShortcutOpen;
+
+  /// No description provided for @teacherDashboardSectionLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live sessions'**
+  String get teacherDashboardSectionLive;
+
+  /// No description provided for @teacherDashboardLiveEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No realtime assignments yet. Assign an exam in Live mode to run a session.'**
+  String get teacherDashboardLiveEmpty;
+
+  /// No description provided for @teacherDashboardLiveWaitingSession.
+  ///
+  /// In en, this message translates to:
+  /// **'No active session — open console to start'**
+  String get teacherDashboardLiveWaitingSession;
+
+  /// No description provided for @teacherDashboardLiveStatusGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Ending session'**
+  String get teacherDashboardLiveStatusGrading;
+
+  /// No description provided for @teacherDashboardLiveSessionStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Session: {status}'**
+  String teacherDashboardLiveSessionStatus(String status);
+
+  /// No description provided for @teacherDashboardSectionGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Grading queue'**
+  String get teacherDashboardSectionGrading;
+
+  /// No description provided for @teacherDashboardViewAllQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'View all ({count})'**
+  String teacherDashboardViewAllQueue(int count);
+
+  /// No description provided for @teacherDashboardViewAllQueueShort.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get teacherDashboardViewAllQueueShort;
+
+  /// No description provided for @teacherDashboardQueueMoreHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more in queue'**
+  String teacherDashboardQueueMoreHidden(int count);
+
+  /// No description provided for @teacherDashboardGradingQueueAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending grading'**
+  String get teacherDashboardGradingQueueAllTitle;
+
+  /// No description provided for @teacherDashboardGradingQueueAllSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} submissions need your action'**
+  String teacherDashboardGradingQueueAllSubtitle(int count);
+
+  /// No description provided for @teacherDashboardViewAllLiveQueue.
+  ///
+  /// In en, this message translates to:
+  /// **'All live rooms ({count})'**
+  String teacherDashboardViewAllLiveQueue(int count);
+
+  /// No description provided for @teacherDashboardLiveQueueAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live sessions'**
+  String get teacherDashboardLiveQueueAllTitle;
+
+  /// No description provided for @teacherDashboardLiveQueueAllSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} realtime assignments in progress'**
+  String teacherDashboardLiveQueueAllSubtitle(int count);
+
+  /// No description provided for @teacherDashboardScrollHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Scroll sideways to browse rooms'**
+  String get teacherDashboardScrollHint;
+
+  /// No description provided for @teacherDashboardGradingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No submitted attempts need your attention right now.'**
+  String get teacherDashboardGradingEmpty;
+
+  /// No description provided for @teacherDashboardGradingLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading grading queue…'**
+  String get teacherDashboardGradingLoading;
+
+  /// No description provided for @teacherDashboardSectionAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get teacherDashboardSectionAssignments;
+
+  /// No description provided for @teacherDashboardAssignmentsPerClassHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by class — manage history inside each class.'**
+  String get teacherDashboardAssignmentsPerClassHint;
+
+  /// No description provided for @teacherDashboardFilterByClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get teacherDashboardFilterByClass;
+
+  /// No description provided for @teacherDashboardAllClasses.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes'**
+  String get teacherDashboardAllClasses;
+
+  /// No description provided for @teacherDashboardFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get teacherDashboardFilterAll;
+
+  /// No description provided for @teacherDashboardFilterPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public link'**
+  String get teacherDashboardFilterPublic;
+
+  /// No description provided for @teacherDashboardSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by exam title'**
+  String get teacherDashboardSearchHint;
+
+  /// No description provided for @teacherDashboardAudienceClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get teacherDashboardAudienceClass;
+
+  /// No description provided for @teacherDashboardAudiencePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Public link'**
+  String get teacherDashboardAudiencePublic;
+
+  /// No description provided for @teacherDashboardDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {date}'**
+  String teacherDashboardDue(String date);
+
+  /// No description provided for @teacherDashboardWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'{opens} – {closes}'**
+  String teacherDashboardWindow(String opens, String closes);
+
+  /// No description provided for @teacherDashboardClassLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class: {name}'**
+  String teacherDashboardClassLabel(String name);
+
+  /// No description provided for @teacherDashboardOpenConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Open console'**
+  String get teacherDashboardOpenConsole;
+
+  /// No description provided for @teacherDashboardOpenGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Open grading'**
+  String get teacherDashboardOpenGrading;
+
+  /// No description provided for @teacherDashboardStudentUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get teacherDashboardStudentUnknown;
+
+  /// No description provided for @teacherDashboardGradingChipManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual grading'**
+  String get teacherDashboardGradingChipManual;
+
+  /// No description provided for @teacherDashboardGradingChipAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI grading'**
+  String get teacherDashboardGradingChipAi;
+
+  /// No description provided for @teacherDashboardGradingChipRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release results'**
+  String get teacherDashboardGradingChipRelease;
+
+  /// No description provided for @teacherExamConsoleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live exam session'**
+  String get teacherExamConsoleTitle;
+
+  /// No description provided for @teacherExamSessionLiveRosterTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Students in lobby'**
+  String get teacherExamSessionLiveRosterTitle;
+
+  /// No description provided for @teacherExamSessionLiveRosterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Count and list update in real time when students join the waiting room.'**
+  String get teacherExamSessionLiveRosterHint;
+
+  /// No description provided for @teacherExamSessionJoinedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 student joined} other{{count} students joined}}'**
+  String teacherExamSessionJoinedCount(int count);
+
+  /// No description provided for @teacherExamSessionNoParticipantsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No students in the lobby yet.'**
+  String get teacherExamSessionNoParticipantsYet;
+
+  /// No description provided for @teacherExamSessionTabControl.
+  ///
+  /// In en, this message translates to:
+  /// **'Session control'**
+  String get teacherExamSessionTabControl;
+
+  /// No description provided for @teacherExamSessionTabLiveMonitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Live monitor'**
+  String get teacherExamSessionTabLiveMonitor;
+
+  /// No description provided for @teacherExamSessionShowDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get teacherExamSessionShowDetails;
+
+  /// No description provided for @teacherExamSessionHideDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get teacherExamSessionHideDetails;
+
+  /// No description provided for @teacherLiveMonitorSummaryInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in progress'**
+  String teacherLiveMonitorSummaryInProgress(int count);
+
+  /// No description provided for @teacherLiveMonitorSummarySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} submitted'**
+  String teacherLiveMonitorSummarySubmitted(int count);
+
+  /// No description provided for @teacherLiveMonitorSummaryFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} flagged'**
+  String teacherLiveMonitorSummaryFlagged(int count);
+
+  /// No description provided for @teacherLiveMonitorSummaryAvgProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. {percent}%'**
+  String teacherLiveMonitorSummaryAvgProgress(double percent);
+
+  /// No description provided for @teacherLiveMonitorSummaryLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{inProgress} in progress · {submitted} submitted · {flagged} flagged · avg {avg}%'**
+  String teacherLiveMonitorSummaryLine(
+      int inProgress, int submitted, int flagged, String avg);
+
+  /// No description provided for @teacherLiveMonitorFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get teacherLiveMonitorFilterAll;
+
+  /// No description provided for @teacherLiveMonitorFilterInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get teacherLiveMonitorFilterInProgress;
+
+  /// No description provided for @teacherLiveMonitorFilterSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherLiveMonitorFilterSubmitted;
+
+  /// No description provided for @teacherLiveMonitorFilterFlagged.
+  ///
+  /// In en, this message translates to:
+  /// **'Flagged'**
+  String get teacherLiveMonitorFilterFlagged;
+
+  /// No description provided for @teacherLiveMonitorNoStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'No students match this filter.'**
+  String get teacherLiveMonitorNoStudents;
+
+  /// No description provided for @teacherLiveMonitorProgressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{answered}/{total} · {percent}%'**
+  String teacherLiveMonitorProgressLabel(
+      int answered, int total, double percent);
+
+  /// No description provided for @teacherLiveMonitorIntegrityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High integrity risk'**
+  String get teacherLiveMonitorIntegrityHigh;
+
+  /// No description provided for @teacherLiveMonitorIntegrityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium integrity risk'**
+  String get teacherLiveMonitorIntegrityMedium;
+
+  /// No description provided for @teacherLiveMonitorCurrentQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Current focus'**
+  String get teacherLiveMonitorCurrentQuestion;
+
+  /// No description provided for @teacherLiveMonitorStatusSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherLiveMonitorStatusSubmitted;
+
+  /// No description provided for @teacherLiveMonitorIntegrityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrity'**
+  String get teacherLiveMonitorIntegrityLabel;
+
+  /// No description provided for @teacherLiveMonitorTabSwitches.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab switches'**
+  String get teacherLiveMonitorTabSwitches;
+
+  /// No description provided for @teacherLiveMonitorFocusLoss.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus loss'**
+  String get teacherLiveMonitorFocusLoss;
+
+  /// No description provided for @teacherLiveMonitorCopyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy/paste'**
+  String get teacherLiveMonitorCopyPaste;
+
+  /// No description provided for @teacherLiveMonitorDetailProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get teacherLiveMonitorDetailProgress;
+
+  /// No description provided for @teacherLiveMonitorDetailSections.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill sections'**
+  String get teacherLiveMonitorDetailSections;
+
+  /// No description provided for @teacherLiveMonitorDetailGrammar.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar answers'**
+  String get teacherLiveMonitorDetailGrammar;
+
+  /// No description provided for @teacherLiveMonitorGrammarQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get teacherLiveMonitorGrammarQuestion;
+
+  /// No description provided for @teacherLiveMonitorGrammarNotAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not answered'**
+  String get teacherLiveMonitorGrammarNotAnswered;
+
+  /// No description provided for @teacherLiveMonitorGrammarCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get teacherLiveMonitorGrammarCorrect;
+
+  /// No description provided for @teacherLiveMonitorGrammarWrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong'**
+  String get teacherLiveMonitorGrammarWrong;
+
+  /// No description provided for @teacherLiveMonitorWatchScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch live screen'**
+  String get teacherLiveMonitorWatchScreen;
+
+  /// No description provided for @teacherLiveMonitorQuestionStripLegend.
+  ///
+  /// In en, this message translates to:
+  /// **'Green: correct · Red: wrong · Gray: not answered yet'**
+  String get teacherLiveMonitorQuestionStripLegend;
+
+  /// No description provided for @teacherLiveMirrorPageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} — {exam}'**
+  String teacherLiveMirrorPageTitle(String name, String exam);
+
+  /// No description provided for @teacherLiveMirrorPageTitleSimple.
+  ///
+  /// In en, this message translates to:
+  /// **'Live view — {name}'**
+  String teacherLiveMirrorPageTitleSimple(String name);
+
+  /// No description provided for @teacherLiveMirrorLiveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Live — mirroring student screen'**
+  String get teacherLiveMirrorLiveBadge;
+
+  /// No description provided for @teacherLiveMirrorNoContent.
+  ///
+  /// In en, this message translates to:
+  /// **'No exam content to display.'**
+  String get teacherLiveMirrorNoContent;
+
+  /// No description provided for @teacherLiveMirrorWritingDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing draft (live)'**
+  String get teacherLiveMirrorWritingDraft;
+
+  /// No description provided for @teacherLiveMirrorWritingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Student has not started writing yet.'**
+  String get teacherLiveMirrorWritingEmpty;
+
+  /// No description provided for @teacherLiveMirrorWordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} words'**
+  String teacherLiveMirrorWordCount(int count);
+
+  /// No description provided for @teacherLiveMirrorSkillCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill section marked complete'**
+  String get teacherLiveMirrorSkillCompleted;
+
+  /// No description provided for @teacherLiveMirrorSkillInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Working on {skill}…'**
+  String teacherLiveMirrorSkillInProgress(String skill);
+
+  /// No description provided for @teacherLiveMirrorBrowsingPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Viewing: {part}'**
+  String teacherLiveMirrorBrowsingPart(String part);
+
+  /// No description provided for @teacherLiveMirrorFollowStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow student'**
+  String get teacherLiveMirrorFollowStudent;
+
+  /// No description provided for @teacherLiveMirrorWritingPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam prompt'**
+  String get teacherLiveMirrorWritingPrompt;
+
+  /// No description provided for @teacherLiveMirrorListeningEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Student has not entered any dictation yet.'**
+  String get teacherLiveMirrorListeningEmpty;
+
+  /// No description provided for @teacherLiveMirrorListeningProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictation progress: {saved} / {total} cues'**
+  String teacherLiveMirrorListeningProgress(int saved, int total);
+
+  /// No description provided for @teacherLiveMirrorListeningCue.
+  ///
+  /// In en, this message translates to:
+  /// **'Cue {number}'**
+  String teacherLiveMirrorListeningCue(int number);
+
+  /// No description provided for @teacherLiveMirrorSpeakingInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Student is doing the speaking exercise.'**
+  String get teacherLiveMirrorSpeakingInProgress;
+
+  /// No description provided for @teacherLiveMirrorReadingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Student has not answered any reading questions yet.'**
+  String get teacherLiveMirrorReadingEmpty;
+
+  /// No description provided for @teacherLiveMirrorReadingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {number}'**
+  String teacherLiveMirrorReadingQuestion(int number);
+
+  /// No description provided for @examSessionStatusLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting room (lobby)'**
+  String get examSessionStatusLobby;
+
+  /// No description provided for @examSessionStatusLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam in progress'**
+  String get examSessionStatusLive;
+
+  /// No description provided for @examSessionStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended'**
+  String get examSessionStatusClosed;
+
+  /// No description provided for @examSessionStatusCanceled.
+  ///
+  /// In en, this message translates to:
+  /// **'Session canceled'**
+  String get examSessionStatusCanceled;
+
+  /// No description provided for @examSessionCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Session created {date}'**
+  String examSessionCreatedAt(String date);
+
+  /// No description provided for @examSessionScheduledEndAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled end: {date}'**
+  String examSessionScheduledEndAt(String date);
+
+  /// No description provided for @examSessionTimeLimitOnStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limit: {minutes} min (timer starts when you start the session)'**
+  String examSessionTimeLimitOnStart(int minutes);
+
+  /// No description provided for @examSessionEndsWhenTeacherEnds.
+  ///
+  /// In en, this message translates to:
+  /// **'No time limit — ends when you end the session'**
+  String get examSessionEndsWhenTeacherEnds;
+
+  /// No description provided for @examSessionReadyCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} ready · {total} in lobby'**
+  String examSessionReadyCount(int ready, int total);
+
+  /// No description provided for @examSessionStudentReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get examSessionStudentReady;
+
+  /// No description provided for @examSessionStudentNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ready'**
+  String get examSessionStudentNotReady;
+
+  /// No description provided for @examSessionMarkReady.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m ready'**
+  String get examSessionMarkReady;
+
+  /// No description provided for @examSessionMarkNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ready yet'**
+  String get examSessionMarkNotReady;
+
+  /// No description provided for @examSessionCancelReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel ready'**
+  String get examSessionCancelReady;
+
+  /// No description provided for @examSessionReadyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell your teacher you are ready to start. This updates in real time.'**
+  String get examSessionReadyHint;
+
+  /// No description provided for @examSessionKickStudentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove student?'**
+  String get examSessionKickStudentTitle;
+
+  /// No description provided for @examSessionKickStudentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name} from this exam room? They will leave the lobby immediately.'**
+  String examSessionKickStudentConfirm(String name);
+
+  /// No description provided for @examSessionKickStudentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get examSessionKickStudentAction;
+
+  /// No description provided for @examSessionKickStudentDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Student removed from the room.'**
+  String get examSessionKickStudentDone;
+
+  /// No description provided for @examSessionKickedByTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher removed you from this exam session.'**
+  String get examSessionKickedByTeacher;
+
+  /// No description provided for @examSessionLobbyParticipantsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Participants'**
+  String get examSessionLobbyParticipantsTitle;
+
+  /// No description provided for @examSessionLobbyParticipantsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Who has joined this waiting room (live).'**
+  String get examSessionLobbyParticipantsHint;
+
+  /// No description provided for @teacherExamCreateSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Create / refresh lobby'**
+  String get teacherExamCreateSession;
+
+  /// No description provided for @teacherExamStartSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Start for everyone'**
+  String get teacherExamStartSession;
+
+  /// No description provided for @teacherExamEndSession.
+  ///
+  /// In en, this message translates to:
+  /// **'End and submit all'**
+  String get teacherExamEndSession;
+
+  /// No description provided for @teacherExamGradingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grading'**
+  String get teacherExamGradingTitle;
+
+  /// No description provided for @teacherExamRunAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI suggestions'**
+  String get teacherExamRunAi;
+
+  /// No description provided for @teacherExamReleaseResults.
+  ///
+  /// In en, this message translates to:
+  /// **'Release results'**
+  String get teacherExamReleaseResults;
+
+  /// No description provided for @teacherExamGradingConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get teacherExamGradingConsole;
+
+  /// No description provided for @teacherExamGradingGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get teacherExamGradingGrade;
+
+  /// No description provided for @teacherMyExamsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My exams'**
+  String get teacherMyExamsTitle;
+
+  /// No description provided for @teacherExamNewExam.
+  ///
+  /// In en, this message translates to:
+  /// **'New exam'**
+  String get teacherExamNewExam;
+
+  /// No description provided for @teacherExamsListEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no exams yet. Tap + to create a draft.'**
+  String get teacherExamsListEmpty;
+
+  /// No description provided for @teacherExamUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled exam'**
+  String get teacherExamUntitled;
+
+  /// No description provided for @teacherExamStatusDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft'**
+  String get teacherExamStatusDraft;
+
+  /// No description provided for @teacherExamStatusPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Published'**
+  String get teacherExamStatusPublished;
+
+  /// No description provided for @teacherExamStatusArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get teacherExamStatusArchived;
+
+  /// No description provided for @teacherExamEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit exam'**
+  String get teacherExamEditorTitle;
+
+  /// No description provided for @teacherExamSaveDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get teacherExamSaveDraft;
+
+  /// No description provided for @teacherExamPublish.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish'**
+  String get teacherExamPublish;
+
+  /// No description provided for @teacherExamAddMcq.
+  ///
+  /// In en, this message translates to:
+  /// **'MCQ'**
+  String get teacherExamAddMcq;
+
+  /// No description provided for @teacherExamAddEssay.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay'**
+  String get teacherExamAddEssay;
+
+  /// No description provided for @teacherExamStemLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Question'**
+  String get teacherExamStemLabel;
+
+  /// No description provided for @teacherExamOptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Options'**
+  String get teacherExamOptionsHint;
+
+  /// No description provided for @teacherExamOptionsPipeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate options with |'**
+  String get teacherExamOptionsPipeHint;
+
+  /// No description provided for @teacherExamCorrectIndex.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct option index (0-based)'**
+  String get teacherExamCorrectIndex;
+
+  /// No description provided for @teacherExamEssayPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Essay prompt'**
+  String get teacherExamEssayPrompt;
+
+  /// No description provided for @teacherExamPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get teacherExamPoints;
+
+  /// No description provided for @teacherExamItemsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions'**
+  String get teacherExamItemsTitle;
+
+  /// No description provided for @teacherExamNoItemsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one question before publishing.'**
+  String get teacherExamNoItemsHint;
+
+  /// No description provided for @teacherExamPublishNeedItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one question before publishing.'**
+  String get teacherExamPublishNeedItems;
+
+  /// No description provided for @teacherExamDraftSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Draft saved'**
+  String get teacherExamDraftSaved;
+
+  /// No description provided for @teacherExamPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam published'**
+  String get teacherExamPublished;
+
+  /// No description provided for @teacherExamOnlyDraftEditable.
+  ///
+  /// In en, this message translates to:
+  /// **'Only draft exams can be edited here.'**
+  String get teacherExamOnlyDraftEditable;
+
+  /// No description provided for @teacherExamReadOnlyPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'This exam is published. Create a new draft to change content.'**
+  String get teacherExamReadOnlyPublished;
+
+  /// No description provided for @teacherExamTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get teacherExamTitleLabel;
+
+  /// No description provided for @teacherExamTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Midterm — Reading & Listening'**
+  String get teacherExamTitleHint;
+
+  /// No description provided for @teacherExamDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get teacherExamDescriptionLabel;
+
+  /// No description provided for @teacherExamResultsPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'When students see results'**
+  String get teacherExamResultsPolicy;
+
+  /// No description provided for @teacherExamPolicyAfterSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Right after submit (if auto-graded)'**
+  String get teacherExamPolicyAfterSubmit;
+
+  /// No description provided for @teacherExamPolicyAfterRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'After teacher releases grades'**
+  String get teacherExamPolicyAfterRelease;
+
+  /// No description provided for @teacherExamPolicyNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never'**
+  String get teacherExamPolicyNever;
+
+  /// No description provided for @teacherAssignmentWizardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign exam'**
+  String get teacherAssignmentWizardTitle;
+
+  /// No description provided for @teacherAssignExamDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose class, delivery mode, and schedule.'**
+  String get teacherAssignExamDialogSubtitle;
+
+  /// No description provided for @teacherAssignExamDialogSubtitleExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign “{examTitle}” to a class or link.'**
+  String teacherAssignExamDialogSubtitleExam(String examTitle);
+
+  /// No description provided for @teacherAssignExamModeHintSelfPaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Students start anytime before the due date.'**
+  String get teacherAssignExamModeHintSelfPaced;
+
+  /// No description provided for @teacherAssignExamModeHintScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed open and close times (markers on Schedule).'**
+  String get teacherAssignExamModeHintScheduled;
+
+  /// No description provided for @teacherAssignExamModeHintRealtime.
+  ///
+  /// In en, this message translates to:
+  /// **'You open a live room from the dashboard — not a calendar slot.'**
+  String get teacherAssignExamModeHintRealtime;
+
+  /// No description provided for @teacherAssignExamModeHintPractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice only — no official grading.'**
+  String get teacherAssignExamModeHintPractice;
+
+  /// No description provided for @teacherAssignExamRealtimeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'After assigning, open Live rooms on the dashboard to start the session.'**
+  String get teacherAssignExamRealtimeNote;
+
+  /// No description provided for @teacherAssignExamCalendarNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Open, Due, and Close appear on Schedule. “Ongoing” on the calendar means the window is open, not a live room.'**
+  String get teacherAssignExamCalendarNote;
+
+  /// No description provided for @teacherAssignExamAdvancedRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts & results'**
+  String get teacherAssignExamAdvancedRules;
+
+  /// No description provided for @teacherAssignExamAdvancedRulesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts, when students see scores, partial submit'**
+  String get teacherAssignExamAdvancedRulesHint;
+
+  /// No description provided for @teacherAssignExamRulesShow.
+  ///
+  /// In en, this message translates to:
+  /// **'Customize'**
+  String get teacherAssignExamRulesShow;
+
+  /// No description provided for @teacherAssignExamRulesHide.
+  ///
+  /// In en, this message translates to:
+  /// **'Collapse'**
+  String get teacherAssignExamRulesHide;
+
+  /// No description provided for @teacherAssignmentClassroom.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom'**
+  String get teacherAssignmentClassroom;
+
+  /// No description provided for @teacherAssignmentPickClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a classroom.'**
+  String get teacherAssignmentPickClass;
+
+  /// No description provided for @teacherAssignmentMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode'**
+  String get teacherAssignmentMode;
+
+  /// No description provided for @teacherAssignmentDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date (optional)'**
+  String get teacherAssignmentDueDate;
+
+  /// No description provided for @teacherAssignmentOpensAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens at'**
+  String get teacherAssignmentOpensAt;
+
+  /// No description provided for @teacherAssignmentClosesAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes at'**
+  String get teacherAssignmentClosesAt;
+
+  /// No description provided for @teacherAssignmentTimeLimitSec.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limit (seconds, optional)'**
+  String get teacherAssignmentTimeLimitSec;
+
+  /// No description provided for @teacherAssignmentTimeLimitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limit per attempt (minutes)'**
+  String get teacherAssignmentTimeLimitMinutes;
+
+  /// No description provided for @teacherAssignmentTimeLimitMinutesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 60'**
+  String get teacherAssignmentTimeLimitMinutesHint;
+
+  /// No description provided for @teacherAssignmentTimeLimitHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Countdown starts when the student begins (or when you start a live session). Leave empty for no per-attempt timer — only due date / exam window applies.'**
+  String get teacherAssignmentTimeLimitHelp;
+
+  /// No description provided for @teacherAssignmentTimeLimitPresetMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String teacherAssignmentTimeLimitPresetMinutes(int minutes);
+
+  /// No description provided for @teacherAssignmentCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create assignment'**
+  String get teacherAssignmentCreate;
+
+  /// No description provided for @teacherAssignmentExamNotPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish the exam first, then assign it.'**
+  String get teacherAssignmentExamNotPublished;
+
+  /// No description provided for @teacherAssignmentOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get teacherAssignmentOptional;
+
+  /// No description provided for @teacherAssignmentAllowPartialSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow submit before finishing all parts'**
+  String get teacherAssignmentAllowPartialSubmit;
+
+  /// No description provided for @teacherAssignmentAllowPartialSubmitHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Students may submit with unfinished sections; those sections score zero.'**
+  String get teacherAssignmentAllowPartialSubmitHint;
+
+  /// No description provided for @teacherAssignmentSectionAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'Audience'**
+  String get teacherAssignmentSectionAudience;
+
+  /// No description provided for @teacherAssignmentSectionDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule & mode'**
+  String get teacherAssignmentSectionDelivery;
+
+  /// No description provided for @teacherAssignmentSectionRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts & results'**
+  String get teacherAssignmentSectionRules;
+
+  /// No description provided for @teacherAssignmentAttemptPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts per student'**
+  String get teacherAssignmentAttemptPolicy;
+
+  /// No description provided for @teacherAssignmentAttemptSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Once'**
+  String get teacherAssignmentAttemptSingle;
+
+  /// No description provided for @teacherAssignmentAttemptUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited'**
+  String get teacherAssignmentAttemptUnlimited;
+
+  /// No description provided for @teacherAssignmentAttemptLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited'**
+  String get teacherAssignmentAttemptLimited;
+
+  /// No description provided for @teacherAssignmentMaxAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Max attempts'**
+  String get teacherAssignmentMaxAttempts;
+
+  /// No description provided for @teacherAssignmentShowResults.
+  ///
+  /// In en, this message translates to:
+  /// **'When students see results'**
+  String get teacherAssignmentShowResults;
+
+  /// No description provided for @examPartialSubmitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit incomplete exam?'**
+  String get examPartialSubmitTitle;
+
+  /// No description provided for @examPartialSubmitMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have not finished every part. Unfinished sections will receive no points.'**
+  String get examPartialSubmitMessage;
+
+  /// No description provided for @examPartialSubmitIncompleteHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Still incomplete:'**
+  String get examPartialSubmitIncompleteHeader;
+
+  /// No description provided for @examPartialSubmitConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit anyway'**
+  String get examPartialSubmitConfirm;
+
+  /// No description provided for @teacherGradingHubFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get teacherGradingHubFilterAll;
+
+  /// No description provided for @teacherGradingHubFilterInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get teacherGradingHubFilterInProgress;
+
+  /// No description provided for @teacherGradingHubFilterSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherGradingHubFilterSubmitted;
+
+  /// No description provided for @teacherGradingHubFilterPendingManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs grading'**
+  String get teacherGradingHubFilterPendingManual;
+
+  /// No description provided for @teacherGradingHubFilterFinalized.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded'**
+  String get teacherGradingHubFilterFinalized;
+
+  /// No description provided for @teacherGradingHubFilterReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Released'**
+  String get teacherGradingHubFilterReleased;
+
+  /// No description provided for @teacherGradingHubFilterPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial submit'**
+  String get teacherGradingHubFilterPartial;
+
+  /// No description provided for @teacherGradingHubPartialBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial'**
+  String get teacherGradingHubPartialBadge;
+
+  /// No description provided for @teacherGradingHubForceEndBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Session ended'**
+  String get teacherGradingHubForceEndBadge;
+
+  /// No description provided for @teacherGradingHubBatchAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI grade all submitted'**
+  String get teacherGradingHubBatchAi;
+
+  /// No description provided for @teacherGradingHubBatchAiDone.
+  ///
+  /// In en, this message translates to:
+  /// **'AI grading finished for submitted attempts'**
+  String get teacherGradingHubBatchAiDone;
+
+  /// No description provided for @teacherGradingHubNotReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Not released'**
+  String get teacherGradingHubNotReleased;
+
+  /// No description provided for @teacherGradingHubScoreLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {awarded} / {max}'**
+  String teacherGradingHubScoreLine(String awarded, String max);
+
+  /// No description provided for @teacherGradingHubSubmittedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {date}'**
+  String teacherGradingHubSubmittedAt(String date);
+
+  /// No description provided for @teacherGradingHubStatsLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{submitted} submitted · {inProgress} in progress · {partial} partial'**
+  String teacherGradingHubStatsLine(int submitted, int inProgress, int partial);
+
+  /// No description provided for @teacherGradingHubEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No attempts for this assignment yet.'**
+  String get teacherGradingHubEmpty;
+
+  /// No description provided for @teacherGradingHubOpenGrade.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade'**
+  String get teacherGradingHubOpenGrade;
+
+  /// No description provided for @teacherGradingHubBatchRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Release all graded'**
+  String get teacherGradingHubBatchRelease;
+
+  /// No description provided for @teacherGradingHubBatchReleaseDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Results released for submitted attempts'**
+  String get teacherGradingHubBatchReleaseDone;
+
+  /// No description provided for @teacherGradingHubBatchFinalize.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalize all submitted'**
+  String get teacherGradingHubBatchFinalize;
+
+  /// No description provided for @teacherGradingHubBatchFinalizeDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted attempts finalized'**
+  String get teacherGradingHubBatchFinalizeDone;
+
+  /// No description provided for @teacherExamDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get teacherExamDuplicate;
+
+  /// No description provided for @teacherExamDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam duplicated as draft'**
+  String get teacherExamDuplicated;
+
+  /// No description provided for @teacherAssignmentDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate assignment'**
+  String get teacherAssignmentDuplicate;
+
+  /// No description provided for @teacherAssignmentDuplicated.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment duplicated'**
+  String get teacherAssignmentDuplicated;
+
+  /// No description provided for @teacherAssignmentExtendDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Extend deadline'**
+  String get teacherAssignmentExtendDeadline;
+
+  /// No description provided for @teacherAssignmentDeadlineSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadline updated'**
+  String get teacherAssignmentDeadlineSaved;
+
+  /// No description provided for @teacherMemberApprove.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get teacherMemberApprove;
+
+  /// No description provided for @teacherMemberReject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get teacherMemberReject;
+
+  /// No description provided for @teacherMemberApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Student approved'**
+  String get teacherMemberApproved;
+
+  /// No description provided for @teacherMemberRejected.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get teacherMemberRejected;
+
+  /// No description provided for @teacherGradebookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook'**
+  String get teacherGradebookTitle;
+
+  /// No description provided for @teacherGradebookStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get teacherGradebookStudent;
+
+  /// No description provided for @teacherGradebookExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export CSV'**
+  String get teacherGradebookExport;
+
+  /// No description provided for @teacherGradebookExportCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook copied to clipboard (paste into Excel)'**
+  String get teacherGradebookExportCopied;
+
+  /// No description provided for @teacherGradebookNoAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'No assignments in this class yet.'**
+  String get teacherGradebookNoAssignments;
+
+  /// No description provided for @teacherGradebookKpiStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get teacherGradebookKpiStudents;
+
+  /// No description provided for @teacherGradebookKpiAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get teacherGradebookKpiAssignments;
+
+  /// No description provided for @teacherGradebookKpiClassAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Class average'**
+  String get teacherGradebookKpiClassAvg;
+
+  /// No description provided for @teacherGradebookKpiPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Cells to grade'**
+  String get teacherGradebookKpiPending;
+
+  /// No description provided for @teacherGradebookSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search student name or email'**
+  String get teacherGradebookSearchHint;
+
+  /// No description provided for @teacherGradebookFilterMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment mode'**
+  String get teacherGradebookFilterMode;
+
+  /// No description provided for @teacherGradebookFilterAllModes.
+  ///
+  /// In en, this message translates to:
+  /// **'All modes'**
+  String get teacherGradebookFilterAllModes;
+
+  /// No description provided for @teacherGradebookSortLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get teacherGradebookSortLabel;
+
+  /// No description provided for @teacherGradebookSortName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name A→Z'**
+  String get teacherGradebookSortName;
+
+  /// No description provided for @teacherGradebookSortAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg score'**
+  String get teacherGradebookSortAvg;
+
+  /// No description provided for @teacherGradebookHideEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide students with no submissions'**
+  String get teacherGradebookHideEmpty;
+
+  /// No description provided for @teacherGradebookShowingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {count} students'**
+  String teacherGradebookShowingCount(int count);
+
+  /// No description provided for @teacherGradebookNoStudentsMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No students match your filters.'**
+  String get teacherGradebookNoStudentsMatch;
+
+  /// No description provided for @teacherGradebookNoColumnsForFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'No assignments for this mode in this class.'**
+  String get teacherGradebookNoColumnsForFilter;
+
+  /// No description provided for @teacherGradebookColAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg'**
+  String get teacherGradebookColAvg;
+
+  /// No description provided for @teacherGradebookClassAverage.
+  ///
+  /// In en, this message translates to:
+  /// **'Class average'**
+  String get teacherGradebookClassAverage;
+
+  /// No description provided for @teacherGradebookCellNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get teacherGradebookCellNotStarted;
+
+  /// No description provided for @teacherGradebookCellPendingGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs grading'**
+  String get teacherGradebookCellPendingGrading;
+
+  /// No description provided for @teacherGradebookTapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a score to open grading; tap an empty cell to open the assignment hub.'**
+  String get teacherGradebookTapHint;
+
+  /// No description provided for @teacherNavCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get teacherNavCalendar;
+
+  /// No description provided for @teacherCalendarEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled events in this range.'**
+  String get teacherCalendarEmpty;
+
+  /// No description provided for @teacherCalendarKindDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due'**
+  String get teacherCalendarKindDue;
+
+  /// No description provided for @teacherCalendarKindOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens'**
+  String get teacherCalendarKindOpens;
+
+  /// No description provided for @teacherCalendarKindCloses.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes'**
+  String get teacherCalendarKindCloses;
+
+  /// No description provided for @teacherCalendarKindLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live now'**
+  String get teacherCalendarKindLive;
+
+  /// No description provided for @teacherCalendarViewMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get teacherCalendarViewMonth;
+
+  /// No description provided for @teacherCalendarViewList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get teacherCalendarViewList;
+
+  /// No description provided for @teacherCalendarToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get teacherCalendarToday;
+
+  /// No description provided for @teacherCalendarNoDayEvents.
+  ///
+  /// In en, this message translates to:
+  /// **'No events on this day.'**
+  String get teacherCalendarNoDayEvents;
+
+  /// No description provided for @teacherCalendarGoToAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'View assignment'**
+  String get teacherCalendarGoToAssignment;
+
+  /// No description provided for @teacherDashboardActionItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get teacherDashboardActionItems;
+
+  /// No description provided for @teacherDashboardPendingJoins.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending join requests'**
+  String get teacherDashboardPendingJoins;
+
+  /// No description provided for @teacherDashboardDueSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Due soon'**
+  String get teacherDashboardDueSoon;
+
+  /// No description provided for @teacherDashboardNeedsGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attempts need grading'**
+  String teacherDashboardNeedsGrading(int count);
+
+  /// No description provided for @teacherAssignmentPresetLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset'**
+  String get teacherAssignmentPresetLabel;
+
+  /// No description provided for @teacherAssignmentPresetSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save as preset'**
+  String get teacherAssignmentPresetSave;
+
+  /// No description provided for @teacherAssignmentPresetSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Preset saved'**
+  String get teacherAssignmentPresetSaved;
+
+  /// No description provided for @teacherAssignmentPresetNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No presets yet'**
+  String get teacherAssignmentPresetNone;
+
+  /// No description provided for @examModePractice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice (no grade)'**
+  String get examModePractice;
+
+  /// No description provided for @teacherAnalyticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get teacherAnalyticsTitle;
+
+  /// No description provided for @teacherAnalyticsSubmissionsChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions per day'**
+  String get teacherAnalyticsSubmissionsChart;
+
+  /// No description provided for @teacherAnalyticsScoreChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Score distribution'**
+  String get teacherAnalyticsScoreChart;
+
+  /// No description provided for @teacherAnalyticsIntegrityChart.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrity flags'**
+  String get teacherAnalyticsIntegrityChart;
+
+  /// No description provided for @teacherAnalyticsIntegrityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High risk'**
+  String get teacherAnalyticsIntegrityHigh;
+
+  /// No description provided for @teacherAnalyticsIntegrityMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get teacherAnalyticsIntegrityMedium;
+
+  /// No description provided for @teacherAnalyticsIntegrityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get teacherAnalyticsIntegrityLow;
+
+  /// No description provided for @teacherAnalyticsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough data yet'**
+  String get teacherAnalyticsNoData;
+
+  /// No description provided for @teacherAnalyticsPeriod7d.
+  ///
+  /// In en, this message translates to:
+  /// **'7 d'**
+  String get teacherAnalyticsPeriod7d;
+
+  /// No description provided for @teacherAnalyticsPeriod14d.
+  ///
+  /// In en, this message translates to:
+  /// **'14 d'**
+  String get teacherAnalyticsPeriod14d;
+
+  /// No description provided for @teacherAnalyticsPeriod30d.
+  ///
+  /// In en, this message translates to:
+  /// **'30 d'**
+  String get teacherAnalyticsPeriod30d;
+
+  /// No description provided for @teacherAnalyticsActiveStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Active students'**
+  String get teacherAnalyticsActiveStudents;
+
+  /// No description provided for @teacherAnalyticsActiveAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Active assignments'**
+  String get teacherAnalyticsActiveAssignments;
+
+  /// No description provided for @teacherAnalyticsSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get teacherAnalyticsSubmissions;
+
+  /// No description provided for @teacherAnalyticsPendingGrading.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending grading'**
+  String get teacherAnalyticsPendingGrading;
+
+  /// No description provided for @teacherAnalyticsAvgScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg score'**
+  String get teacherAnalyticsAvgScore;
+
+  /// No description provided for @teacherAnalyticsSkillBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Per-skill averages'**
+  String get teacherAnalyticsSkillBreakdown;
+
+  /// No description provided for @teacherAnalyticsSkillListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get teacherAnalyticsSkillListening;
+
+  /// No description provided for @teacherAnalyticsSkillReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get teacherAnalyticsSkillReading;
+
+  /// No description provided for @teacherAnalyticsSkillWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get teacherAnalyticsSkillWriting;
+
+  /// No description provided for @teacherAnalyticsSkillSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get teacherAnalyticsSkillSpeaking;
+
+  /// No description provided for @teacherAnalyticsSkillGrammar.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get teacherAnalyticsSkillGrammar;
+
+  /// No description provided for @teacherAnalyticsWeakSkillHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{skill} avg {score}/10 — consider scheduling extra practice.'**
+  String teacherAnalyticsWeakSkillHint(String skill, String score);
+
+  /// No description provided for @teacherAnalyticsModeBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment modes'**
+  String get teacherAnalyticsModeBreakdown;
+
+  /// No description provided for @teacherAnalyticsModeHomework.
+  ///
+  /// In en, this message translates to:
+  /// **'Homework'**
+  String get teacherAnalyticsModeHomework;
+
+  /// No description provided for @teacherAnalyticsModeLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get teacherAnalyticsModeLive;
+
+  /// No description provided for @teacherAnalyticsModeSelfPaced.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-paced'**
+  String get teacherAnalyticsModeSelfPaced;
+
+  /// No description provided for @teacherNavAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get teacherNavAnalytics;
+
+  /// No description provided for @teacherClassTabActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get teacherClassTabActivity;
+
+  /// No description provided for @teacherClassActivityEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity recorded yet.'**
+  String get teacherClassActivityEmpty;
+
+  /// No description provided for @teacherCoTeacherAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add co-teacher'**
+  String get teacherCoTeacherAdd;
+
+  /// No description provided for @teacherCoTeacherEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher email'**
+  String get teacherCoTeacherEmailHint;
+
+  /// No description provided for @teacherCoTeacherAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-teacher added'**
+  String get teacherCoTeacherAdded;
+
+  /// No description provided for @teacherCoTeacherRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-teacher removed'**
+  String get teacherCoTeacherRemoved;
+
+  /// No description provided for @teacherIntegrationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get teacherIntegrationsTitle;
+
+  /// No description provided for @teacherGoogleClassroomLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Google Classroom course'**
+  String get teacherGoogleClassroomLink;
+
+  /// No description provided for @teacherGoogleClassroomUnlink.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlink Google Classroom'**
+  String get teacherGoogleClassroomUnlink;
+
+  /// No description provided for @teacherGoogleClassroomCourseId.
+  ///
+  /// In en, this message translates to:
+  /// **'Google course ID'**
+  String get teacherGoogleClassroomCourseId;
+
+  /// No description provided for @teacherRubricTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rubric scoring'**
+  String get teacherRubricTitle;
+
+  /// No description provided for @teacherRubricCriterion.
+  ///
+  /// In en, this message translates to:
+  /// **'Criterion'**
+  String get teacherRubricCriterion;
+
+  /// No description provided for @teacherAdaptiveEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Adaptive difficulty'**
+  String get teacherAdaptiveEnabled;
+
+  /// No description provided for @teacherGradingLiveProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Live progress'**
+  String get teacherGradingLiveProgress;
+
+  /// No description provided for @teacherClassViewStudentAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Student work'**
+  String get teacherClassViewStudentAttempts;
+
+  /// No description provided for @teacherClassTapToViewAttempts.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to view all student submissions'**
+  String get teacherClassTapToViewAttempts;
+
+  /// No description provided for @teacherClassOpenAttemptsList.
+  ///
+  /// In en, this message translates to:
+  /// **'View submissions'**
+  String get teacherClassOpenAttemptsList;
+
+  /// No description provided for @teacherGradingStudentAttemptsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Student submissions'**
+  String get teacherGradingStudentAttemptsTitle;
+
+  /// No description provided for @teacherGradingStatusInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get teacherGradingStatusInProgress;
+
+  /// No description provided for @teacherGradingStatusSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherGradingStatusSubmitted;
+
+  /// No description provided for @teacherGradingStatePendingAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto grading'**
+  String get teacherGradingStatePendingAuto;
+
+  /// No description provided for @teacherGradingStatePendingAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI review'**
+  String get teacherGradingStatePendingAi;
+
+  /// No description provided for @teacherGradingStatePendingManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs manual grading'**
+  String get teacherGradingStatePendingManual;
+
+  /// No description provided for @teacherGradingStateFinalized.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded'**
+  String get teacherGradingStateFinalized;
+
+  /// No description provided for @teacherGradingStartedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String teacherGradingStartedAt(String date);
+
+  /// No description provided for @teacherGradingFinalize.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalize grading'**
+  String get teacherGradingFinalize;
+
+  /// No description provided for @teacherGradingFinalized.
+  ///
+  /// In en, this message translates to:
+  /// **'Grading finalized'**
+  String get teacherGradingFinalized;
+
+  /// No description provided for @teacherGradingCompletenessComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Full submission'**
+  String get teacherGradingCompletenessComplete;
+
+  /// No description provided for @teacherGradingCompletenessPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial submission'**
+  String get teacherGradingCompletenessPartial;
+
+  /// No description provided for @teacherGradingCompletenessForceEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended by teacher (live session)'**
+  String get teacherGradingCompletenessForceEnd;
+
+  /// No description provided for @teacherGradingAiRationale.
+  ///
+  /// In en, this message translates to:
+  /// **'AI feedback'**
+  String get teacherGradingAiRationale;
+
+  /// No description provided for @teacherGradingIntegratedScores.
+  ///
+  /// In en, this message translates to:
+  /// **'Section scores'**
+  String get teacherGradingIntegratedScores;
+
+  /// No description provided for @teacherGradingDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade attempt'**
+  String get teacherGradingDetailTitle;
+
+  /// No description provided for @teacherGradingSaveScores.
+  ///
+  /// In en, this message translates to:
+  /// **'Save scores'**
+  String get teacherGradingSaveScores;
+
+  /// No description provided for @teacherGradingSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores saved'**
+  String get teacherGradingSaved;
+
+  /// No description provided for @teacherGradingNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Feedback note'**
+  String get teacherGradingNotesHint;
+
+  /// No description provided for @teacherGradingAwardedPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Awarded points'**
+  String get teacherGradingAwardedPoints;
+
+  /// No description provided for @teacherGradingOnlySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores can be adjusted after the student submits.'**
+  String get teacherGradingOnlySubmitted;
+
+  /// No description provided for @teacherAttemptGradeHeaderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review responses, adjust scores, and release results when ready.'**
+  String get teacherAttemptGradeHeaderSubtitle;
+
+  /// No description provided for @teacherAttemptGradeExamLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get teacherAttemptGradeExamLabel;
+
+  /// No description provided for @teacherAttemptGradeStartedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String teacherAttemptGradeStartedLine(String date);
+
+  /// No description provided for @teacherAttemptGradeSubmittedLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted {date}'**
+  String teacherAttemptGradeSubmittedLine(String date);
+
+  /// No description provided for @teacherAttemptGradeReleasedYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Published to student'**
+  String get teacherAttemptGradeReleasedYes;
+
+  /// No description provided for @teacherAttemptGradeReleasedNo.
+  ///
+  /// In en, this message translates to:
+  /// **'Not published yet'**
+  String get teacherAttemptGradeReleasedNo;
+
+  /// No description provided for @teacherAttemptGradeTotalScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill scores'**
+  String get teacherAttemptGradeTotalScore;
+
+  /// No description provided for @integratedSkillScoreLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} / 10'**
+  String integratedSkillScoreLabel(String score);
+
+  /// No description provided for @integratedSkillScorePending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get integratedSkillScorePending;
+
+  /// No description provided for @integratedSkillFinalAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Average'**
+  String get integratedSkillFinalAvg;
+
+  /// No description provided for @integratedSkillFinalPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial avg.'**
+  String get integratedSkillFinalPartial;
+
+  /// No description provided for @integratedSkillGrammar.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get integratedSkillGrammar;
+
+  /// No description provided for @integratedSkillListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening'**
+  String get integratedSkillListening;
+
+  /// No description provided for @integratedSkillReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get integratedSkillReading;
+
+  /// No description provided for @integratedSkillWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get integratedSkillWriting;
+
+  /// No description provided for @integratedSkillSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking'**
+  String get integratedSkillSpeaking;
+
+  /// No description provided for @integratedSkillEnterScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter score (0–10)'**
+  String get integratedSkillEnterScore;
+
+  /// No description provided for @integratedSkillScoreSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Score saved'**
+  String get integratedSkillScoreSaved;
+
+  /// No description provided for @integratedSkillSaveScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Save score'**
+  String get integratedSkillSaveScore;
+
+  /// No description provided for @integratedScoresAwaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores are being calculated. Refresh in a moment if this persists.'**
+  String get integratedScoresAwaiting;
+
+  /// No description provided for @integratedGradingAvgFormulaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score = arithmetic mean of all skill scores (0–10 each). Pending skills are excluded until graded.'**
+  String get integratedGradingAvgFormulaHint;
+
+  /// No description provided for @integratedGradingColumnSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill'**
+  String get integratedGradingColumnSkill;
+
+  /// No description provided for @integratedGradingColumnScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get integratedGradingColumnScore;
+
+  /// No description provided for @integratedWritingGradingEssayLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Student essay'**
+  String get integratedWritingGradingEssayLabel;
+
+  /// No description provided for @integratedWritingGradingWordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} words'**
+  String integratedWritingGradingWordCount(String count);
+
+  /// No description provided for @integratedWritingGradingNoDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'No essay text saved for this attempt.'**
+  String get integratedWritingGradingNoDraft;
+
+  /// No description provided for @integratedWritingGradingRunAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade with AI'**
+  String get integratedWritingGradingRunAi;
+
+  /// No description provided for @integratedWritingGradingApplyAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply AI score'**
+  String get integratedWritingGradingApplyAi;
+
+  /// No description provided for @integratedWritingGradingManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual score'**
+  String get integratedWritingGradingManual;
+
+  /// No description provided for @integratedWritingGradingAiBand.
+  ///
+  /// In en, this message translates to:
+  /// **'AI band: {band} / 9'**
+  String integratedWritingGradingAiBand(String band);
+
+  /// No description provided for @integratedWritingGradingAiExamScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested exam score: {score} / 10'**
+  String integratedWritingGradingAiExamScore(String score);
+
+  /// No description provided for @integratedGrammarItemResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{awarded} / {max} correct'**
+  String integratedGrammarItemResult(String awarded, String max);
+
+  /// No description provided for @teacherAttemptGradeSectionBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Questions & scoring'**
+  String get teacherAttemptGradeSectionBreakdown;
+
+  /// No description provided for @teacherAttemptGradeItemKind.
+  ///
+  /// In en, this message translates to:
+  /// **'Type: {kind}'**
+  String teacherAttemptGradeItemKind(String kind);
+
+  /// No description provided for @teacherAttemptGradeMaxPts.
+  ///
+  /// In en, this message translates to:
+  /// **'Max {n} pts'**
+  String teacherAttemptGradeMaxPts(int n);
+
+  /// No description provided for @teacherAttemptGradeStudentFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get teacherAttemptGradeStudentFallback;
+
+  /// No description provided for @teacherAttemptGradePointsShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{awarded} / {max} pts'**
+  String teacherAttemptGradePointsShort(Object awarded, Object max);
+
+  /// No description provided for @teacherAttemptGradeAnswerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Student answer'**
+  String get teacherAttemptGradeAnswerLabel;
+
+  /// No description provided for @teacherAttemptGradeWorkAndScores.
+  ///
+  /// In en, this message translates to:
+  /// **'Submission review & scoring'**
+  String get teacherAttemptGradeWorkAndScores;
+
+  /// No description provided for @teacherAttemptGradeCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get teacherAttemptGradeCorrectAnswer;
+
+  /// No description provided for @teacherAttemptGradeSkillLinkedWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked exercises'**
+  String get teacherAttemptGradeSkillLinkedWork;
+
+  /// No description provided for @teacherAttemptGradeSkillCmsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The student practiced this in the in-app lesson and marked it done here. Detailed attempts stay in the skill activity history, not in this exam payload.'**
+  String get teacherAttemptGradeSkillCmsHint;
+
+  /// No description provided for @teacherAttemptGradeQuestionN.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n}'**
+  String teacherAttemptGradeQuestionN(int n);
+
+  /// No description provided for @teacherAttemptGradeMarkedComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked complete'**
+  String get teacherAttemptGradeMarkedComplete;
+
+  /// No description provided for @teacherAttemptGradeNotMarkedComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Not marked complete'**
+  String get teacherAttemptGradeNotMarkedComplete;
+
+  /// No description provided for @teacherAttemptGradeInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Instructions'**
+  String get teacherAttemptGradeInstructions;
+
+  /// No description provided for @teacherAttemptGradeChoicesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer choices'**
+  String get teacherAttemptGradeChoicesLabel;
+
+  /// No description provided for @teacherAttemptGradeNoSkillWork.
+  ///
+  /// In en, this message translates to:
+  /// **'No work recorded during this exam session.'**
+  String get teacherAttemptGradeNoSkillWork;
+
+  /// No description provided for @teacherAttemptGradeOnlyMarkedComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'The student marked this part complete, but no saved answers were found for the linked exercise.'**
+  String get teacherAttemptGradeOnlyMarkedComplete;
+
+  /// No description provided for @teacherAttemptGradeSkillWorkExamInline.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers saved inside this exam attempt (integrated exam).'**
+  String get teacherAttemptGradeSkillWorkExamInline;
+
+  /// No description provided for @teacherAttemptGradeSkillWorkNearSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing work from near this exam session (timestamps may fall slightly outside the exact window).'**
+  String get teacherAttemptGradeSkillWorkNearSession;
+
+  /// No description provided for @teacherAttemptGradeSkillWorkLatestLinked.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing the student\'s most recent work on this linked exercise.'**
+  String get teacherAttemptGradeSkillWorkLatestLinked;
+
+  /// No description provided for @teacherAttemptGradeWordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} words'**
+  String teacherAttemptGradeWordCount(int count);
+
+  /// No description provided for @teacherAttemptGradeViewSkillWork.
+  ///
+  /// In en, this message translates to:
+  /// **'View student submission'**
+  String get teacherAttemptGradeViewSkillWork;
+
+  /// No description provided for @teacherAttemptGradeHideSkillWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide submission'**
+  String get teacherAttemptGradeHideSkillWork;
+
+  /// No description provided for @teacherAttemptGradeListeningCue.
+  ///
+  /// In en, this message translates to:
+  /// **'Cue'**
+  String get teacherAttemptGradeListeningCue;
+
+  /// No description provided for @teacherAttemptGradeDictationScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Words correct: {correct} / {total}'**
+  String teacherAttemptGradeDictationScore(Object correct, Object total);
+
+  /// No description provided for @teacherAttemptGradeSpeakingLine.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence {id}'**
+  String teacherAttemptGradeSpeakingLine(String id);
+
+  /// No description provided for @teacherAttemptGradeWritingScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score: {score}'**
+  String teacherAttemptGradeWritingScore(String score);
+
+  /// No description provided for @teacherAttemptGradeSkillOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Section'**
+  String get teacherAttemptGradeSkillOther;
+
+  /// No description provided for @teacherExamTimeRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Time left'**
+  String get teacherExamTimeRemaining;
+
+  /// No description provided for @teacherExamMcqNeedsStem.
+  ///
+  /// In en, this message translates to:
+  /// **'Each MCQ needs question text.'**
+  String get teacherExamMcqNeedsStem;
+
+  /// No description provided for @teacherExamEssayNeedsPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Each essay needs a prompt.'**
+  String get teacherExamEssayNeedsPrompt;
+
+  /// No description provided for @teacherExamIntegratedUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Four-skill practice set'**
+  String get teacherExamIntegratedUntitled;
+
+  /// No description provided for @teacherExamIntegratedNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Four-skill exam'**
+  String get teacherExamIntegratedNew;
+
+  /// No description provided for @teacherExamIntegratedBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'4 skills'**
+  String get teacherExamIntegratedBadge;
+
+  /// No description provided for @teacherExamIntegratedEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Four-skill exam'**
+  String get teacherExamIntegratedEditorTitle;
+
+  /// No description provided for @teacherExamIntegratedPartsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Parts (Reading → Listening → Writing → Speaking)'**
+  String get teacherExamIntegratedPartsTitle;
+
+  /// No description provided for @teacherExamIntegratedPartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick one published exercise per skill. Students open each activity in the app, then mark it done before submitting.'**
+  String get teacherExamIntegratedPartsHint;
+
+  /// No description provided for @teacherExamIntegratedTapToPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to choose content'**
+  String get teacherExamIntegratedTapToPick;
+
+  /// No description provided for @teacherExamIntegratedPickAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose all four exercises before publishing.'**
+  String get teacherExamIntegratedPickAll;
+
+  /// No description provided for @teacherExamIntegratedSkillListening.
+  ///
+  /// In en, this message translates to:
+  /// **'Listening (dictation)'**
+  String get teacherExamIntegratedSkillListening;
+
+  /// No description provided for @teacherExamIntegratedSkillSpeaking.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking (read aloud)'**
+  String get teacherExamIntegratedSkillSpeaking;
+
+  /// No description provided for @teacherExamIntegratedSkillReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get teacherExamIntegratedSkillReading;
+
+  /// No description provided for @teacherExamIntegratedSkillWriting.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing'**
+  String get teacherExamIntegratedSkillWriting;
+
+  /// No description provided for @teacherExamIntegratedChooseExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose exercise'**
+  String get teacherExamIntegratedChooseExercise;
+
+  /// No description provided for @teacherExamIntegratedEmptyList.
+  ///
+  /// In en, this message translates to:
+  /// **'No items found.'**
+  String get teacherExamIntegratedEmptyList;
+
+  /// No description provided for @teacherExamSkillsEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills exam'**
+  String get teacherExamSkillsEditorTitle;
+
+  /// No description provided for @teacherExamSkillsPartsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills (choose what this test includes)'**
+  String get teacherExamSkillsPartsTitle;
+
+  /// No description provided for @teacherExamSkillsPartsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off a skill if this test should not cover it. For each included skill, add one or more exercises from the library.'**
+  String get teacherExamSkillsPartsHint;
+
+  /// No description provided for @teacherExamSkillsIncludeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Include this skill'**
+  String get teacherExamSkillsIncludeSubtitle;
+
+  /// No description provided for @teacherExamGrammarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get teacherExamGrammarTitle;
+
+  /// No description provided for @teacherExamGrammarHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Add cloze, gap fill, matching, sentence order, or multiple choice. All are auto-scored. If the exam includes skills, total Grammar points cannot exceed 100.'**
+  String get teacherExamGrammarHint;
+
+  /// No description provided for @teacherExamGrammarAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add question'**
+  String get teacherExamGrammarAdd;
+
+  /// No description provided for @teacherExamGrammarEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar question'**
+  String get teacherExamGrammarEdit;
+
+  /// No description provided for @teacherExamPublishNeedSelection.
+  ///
+  /// In en, this message translates to:
+  /// **'Include at least one skill with an exercise, or add at least one Grammar question.'**
+  String get teacherExamPublishNeedSelection;
+
+  /// No description provided for @teacherExamPublishPickEachIncludedSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Add at least one exercise for every skill that is turned on.'**
+  String get teacherExamPublishPickEachIncludedSkill;
+
+  /// No description provided for @teacherExamWritingPromptSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing Prompt'**
+  String get teacherExamWritingPromptSectionTitle;
+
+  /// No description provided for @teacherExamWritingPromptEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'All students will receive the same writing prompt. Choose one AI-generated option or write your own.'**
+  String get teacherExamWritingPromptEmptyHint;
+
+  /// No description provided for @teacherExamWritingGenerateWithAI.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate with AI'**
+  String get teacherExamWritingGenerateWithAI;
+
+  /// No description provided for @teacherExamWritingWriteManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Write manually'**
+  String get teacherExamWritingWriteManually;
+
+  /// No description provided for @teacherExamWritingPromptNeedTopic.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a writing topic first to generate AI prompts.'**
+  String get teacherExamWritingPromptNeedTopic;
+
+  /// No description provided for @teacherExamWritingPickPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a writing prompt'**
+  String get teacherExamWritingPickPromptTitle;
+
+  /// No description provided for @teacherExamWritingPickPromptSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one of the AI-generated prompts below. All students will receive this same prompt.'**
+  String get teacherExamWritingPickPromptSubtitle;
+
+  /// No description provided for @teacherExamWritingSelectThisPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get teacherExamWritingSelectThisPrompt;
+
+  /// No description provided for @teacherExamWritingManualPromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your own prompt'**
+  String get teacherExamWritingManualPromptTitle;
+
+  /// No description provided for @teacherExamWritingPromptTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Prompt title'**
+  String get teacherExamWritingPromptTitleLabel;
+
+  /// No description provided for @teacherExamWritingPromptTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Technology in Education'**
+  String get teacherExamWritingPromptTitleHint;
+
+  /// No description provided for @teacherExamWritingPromptTaskTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Task type'**
+  String get teacherExamWritingPromptTaskTypeLabel;
+
+  /// No description provided for @teacherExamWritingPromptTextLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing prompt'**
+  String get teacherExamWritingPromptTextLabel;
+
+  /// No description provided for @teacherExamWritingPromptTextHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write the full exam question here. Include context and specific instructions for students...'**
+  String get teacherExamWritingPromptTextHint;
+
+  /// No description provided for @teacherExamWritingPromptTextRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the writing prompt text before saving.'**
+  String get teacherExamWritingPromptTextRequired;
+
+  /// No description provided for @teacherExamWritingPromptRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set a writing prompt before publishing.'**
+  String get teacherExamWritingPromptRequired;
+
+  /// No description provided for @teacherExamWritingPromptNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'No writing prompt set. Students will not be able to complete this section.'**
+  String get teacherExamWritingPromptNotSet;
+
+  /// No description provided for @teacherExamWritingCustomPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom prompt'**
+  String get teacherExamWritingCustomPrompt;
+
+  /// No description provided for @teacherExamGrammarPointsCap100.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Grammar points cannot exceed 100 while skills are included.'**
+  String get teacherExamGrammarPointsCap100;
+
+  /// No description provided for @teacherExamSkillsBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills exam'**
+  String get teacherExamSkillsBadge;
+
+  /// No description provided for @integratedExamGrammarSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar'**
+  String get integratedExamGrammarSectionTitle;
+
+  /// No description provided for @integratedExamSubmitBlockedAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish every skill part and every Grammar question before submitting.'**
+  String get integratedExamSubmitBlockedAll;
+
+  /// No description provided for @teacherExamSkillsWebSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Lay out like an exam paper: Grammar first, then Reading, Listening, Writing, and Speaking. Add one or more library exercises per skill you include.'**
+  String get teacherExamSkillsWebSubtitle;
+
+  /// No description provided for @teacherExamSkillsBrowseContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Browse library'**
+  String get teacherExamSkillsBrowseContent;
+
+  /// No description provided for @teacherExamSkillsNoGrammarYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No Grammar questions yet. Use Add question to open the editor.'**
+  String get teacherExamSkillsNoGrammarYet;
+
+  /// No description provided for @teacherExamSkillsAddExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exercise'**
+  String get teacherExamSkillsAddExercise;
+
+  /// No description provided for @teacherExamSkillsCreateNew.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new exercise'**
+  String get teacherExamSkillsCreateNew;
+
+  /// No description provided for @teacherExamSkillsExercisesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'exercise(s) selected'**
+  String get teacherExamSkillsExercisesSelected;
+
+  /// No description provided for @teacherExamSkillsAllAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'All available exercises are already added.'**
+  String get teacherExamSkillsAllAdded;
+
+  /// No description provided for @teacherExamCreateMenuLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'New exam'**
+  String get teacherExamCreateMenuLabel;
+
+  /// No description provided for @teacherExamIntegratedCreateClassicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'MCQ & essay in one editor'**
+  String get teacherExamIntegratedCreateClassicHint;
+
+  /// No description provided for @teacherExamIntegratedCreateFourHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Four parts linked to existing lessons'**
+  String get teacherExamIntegratedCreateFourHint;
+
+  /// No description provided for @integratedExamRunnerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice set'**
+  String get integratedExamRunnerTitle;
+
+  /// No description provided for @integratedExamMetaClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get integratedExamMetaClass;
+
+  /// No description provided for @integratedExamMetaSubject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get integratedExamMetaSubject;
+
+  /// No description provided for @integratedExamMetaTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get integratedExamMetaTeacher;
+
+  /// No description provided for @integratedExamMetaStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get integratedExamMetaStudent;
+
+  /// No description provided for @integratedExamMetaDelivery.
+  ///
+  /// In en, this message translates to:
+  /// **'How you take this'**
+  String get integratedExamMetaDelivery;
+
+  /// No description provided for @integratedExamMetaModeHomework.
+  ///
+  /// In en, this message translates to:
+  /// **'Take-home assignment'**
+  String get integratedExamMetaModeHomework;
+
+  /// No description provided for @integratedExamMetaModeScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled exam'**
+  String get integratedExamMetaModeScheduled;
+
+  /// No description provided for @integratedExamMetaModeLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live session'**
+  String get integratedExamMetaModeLive;
+
+  /// No description provided for @integratedExamMetaPublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Open link'**
+  String get integratedExamMetaPublic;
+
+  /// No description provided for @integratedExamMetaTimeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limit'**
+  String get integratedExamMetaTimeLimit;
+
+  /// No description provided for @integratedExamMetaTimeLimitMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String integratedExamMetaTimeLimitMinutes(int minutes);
+
+  /// No description provided for @integratedExamMetaNoTimeLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed time limit'**
+  String get integratedExamMetaNoTimeLimit;
+
+  /// No description provided for @integratedExamMetaDeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes in'**
+  String get integratedExamMetaDeadline;
+
+  /// No description provided for @integratedExamMetaDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit by'**
+  String get integratedExamMetaDue;
+
+  /// No description provided for @integratedExamMetaWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Open until'**
+  String get integratedExamMetaWindow;
+
+  /// No description provided for @integratedExamMetaOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens at'**
+  String get integratedExamMetaOpens;
+
+  /// No description provided for @integratedExamMetaStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started at'**
+  String get integratedExamMetaStarted;
+
+  /// No description provided for @integratedExamSubjectDefault.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get integratedExamSubjectDefault;
+
+  /// No description provided for @integratedExamNoClassName.
+  ///
+  /// In en, this message translates to:
+  /// **'—'**
+  String get integratedExamNoClassName;
+
+  /// No description provided for @integratedExamGrammarNavHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold border = in progress; green = answered.'**
+  String get integratedExamGrammarNavHint;
+
+  /// No description provided for @integratedExamGrammarQuestionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Question {n} of {total}'**
+  String integratedExamGrammarQuestionLabel(int n, int total);
+
+  /// No description provided for @integratedExamTimeUpShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Time up'**
+  String get integratedExamTimeUpShort;
+
+  /// No description provided for @integratedExamGrammarPrevious.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous grammar question'**
+  String get integratedExamGrammarPrevious;
+
+  /// No description provided for @integratedExamGrammarNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next grammar question'**
+  String get integratedExamGrammarNext;
+
+  /// No description provided for @integratedExamOpenExercise.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get integratedExamOpenExercise;
+
+  /// No description provided for @integratedExamMarkDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark done'**
+  String get integratedExamMarkDone;
+
+  /// No description provided for @integratedExamUndoPart.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get integratedExamUndoPart;
+
+  /// No description provided for @integratedExamSubmit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit all parts'**
+  String get integratedExamSubmit;
+
+  /// No description provided for @integratedExamSubmitShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get integratedExamSubmitShort;
+
+  /// No description provided for @integratedExamSubmitBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark every part as done before submitting.'**
+  String get integratedExamSubmitBlocked;
+
+  /// No description provided for @integratedExamProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} parts ready'**
+  String integratedExamProgress(int done, int total);
+
+  /// No description provided for @integratedExamScoreSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg. score: {earned} / 10'**
+  String integratedExamScoreSummary(Object earned);
+
+  /// No description provided for @integratedExamSkillsSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Skills'**
+  String get integratedExamSkillsSectionTitle;
+
+  /// No description provided for @integratedExamDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam details'**
+  String get integratedExamDetailsTitle;
+
+  /// No description provided for @integratedExamSelectPartHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a part below. Work on one section at a time.'**
+  String get integratedExamSelectPartHint;
+
+  /// No description provided for @integratedExamPartDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get integratedExamPartDone;
+
+  /// No description provided for @integratedExamPartNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Not started'**
+  String get integratedExamPartNotStarted;
+
+  /// No description provided for @integratedExamEmbeddedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the exercise below. Only the exam timer applies.'**
+  String get integratedExamEmbeddedHint;
+
+  /// No description provided for @integratedExamEmbeddedLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This part is locked after you submitted the exam.'**
+  String get integratedExamEmbeddedLocked;
+
+  /// No description provided for @integratedExamEmbeddedNoResource.
+  ///
+  /// In en, this message translates to:
+  /// **'No exercise linked for this part.'**
+  String get integratedExamEmbeddedNoResource;
+
+  /// No description provided for @integratedExamGrammarUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This question type is not supported in the app yet.'**
+  String get integratedExamGrammarUnsupported;
+
+  /// No description provided for @integratedExamMatchPick.
+  ///
+  /// In en, this message translates to:
+  /// **'Match'**
+  String get integratedExamMatchPick;
+
+  /// No description provided for @integratedExamReorderHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the lines into the correct order.'**
+  String get integratedExamReorderHint;
+
+  /// No description provided for @teacherExamGrammarKindMcqSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple choice (one answer)'**
+  String get teacherExamGrammarKindMcqSingle;
+
+  /// No description provided for @teacherExamGrammarKindMcqMulti.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple choice (several answers)'**
+  String get teacherExamGrammarKindMcqMulti;
+
+  /// No description provided for @teacherExamGrammarKindCloze.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloze — fill blanks in a passage'**
+  String get teacherExamGrammarKindCloze;
+
+  /// No description provided for @teacherExamGrammarKindGap.
+  ///
+  /// In en, this message translates to:
+  /// **'Gap — one missing word'**
+  String get teacherExamGrammarKindGap;
+
+  /// No description provided for @teacherExamGrammarKindMatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Match pairs'**
+  String get teacherExamGrammarKindMatching;
+
+  /// No description provided for @teacherExamGrammarKindReorder.
+  ///
+  /// In en, this message translates to:
+  /// **'Put fragments in order'**
+  String get teacherExamGrammarKindReorder;
+
+  /// No description provided for @teacherExamGrammarQuestionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Question type'**
+  String get teacherExamGrammarQuestionType;
+
+  /// No description provided for @teacherExamGrammarPassageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Passage (mark blanks with double curly braces around numbers, e.g. 0 and 1)'**
+  String get teacherExamGrammarPassageLabel;
+
+  /// No description provided for @teacherExamGrammarTextBefore.
+  ///
+  /// In en, this message translates to:
+  /// **'Text before gap'**
+  String get teacherExamGrammarTextBefore;
+
+  /// No description provided for @teacherExamGrammarTextAfter.
+  ///
+  /// In en, this message translates to:
+  /// **'Text after gap'**
+  String get teacherExamGrammarTextAfter;
+
+  /// No description provided for @teacherExamGrammarAcceptedAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted answers (comma-separated)'**
+  String get teacherExamGrammarAcceptedAnswers;
+
+  /// No description provided for @teacherExamGrammarBlankId.
+  ///
+  /// In en, this message translates to:
+  /// **'Blank id'**
+  String get teacherExamGrammarBlankId;
+
+  /// No description provided for @teacherExamGrammarLeftColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Left column'**
+  String get teacherExamGrammarLeftColumn;
+
+  /// No description provided for @teacherExamGrammarRightColumn.
+  ///
+  /// In en, this message translates to:
+  /// **'Right column'**
+  String get teacherExamGrammarRightColumn;
+
+  /// No description provided for @teacherExamGrammarPairCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct match for row {row}'**
+  String teacherExamGrammarPairCorrect(int row);
+
+  /// No description provided for @teacherExamGrammarFragments.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentence fragments (one per line in correct reading order)'**
+  String get teacherExamGrammarFragments;
+
+  /// No description provided for @teacherExamGrammarReorderInstruction.
+  ///
+  /// In en, this message translates to:
+  /// **'Drag the chips below to set the correct sentence order students should produce.'**
+  String get teacherExamGrammarReorderInstruction;
+
+  /// No description provided for @teacherExamGrammarSaveItem.
+  ///
+  /// In en, this message translates to:
+  /// **'Save question'**
+  String get teacherExamGrammarSaveItem;
+
+  /// No description provided for @teacherExamGrammarNewItem.
+  ///
+  /// In en, this message translates to:
+  /// **'New question'**
+  String get teacherExamGrammarNewItem;
+
+  /// No description provided for @teacherExamGrammarPanelTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar editor'**
+  String get teacherExamGrammarPanelTitle;
+
+  /// No description provided for @teacherExamGrammarCloseEditor.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get teacherExamGrammarCloseEditor;
+
+  /// No description provided for @teacherExamGrammarImport.
+  ///
+  /// In en, this message translates to:
+  /// **'Import questions'**
+  String get teacherExamGrammarImport;
+
+  /// No description provided for @teacherExamGrammarImportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Imported {count} question(s) successfully.'**
+  String teacherExamGrammarImportSuccess(int count);
+
+  /// No description provided for @teacherExamGrammarImportError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to parse file. Check the format and try again.'**
+  String get teacherExamGrammarImportError;
+
+  /// No description provided for @teacherExamGrammarImportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No valid questions found in the file.'**
+  String get teacherExamGrammarImportEmpty;
+
+  /// No description provided for @teacherExamGrammarImportFormatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import format (JSON)'**
+  String get teacherExamGrammarImportFormatTitle;
+
+  /// No description provided for @teacherExamGrammarImportFormatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a .json file containing an array of question objects. Each object must have a \"kind\" field. Supported kinds:'**
+  String get teacherExamGrammarImportFormatHint;
+
+  /// No description provided for @teacherExamGrammarDownloadSample.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy sample to clipboard'**
+  String get teacherExamGrammarDownloadSample;
+
+  /// No description provided for @teacherExamGrammarImportPickFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick .json file'**
+  String get teacherExamGrammarImportPickFile;
+
+  /// No description provided for @teacherExamGrammarAddOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Add option'**
+  String get teacherExamGrammarAddOption;
+
+  /// No description provided for @teacherExamGrammarCorrectOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct options'**
+  String get teacherExamGrammarCorrectOptions;
+
+  /// No description provided for @studentExamExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Time is up'**
+  String get studentExamExpired;
+
+  /// No description provided for @teacherAssignmentEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Assignment'**
+  String get teacherAssignmentEditTitle;
+
+  /// No description provided for @teacherAssignmentEditSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust schedule, time limits and rules'**
+  String get teacherAssignmentEditSubtitle;
+
+  /// No description provided for @teacherAssignmentEditSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignment updated'**
+  String get teacherAssignmentEditSaved;
+
+  /// No description provided for @teacherAssignmentEditScheduleSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get teacherAssignmentEditScheduleSection;
+
+  /// No description provided for @teacherAssignmentEditRulesSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Attempts & Results'**
+  String get teacherAssignmentEditRulesSection;
+
+  /// No description provided for @teacherAssignmentEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit assignment'**
+  String get teacherAssignmentEditTooltip;
+
+  /// No description provided for @teacherAssignmentModeFixed.
+  ///
+  /// In en, this message translates to:
+  /// **'Mode is set and cannot be changed after creation.'**
+  String get teacherAssignmentModeFixed;
+
+  /// No description provided for @teacherAssignmentRealtimeLobbyOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Lobby opens at'**
+  String get teacherAssignmentRealtimeLobbyOpens;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduledStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled start'**
+  String get teacherAssignmentRealtimeScheduledStart;
+
+  /// No description provided for @teacherAssignmentRealtimeHardEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard end'**
+  String get teacherAssignmentRealtimeHardEnd;
+
+  /// No description provided for @teacherAssignmentEditPracticeNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice mode has no schedule — students can access this assignment at any time.'**
+  String get teacherAssignmentEditPracticeNote;
 }
 
 class _AppLocalizationsDelegate

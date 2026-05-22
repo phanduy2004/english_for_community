@@ -171,6 +171,25 @@
   "sessionTerminated": "Your session has been terminated.",
   "reasonLabel": "Reason:",
   "adminConsoleTitle": "Admin Console",
+  "adminShellAppName": "Admin",
+  "adminShellNavGroup": "Overview",
+  "adminShellOpsGroup": "Operations",
+  "adminShellContentGroup": "Content",
+  "adminShellDesktopTitle": "Use a desktop browser",
+  "adminShellDesktopBody": "The admin console is optimized for screens 768px and wider. Open this page on a laptop or desktop for the best experience.",
+  "adminShellCollapseSidebar": "Collapse sidebar",
+  "adminShellExpandSidebar": "Expand sidebar",
+  "adminNavSubmissions": "Submissions",
+  "adminNavOps": "Ops center",
+  "adminNavReleases": "Releases",
+  "adminOverviewTitle": "Overview",
+  "adminUserManagementTitle": "User management",
+  "adminReportManagementTitle": "Report management",
+  "adminActivityHistoryTitle": "Submission history",
+  "adminSearchUsersHint": "Search by name or email…",
+  "adminSearchReportsHint": "Search by title or sender…",
+  "adminNoUsersFound": "No users found",
+  "adminNoReportsFound": "No reports in this status",
   "superAdminRole": "Super Admin",
   "managementSection": "Management",
   "contentManagerTile": "Content Manager",
@@ -620,6 +639,7 @@
   },
   "dictationCheckButton": "Check",
   "dictationNextButton": "Next",
+  "dictationSaveContinue": "Save & continue",
   "dictationFinishButton": "Finish",
   "dictationTypeWhatYouHearHint": "Type what you hear…",
   "meaningLabel": "Meaning:",
@@ -884,5 +904,1176 @@
   },
   "updateDialogWhatsNewTitle": "What is new",
   "updateLinkOpenFailed": "Could not open the update link.",
-  "appVersionLabel": "App version"
+  "appVersionLabel": "App version",
+  "profileTeacherSectionTitle": "Classes & teaching",
+  "profileStudentClassesTitle": "My classes",
+  "profileStudentClassesSubtitle": "Join a class with an invite code",
+  "profileTeacherHubTitle": "Teacher hub",
+  "profileTeacherHubSubtitle": "Classrooms and exams",
+  "profileApplyTeacherTitle": "Apply to teach",
+  "profileApplyTeacherSubtitle": "Submit a request for a teacher account",
+  "teacherApplyTitle": "Become a teacher",
+  "teacherApplySubtitle": "Tell us briefly about your teaching background. An admin will review your request.",
+  "teacherApplyBioLabel": "Bio",
+  "teacherApplyOrgLabel": "School or organization (optional)",
+  "teacherApplySubmit": "Submit application",
+  "teacherApplySubmitted": "Application submitted",
+  "teacherDashboardTitle": "Teacher hub",
+  "teacherNavDashboard": "Dashboard",
+  "teacherNavExams": "Exam bank",
+  "teacherShellAppName": "Teacher",
+  "teacherShellNavGroup": "Workspace",
+  "teacherShellDesktopTitle": "Use a desktop browser",
+  "teacherShellDesktopBody": "The teacher workspace is optimized for screens 768px and wider. Open this page on a laptop or desktop for the best experience.",
+  "teacherShellCollapseSidebar": "Collapse sidebar",
+  "teacherShellExpandSidebar": "Expand sidebar",
+  "teacherAccountMenuTitle": "Account & settings",
+  "teacherAccountRoleTeacher": "Teacher",
+  "teacherAccountSectionAbout": "About",
+  "teacherAccountOpenMenu": "Account menu",
+  "teacherAccountEditProfileSubtitle": "Update your name, avatar, and contact details.",
+  "teacherDashboardGreeting": "Hello, {name}",
+  "@teacherDashboardGreeting": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "teacherDashboardTodayMeta": "Today · {time}",
+  "@teacherDashboardTodayMeta": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "teacherDashboardActionNewExam": "New exam",
+  "teacherClassFab": "New class",
+  "teacherClassCreateTitle": "Create classroom",
+  "teacherClassNameLabel": "Class name",
+  "teacherClassCreated": "Classroom created",
+  "teacherMyClassrooms": "My classrooms",
+  "teacherNoClassrooms": "No classrooms yet. Create one with the + button.",
+  "teacherInviteCode": "Invite code",
+  "teacherClassroomDetailTitle": "Classroom",
+  "teacherNoExams": "Create a sample exam from the Teacher hub first.",
+  "teacherAssignmentCreated": "Exam assigned to this class",
+  "teacherAssignFirstExam": "Assign latest exam to this class",
+  "teacherClassroomMemberCountActive": "{count} students in this class",
+  "@teacherClassroomMemberCountActive": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "teacherClassroomMemberCountPending": "{count} awaiting approval",
+  "@teacherClassroomMemberCountPending": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "teacherAssignExamToClass": "Assign exam to this class",
+  "teacherPickExamToAssign": "Choose a published exam",
+  "teacherNoPublishedExams": "No published exams yet. Publish an exam under My exams first.",
+  "copyInviteCode": "Copy invite code",
+  "adminTeacherApplicationsTitle": "Teacher applications",
+  "adminTeacherApplicationsSubtitle": "Review pending requests",
+  "adminTeacherApplicationsEmpty": "No applications in this state.",
+  "adminTeacherApprove": "Approve",
+  "adminTeacherReject": "Reject",
+  "adminTeacherRejectReason": "Reason for rejection",
+  "studentClassesTitle": "My classes",
+  "studentClassesSubtitle": "Open a class to see only assignments from that class.",
+  "studentJoinClassTitle": "Join with invite code",
+  "studentJoinClassSubtitle": "Use the code from your teacher. Assignments will appear inside each class.",
+  "studentInviteCodeLabel": "Invite code",
+  "studentJoinClassButton": "Join",
+  "studentJoinClassSuccess": "Joined classroom",
+  "studentMyClassesTitle": "Your classrooms",
+  "studentNoClasses": "You are not in any class yet.",
+  "studentClassOpen": "Open class",
+  "studentClassAssignmentsCount": "{count, plural, =0{No assignments} one{1 assignment} other{{count} assignments}}",
+  "@studentClassAssignmentsCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassLiveCount": "{count, plural, one{1 live} other{{count} live}}",
+  "@studentClassLiveCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassDetailTitle": "Classroom",
+  "studentClassDetailAssignmentsTitle": "Class assignments",
+  "studentClassDetailAssignmentsSubtitle": "Only assignments from this classroom are shown here.",
+  "studentClassNoAssignments": "This class does not have any assignments yet.",
+  "studentClassAssignmentNotYetOpen": "Not open yet — check the schedule from your teacher.",
+  "studentClassAssignmentClosed": "This assignment window has closed.",
+  "studentClassInfoTitle": "Class information",
+  "studentClassMemberCount": "{count, plural, one{1 active student} other{{count} active students}}",
+  "@studentClassMemberCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassJoinPolicyOpen": "Open join",
+  "studentClassJoinPolicyApproval": "Approval required",
+  "studentClassCreatedAt": "Created {date}",
+  "@studentClassCreatedAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "studentClassUpdatedAt": "Updated {date}",
+  "@studentClassUpdatedAt": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "studentClassScheduleDue": "Due {date}",
+  "@studentClassScheduleDue": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "studentClassScheduleWindow": "{opens} – {closes}",
+  "@studentClassScheduleWindow": {
+    "placeholders": {
+      "opens": {"type": "String"},
+      "closes": {"type": "String"}
+    }
+  },
+  "studentClassPublicJoin": "Join public exam",
+  "studentClassTeacher": "Teacher: {name}",
+  "@studentClassTeacher": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "studentClassNoDescription": "No description for this class.",
+  "teacherClassDetailAssignmentsTitle": "Class assignments",
+  "teacherClassDetailAssignmentsSubtitle": "Exams assigned to this class — schedule, format, and student progress.",
+  "teacherClassDetailActiveTitle": "Active assignments",
+  "teacherClassDetailActiveSubtitle": "Open sessions and assignments students can still take.",
+  "teacherClassDetailHistoryTitle": "Session history",
+  "teacherClassDetailHistorySubtitle": "Live exams whose latest session has ended.",
+  "teacherClassHistoryOpenGrading": "Grade",
+  "teacherClassHistorySessionEnded": "Last session ended: {date}",
+  "@teacherClassHistorySessionEnded": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "teacherClassNoAssignments": "No exams assigned to this class yet.",
+  "teacherClassNoHistory": "No ended live sessions for this class yet.",
+  "teacherClassTabOverview": "Overview",
+  "teacherClassTabAssignments": "Assignments",
+  "teacherClassTabMembers": "Members",
+  "teacherClassTabSettings": "Settings",
+  "teacherClassMembersEmpty": "No members yet.",
+  "teacherClassMemberRemove": "Remove",
+  "teacherClassMemberRemoveConfirm": "Remove this student from the class?",
+  "teacherClassMemberStatusPending": "Pending approval",
+  "teacherClassSaveSettings": "Save changes",
+  "teacherClassSettingsSaved": "Classroom updated",
+  "teacherClassRotateInvite": "Rotate invite code",
+  "teacherClassRotateInviteConfirm": "Generate a new invite code? The old code will stop working.",
+  "teacherClassArchive": "Archive class",
+  "teacherClassArchiveConfirm": "Archive this class? Students will no longer see new assignments here.",
+  "teacherClassArchivedMessage": "Class archived",
+  "teacherExamArchive": "Archive exam",
+  "teacherExamArchiveConfirm": "Archive this exam? You cannot assign archived exams.",
+  "teacherExamArchived": "Exam archived",
+  "teacherExamDelete": "Delete permanently",
+  "teacherExamDeleteConfirm": "Delete this exam permanently? All assignments without submitted work will be removed. This cannot be undone.",
+  "teacherExamDeleted": "Exam deleted",
+  "teacherExamRestore": "Restore exam",
+  "teacherExamRestoreConfirm": "Restore this exam from archive?",
+  "teacherExamRestored": "Exam restored",
+  "teacherExamsFilterAll": "All",
+  "teacherExamsFilterDraft": "Draft",
+  "teacherExamsFilterPublished": "Published",
+  "teacherExamsFilterArchived": "Archived",
+  "teacherExamsFilterEmpty": "No exams in this filter.",
+  "teacherExamPublishConfirm": "Publish this exam so you can assign it to classes?",
+  "teacherExamMoreActions": "More actions",
+  "teacherAssignmentDelete": "Delete assignment",
+  "teacherAssignmentDeleteConfirm": "Delete this assignment? Only allowed if no student has submitted yet.",
+  "teacherAssignmentDeleted": "Assignment deleted",
+  "teacherAssignmentClose": "Close assignment",
+  "teacherAssignmentCloseConfirm": "Close this assignment? Students can no longer start new attempts.",
+  "teacherAssignmentClosed": "Assignment closed",
+  "teacherAssignmentAudience": "Audience",
+  "teacherAssignmentAudienceClassroom": "Classroom",
+  "teacherAssignmentAudiencePublic": "Public link",
+  "teacherAssignmentPublicMaxUsesHint": "Max uses (optional)",
+  "teacherAssignmentPublicExpiresHint": "Pick expiry (optional)",
+  "teacherAssignmentPublicTokenTitle": "Public join token",
+  "teacherAssignmentPublicTokenBody": "Share this token with students. They paste it in “Join public exam” (or your shared instructions).",
+  "dashboardPublicCopyToken": "Copy token",
+  "dashboardPublicTokenCopied": "Token copied",
+  "dashboardPublicRotateLink": "New link",
+  "dashboardPublicRotateConfirm": "Generate a new public token? Old links will stop working.",
+  "dashboardPublicCloseLink": "Close link",
+  "dashboardPublicCloseConfirm": "Close this public assignment? New participants cannot start.",
+  "teacherApplyStatusPending": "Your application is pending review.",
+  "teacherApplyStatusApproved": "You are approved as a teacher. Open the teacher hub from your profile.",
+  "teacherApplyStatusRejected": "Your application was rejected.",
+  "teacherApplyStatusWithdrawn": "You withdrew your application. You can submit a new one.",
+  "teacherApplyStatusNone": "No application yet — tell us about yourself below.",
+  "teacherApplyRejectReason": "Note from reviewer",
+  "teacherApplyWithdraw": "Withdraw application",
+  "teacherApplyWithdrawConfirm": "Withdraw your pending application?",
+  "teacherApplyGoToHub": "Open teacher hub",
+  "homeQuickMyClasses": "Classes",
+  "homeQuickPublicExam": "Public exam",
+  "studentJoinClassByTokenLabel": "Invite link token",
+  "studentJoinClassByTokenHint": "Paste the long token from your teacher’s class link",
+  "studentJoinClassByTokenButton": "Join with link",
+  "studentExamsHubTitle": "Public exam join",
+  "studentExamsHubSubtitle": "Class assignments stay inside each class. Use this screen only when you have a public exam token from your teacher.",
+  "studentExamTimeRemainingHM": "{hours}h {minutes}m",
+  "@studentExamTimeRemainingHM": {
+    "placeholders": {
+      "hours": {"type": "int"},
+      "minutes": {"type": "int"}
+    }
+  },
+  "studentExamTimeRemainingMS": "{minutes}m {seconds}s",
+  "@studentExamTimeRemainingMS": {
+    "placeholders": {
+      "minutes": {"type": "int"},
+      "seconds": {"type": "int"}
+    }
+  },
+  "studentExamTimeRemainingS": "{seconds}s",
+  "@studentExamTimeRemainingS": {
+    "placeholders": {
+      "seconds": {"type": "int"}
+    }
+  },
+  "studentExamRunnerLoadFailed": "Could not load this exam.",
+  "teacherMobileWorkspaceTitle": "Teacher hub",
+  "teacherMobileWorkspaceBody": "Use the tabs below for quick navigation. For complex exam editing, a wider screen is recommended.",
+  "teacherClassOverviewMeta": "{students} students · {policy}",
+  "@teacherClassOverviewMeta": {
+    "placeholders": {
+      "students": {"type": "int"},
+      "policy": {"type": "String"}
+    }
+  },
+  "teacherClassStatActiveAssignments": "Active",
+  "teacherClassStatHistoryAssignments": "History",
+  "teacherClassStatStudents": "Students",
+  "teacherClassStatPendingMembers": "Pending join",
+  "teacherClassCreatedLabel": "Created",
+  "teacherClassUpdatedLabel": "Updated",
+  "teacherClassInviteCardHint": "Share this code so students can join the class.",
+  "teacherClassRecentAssignments": "Recent assignments",
+  "teacherClassViewAllAssignments": "View all assignments",
+  "teacherClassSettingsAbout": "About this class",
+  "teacherClassSettingsJoin": "Join settings",
+  "teacherClassAssignExamCta": "Assign an exam",
+  "examCardFormatClassic": "Classic exam",
+  "examCardFormatIntegrated": "Integrated 4 skills",
+  "examCardFormatSkills": "Skills + Grammar",
+  "examCardScheduleTitle": "Schedule",
+  "examCardExamInfoTitle": "Exam details",
+  "examCardQuestionsCount": "{count} questions",
+  "@examCardQuestionsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "examCardPointsMax": "Max {points} pts",
+  "@examCardPointsMax": {
+    "placeholders": { "points": { "type": "int" } }
+  },
+  "examCardGrammarSkillsCount": "{grammar} grammar · {skills} skill parts",
+  "@examCardGrammarSkillsCount": {
+    "placeholders": {
+      "grammar": { "type": "int" },
+      "skills": { "type": "int" }
+    }
+  },
+  "examCardAssignedAt": "Assigned {date}",
+  "@examCardAssignedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examCardRoomCode": "Room code: {code}",
+  "@examCardRoomCode": {
+    "placeholders": { "code": { "type": "String" } }
+  },
+  "examCardOpensAt": "Opens {date}",
+  "@examCardOpensAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examCardClosesAt": "Closes {date}",
+  "@examCardClosesAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examCardSessionStarted": "Session started {date}",
+  "@examCardSessionStarted": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examCardStatusLobby": "Lobby open — waiting to go live",
+  "examCardStatusLive": "Live now",
+  "examCardMyAttemptInProgress": "You have a draft in progress",
+  "examCardMyAttemptSubmitted": "Submitted — results pending",
+  "examCardMyAttemptVoid": "Attempt voided",
+  "examCardMyAttemptScore": "Score: {awarded} / {max}",
+  "@examCardMyAttemptScore": {
+    "placeholders": {
+      "awarded": { "type": "num" },
+      "max": { "type": "num" }
+    }
+  },
+  "examCardTeacherNoAttempts": "No student attempts yet",
+  "examCardTeacherAttemptsSummary": "{submitted} submitted · {inProgress} in progress · {total} total",
+  "@examCardTeacherAttemptsSummary": {
+    "placeholders": {
+      "submitted": { "type": "int" },
+      "inProgress": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "examCardManageSession": "Open session",
+  "studentExamsPageSubtitle": "Assignments from your classes are listed inside each class. Use a public link only when your teacher shared one.",
+  "studentExamsGoToClasses": "Go to my classes",
+  "studentExamsMenu": "Exams",
+  "studentExamsTitle": "Available exams",
+  "studentNoExams": "No exams available for your classes.",
+  "studentExamStart": "Start",
+  "studentExamUnknownTitle": "Exam",
+  "studentExamRunnerTitle": "Exam",
+  "studentExamSubmit": "Submit answers",
+  "studentExamSubmitted": "Submitted",
+  "studentExamScore": "Score",
+  "studentExamQuestionProgress": "Question {current} of {total}",
+  "@studentExamQuestionProgress": {
+    "placeholders": {
+      "current": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "studentExamPrevious": "Previous",
+  "studentExamNext": "Next",
+  "studentExamItemUnsupported": "This question type cannot be answered in the app yet. Skip or contact your teacher.",
+  "studentExamEssayPlaceholder": "Write your answer here…",
+  "studentExamScoreTotals": "Score: {earned} / {max}",
+  "@studentExamScoreTotals": {
+    "placeholders": {
+      "earned": {},
+      "max": {}
+    }
+  },
+  "studentExamNoQuestions": "This exam has no questions you can answer here yet.",
+  "examModeSelfPaced": "Self-paced",
+  "examModeScheduled": "Scheduled",
+  "examModeRealtime": "Live session",
+  "examOpenLobby": "Enter lobby",
+  "examWaitingForTeacher": "Waiting for the teacher to start",
+  "examCardLiveSessionEnded": "The teacher has ended this live session.",
+  "examCardLiveSessionEndedAt": "Session ended: {date}",
+  "@examCardLiveSessionEndedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examCardViewMySubmission": "View my submission",
+  "examSessionEndedByTeacher": "The teacher ended this live session. Your answers were saved.",
+  "examJoinByLinkTitle": "Join with public link",
+  "examJoinByLinkHint": "Paste the token from your teacher",
+  "examJoinPreview": "Preview",
+  "examJoinStart": "Start exam",
+  "examSessionRoomCode": "Room code",
+  "examSessionGo": "Open exam",
+  "studentExamLeaveRealtimeTitle": "Leave this exam?",
+  "studentExamLeaveRealtimeMessage": "If you leave now, you cannot return to this live exam. Your attempt will be closed.",
+  "studentExamLeaveRealtimeConfirm": "Leave exam",
+  "studentExamLeaveRealtimeCancel": "Keep working",
+  "studentExamVoluntaryExitBlocked": "You left this exam and cannot re-enter.",
+  "studentExamCannotRejoinAfterLeave": "You cannot rejoin this exam after leaving.",
+  "teacherExamSessionLeavePageHint": "Leaving this page does not end the exam for students. End the session here when you are ready to finish.",
+  "teacherAssignmentsSection": "Assignments",
+  "teacherNoAssignments": "No assignments yet.",
+  "teacherDashboardSubtitle": "Classes, exams, and grading in one calm workspace.",
+  "teacherDashboardOverview": "Overview",
+  "teacherDashboardStatClasses": "Classes",
+  "teacherDashboardStatAssignments": "Assignments",
+  "teacherDashboardStatLiveModes": "Live mode",
+  "teacherDashboardStatDraftExams": "Draft exams",
+  "teacherDashboardStatPublishedExams": "Published",
+  "teacherDashboardStatNeedsAction": "Needs action",
+  "teacherDashboardShortcuts": "Shortcuts",
+  "teacherDashboardShortcutExamBank": "Exam bank",
+  "teacherDashboardShortcutNewSkillsExam": "New skills exam",
+  "teacherDashboardShortcutOpen": "Open",
+  "teacherDashboardSectionLive": "Live sessions",
+  "teacherDashboardLiveEmpty": "No realtime assignments yet. Assign an exam in Live mode to run a session.",
+  "teacherDashboardLiveWaitingSession": "No active session — open console to start",
+  "teacherDashboardLiveStatusGrading": "Ending session",
+  "teacherDashboardLiveSessionStatus": "Session: {status}",
+  "@teacherDashboardLiveSessionStatus": {
+    "placeholders": { "status": { "type": "String" } }
+  },
+  "teacherDashboardSectionGrading": "Grading queue",
+  "teacherDashboardViewAllQueue": "View all ({count})",
+  "@teacherDashboardViewAllQueue": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardViewAllQueueShort": "View all",
+  "teacherDashboardQueueMoreHidden": "+{count} more in queue",
+  "@teacherDashboardQueueMoreHidden": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardGradingQueueAllTitle": "Pending grading",
+  "teacherDashboardGradingQueueAllSubtitle": "{count} submissions need your action",
+  "@teacherDashboardGradingQueueAllSubtitle": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardViewAllLiveQueue": "All live rooms ({count})",
+  "@teacherDashboardViewAllLiveQueue": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardLiveQueueAllTitle": "Live sessions",
+  "teacherDashboardLiveQueueAllSubtitle": "{count} realtime assignments in progress",
+  "@teacherDashboardLiveQueueAllSubtitle": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardScrollHint": "Scroll sideways to browse rooms",
+  "teacherDashboardGradingEmpty": "No submitted attempts need your attention right now.",
+  "teacherDashboardGradingLoading": "Loading grading queue…",
+  "teacherDashboardSectionAssignments": "Assignments",
+  "teacherDashboardAssignmentsPerClassHint": "Filter by class — manage history inside each class.",
+  "teacherDashboardFilterByClass": "Class",
+  "teacherDashboardAllClasses": "All classes",
+  "teacherDashboardFilterAll": "All",
+  "teacherDashboardFilterPublic": "Public link",
+  "teacherDashboardSearchHint": "Search by exam title",
+  "teacherDashboardAudienceClass": "Class",
+  "teacherDashboardAudiencePublic": "Public link",
+  "teacherDashboardDue": "Due {date}",
+  "@teacherDashboardDue": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
+  "teacherDashboardWindow": "{opens} – {closes}",
+  "@teacherDashboardWindow": {
+    "placeholders": {
+      "opens": {"type": "String"},
+      "closes": {"type": "String"}
+    }
+  },
+  "teacherDashboardClassLabel": "Class: {name}",
+  "@teacherDashboardClassLabel": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "teacherDashboardOpenConsole": "Open console",
+  "teacherDashboardOpenGrading": "Open grading",
+  "teacherDashboardStudentUnknown": "Student",
+  "teacherDashboardGradingChipManual": "Manual grading",
+  "teacherDashboardGradingChipAi": "AI grading",
+  "teacherDashboardGradingChipRelease": "Release results",
+  "teacherExamConsoleTitle": "Live exam session",
+  "teacherExamSessionLiveRosterTitle": "Students in lobby",
+  "teacherExamSessionLiveRosterHint": "Count and list update in real time when students join the waiting room.",
+  "teacherExamSessionJoinedCount": "{count, plural, one{1 student joined} other{{count} students joined}}",
+  "@teacherExamSessionJoinedCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "teacherExamSessionNoParticipantsYet": "No students in the lobby yet.",
+  "teacherExamSessionTabControl": "Session control",
+  "teacherExamSessionTabLiveMonitor": "Live monitor",
+  "teacherExamSessionShowDetails": "Details",
+  "teacherExamSessionHideDetails": "Hide",
+  "teacherLiveMonitorSummaryInProgress": "{count} in progress",
+  "@teacherLiveMonitorSummaryInProgress": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherLiveMonitorSummarySubmitted": "{count} submitted",
+  "@teacherLiveMonitorSummarySubmitted": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherLiveMonitorSummaryFlagged": "{count} flagged",
+  "@teacherLiveMonitorSummaryFlagged": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherLiveMonitorSummaryAvgProgress": "Avg. {percent}%",
+  "@teacherLiveMonitorSummaryAvgProgress": {
+    "placeholders": { "percent": { "type": "double" } }
+  },
+  "teacherLiveMonitorSummaryLine": "{inProgress} in progress · {submitted} submitted · {flagged} flagged · avg {avg}%",
+  "@teacherLiveMonitorSummaryLine": {
+    "placeholders": {
+      "inProgress": { "type": "int" },
+      "submitted": { "type": "int" },
+      "flagged": { "type": "int" },
+      "avg": { "type": "String" }
+    }
+  },
+  "teacherLiveMonitorFilterAll": "All",
+  "teacherLiveMonitorFilterInProgress": "In progress",
+  "teacherLiveMonitorFilterSubmitted": "Submitted",
+  "teacherLiveMonitorFilterFlagged": "Flagged",
+  "teacherLiveMonitorNoStudents": "No students match this filter.",
+  "teacherLiveMonitorProgressLabel": "{answered}/{total} · {percent}%",
+  "@teacherLiveMonitorProgressLabel": {
+    "placeholders": {
+      "answered": { "type": "int" },
+      "total": { "type": "int" },
+      "percent": { "type": "double" }
+    }
+  },
+  "teacherLiveMonitorIntegrityHigh": "High integrity risk",
+  "teacherLiveMonitorIntegrityMedium": "Medium integrity risk",
+  "teacherLiveMonitorCurrentQuestion": "Current focus",
+  "teacherLiveMonitorStatusSubmitted": "Submitted",
+  "teacherLiveMonitorIntegrityLabel": "Integrity",
+  "teacherLiveMonitorTabSwitches": "Tab switches",
+  "teacherLiveMonitorFocusLoss": "Focus loss",
+  "teacherLiveMonitorCopyPaste": "Copy/paste",
+  "teacherLiveMonitorDetailProgress": "Progress",
+  "teacherLiveMonitorDetailSections": "Skill sections",
+  "teacherLiveMonitorDetailGrammar": "Grammar answers",
+  "teacherLiveMonitorGrammarQuestion": "Question",
+  "teacherLiveMonitorGrammarNotAnswered": "Not answered",
+  "teacherLiveMonitorGrammarCorrect": "Correct",
+  "teacherLiveMonitorGrammarWrong": "Wrong",
+  "teacherLiveMonitorWatchScreen": "Watch live screen",
+  "teacherLiveMonitorQuestionStripLegend": "Green: correct · Red: wrong · Gray: not answered yet",
+  "teacherLiveMirrorPageTitle": "{name} — {exam}",
+  "@teacherLiveMirrorPageTitle": {
+    "placeholders": { "name": { "type": "String" }, "exam": { "type": "String" } }
+  },
+  "teacherLiveMirrorPageTitleSimple": "Live view — {name}",
+  "@teacherLiveMirrorPageTitleSimple": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "teacherLiveMirrorLiveBadge": "Live — mirroring student screen",
+  "teacherLiveMirrorNoContent": "No exam content to display.",
+  "teacherLiveMirrorWritingDraft": "Writing draft (live)",
+  "teacherLiveMirrorWritingEmpty": "Student has not started writing yet.",
+  "teacherLiveMirrorWordCount": "{count} words",
+  "@teacherLiveMirrorWordCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherLiveMirrorSkillCompleted": "Skill section marked complete",
+  "teacherLiveMirrorSkillInProgress": "Working on {skill}…",
+  "@teacherLiveMirrorSkillInProgress": {
+    "placeholders": { "skill": { "type": "String" } }
+  },
+  "teacherLiveMirrorBrowsingPart": "Viewing: {part}",
+  "@teacherLiveMirrorBrowsingPart": {
+    "placeholders": { "part": { "type": "String" } }
+  },
+  "teacherLiveMirrorFollowStudent": "Follow student",
+  "teacherLiveMirrorWritingPrompt": "Exam prompt",
+  "teacherLiveMirrorListeningEmpty": "Student has not entered any dictation yet.",
+  "teacherLiveMirrorListeningProgress": "Dictation progress: {saved} / {total} cues",
+  "@teacherLiveMirrorListeningProgress": {
+    "placeholders": { "saved": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "teacherLiveMirrorListeningCue": "Cue {number}",
+  "@teacherLiveMirrorListeningCue": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "teacherLiveMirrorSpeakingInProgress": "Student is doing the speaking exercise.",
+  "teacherLiveMirrorReadingEmpty": "Student has not answered any reading questions yet.",
+  "teacherLiveMirrorReadingQuestion": "Question {number}",
+  "@teacherLiveMirrorReadingQuestion": {
+    "placeholders": { "number": { "type": "int" } }
+  },
+  "examSessionStatusLobby": "Waiting room (lobby)",
+  "examSessionStatusLive": "Exam in progress",
+  "examSessionStatusClosed": "Session ended",
+  "examSessionStatusCanceled": "Session canceled",
+  "examSessionCreatedAt": "Session created {date}",
+  "@examSessionCreatedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examSessionScheduledEndAt": "Scheduled end: {date}",
+  "@examSessionScheduledEndAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "examSessionTimeLimitOnStart": "Time limit: {minutes} min (timer starts when you start the session)",
+  "@examSessionTimeLimitOnStart": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "examSessionEndsWhenTeacherEnds": "No time limit — ends when you end the session",
+  "examSessionReadyCount": "{ready} ready · {total} in lobby",
+  "@examSessionReadyCount": {
+    "placeholders": {
+      "ready": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "examSessionStudentReady": "Ready",
+  "examSessionStudentNotReady": "Not ready",
+  "examSessionMarkReady": "I'm ready",
+  "examSessionMarkNotReady": "Not ready yet",
+  "examSessionCancelReady": "Cancel ready",
+  "examSessionReadyHint": "Tell your teacher you are ready to start. This updates in real time.",
+  "examSessionKickStudentTitle": "Remove student?",
+  "examSessionKickStudentConfirm": "Remove {name} from this exam room? They will leave the lobby immediately.",
+  "@examSessionKickStudentConfirm": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "examSessionKickStudentAction": "Remove",
+  "examSessionKickStudentDone": "Student removed from the room.",
+  "examSessionKickedByTeacher": "Your teacher removed you from this exam session.",
+  "examSessionLobbyParticipantsTitle": "Participants",
+  "examSessionLobbyParticipantsHint": "Who has joined this waiting room (live).",
+  "teacherExamCreateSession": "Create / refresh lobby",
+  "teacherExamStartSession": "Start for everyone",
+  "teacherExamEndSession": "End and submit all",
+  "teacherExamGradingTitle": "Grading",
+  "teacherExamRunAi": "AI suggestions",
+  "teacherExamReleaseResults": "Release results",
+  "teacherExamGradingConsole": "Session",
+  "teacherExamGradingGrade": "Grade",
+  "teacherMyExamsTitle": "My exams",
+  "teacherExamNewExam": "New exam",
+  "teacherExamsListEmpty": "You have no exams yet. Tap + to create a draft.",
+  "teacherExamUntitled": "Untitled exam",
+  "teacherExamStatusDraft": "Draft",
+  "teacherExamStatusPublished": "Published",
+  "teacherExamStatusArchived": "Archived",
+  "teacherExamEditorTitle": "Edit exam",
+  "teacherExamSaveDraft": "Save",
+  "teacherExamPublish": "Publish",
+  "teacherExamAddMcq": "MCQ",
+  "teacherExamAddEssay": "Essay",
+  "teacherExamStemLabel": "Question",
+  "teacherExamOptionsHint": "Options",
+  "teacherExamOptionsPipeHint": "Separate options with |",
+  "teacherExamCorrectIndex": "Correct option index (0-based)",
+  "teacherExamEssayPrompt": "Essay prompt",
+  "teacherExamPoints": "Points",
+  "teacherExamItemsTitle": "Questions",
+  "teacherExamNoItemsHint": "Add at least one question before publishing.",
+  "teacherExamPublishNeedItems": "Add at least one question before publishing.",
+  "teacherExamDraftSaved": "Draft saved",
+  "teacherExamPublished": "Exam published",
+  "teacherExamOnlyDraftEditable": "Only draft exams can be edited here.",
+  "teacherExamReadOnlyPublished": "This exam is published. Create a new draft to change content.",
+  "teacherExamTitleLabel": "Title",
+  "teacherExamTitleHint": "e.g. Midterm — Reading & Listening",
+  "teacherExamDescriptionLabel": "Description",
+  "teacherExamResultsPolicy": "When students see results",
+  "teacherExamPolicyAfterSubmit": "Right after submit (if auto-graded)",
+  "teacherExamPolicyAfterRelease": "After teacher releases grades",
+  "teacherExamPolicyNever": "Never",
+  "teacherAssignmentWizardTitle": "Assign exam",
+  "teacherAssignExamDialogSubtitle": "Choose class, delivery mode, and schedule.",
+  "teacherAssignExamDialogSubtitleExam": "Assign “{examTitle}” to a class or link.",
+  "@teacherAssignExamDialogSubtitleExam": {
+    "placeholders": {
+      "examTitle": { "type": "String" }
+    }
+  },
+  "teacherAssignExamModeHintSelfPaced": "Students start anytime before the due date.",
+  "teacherAssignExamModeHintScheduled": "Fixed open and close times (markers on Schedule).",
+  "teacherAssignExamModeHintRealtime": "You open a live room from the dashboard — not a calendar slot.",
+  "teacherAssignExamModeHintPractice": "Practice only — no official grading.",
+  "teacherAssignExamRealtimeNote": "After assigning, open Live rooms on the dashboard to start the session.",
+  "teacherAssignExamCalendarNote": "Open, Due, and Close appear on Schedule. “Ongoing” on the calendar means the window is open, not a live room.",
+  "teacherAssignExamAdvancedRules": "Attempts & results",
+  "teacherAssignExamAdvancedRulesHint": "Attempts, when students see scores, partial submit",
+  "teacherAssignExamRulesShow": "Customize",
+  "teacherAssignExamRulesHide": "Collapse",
+  "teacherAssignmentClassroom": "Classroom",
+  "teacherAssignmentPickClass": "Select a classroom.",
+  "teacherAssignmentMode": "Mode",
+  "teacherAssignmentDueDate": "Due date (optional)",
+  "teacherAssignmentOpensAt": "Opens at",
+  "teacherAssignmentClosesAt": "Closes at",
+  "teacherAssignmentTimeLimitSec": "Time limit (seconds, optional)",
+  "teacherAssignmentTimeLimitMinutes": "Time limit per attempt (minutes)",
+  "teacherAssignmentTimeLimitMinutesHint": "e.g. 60",
+  "teacherAssignmentTimeLimitHelp": "Countdown starts when the student begins (or when you start a live session). Leave empty for no per-attempt timer — only due date / exam window applies.",
+  "teacherAssignmentTimeLimitPresetMinutes": "{minutes} min",
+  "@teacherAssignmentTimeLimitPresetMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "teacherAssignmentCreate": "Create assignment",
+  "teacherAssignmentExamNotPublished": "Publish the exam first, then assign it.",
+  "teacherAssignmentOptional": "Optional",
+  "teacherAssignmentAllowPartialSubmit": "Allow submit before finishing all parts",
+  "teacherAssignmentAllowPartialSubmitHint": "Students may submit with unfinished sections; those sections score zero.",
+  "teacherAssignmentSectionAudience": "Audience",
+  "teacherAssignmentSectionDelivery": "Schedule & mode",
+  "teacherAssignmentSectionRules": "Attempts & results",
+  "teacherAssignmentAttemptPolicy": "Attempts per student",
+  "teacherAssignmentAttemptSingle": "Once",
+  "teacherAssignmentAttemptUnlimited": "Unlimited",
+  "teacherAssignmentAttemptLimited": "Limited",
+  "teacherAssignmentMaxAttempts": "Max attempts",
+  "teacherAssignmentShowResults": "When students see results",
+  "examPartialSubmitTitle": "Submit incomplete exam?",
+  "examPartialSubmitMessage": "You have not finished every part. Unfinished sections will receive no points.",
+  "examPartialSubmitIncompleteHeader": "Still incomplete:",
+  "examPartialSubmitConfirm": "Submit anyway",
+  "teacherGradingHubFilterAll": "All",
+  "teacherGradingHubFilterInProgress": "In progress",
+  "teacherGradingHubFilterSubmitted": "Submitted",
+  "teacherGradingHubFilterPendingManual": "Needs grading",
+  "teacherGradingHubFilterFinalized": "Graded",
+  "teacherGradingHubFilterReleased": "Released",
+  "teacherGradingHubFilterPartial": "Partial submit",
+  "teacherGradingHubPartialBadge": "Partial",
+  "teacherGradingHubForceEndBadge": "Session ended",
+  "teacherGradingHubBatchAi": "AI grade all submitted",
+  "teacherGradingHubBatchAiDone": "AI grading finished for submitted attempts",
+  "teacherGradingHubNotReleased": "Not released",
+  "teacherGradingHubScoreLine": "Score: {awarded} / {max}",
+  "@teacherGradingHubScoreLine": {
+    "placeholders": {
+      "awarded": { "type": "String" },
+      "max": { "type": "String" }
+    }
+  },
+  "teacherGradingHubSubmittedAt": "Submitted {date}",
+  "@teacherGradingHubSubmittedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "teacherGradingHubStatsLine": "{submitted} submitted · {inProgress} in progress · {partial} partial",
+  "@teacherGradingHubStatsLine": {
+    "placeholders": {
+      "submitted": { "type": "int" },
+      "inProgress": { "type": "int" },
+      "partial": { "type": "int" }
+    }
+  },
+  "teacherGradingHubEmpty": "No attempts for this assignment yet.",
+  "teacherGradingHubOpenGrade": "Grade",
+  "teacherGradingHubBatchRelease": "Release all graded",
+  "teacherGradingHubBatchReleaseDone": "Results released for submitted attempts",
+  "teacherGradingHubBatchFinalize": "Finalize all submitted",
+  "teacherGradingHubBatchFinalizeDone": "Submitted attempts finalized",
+  "teacherExamDuplicate": "Duplicate",
+  "teacherExamDuplicated": "Exam duplicated as draft",
+  "teacherAssignmentDuplicate": "Duplicate assignment",
+  "teacherAssignmentDuplicated": "Assignment duplicated",
+  "teacherAssignmentExtendDeadline": "Extend deadline",
+  "teacherAssignmentDeadlineSaved": "Deadline updated",
+  "teacherMemberApprove": "Approve",
+  "teacherMemberReject": "Reject",
+  "teacherMemberApproved": "Student approved",
+  "teacherMemberRejected": "Request declined",
+  "teacherGradebookTitle": "Gradebook",
+  "teacherGradebookStudent": "Student",
+  "teacherGradebookExport": "Export CSV",
+  "teacherGradebookExportCopied": "Gradebook copied to clipboard (paste into Excel)",
+  "teacherGradebookNoAssignments": "No assignments in this class yet.",
+  "teacherGradebookKpiStudents": "Students",
+  "teacherGradebookKpiAssignments": "Assignments",
+  "teacherGradebookKpiClassAvg": "Class average",
+  "teacherGradebookKpiPending": "Cells to grade",
+  "teacherGradebookSearchHint": "Search student name or email",
+  "teacherGradebookFilterMode": "Assignment mode",
+  "teacherGradebookFilterAllModes": "All modes",
+  "teacherGradebookSortLabel": "Sort",
+  "teacherGradebookSortName": "Name A→Z",
+  "teacherGradebookSortAvg": "Avg score",
+  "teacherGradebookHideEmpty": "Hide students with no submissions",
+  "teacherGradebookShowingCount": "Showing {count} students",
+  "@teacherGradebookShowingCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherGradebookNoStudentsMatch": "No students match your filters.",
+  "teacherGradebookNoColumnsForFilter": "No assignments for this mode in this class.",
+  "teacherGradebookColAvg": "Avg",
+  "teacherGradebookClassAverage": "Class average",
+  "teacherGradebookCellNotStarted": "Not started",
+  "teacherGradebookCellPendingGrading": "Needs grading",
+  "teacherGradebookTapHint": "Tap a score to open grading; tap an empty cell to open the assignment hub.",
+  "teacherNavCalendar": "Schedule",
+  "teacherCalendarEmpty": "No scheduled events in this range.",
+  "teacherCalendarKindDue": "Due",
+  "teacherCalendarKindOpens": "Opens",
+  "teacherCalendarKindCloses": "Closes",
+  "teacherCalendarKindLive": "Live now",
+  "teacherCalendarViewMonth": "Month",
+  "teacherCalendarViewList": "List",
+  "teacherCalendarToday": "Today",
+  "teacherCalendarNoDayEvents": "No events on this day.",
+  "teacherCalendarGoToAssignment": "View assignment",
+  "teacherDashboardActionItems": "Needs attention",
+  "teacherDashboardPendingJoins": "Pending join requests",
+  "teacherDashboardDueSoon": "Due soon",
+  "teacherDashboardNeedsGrading": "{count} attempts need grading",
+  "@teacherDashboardNeedsGrading": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAssignmentPresetLabel": "Preset",
+  "teacherAssignmentPresetSave": "Save as preset",
+  "teacherAssignmentPresetSaved": "Preset saved",
+  "teacherAssignmentPresetNone": "No presets yet",
+  "examModePractice": "Practice (no grade)",
+  "teacherAnalyticsTitle": "Analytics",
+  "teacherAnalyticsSubmissionsChart": "Submissions per day",
+  "teacherAnalyticsScoreChart": "Score distribution",
+  "teacherAnalyticsIntegrityChart": "Integrity flags",
+  "teacherAnalyticsIntegrityHigh": "High risk",
+  "teacherAnalyticsIntegrityMedium": "Medium",
+  "teacherAnalyticsIntegrityLow": "Low",
+  "teacherAnalyticsNoData": "Not enough data yet",
+  "teacherAnalyticsPeriod7d": "7 d",
+  "teacherAnalyticsPeriod14d": "14 d",
+  "teacherAnalyticsPeriod30d": "30 d",
+  "teacherAnalyticsActiveStudents": "Active students",
+  "teacherAnalyticsActiveAssignments": "Active assignments",
+  "teacherAnalyticsSubmissions": "Submissions",
+  "teacherAnalyticsPendingGrading": "Pending grading",
+  "teacherAnalyticsAvgScore": "Avg score",
+  "teacherAnalyticsSkillBreakdown": "Per-skill averages",
+  "teacherAnalyticsSkillListening": "Listening",
+  "teacherAnalyticsSkillReading": "Reading",
+  "teacherAnalyticsSkillWriting": "Writing",
+  "teacherAnalyticsSkillSpeaking": "Speaking",
+  "teacherAnalyticsSkillGrammar": "Grammar",
+  "teacherAnalyticsWeakSkillHint": "{skill} avg {score}/10 — consider scheduling extra practice.",
+  "@teacherAnalyticsWeakSkillHint": {
+    "placeholders": {
+      "skill": { "type": "String" },
+      "score": { "type": "String" }
+    }
+  },
+  "teacherAnalyticsModeBreakdown": "Assignment modes",
+  "teacherAnalyticsModeHomework": "Homework",
+  "teacherAnalyticsModeLive": "Live",
+  "teacherAnalyticsModeSelfPaced": "Self-paced",
+  "teacherNavAnalytics": "Analytics",
+  "teacherClassTabActivity": "Activity",
+  "teacherClassActivityEmpty": "No activity recorded yet.",
+  "teacherCoTeacherAdd": "Add co-teacher",
+  "teacherCoTeacherEmailHint": "Teacher email",
+  "teacherCoTeacherAdded": "Co-teacher added",
+  "teacherCoTeacherRemoved": "Co-teacher removed",
+  "teacherIntegrationsTitle": "Integrations",
+  "teacherGoogleClassroomLink": "Link Google Classroom course",
+  "teacherGoogleClassroomUnlink": "Unlink Google Classroom",
+  "teacherGoogleClassroomCourseId": "Google course ID",
+  "teacherRubricTitle": "Rubric scoring",
+  "teacherRubricCriterion": "Criterion",
+  "teacherAdaptiveEnabled": "Adaptive difficulty",
+  "teacherGradingLiveProgress": "Live progress",
+  "teacherClassViewStudentAttempts": "Student work",
+  "teacherClassTapToViewAttempts": "Tap to view all student submissions",
+  "teacherClassOpenAttemptsList": "View submissions",
+  "teacherGradingStudentAttemptsTitle": "Student submissions",
+  "teacherGradingStatusInProgress": "In progress",
+  "teacherGradingStatusSubmitted": "Submitted",
+  "teacherGradingStatePendingAuto": "Auto grading",
+  "teacherGradingStatePendingAi": "AI review",
+  "teacherGradingStatePendingManual": "Needs manual grading",
+  "teacherGradingStateFinalized": "Graded",
+  "teacherGradingStartedAt": "Started {date}",
+  "@teacherGradingStartedAt": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "teacherGradingFinalize": "Finalize grading",
+  "teacherGradingFinalized": "Grading finalized",
+  "teacherGradingCompletenessComplete": "Full submission",
+  "teacherGradingCompletenessPartial": "Partial submission",
+  "teacherGradingCompletenessForceEnd": "Ended by teacher (live session)",
+  "teacherGradingAiRationale": "AI feedback",
+  "teacherGradingIntegratedScores": "Section scores",
+  "teacherGradingDetailTitle": "Grade attempt",
+  "teacherGradingSaveScores": "Save scores",
+  "teacherGradingSaved": "Scores saved",
+  "teacherGradingNotesHint": "Feedback note",
+  "teacherGradingAwardedPoints": "Awarded points",
+  "teacherGradingOnlySubmitted": "Scores can be adjusted after the student submits.",
+  "teacherAttemptGradeHeaderSubtitle": "Review responses, adjust scores, and release results when ready.",
+  "teacherAttemptGradeExamLabel": "Exam",
+  "teacherAttemptGradeStartedLine": "Started {date}",
+  "@teacherAttemptGradeStartedLine": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "teacherAttemptGradeSubmittedLine": "Submitted {date}",
+  "@teacherAttemptGradeSubmittedLine": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "teacherAttemptGradeReleasedYes": "Published to student",
+  "teacherAttemptGradeReleasedNo": "Not published yet",
+  "teacherAttemptGradeTotalScore": "Skill scores",
+  "integratedSkillScoreLabel": "{score} / 10",
+  "@integratedSkillScoreLabel": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "integratedSkillScorePending": "Pending",
+  "integratedSkillFinalAvg": "Average",
+  "integratedSkillFinalPartial": "Partial avg.",
+  "integratedSkillGrammar": "Grammar",
+  "integratedSkillListening": "Listening",
+  "integratedSkillReading": "Reading",
+  "integratedSkillWriting": "Writing",
+  "integratedSkillSpeaking": "Speaking",
+  "integratedSkillEnterScore": "Enter score (0–10)",
+  "integratedSkillScoreSaved": "Score saved",
+  "integratedSkillSaveScore": "Save score",
+  "integratedScoresAwaiting": "Scores are being calculated. Refresh in a moment if this persists.",
+  "integratedGradingAvgFormulaHint": "Final score = arithmetic mean of all skill scores (0–10 each). Pending skills are excluded until graded.",
+  "integratedGradingColumnSkill": "Skill",
+  "integratedGradingColumnScore": "Score",
+  "integratedWritingGradingEssayLabel": "Student essay",
+  "integratedWritingGradingWordCount": "{count} words",
+  "@integratedWritingGradingWordCount": {
+    "placeholders": { "count": { "type": "String" } }
+  },
+  "integratedWritingGradingNoDraft": "No essay text saved for this attempt.",
+  "integratedWritingGradingRunAi": "Grade with AI",
+  "integratedWritingGradingApplyAi": "Apply AI score",
+  "integratedWritingGradingManual": "Manual score",
+  "integratedWritingGradingAiBand": "AI band: {band} / 9",
+  "@integratedWritingGradingAiBand": {
+    "placeholders": { "band": { "type": "String" } }
+  },
+  "integratedWritingGradingAiExamScore": "Suggested exam score: {score} / 10",
+  "@integratedWritingGradingAiExamScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "integratedGrammarItemResult": "{awarded} / {max} correct",
+  "@integratedGrammarItemResult": {
+    "placeholders": { "awarded": { "type": "String" }, "max": { "type": "String" } }
+  },
+  "teacherAttemptGradeSectionBreakdown": "Questions & scoring",
+  "teacherAttemptGradeItemKind": "Type: {kind}",
+  "@teacherAttemptGradeItemKind": {
+    "placeholders": { "kind": { "type": "String" } }
+  },
+  "teacherAttemptGradeMaxPts": "Max {n} pts",
+  "@teacherAttemptGradeMaxPts": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "teacherAttemptGradeStudentFallback": "Student",
+  "teacherAttemptGradePointsShort": "{awarded} / {max} pts",
+  "@teacherAttemptGradePointsShort": {
+    "placeholders": { "awarded": {}, "max": {} }
+  },
+  "teacherAttemptGradeAnswerLabel": "Student answer",
+  "teacherAttemptGradeWorkAndScores": "Submission review & scoring",
+  "teacherAttemptGradeCorrectAnswer": "Correct answer",
+  "teacherAttemptGradeSkillLinkedWork": "Linked exercises",
+  "teacherAttemptGradeSkillCmsHint": "The student practiced this in the in-app lesson and marked it done here. Detailed attempts stay in the skill activity history, not in this exam payload.",
+  "teacherAttemptGradeQuestionN": "Question {n}",
+  "@teacherAttemptGradeQuestionN": {
+    "placeholders": { "n": { "type": "int" } }
+  },
+  "teacherAttemptGradeMarkedComplete": "Marked complete",
+  "teacherAttemptGradeNotMarkedComplete": "Not marked complete",
+  "teacherAttemptGradeInstructions": "Instructions",
+  "teacherAttemptGradeChoicesLabel": "Answer choices",
+  "teacherAttemptGradeNoSkillWork": "No work recorded during this exam session.",
+  "teacherAttemptGradeOnlyMarkedComplete": "The student marked this part complete, but no saved answers were found for the linked exercise.",
+  "teacherAttemptGradeSkillWorkExamInline": "Answers saved inside this exam attempt (integrated exam).",
+  "teacherAttemptGradeSkillWorkNearSession": "Showing work from near this exam session (timestamps may fall slightly outside the exact window).",
+  "teacherAttemptGradeSkillWorkLatestLinked": "Showing the student's most recent work on this linked exercise.",
+  "teacherAttemptGradeWordCount": "{count} words",
+  "@teacherAttemptGradeWordCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "teacherAttemptGradeViewSkillWork": "View student submission",
+  "teacherAttemptGradeHideSkillWork": "Hide submission",
+  "teacherAttemptGradeListeningCue": "Cue",
+  "teacherAttemptGradeDictationScore": "Words correct: {correct} / {total}",
+  "@teacherAttemptGradeDictationScore": {
+    "placeholders": { "correct": {}, "total": {} }
+  },
+  "teacherAttemptGradeSpeakingLine": "Sentence {id}",
+  "@teacherAttemptGradeSpeakingLine": {
+    "placeholders": { "id": { "type": "String" } }
+  },
+  "teacherAttemptGradeWritingScore": "Score: {score}",
+  "@teacherAttemptGradeWritingScore": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "teacherAttemptGradeSkillOther": "Section",
+  "teacherExamTimeRemaining": "Time left",
+  "teacherExamMcqNeedsStem": "Each MCQ needs question text.",
+  "teacherExamEssayNeedsPrompt": "Each essay needs a prompt.",
+  "teacherExamIntegratedUntitled": "Four-skill practice set",
+  "teacherExamIntegratedNew": "Four-skill exam",
+  "teacherExamIntegratedBadge": "4 skills",
+  "teacherExamIntegratedEditorTitle": "Four-skill exam",
+  "teacherExamIntegratedPartsTitle": "Parts (Reading → Listening → Writing → Speaking)",
+  "teacherExamIntegratedPartsHint": "Pick one published exercise per skill. Students open each activity in the app, then mark it done before submitting.",
+  "teacherExamIntegratedTapToPick": "Tap to choose content",
+  "teacherExamIntegratedPickAll": "Choose all four exercises before publishing.",
+  "teacherExamIntegratedSkillListening": "Listening (dictation)",
+  "teacherExamIntegratedSkillSpeaking": "Speaking (read aloud)",
+  "teacherExamIntegratedSkillReading": "Reading",
+  "teacherExamIntegratedSkillWriting": "Writing",
+  "teacherExamIntegratedChooseExercise": "Choose exercise",
+  "teacherExamIntegratedEmptyList": "No items found.",
+  "teacherExamSkillsEditorTitle": "Skills exam",
+  "teacherExamSkillsPartsTitle": "Skills (choose what this test includes)",
+  "teacherExamSkillsPartsHint": "Turn off a skill if this test should not cover it. For each included skill, add one or more exercises from the library.",
+  "teacherExamSkillsIncludeSubtitle": "Include this skill",
+  "teacherExamGrammarTitle": "Grammar",
+  "teacherExamGrammarHint": "Optional. Add cloze, gap fill, matching, sentence order, or multiple choice. All are auto-scored. If the exam includes skills, total Grammar points cannot exceed 100.",
+  "teacherExamGrammarAdd": "Add question",
+  "teacherExamGrammarEdit": "Grammar question",
+  "teacherExamPublishNeedSelection": "Include at least one skill with an exercise, or add at least one Grammar question.",
+  "teacherExamPublishPickEachIncludedSkill": "Add at least one exercise for every skill that is turned on.",
+  "teacherExamWritingPromptSectionTitle": "Writing Prompt",
+  "teacherExamWritingPromptEmptyHint": "All students will receive the same writing prompt. Choose one AI-generated option or write your own.",
+  "teacherExamWritingGenerateWithAI": "Generate with AI",
+  "teacherExamWritingWriteManually": "Write manually",
+  "teacherExamWritingPromptNeedTopic": "Select a writing topic first to generate AI prompts.",
+  "teacherExamWritingPickPromptTitle": "Choose a writing prompt",
+  "teacherExamWritingPickPromptSubtitle": "Select one of the AI-generated prompts below. All students will receive this same prompt.",
+  "teacherExamWritingSelectThisPrompt": "Select",
+  "teacherExamWritingManualPromptTitle": "Write your own prompt",
+  "teacherExamWritingPromptTitleLabel": "Prompt title",
+  "teacherExamWritingPromptTitleHint": "e.g. Technology in Education",
+  "teacherExamWritingPromptTaskTypeLabel": "Task type",
+  "teacherExamWritingPromptTextLabel": "Writing prompt",
+  "teacherExamWritingPromptTextHint": "Write the full exam question here. Include context and specific instructions for students...",
+  "teacherExamWritingPromptTextRequired": "Enter the writing prompt text before saving.",
+  "teacherExamWritingPromptRequired": "Please set a writing prompt before publishing.",
+  "teacherExamWritingPromptNotSet": "No writing prompt set. Students will not be able to complete this section.",
+  "teacherExamWritingCustomPrompt": "Custom prompt",
+  "teacherExamGrammarPointsCap100": "Total Grammar points cannot exceed 100 while skills are included.",
+  "teacherExamSkillsBadge": "Skills exam",
+  "integratedExamGrammarSectionTitle": "Grammar",
+  "integratedExamSubmitBlockedAll": "Finish every skill part and every Grammar question before submitting.",
+  "teacherExamSkillsWebSubtitle": "Lay out like an exam paper: Grammar first, then Reading, Listening, Writing, and Speaking. Add one or more library exercises per skill you include.",
+  "teacherExamSkillsBrowseContent": "Browse library",
+  "teacherExamSkillsNoGrammarYet": "No Grammar questions yet. Use Add question to open the editor.",
+  "teacherExamSkillsAddExercise": "Add exercise",
+  "teacherExamSkillsCreateNew": "Create new exercise",
+  "teacherExamSkillsExercisesSelected": "exercise(s) selected",
+  "teacherExamSkillsAllAdded": "All available exercises are already added.",
+  "teacherExamCreateMenuLabel": "New exam",
+  "teacherExamIntegratedCreateClassicHint": "MCQ & essay in one editor",
+  "teacherExamIntegratedCreateFourHint": "Four parts linked to existing lessons",
+  "integratedExamRunnerTitle": "Practice set",
+  "integratedExamMetaClass": "Class",
+  "integratedExamMetaSubject": "Subject",
+  "integratedExamMetaTeacher": "Teacher",
+  "integratedExamMetaStudent": "Student",
+  "integratedExamMetaDelivery": "How you take this",
+  "integratedExamMetaModeHomework": "Take-home assignment",
+  "integratedExamMetaModeScheduled": "Scheduled exam",
+  "integratedExamMetaModeLive": "Live session",
+  "integratedExamMetaPublic": "Open link",
+  "integratedExamMetaTimeLimit": "Time limit",
+  "integratedExamMetaTimeLimitMinutes": "{minutes} min",
+  "@integratedExamMetaTimeLimitMinutes": {
+    "placeholders": { "minutes": {"type": "int"} }
+  },
+  "integratedExamMetaNoTimeLimit": "No fixed time limit",
+  "integratedExamMetaDeadline": "Closes in",
+  "integratedExamMetaDue": "Submit by",
+  "integratedExamMetaWindow": "Open until",
+  "integratedExamMetaOpens": "Opens at",
+  "integratedExamMetaStarted": "Started at",
+  "integratedExamSubjectDefault": "English",
+  "integratedExamNoClassName": "—",
+  "integratedExamGrammarNavHint": "Bold border = in progress; green = answered.",
+  "integratedExamGrammarQuestionLabel": "Question {n} of {total}",
+  "@integratedExamGrammarQuestionLabel": {
+    "placeholders": { "n": {"type": "int"}, "total": {"type": "int"} }
+  },
+  "integratedExamTimeUpShort": "Time up",
+  "integratedExamGrammarPrevious": "Previous grammar question",
+  "integratedExamGrammarNext": "Next grammar question",
+  "integratedExamOpenExercise": "Open",
+  "integratedExamMarkDone": "Mark done",
+  "integratedExamUndoPart": "Undo",
+  "integratedExamSubmit": "Submit all parts",
+  "integratedExamSubmitShort": "Submit",
+  "integratedExamSubmitBlocked": "Mark every part as done before submitting.",
+  "integratedExamProgress": "{done} of {total} parts ready",
+  "@integratedExamProgress": {
+    "placeholders": {
+      "done": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
+  "integratedExamScoreSummary": "Avg. score: {earned} / 10",
+  "@integratedExamScoreSummary": {
+    "placeholders": {
+      "earned": {}
+    }
+  },
+  "integratedExamSkillsSectionTitle": "Skills",
+  "integratedExamDetailsTitle": "Exam details",
+  "integratedExamSelectPartHint": "Choose a part below. Work on one section at a time.",
+  "integratedExamPartDone": "Done",
+  "integratedExamPartNotStarted": "Not started",
+  "integratedExamEmbeddedHint": "Complete the exercise below. Only the exam timer applies.",
+  "integratedExamEmbeddedLocked": "This part is locked after you submitted the exam.",
+  "integratedExamEmbeddedNoResource": "No exercise linked for this part.",
+  "integratedExamGrammarUnsupported": "This question type is not supported in the app yet.",
+  "integratedExamMatchPick": "Match",
+  "integratedExamReorderHint": "Drag the lines into the correct order.",
+  "teacherExamGrammarKindMcqSingle": "Multiple choice (one answer)",
+  "teacherExamGrammarKindMcqMulti": "Multiple choice (several answers)",
+  "teacherExamGrammarKindCloze": "Cloze — fill blanks in a passage",
+  "teacherExamGrammarKindGap": "Gap — one missing word",
+  "teacherExamGrammarKindMatching": "Match pairs",
+  "teacherExamGrammarKindReorder": "Put fragments in order",
+  "teacherExamGrammarQuestionType": "Question type",
+  "teacherExamGrammarPassageLabel": "Passage (mark blanks with double curly braces around numbers, e.g. 0 and 1)",
+  "teacherExamGrammarTextBefore": "Text before gap",
+  "teacherExamGrammarTextAfter": "Text after gap",
+  "teacherExamGrammarAcceptedAnswers": "Accepted answers (comma-separated)",
+  "teacherExamGrammarBlankId": "Blank id",
+  "teacherExamGrammarLeftColumn": "Left column",
+  "teacherExamGrammarRightColumn": "Right column",
+  "teacherExamGrammarPairCorrect": "Correct match for row {row}",
+  "@teacherExamGrammarPairCorrect": {
+    "placeholders": {
+      "row": {"type": "int"}
+    }
+  },
+  "teacherExamGrammarFragments": "Sentence fragments (one per line in correct reading order)",
+  "teacherExamGrammarReorderInstruction": "Drag the chips below to set the correct sentence order students should produce.",
+  "teacherExamGrammarSaveItem": "Save question",
+  "teacherExamGrammarNewItem": "New question",
+  "teacherExamGrammarPanelTitle": "Grammar editor",
+  "teacherExamGrammarCloseEditor": "Close",
+  "teacherExamGrammarImport": "Import questions",
+  "teacherExamGrammarImportSuccess": "Imported {count} question(s) successfully.",
+  "@teacherExamGrammarImportSuccess": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherExamGrammarImportError": "Failed to parse file. Check the format and try again.",
+  "teacherExamGrammarImportEmpty": "No valid questions found in the file.",
+  "teacherExamGrammarImportFormatTitle": "Import format (JSON)",
+  "teacherExamGrammarImportFormatHint": "Create a .json file containing an array of question objects. Each object must have a \"kind\" field. Supported kinds:",
+  "teacherExamGrammarDownloadSample": "Copy sample to clipboard",
+  "teacherExamGrammarImportPickFile": "Pick .json file",
+  "teacherExamGrammarAddOption": "Add option",
+  "teacherExamGrammarCorrectOptions": "Correct options",
+  "studentExamExpired": "Time is up",
+  "teacherAssignmentEditTitle": "Edit Assignment",
+  "teacherAssignmentEditSubtitle": "Adjust schedule, time limits and rules",
+  "teacherAssignmentEditSaved": "Assignment updated",
+  "teacherAssignmentEditScheduleSection": "Schedule",
+  "teacherAssignmentEditRulesSection": "Attempts & Results",
+  "teacherAssignmentEditTooltip": "Edit assignment",
+  "teacherAssignmentModeFixed": "Mode is set and cannot be changed after creation.",
+  "teacherAssignmentRealtimeLobbyOpens": "Lobby opens at",
+  "teacherAssignmentRealtimeScheduledStart": "Scheduled start",
+  "teacherAssignmentRealtimeHardEnd": "Hard end",
+  "teacherAssignmentEditPracticeNote": "Practice mode has no schedule — students can access this assignment at any time."
 }

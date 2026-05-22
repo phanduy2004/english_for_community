@@ -1,3 +1,6 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -276,33 +279,22 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
           final isLoading = state.status == ReleaseManagementStatus.loading ||
               state.status == ReleaseManagementStatus.initial;
 
-          return Scaffold(
-            backgroundColor: const Color(0xFFF8FAFC),
-            appBar: AppBar(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.textPrimary,
-              elevation: 0,
-              centerTitle: false,
-              title: const Text('Quản lý phiên bản',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              shape: const Border(
-                  bottom: BorderSide(color: Color(0xFFE2E8F0))),
-              actions: [
-                IconButton(
-                  tooltip: 'Chạy publish theo lịch ngay',
-                  onPressed: () => bloc.add(ReleaseActionRequested(
-                      action: 'publish-due-run', releaseId: '')),
-                  icon: const Icon(Icons.schedule_send_outlined),
-                ),
-                IconButton(
-                  tooltip: 'Làm mới',
-                  onPressed: () =>
-                      bloc.add(ReleaseLoadRequested(status: _statusFilter)),
-                  icon: const Icon(Icons.refresh),
-                ),
-                const SizedBox(width: 8),
-              ],
-            ),
+          return AdminPageScaffold(
+            title: context.l10n.adminNavReleases,
+            scrollable: false,
+            maxWidth: AdminWebUi.contentMaxTable,
+            actions: [
+              IconButton(
+                tooltip: 'Chạy publish theo lịch ngay',
+                onPressed: () => bloc.add(ReleaseActionRequested(action: 'publish-due-run', releaseId: '')),
+                icon: const Icon(Icons.schedule_send_outlined, size: 20),
+              ),
+              IconButton(
+                tooltip: 'Làm mới',
+                onPressed: () => bloc.add(ReleaseLoadRequested(status: _statusFilter)),
+                icon: const Icon(Icons.refresh, size: 20),
+              ),
+            ],
             body: RefreshIndicator(
               onRefresh: () async =>
                   bloc.add(ReleaseLoadRequested(status: _statusFilter)),
@@ -1007,7 +999,7 @@ class _CompactDropdown<T> extends StatelessWidget {
           style: const TextStyle(
               fontSize: 13,
               color: AppColors.textPrimary,
-              fontFamily: 'Lexend'),
+              fontFamily: 'Inter'),
           icon: const Icon(Icons.unfold_more, size: 16),
           items: items.entries
               .map((e) =>

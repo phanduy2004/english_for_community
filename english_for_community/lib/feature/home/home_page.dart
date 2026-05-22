@@ -35,6 +35,8 @@ import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
 import '../profile/my_exercise_history/my_exercise_history_page.dart';
 import '../profile/profile_page.dart';
+import '../student/classes/my_classes_hub_page.dart';
+import '../student/exams/public_exam_join_page.dart';
 import '../progress/progress_report_page.dart';
 import '../reading/reading_list_page.dart';
 import '../writing/writing_topics_page.dart';
@@ -792,6 +794,34 @@ class _HomeContentView extends StatelessWidget {
                   iconColor: const Color(0xFF3B82F6),
                   label: 'History',
                   onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFE8F5E9),
+                  icon: Icons.class_outlined,
+                  iconColor: const Color(0xFF2E7D32),
+                  label: t.homeQuickMyClasses,
+                  onTap: () => context.push(MyClassesHubPage.routePath),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Center(
+                child: _QuickAction(
+                  colorBg: const Color(0xFFE3F2FD),
+                  icon: Icons.public_outlined,
+                  iconColor: const Color(0xFF1565C0),
+                  label: t.homeQuickPublicExam,
+                  onTap: () => context.push(PublicExamJoinPage.routePath),
                 ),
               ),
             ),

@@ -25,10 +25,13 @@ export const getWritingTopics = async (req, res) => {
 export const startWritingForTopic = async (req, res) => {
   try {
     const { id } = req.params;
-    const { taskType } = req.body;
+    const { taskType, freshStart, fixedPrompt } = req.body;
     const { userId } = req;
 
-    const result = await writingTopicService.startWritingForTopic(userId, id, taskType);
+    const result = await writingTopicService.startWritingForTopic(userId, id, taskType, {
+      freshStart: freshStart === true,
+      fixedPrompt: fixedPrompt || null,
+    });
     if (result.error) {
       return res.status(result.error.status).json({ message: result.error.message });
     }
@@ -92,6 +95,13 @@ export const getWritingTopicDetail = async (req, res) => {
     const { id } = req.params;
     const topic = await writingTopicService.getWritingTopicById(id);
     if (!topic) return res.status(404).json({ message: 'Topic not found' });
+
+    // Students only see active topics; admin/teacher may load drafts for CMS/exams.
+    const role = req.user?.role;
+    if (role === 'user' && topic.isActive === false) {
+      return res.status(404).json({ message: 'Topic not found' });
+    }
+
     return res.status(200).json(topic);
   } catch (error) {
     return res.status(500).json({ message: 'Server error', error: error.message });

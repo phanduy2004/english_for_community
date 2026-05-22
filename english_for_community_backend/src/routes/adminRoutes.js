@@ -34,5 +34,9 @@ router.patch('/users/:id/role', requirePermissions(Permission.USERS_READ), admin
 router.get('/activities', requirePermissions(Permission.USERS_READ), adminController.getActivities);
 router.get('/activities/:id', requirePermissions(Permission.USERS_READ), adminController.getActivityDetail);
 
+router.get('/teacher-applications', requirePermissions(Permission.USERS_READ), adminController.listTeacherApplications);
+router.post('/teacher-applications/:id/approve', requirePermissions(Permission.USERS_READ), adminController.approveTeacherApplication);
+router.post('/teacher-applications/:id/reject', requirePermissions(Permission.USERS_READ), adminController.rejectTeacherApplication);
+
 // -----------------------------
 export default router;

@@ -27,6 +27,11 @@ class ListeningSkillsPage extends StatefulWidget {
   // 🔥 THÊM 2 THAM SỐ MỚI
   final int initialTab; // 0: Practice, 1: Discussion
   final String? targetCommentId; // ID comment cần highlight
+  final bool embedded;
+  final bool examPracticeMode;
+  final VoidCallback? onPartComplete;
+  final void Function(Map<String, String> cueTextsByIndex, int savedCount, int totalCount)?
+      onExamListeningProgress;
 
   const ListeningSkillsPage({
     super.key,
@@ -36,6 +41,10 @@ class ListeningSkillsPage extends StatefulWidget {
     this.levelText,
     this.initialTab = 0, // Mặc định là Practice
     this.targetCommentId,
+    this.embedded = false,
+    this.examPracticeMode = false,
+    this.onPartComplete,
+    this.onExamListeningProgress,
   });
 
   @override
@@ -68,7 +77,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     );
 
     _initAudio();
-    _initSocketListeners();
+    if (!widget.embedded) {
+      _initSocketListeners();
+    }
 
     _psSub = _player.playerStateStream.listen((st) async {
       if (st.processingState == ja.ProcessingState.completed) {
@@ -126,7 +137,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     _player.dispose();
     _tabController.dispose();
     _cueStopwatch.stop();
-    GetIt.I<SocketService>().leaveListeningRoom(widget.listeningId);
+    if (!widget.embedded) {
+      GetIt.I<SocketService>().leaveListeningRoom(widget.listeningId);
+    }
     super.dispose();
   }
 
@@ -169,6 +182,17 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     } catch (_) {}
   }
 
+  Map<String, String> _examCueTexts(CueState st) {
+    final map = <String, String>{};
+    for (final e in st.latestAttempts.entries) {
+      final t = e.value.userText?.trim() ?? '';
+      if (t.isNotEmpty) map['${e.key}'] = t;
+    }
+    final cur = st.userAnswer.trim();
+    if (cur.isNotEmpty) map['${st.selectedIndex}'] = cur;
+    return map;
+  }
+
   String _buildMaskedHint(String refRaw, String userText) {
     final refTokens = refRaw.toLowerCase().split(RegExp(r'\s+'));
     final userTokens = userText.toLowerCase().split(RegExp(r'\s+'));
@@ -188,17 +212,40 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     final bloc = context.read<CueBloc>();
     final st = bloc.state;
     final text = _dictationCtrl.text.trim();
-    final cue = st.currentCue;
-    if (cue?.text != null && cue!.text!.isNotEmpty) {
-      setState(() => _lastHint = _buildMaskedHint(cue.text!, text));
+    if (text.isEmpty) return;
+
+    final silent = widget.examPracticeMode;
+    if (!silent) {
+      final cue = st.currentCue;
+      if (cue?.text != null && cue!.text!.isNotEmpty) {
+        setState(() => _lastHint = _buildMaskedHint(cue.text!, text));
+      }
     }
+
     final result = await bloc.submitCue(
       listeningId: widget.listeningId,
       cueIdx: st.selectedIndex,
       userText: text,
       playedMs: _player.position.inMilliseconds,
       durationInSeconds: _cueStopwatch.elapsed.inSeconds,
+      examSilentMode: silent,
     );
+
+    if (!mounted) return;
+
+    if (silent) {
+      final next = bloc.state;
+      widget.onExamListeningProgress?.call(
+        _examCueTexts(next),
+        next.completedIdx.length,
+        next.cues.length,
+      );
+      if (next.selectedIndex < next.cues.length - 1) {
+        bloc.add(const NextCue());
+      }
+      return;
+    }
+
     setState(() => _showHint = !result.passed);
     if (!mounted) return;
     final t = context.l10n;
@@ -209,23 +256,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     ));
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildCueContent(BuildContext context, String myUserId) {
     final t = context.l10n;
-    final String myUserId = context.select((UserBloc bloc) => bloc.state.userEntity?.id ?? "");
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text(widget.title ?? t.listeningSkillsPracticeTitle, style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF09090B)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: const Color(0xFFE4E4E7), height: 1)),
-      ),
-      body: SafeArea(
-        child: BlocConsumer<CueBloc, CueState>(
+    return BlocConsumer<CueBloc, CueState>(
           listenWhen: (p, c) => p.selectedIndex != c.selectedIndex || p.userAnswer != c.userAnswer,
           listener: (context, state) {
             if (_dictationCtrl.text != state.userAnswer) {
@@ -248,6 +281,54 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
             if (state.status == CueStatus.loading) return const Center(child: CircularProgressIndicator());
             if (state.status == CueStatus.error) {
               return Center(child: Text(state.errorMessage ?? context.l10n.commonError));
+            }
+
+            final practice = PracticeTab(
+              state: state,
+              controller: _dictationCtrl,
+              onTextChange: (v) => context.read<CueBloc>().add(UpdateUserAnswer(v)),
+              onSubmit: () => _submitAndScore(context),
+              onReplay: () async {
+                await _player.seek(Duration.zero);
+                _player.play();
+              },
+              onNext: () => context.read<CueBloc>().add(const NextCue()),
+              onPrev: () => context.read<CueBloc>().add(const PrevCue()),
+              showHint: _showHint,
+              lastHint: _lastHint,
+              autoPlay: _autoPlayAfterClip,
+              onToggleAutoPlay: (v) => setState(() => _autoPlayAfterClip = v),
+              onAllFinished: widget.onPartComplete,
+              examPracticeMode: widget.examPracticeMode,
+            );
+
+            if (widget.embedded) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ListeningHeader(
+                    title: widget.title ?? t.listeningSkillsHeaderTitle,
+                    levelText: widget.levelText,
+                    doneCount: state.completedIdx.length,
+                    totalCount: state.cues.length,
+                  ),
+                  const SizedBox(height: 16),
+                  ListeningPlayer(
+                    player: _player,
+                    onTogglePlay: () => _player.playing ? _player.pause() : _player.play(),
+                    onSeek: (d) => _player.seek(d),
+                  ),
+                  const SizedBox(height: 16),
+                  CueSelector(
+                    count: state.cues.length,
+                    selectedIndex: state.selectedIndex,
+                    completedIdx: state.completedIdx,
+                    onSelect: (i) => context.read<CueBloc>().add(SelectCueByIndex(i)),
+                  ),
+                  const SizedBox(height: 16),
+                  practice,
+                ],
+              );
             }
 
             return SingleChildScrollView(
@@ -298,27 +379,11 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                           child: TabBarView(
                             controller: _tabController,
                             children: [
-                              PracticeTab(
-                                state: state,
-                                controller: _dictationCtrl,
-                                onTextChange: (v) => context.read<CueBloc>().add(UpdateUserAnswer(v)),
-                                onSubmit: () => _submitAndScore(context),
-                                onReplay: () async {
-                                  await _player.seek(Duration.zero);
-                                  _player.play();
-                                },
-                                onNext: () => context.read<CueBloc>().add(const NextCue()),
-                                onPrev: () => context.read<CueBloc>().add(const PrevCue()),
-                                showHint: _showHint,
-                                lastHint: _lastHint,
-                                autoPlay: _autoPlayAfterClip,
-                                onToggleAutoPlay: (v) => setState(() => _autoPlayAfterClip = v),
-                              ),
+                              practice,
                               DiscussionTab(
                                 comments: state.comments,
                                 isLoading: state.isCommentsLoading,
                                 currentUserId: myUserId,
-                                // 🔥 TRUYỀN ID ĐỂ HIGHLIGHT
                                 targetCommentId: widget.targetCommentId,
                                 onSend: (content, parentId) {
                                   if (myUserId.isEmpty) return;
@@ -344,8 +409,30 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
               ),
             );
           },
-        ),
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final String myUserId = context.select((UserBloc bloc) => bloc.state.userEntity?.id ?? "");
+    final content = _buildCueContent(context, myUserId);
+
+    if (widget.embedded) {
+      return content;
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        title: Text(widget.title ?? t.listeningSkillsPracticeTitle, style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Color(0xFF09090B)),
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: const Color(0xFFE4E4E7), height: 1)),
       ),
+      body: SafeArea(child: content),
     );
   }
 }

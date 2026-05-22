@@ -38,6 +38,7 @@ import '../../feature/auth/bloc/user_state.dart';
 import '../../feature/onboarding_page.dart';
 
 // --- ADMIN PAGES ---
+import '../../feature/admin/layout/admin_shell.dart';
 import '../../feature/admin/dashboard_home/admin_dashboard.dart';
 import '../../feature/admin/user_management/user_management_page.dart';
 import '../../feature/admin/ops_center/admin_ops_center_page.dart';
@@ -74,6 +75,28 @@ import '../../feature/vocabulary/vocabulary_home_page.dart';
 import '../../feature/vocabulary/dict_demo_page.dart';
 import '../../feature/vocabulary/dict_detail_page.dart';
 import '../../feature/vocabulary/review_session_page.dart';
+
+import '../../feature/teacher/teacher_apply_page.dart';
+import '../../feature/teacher/teacher_dashboard_page.dart';
+import '../../feature/teacher/teacher_classroom_detail_page.dart';
+import '../../feature/teacher/teacher_exam_session_console_page.dart';
+import '../../feature/teacher/teacher_exam_grading_page.dart';
+import '../../feature/teacher/teacher_exams_list_page.dart';
+import '../../feature/teacher/teacher_exam_editor_page.dart';
+import '../../feature/teacher/teacher_integrated_exam_editor_page.dart';
+import '../../feature/teacher/teacher_assignment_wizard_page.dart';
+import '../../feature/teacher/teacher_exam_attempt_grade_page.dart';
+import '../../feature/teacher/teacher_gradebook_page.dart';
+import '../../feature/teacher/teacher_analytics_page.dart';
+import '../../feature/teacher/teacher_calendar_page.dart';
+import '../../feature/teacher/layout/teacher_shell.dart';
+import '../../feature/student/classes/my_classes_hub_page.dart';
+import '../../feature/student/classes/student_classroom_detail_page.dart';
+import '../../feature/student/exams/exam_assignments_page.dart';
+import '../../feature/student/exams/exam_runner_page.dart';
+import '../../feature/student/exams/public_exam_join_page.dart';
+import '../../feature/student/exams/exam_session_lobby_page.dart';
+import '../../feature/admin/teacher_applications/admin_teacher_applications_page.dart';
 
 // Route Constants
 const String kReadingDetailRouteName = 'reading-detail';
@@ -158,14 +181,38 @@ class AppRouter {
             return AdminDashboardPage.routePath;
           }
         }
+        // 🟢 TEACHER — vào workspace giáo viên, không qua Home học sinh
+        else if (role == 'teacher') {
+          final isDictionaryRoute = location.startsWith('/dictionary');
+          final isTeacherApply = location == TeacherApplyPage.routePath;
+          final isAccountRoute = location.startsWith('/profile');
+
+          if (publicRoutes.contains(location) && !isDictionaryRoute ||
+              location == SplashPage.routePath) {
+            return TeacherDashboardPage.routePath;
+          }
+
+          if (!location.startsWith('/teacher') &&
+              !isTeacherApply &&
+              !isAccountRoute &&
+              !isDictionaryRoute) {
+            return TeacherDashboardPage.routePath;
+          }
+
+          if (location.contains('/admin')) {
+            return TeacherDashboardPage.routePath;
+          }
+        }
         // 🟢 USER THƯỜNG
         else {
-          // Chặn User thường truy cập các route bắt đầu bằng '/admin'
-          final isDictionaryRoute = location.startsWith(
-              '/dictionary'); // Kiểm tra xem có phải route từ điển không
+          final isDictionaryRoute = location.startsWith('/dictionary');
 
-          if ((publicRoutes.contains(location) &&
-                  !isDictionaryRoute) || // 👈 THÊM ĐIỀU KIỆN NÀY
+          if (location.startsWith('/teacher') &&
+              location != TeacherApplyPage.routePath) {
+            return HomePage.routePath;
+          }
+
+          if ((publicRoutes.contains(location) && !isDictionaryRoute) ||
               location == SplashPage.routePath ||
               location.contains('/admin')) {
             return HomePage.routePath;
@@ -185,100 +232,97 @@ class AppRouter {
       ),
 
       // ==========================================
-      // 👑 ADMIN ROUTES
+      // 👑 ADMIN ROUTES (web shell)
       // ==========================================
-      GoRoute(
-        path: '/admin-dashboard',
-        name: AdminDashboardPage.routeName,
-        builder: (context, state) => const AdminDashboardPage(),
-      ),
-      GoRoute(
-        path: AdminOpsCenterPage.routePath,
-        name: AdminOpsCenterPage.routeName,
-        builder: (context, state) => const AdminOpsCenterPage(),
-      ),
-      GoRoute(
-        path: ReleaseManagementPage.routePath,
-        name: ReleaseManagementPage.routeName,
-        builder: (context, state) => const ReleaseManagementPage(),
-      ),
-      GoRoute(
-        path: '/admin/users',
-        name: UserManagementPage.routeName,
-        builder: (context, state) {
-          final filterParam = state.uri.queryParameters['filter'];
-          UserFilter initialFilter = UserFilter.all;
-          if (filterParam == 'today') initialFilter = UserFilter.today;
-          if (filterParam == 'online') initialFilter = UserFilter.online;
-          return UserManagementPage(initialFilter: initialFilter);
-        },
-      ),
-      GoRoute(
-        path: ActivityHistoryPage.routePath, // '/activity-history'
-        name: ActivityHistoryPage.routeName,
-        builder: (context, state) => const ActivityHistoryPage(),
-      ),
-      GoRoute(
-        path: '/admin/reports', // Khớp với routePath bạn đã đặt trong file Page
-        name: ReportManagementPage.routeName,
-        builder: (context, state) => const ReportManagementPage(),
-      ),
-      // 👇 QUẢN LÝ NỘI DUNG (NESTED ROUTES) 👇
-      // 👇 QUẢN LÝ NỘI DUNG (NESTED ROUTES) 👇
-      GoRoute(
-        path: '/admin/content',
-        name: ContentDashboardPage.routeName,
-        builder: (context, state) => const ContentDashboardPage(),
+      ShellRoute(
+        builder: (context, state, child) => AdminShell(child: child),
         routes: [
-          // 1. Route Danh sách
           GoRoute(
-            path: ':type', // URL: /admin/content/reading
-            name: 'ContentListViewRoute',
+            path: '/admin-dashboard',
+            name: AdminDashboardPage.routeName,
+            builder: (context, state) => const AdminDashboardPage(),
+          ),
+          GoRoute(
+            path: AdminTeacherApplicationsPage.routePath,
+            name: AdminTeacherApplicationsPage.routeName,
+            builder: (context, state) => const AdminTeacherApplicationsPage(),
+          ),
+          GoRoute(
+            path: AdminOpsCenterPage.routePath,
+            name: AdminOpsCenterPage.routeName,
+            builder: (context, state) => const AdminOpsCenterPage(),
+          ),
+          GoRoute(
+            path: ReleaseManagementPage.routePath,
+            name: ReleaseManagementPage.routeName,
+            builder: (context, state) => const ReleaseManagementPage(),
+          ),
+          GoRoute(
+            path: '/admin/users',
+            name: UserManagementPage.routeName,
             builder: (context, state) {
-              final type = state.pathParameters['type'];
-
-              // 👇 KIỂM TRA & TRẢ VỀ MÀN HÌNH TƯƠNG ỨNG
-              if (type == 'reading') {
-                return const AdminReadingListView(skillType: 'reading');
-              } else if (type == 'listening') {
-                return const AdminListeningListView();
-              }
-              // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
-              else if (type == 'listening-comp') {
-                return const AdminListeningCompListPage();
-              } else if (type == 'speaking') {
-                return const AdminSpeakingListView();
-              } else if (type == 'writing') {
-                return const AdminWritingListView();
-              }
-              return Scaffold(body: Center(child: Text("Unknown type: $type")));
+              final filterParam = state.uri.queryParameters['filter'];
+              UserFilter initialFilter = UserFilter.all;
+              if (filterParam == 'today') initialFilter = UserFilter.today;
+              if (filterParam == 'online') initialFilter = UserFilter.online;
+              return UserManagementPage(initialFilter: initialFilter);
             },
+          ),
+          GoRoute(
+            path: ActivityHistoryPage.routePath,
+            name: ActivityHistoryPage.routeName,
+            builder: (context, state) => const ActivityHistoryPage(),
+          ),
+          GoRoute(
+            path: '/admin/reports',
+            name: ReportManagementPage.routeName,
+            builder: (context, state) => const ReportManagementPage(),
+          ),
+          GoRoute(
+            path: '/admin/content',
+            name: ContentDashboardPage.routeName,
+            builder: (context, state) => const ContentDashboardPage(),
             routes: [
-              // 2. Route Editor
               GoRoute(
-                path: 'editor',
-                name: 'ContentEditorRoute',
+                path: ':type',
+                name: 'ContentListViewRoute',
                 builder: (context, state) {
                   final type = state.pathParameters['type'];
-                  final id = state.extra as String?;
-
-                  print("DEBUG ROUTER - Type: $type, ID: $id");
-
                   if (type == 'reading') {
-                    return ReadingEditorPage(id: id);
+                    return const AdminReadingListView(skillType: 'reading');
                   } else if (type == 'listening') {
-                    return ListeningEditorPage(id: id);
-                  }
-                  // 🔥 THÊM COMPREHENSION VÀO ĐÂY 🔥
-                  else if (type == 'listening-comp') {
-                    return ListeningCompEditorPage(id: id);
+                    return const AdminListeningListView();
+                  } else if (type == 'listening-comp') {
+                    return const AdminListeningCompListPage();
                   } else if (type == 'speaking') {
-                    return SpeakingEditorPage(id: id);
+                    return const AdminSpeakingListView();
                   } else if (type == 'writing') {
-                    return WritingTopicEditorPage(id: id);
+                    return const AdminWritingListView();
                   }
-                  return Scaffold(body: Center(child: Text("Error: $type")));
+                  return Scaffold(body: Center(child: Text('Unknown type: $type')));
                 },
+                routes: [
+                  GoRoute(
+                    path: 'editor',
+                    name: 'ContentEditorRoute',
+                    builder: (context, state) {
+                      final type = state.pathParameters['type'];
+                      final id = state.extra as String?;
+                      if (type == 'reading') {
+                        return ReadingEditorPage(id: id);
+                      } else if (type == 'listening') {
+                        return ListeningEditorPage(id: id);
+                      } else if (type == 'listening-comp') {
+                        return ListeningCompEditorPage(id: id);
+                      } else if (type == 'speaking') {
+                        return SpeakingEditorPage(id: id);
+                      } else if (type == 'writing') {
+                        return WritingTopicEditorPage(id: id);
+                      }
+                      return Scaffold(body: Center(child: Text('Error: $type')));
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -344,6 +388,155 @@ class AppRouter {
         path: EditProfilePage.routePath,
         name: EditProfilePage.routeName,
         builder: (context, state) => EditProfilePage(),
+      ),
+      GoRoute(
+        path: TeacherApplyPage.routePath,
+        name: TeacherApplyPage.routeName,
+        builder: (context, state) => const TeacherApplyPage(),
+      ),
+      ShellRoute(
+        builder: (context, state, child) => TeacherShell(child: child),
+        routes: [
+          GoRoute(
+            path: TeacherDashboardPage.routePath,
+            name: TeacherDashboardPage.routeName,
+            builder: (context, state) => const TeacherDashboardPage(),
+            routes: [
+              GoRoute(
+                path: 'classroom/:classroomId',
+                name: TeacherClassroomDetailPage.routeName,
+                builder: (context, state) => TeacherClassroomDetailPage(
+                  classroomId: state.pathParameters['classroomId'] ?? '',
+                ),
+                routes: [
+                  GoRoute(
+                    path: 'gradebook',
+                    name: TeacherGradebookPage.routeName,
+                    builder: (context, state) => TeacherGradebookPage(
+                      classroomId: state.pathParameters['classroomId'] ?? '',
+                    ),
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'calendar',
+                name: TeacherCalendarPage.routeName,
+                builder: (context, state) => const TeacherCalendarPage(),
+              ),
+              GoRoute(
+                path: 'analytics',
+                name: TeacherAnalyticsPage.routeName,
+                builder: (context, state) => const TeacherAnalyticsPage(),
+              ),
+              GoRoute(
+                path: 'exams',
+                name: TeacherExamsListPage.routeName,
+                builder: (context, state) => const TeacherExamsListPage(),
+                routes: [
+                  GoRoute(
+                    path: ':examId/edit',
+                    name: TeacherExamEditorPage.routeName,
+                    builder: (context, state) => TeacherExamEditorPage(
+                      examId: state.pathParameters['examId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':examId/integrated-edit',
+                    name: 'TeacherIntegratedExamEditorPage',
+                    builder: (context, state) => TeacherIntegratedExamEditorPage(
+                      examId: state.pathParameters['examId'] ?? '',
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':examId/assign',
+                    name: 'TeacherAssignmentWizardPage',
+                    builder: (context, state) {
+                      final extra = state.extra;
+                      String? initialClassroomId;
+                      if (extra is Map<String, dynamic>) {
+                        initialClassroomId = extra['initialClassroomId'] as String?;
+                      }
+                      return TeacherAssignmentWizardPage(
+                        examId: state.pathParameters['examId'] ?? '',
+                        initialClassroomId: initialClassroomId,
+                      );
+                    },
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'exam-grading/:assignmentId/attempt/:attemptId',
+                name: TeacherExamAttemptGradePage.routeName,
+                builder: (context, state) => TeacherExamAttemptGradePage(
+                  assignmentId: state.pathParameters['assignmentId'] ?? '',
+                  attemptId: state.pathParameters['attemptId'] ?? '',
+                ),
+              ),
+              GoRoute(
+                path: 'exam-console/:assignmentId',
+                name: TeacherExamSessionConsolePage.routeName,
+                builder: (context, state) => TeacherExamSessionConsolePage(
+                  assignmentId: state.pathParameters['assignmentId'] ?? '',
+                ),
+              ),
+              GoRoute(
+                path: 'exam-grading/:assignmentId',
+                name: TeacherExamGradingPage.routeName,
+                builder: (context, state) => TeacherExamGradingPage(
+                  assignmentId: state.pathParameters['assignmentId'] ?? '',
+                ),
+              ),
+              GoRoute(
+                path: 'content/:type/new',
+                name: 'TeacherContentNewRoute',
+                builder: (context, state) {
+                  final type = state.pathParameters['type'];
+                  if (type == 'reading') return ReadingEditorPage();
+                  if (type == 'listening') return ListeningEditorPage();
+                  if (type == 'speaking') return SpeakingEditorPage();
+                  if (type == 'writing') return WritingTopicEditorPage();
+                  return Scaffold(body: Center(child: Text('Unknown content type: $type')));
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: MyClassesHubPage.routePath,
+        name: MyClassesHubPage.routeName,
+        builder: (context, state) => const MyClassesHubPage(),
+      ),
+      GoRoute(
+        path: '${StudentClassroomDetailPage.routePath}/:classroomId',
+        name: StudentClassroomDetailPage.routeName,
+        builder: (context, state) => StudentClassroomDetailPage(
+          classroomId: state.pathParameters['classroomId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: PublicExamJoinPage.routePath,
+        name: PublicExamJoinPage.routeName,
+        builder: (context, state) => const PublicExamJoinPage(),
+      ),
+      GoRoute(
+        path: ExamAssignmentsPage.routePath,
+        name: ExamAssignmentsPage.routeName,
+        builder: (context, state) => const ExamAssignmentsPage(),
+      ),
+      GoRoute(
+        path: '/student/exam-session/:sessionId',
+        name: ExamSessionLobbyPage.routeName,
+        builder: (context, state) => ExamSessionLobbyPage(
+          sessionId: state.pathParameters['sessionId'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: '/student/exam-run/:attemptId',
+        name: ExamRunnerPage.routeName,
+        builder: (context, state) => ExamRunnerPage(
+          attemptId: state.pathParameters['attemptId'] ?? '',
+        ),
       ),
       GoRoute(
         path: ProgressReportPage.routePath,

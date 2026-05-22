@@ -1,5 +1,7 @@
 import 'dart:convert'; // 🔥 Import để xử lý JSON
 import 'dart:io';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:go_router/go_router.dart'; // 🔥 Import GoRouter
@@ -19,6 +21,8 @@ class LocalNotificationService {
 
   // 🟢 1. KHỞI TẠO DỊCH VỤ
   Future<void> init() async {
+    if (kIsWeb) return;
+
     // A. Khởi tạo dữ liệu múi giờ
     tz.initializeTimeZones();
 
@@ -68,6 +72,8 @@ class LocalNotificationService {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb) return;
+
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
     AndroidNotificationDetails(
       'social_channel',
@@ -145,6 +151,8 @@ class LocalNotificationService {
 
   // 🟢 4. XIN QUYỀN THÔNG BÁO
   Future<void> requestPermissions() async {
+    if (kIsWeb) return;
+
     if (Platform.isIOS) {
       await _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
@@ -164,6 +172,8 @@ class LocalNotificationService {
     required List<dynamic> words,
     required TimeOfDay time,
   }) async {
+    if (kIsWeb) return;
+
     await cancelAll(); // Hủy lịch cũ
 
     final now = tz.TZDateTime.now(tz.local);
@@ -225,6 +235,8 @@ class LocalNotificationService {
 
   // 🟢 6. HỦY TẤT CẢ
   Future<void> cancelAll() async {
+    if (kIsWeb) return;
+
     await _flutterLocalNotificationsPlugin.cancelAll();
     print("🗑️ Cancelled all notifications.");
   }

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 abstract class UserEvent {}
 class ChangePasswordEvent extends UserEvent {
@@ -23,7 +23,7 @@ class UpdateProfileEvent extends UserEvent {
   final String? phone;
   final DateTime? dateOfBirth;
   final String? bio;
-  final File? avatarFile; // Chỉ cần 1 trường File
+  final XFile? avatarFile;
   final String? goal;
   final String? cefr;
   final int? dailyMinutes;

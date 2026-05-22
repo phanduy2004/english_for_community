@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+
 import '../entity/user_entity.dart';
 import '../model/either.dart';
 import '../model/failure.dart';
@@ -13,7 +14,7 @@ abstract class UserRepository {
     String? phone,
     DateTime? dateOfBirth,
     String? bio,
-    File? avatarFile,
+    XFile? avatarFile,
     String? goal,
     String? cefr, // ✅ Đảm bảo tên là cefr
     int? dailyMinutes,

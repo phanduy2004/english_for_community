@@ -12,6 +12,9 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/exam_system_ui.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../student/exams/exam_embedded_skill_scope.dart';
 import '../auth/bloc/user_bloc.dart';
 
 // --- 1. ĐỊNH NGHĨA MÀU SẮC (Theme Local) ---
@@ -29,18 +32,31 @@ class WritingTaskPage extends StatelessWidget {
   final WritingTopicEntity topic;
   final String selectedTaskType;
   final String? userId;
+  final bool embedded;
+  final bool examPracticeMode;
+  final String? initialExamDraft;
+  final VoidCallback? onPartComplete;
+  final void Function(String text)? onEmbeddedDraftChanged;
   final Widget Function(BuildContext, WritingTaskState, String?, ValueChanged<String?>)? promptBuilder;
   final Widget Function(BuildContext, TextEditingController, ValueChanged<String>)? editorBuilder;
   final Widget Function(BuildContext, int, bool, VoidCallback)? bottomBarBuilder;
+  /// When provided, bypasses AI generation and uses this teacher-assigned prompt.
+  final Map<String, dynamic>? fixedPrompt;
 
   const WritingTaskPage({
     super.key,
     required this.topic,
     required this.selectedTaskType,
     this.userId,
+    this.embedded = false,
+    this.examPracticeMode = false,
+    this.initialExamDraft,
+    this.onPartComplete,
+    this.onEmbeddedDraftChanged,
     this.promptBuilder,
     this.editorBuilder,
     this.bottomBarBuilder,
+    this.fixedPrompt,
   });
 
   @override
@@ -68,9 +84,16 @@ class WritingTaskPage extends StatelessWidget {
         topic: topic,
         userId: resolvedUserId,
         taskType: selectedTaskType,
+        freshStart: examPracticeMode,
+        fixedPrompt: fixedPrompt,
       )),
       child: WritingTaskView(
         initialTaskType: selectedTaskType,
+        embedded: embedded,
+        examPracticeMode: examPracticeMode,
+        initialExamDraft: initialExamDraft,
+        onPartComplete: onPartComplete,
+        onEmbeddedDraftChanged: onEmbeddedDraftChanged,
         promptBuilder: promptBuilder,
         editorBuilder: editorBuilder,
         bottomBarBuilder: bottomBarBuilder,
@@ -89,6 +112,11 @@ class WritingTaskPage extends StatelessWidget {
 
 class WritingTaskView extends StatefulWidget {
   final String? initialTaskType;
+  final bool embedded;
+  final bool examPracticeMode;
+  final String? initialExamDraft;
+  final VoidCallback? onPartComplete;
+  final void Function(String text)? onEmbeddedDraftChanged;
   final Widget Function(BuildContext, WritingTaskState, String?, ValueChanged<String?>)? promptBuilder;
   final Widget Function(BuildContext, TextEditingController, ValueChanged<String>)? editorBuilder;
   final Widget Function(BuildContext, int, bool, VoidCallback)? bottomBarBuilder;
@@ -96,6 +124,11 @@ class WritingTaskView extends StatefulWidget {
   const WritingTaskView({
     super.key,
     this.initialTaskType,
+    this.embedded = false,
+    this.examPracticeMode = false,
+    this.initialExamDraft,
+    this.onPartComplete,
+    this.onEmbeddedDraftChanged,
     this.promptBuilder,
     this.editorBuilder,
     this.bottomBarBuilder,
@@ -121,6 +154,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   bool _isAutoSaving = false;
   bool _shouldCloseAfterSave = false;
   Timer? _autoSaveTimer;
+  Timer? _embeddedDraftNotifyTimer;
   Timer? _savedStatusTicker;
   DateTime? _lastAutoSavedAt;
   String _lastAutoSavedContent = '';
@@ -151,6 +185,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         if (_wordCount > 0) _isDirty = true;
       });
       _scheduleAutoSave();
+      _scheduleEmbeddedDraftNotify();
     });
 
     _savedStatusTicker = Timer.periodic(const Duration(seconds: 15), (_) {
@@ -276,7 +311,17 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     }
   }
 
+  void _scheduleEmbeddedDraftNotify() {
+    if (!widget.embedded || widget.onEmbeddedDraftChanged == null) return;
+    _embeddedDraftNotifyTimer?.cancel();
+    _embeddedDraftNotifyTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      widget.onEmbeddedDraftChanged!(_text.text);
+    });
+  }
+
   void _scheduleAutoSave() {
+    if (widget.examPracticeMode) return;
     final blocState = context.read<WritingTaskBloc>().state;
     final submissionId = blocState.submission?.id;
     final text = _text.text.trim();
@@ -400,15 +445,15 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
+  Widget _buildTaskScaffold(BuildContext context, AppLocalizations t, Widget child) {
+    if (widget.embedded) {
+      return child;
+    }
     return PopScope(
       canPop: false,
       onPopInvoked: _onWillPop,
       child: Scaffold(
         backgroundColor: _Colors.bgSubtle,
-        // Quan trọng: Co lại khi bàn phím hiện
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -441,14 +486,36 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             ),
           ],
         ),
-        body: BlocConsumer<WritingTaskBloc, WritingTaskState>(
+        body: child,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    return _buildTaskScaffold(
+      context,
+      t,
+      BlocConsumer<WritingTaskBloc, WritingTaskState>(
           listenWhen: (p, c) => p.status != c.status || p.submission != c.submission,
           listener: (context, state) {
             // ... Logic Listener giữ nguyên
             if (state.status == WritingTaskStatus.promptReady && state.submission != null) {
+              final examDraft = widget.initialExamDraft?.trim() ?? '';
+              if (widget.examPracticeMode && examDraft.isNotEmpty && _text.text.isEmpty) {
+                _isProgrammaticEdit = true;
+                _text.text = examDraft;
+                _isProgrammaticEdit = false;
+                _wordCount = examDraft.trim().isEmpty ? 0 : examDraft.trim().split(RegExp(r'\s+')).length;
+                widget.onEmbeddedDraftChanged?.call(examDraft);
+              }
               final hasDraftContent = state.submission!.content.isNotEmpty;
               final isDraftStatus = state.submission!.status == 'draft';
-              if (hasDraftContent && isDraftStatus && !_hasShownResumeDialog) {
+              if (!widget.examPracticeMode &&
+                  hasDraftContent &&
+                  isDraftStatus &&
+                  !_hasShownResumeDialog) {
                 Future.delayed(Duration.zero, () {
                   if (mounted) {
                     _showResumeConflictDialog(context, state.submission!.generatedPrompt?.taskType ?? 'Essay', state.submission!.id, state.submission!.content);
@@ -472,7 +539,19 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             }
             if (state.status == WritingTaskStatus.success && state.submission != null) {
               _writingStopwatch.stop();
-              Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)));
+              if (widget.examPracticeMode) {
+                return;
+              }
+              if (widget.embedded) {
+                widget.onPartComplete?.call();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(context.l10n.studentExamSubmitted)),
+                );
+              } else {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)),
+                );
+              }
             }
             if (state.status == WritingTaskStatus.error) {
               _isAutoSaving = false;
@@ -543,23 +622,32 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                   ),
 
                   // 2. BOTTOM BAR (Layout Cũ: Ngang)
-                  widget.bottomBarBuilder != null
-                      ? widget.bottomBarBuilder!(context, _wordCount, isSubmitting, () => _submit(state))
-                      : _ClassicBottomBar(
-                    wordCount: _wordCount,
-                    minWords: _minimumSubmitWords,
-                    busy: isSubmitting,
-                    canSubmit: _canSubmitNow,
-                    isAutoSaving: _isAutoSaving,
-                    savedLabel: _savedLabel,
-                    onSubmit: () => _submit(state),
-                  ),
+                  if (!widget.examPracticeMode)
+                    widget.bottomBarBuilder != null
+                        ? widget.bottomBarBuilder!(context, _wordCount, isSubmitting, () => _submit(state))
+                        : _ClassicBottomBar(
+                      wordCount: _wordCount,
+                      minWords: _minimumSubmitWords,
+                      busy: isSubmitting,
+                      canSubmit: _canSubmitNow,
+                      isAutoSaving: _isAutoSaving,
+                      savedLabel: _savedLabel,
+                      onSubmit: () => _submit(state),
+                    )
+                  else
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                      child: Text(
+                        '${context.l10n.wordCountN(_wordCount)} · ${context.l10n.integratedExamEmbeddedHint}',
+                        style: ExamSystemUi.captionSecondary,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                 ],
               ),
             );
           },
         ),
-      ),
     );
   }
 }
@@ -582,13 +670,14 @@ class _PromptCardState extends State<_PromptCard> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final compact = ExamEmbeddedSkillScope.compactOf(context);
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: EdgeInsets.all(compact ? 10 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: _Colors.border),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: compact ? null : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -609,9 +698,19 @@ class _PromptCardState extends State<_PromptCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _Colors.textMain), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        Text(
+                          widget.title,
+                          style: compact
+                              ? ExamSystemUi.embeddedListTitle(context)
+                              : const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _Colors.textMain),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 2),
-                        Text(_isExpanded ? t.writingPromptTapCollapse : t.writingPromptTapExpand, style: const TextStyle(fontSize: 12, color: _Colors.textMuted)),
+                        Text(
+                          _isExpanded ? t.writingPromptTapCollapse : t.writingPromptTapExpand,
+                          style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 12, color: _Colors.textMuted),
+                        ),
                       ],
                     ),
                   ),
@@ -627,7 +726,10 @@ class _PromptCardState extends State<_PromptCard> {
               child: Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: _Colors.bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: _Colors.border.withOpacity(0.5))),
-                child: Text(widget.text, style: const TextStyle(fontSize: 14, height: 1.5, color: _Colors.textMain)),
+                child: Text(
+                  widget.text,
+                  style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: 14, height: 1.5, color: _Colors.textMain),
+                ),
               ),
             ),
         ],
@@ -647,9 +749,10 @@ class _Editor extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
+    final compact = ExamEmbeddedSkillScope.compactOf(context);
     return Container(
-      constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * 0.5),
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * (compact ? 0.35 : 0.5)),
+      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 20),
       child: TextField(
         controller: controller,
         focusNode: focusNode,
@@ -658,7 +761,9 @@ class _Editor extends StatelessWidget {
         minLines: 1,
         keyboardType: TextInputType.multiline,
         textCapitalization: TextCapitalization.sentences,
-        style: const TextStyle(fontSize: 16, height: 1.6, color: _Colors.textMain),
+        style: compact
+            ? ExamSystemUi.embeddedBodyStyle.copyWith(color: _Colors.textMain)
+            : const TextStyle(fontSize: 16, height: 1.6, color: _Colors.textMain),
         cursorColor: _Colors.primary,
         decoration: InputDecoration(
           border: InputBorder.none,

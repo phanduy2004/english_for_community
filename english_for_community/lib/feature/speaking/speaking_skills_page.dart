@@ -9,6 +9,7 @@ import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/spea
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/speaking/widget/word_details_dialog.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -33,12 +34,18 @@ String _localizedLevelLabel(AppLocalizations t, String level) {
 
 class SpeakingSkillsPage extends StatelessWidget {
   final String setId;
-  final bool isRetake; // 🔥 THÊM BIẾN NÀY
+  final bool isRetake;
+  final bool embedded;
+  final bool examPracticeMode;
+  final VoidCallback? onPartComplete;
 
   const SpeakingSkillsPage({
     super.key,
     required this.setId,
-    this.isRetake = false, // Mặc định false
+    this.isRetake = false,
+    this.embedded = false,
+    this.examPracticeMode = false,
+    this.onPartComplete,
   });
 
   static const routeName = 'SpeakingSkillsPage';
@@ -50,13 +57,25 @@ class SpeakingSkillsPage extends StatelessWidget {
       create: (_) => getIt<SpeakingLessonBloc>()
       // 🔥 TRUYỀN isRetake XUỐNG EVENT CỦA BLOC
         ..add(FetchLessonDetailsEvent(setId: setId, isRetake: isRetake)),
-      child: const _SpeakingSkillsView(),
+      child: _SpeakingSkillsView(
+        embedded: embedded,
+        examPracticeMode: examPracticeMode,
+        onPartComplete: onPartComplete,
+      ),
     );
   }
 }
 
 class _SpeakingSkillsView extends StatefulWidget {
-  const _SpeakingSkillsView();
+  const _SpeakingSkillsView({
+    this.embedded = false,
+    this.examPracticeMode = false,
+    this.onPartComplete,
+  });
+
+  final bool embedded;
+  final bool examPracticeMode;
+  final VoidCallback? onPartComplete;
 
   @override
   State<_SpeakingSkillsView> createState() => _SpeakingSkillsViewState();
@@ -388,7 +407,11 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   void _goToNextSentence() {
     if (_set == null || _currentPageIndex >= _set!.sentences.length - 1) {
-      Navigator.of(context).pop();
+      if (widget.embedded && widget.onPartComplete != null) {
+        widget.onPartComplete!();
+      } else {
+        Navigator.of(context).pop();
+      }
       return;
     }
     _pageController.nextPage(
@@ -410,35 +433,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   // --- UI BUILDERS ---
 
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.outline, height: 1),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          _set?.title ?? t.practiceFallbackTitle,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: BlocConsumer<SpeakingLessonBloc, SpeakingLessonState>(
+  Widget _buildLessonBody() {
+    return BlocConsumer<SpeakingLessonBloc, SpeakingLessonState>(
           listener: (context, state) {
             if (state.status == LessonStatus.success && state.set != null && _set == null) {
               setState(() {
@@ -446,7 +442,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 _currentSentence = state.set!.sentences.firstOrNull;
                 _historyMap.clear();
                 for (var s in _set!.sentences) {
-                  _historyMap[s.id] = List.from(s.history);
+                  _historyMap[s.id] = widget.examPracticeMode ? [] : List.from(s.history);
                 }
               });
             }
@@ -464,6 +460,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
           },
           builder: (context, state) {
             final t = context.l10n;
+            final compact = widget.embedded;
             if (state.status == LessonStatus.loading || _set == null) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2));
             }
@@ -472,7 +469,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
               children: [
                 Container(
                   color: AppColors.surfaceCard,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20, vertical: compact ? 10 : 12),
                   child: Column(
                     children: [
                       Row(
@@ -488,10 +485,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                           ),
                           Text(
                             '${((_currentPageIndex + 1) / _set!.sentences.length * 100).toInt()}%',
-                            style: TextStyle(
+                            style: ExamSystemUi.embeddedProgressLabel(context).copyWith(
                               color: AppColors.textPrimary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -552,11 +547,17 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                         // Hiển thị những gì đang nói
                         displayTranscript = _liveTranscript.isNotEmpty ? _liveTranscript : _finalTranscript;
                       }
-                      if (displayTranscript.isEmpty && latestAttempt != null) {
+                      if (!widget.examPracticeMode &&
+                          displayTranscript.isEmpty &&
+                          latestAttempt != null) {
                         displayTranscript = latestAttempt.userTranscript ?? "";
                       }
 
-                      final score = (latestAttempt != null) ? _scoreFromWer(latestAttempt.score?.wer ?? 1.0) : null;
+                      final score = widget.examPracticeMode
+                          ? null
+                          : (latestAttempt != null)
+                              ? _scoreFromWer(latestAttempt.score?.wer ?? 1.0)
+                              : null;
 
                       return _buildSentenceCard(
                         context,
@@ -573,30 +574,32 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 ),
 
                 Container(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  padding: EdgeInsets.fromLTRB(compact ? 14 : 20, compact ? 12 : 16, compact ? 14 : 20, compact ? 14 : 20),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceCard,
                     border: Border(top: BorderSide(color: AppColors.outline)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
+                    boxShadow: compact
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 12,
+                              offset: const Offset(0, -4),
+                            ),
+                          ],
                   ),
                   child: SafeArea(
                     top: false,
                     child: SizedBox(
                       width: double.infinity,
-                      height: 50,
+                      height: compact ? 44 : 50,
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.onPrimary,
                           elevation: 0,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                          textStyle: compact ? ExamSystemUi.embeddedButtonLabelStyle : const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                         onPressed: (_isRecording || _isSubmitting) ? null : _goToNextSentence,
                         child: Text(
@@ -609,8 +612,41 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
               ],
             );
           },
+        );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final body = _buildLessonBody();
+    if (widget.embedded) {
+      return body;
+    }
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      appBar: AppBar(
+        backgroundColor: AppColors.surfaceCard,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.outline, height: 1),
+        ),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: Text(
+          _set?.title ?? t.practiceFallbackTitle,
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
         ),
       ),
+      body: SafeArea(child: body),
     );
   }
 
@@ -624,15 +660,17 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         required bool isSubmitting,
         required bool micBusy,
       }) {
+    final compact = widget.embedded;
     final primaryColor = AppColors.primary;
     final textMain = AppColors.textPrimary;
     final textMuted = AppColors.textMuted;
     final recordRed = AppColors.chartTrend;
+    final micSize = compact ? 60.0 : 72.0;
 
     final micCore = AnimatedContainer(
       duration: const Duration(milliseconds: 220),
-      width: 72,
-      height: 72,
+      width: micSize,
+      height: micSize,
       decoration: BoxDecoration(
         color: isRecording ? recordRed : primaryColor,
         shape: BoxShape.circle,
@@ -674,7 +712,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     );
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(compact ? 12 : 20),
       child: Column(
         children: [
           _ShadcnCard(
@@ -807,21 +845,18 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 children: [
                   Text(
                     t.yourSpeechSection,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: textMuted,
-                      letterSpacing: 0.6,
-                    ),
+                    style: compact
+                        ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.4)
+                        : TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: textMuted, letterSpacing: 0.6),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     transcript.isEmpty ? t.transcriptPlaceholder : transcript,
                     style: TextStyle(
-                      fontSize: 17,
+                      fontSize: compact ? 14 : 17,
                       color: transcript.isEmpty ? textMuted : textMain,
-                      height: 1.5,
-                      fontWeight: transcript.isEmpty ? FontWeight.w400 : FontWeight.w500,
+                      height: 1.45,
+                      fontWeight: FontWeight.w400,
                     ),
                   ),
                   if (score != null) ...[
@@ -853,13 +888,14 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
   }
 
   Widget _buildTappableScript(BuildContext context, String script) {
+    final compact = widget.embedded;
     final words = script.split(' ');
     final List<Widget> wordWidgets = [];
     final textStyle = TextStyle(
-      fontSize: 22,
+      fontSize: compact ? 17 : 22,
       height: 1.4,
       fontWeight: FontWeight.w500,
-      color: Theme.of(context).colorScheme.onSurface,
+      color: compact ? AppColors.textPrimary : Theme.of(context).colorScheme.onSurface,
     );
 
     for (final word in words) {

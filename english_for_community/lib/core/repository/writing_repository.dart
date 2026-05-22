@@ -12,8 +12,9 @@ abstract class WritingRepository {
   startWriting({
     required String topicId,
     required String userId,
-    // required GeneratedPrompt generatedPrompt, -> BỎ
-    required String taskType, // -> THÊM
+    required String taskType,
+    bool freshStart = false,
+    Map<String, dynamic>? fixedPrompt,
   });
   Future<Either<Failure, WritingSubmissionEntity>> submitForReview({
     required String submissionId,

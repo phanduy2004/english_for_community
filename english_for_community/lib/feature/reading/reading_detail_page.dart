@@ -15,19 +15,30 @@ import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/repository/reading_repository.dart';
+import '../../core/ui/exam_system_ui.dart';
+import '../student/exams/exam_embedded_skill_scope.dart';
 
 // =============================================================================
 // 1. WIDGET CHA
 // =============================================================================
 class ReadingDetailPage extends StatelessWidget {
   final ReadingEntity reading;
-  // 🔥 THÊM BIẾN isRetake VÀO ĐÂY
   final bool isRetake;
+  final bool embedded;
+  final bool disableTimer;
+  final VoidCallback? onPartComplete;
+  final Map<String, int>? initialSelectedAnswers;
+  final void Function(Map<String, int> answers, int totalQuestions)? onExamAnswersChanged;
 
   const ReadingDetailPage({
     super.key,
     required this.reading,
     this.isRetake = false,
+    this.embedded = false,
+    this.disableTimer = false,
+    this.onPartComplete,
+    this.initialSelectedAnswers,
+    this.onExamAnswersChanged,
   });
 
   @override
@@ -44,7 +55,15 @@ class ReadingDetailPage extends StatelessWidget {
         return bloc;
       },
       // Truyền isRetake xuống View con
-      child: _ReadingDetailView(reading: reading, isRetake: isRetake),
+      child: _ReadingDetailView(
+        reading: reading,
+        isRetake: isRetake,
+        embedded: embedded,
+        disableTimer: disableTimer,
+        onPartComplete: onPartComplete,
+        initialSelectedAnswers: initialSelectedAnswers,
+        onExamAnswersChanged: onExamAnswersChanged,
+      ),
     );
   }
 }
@@ -54,8 +73,22 @@ class ReadingDetailPage extends StatelessWidget {
 // =============================================================================
 class _ReadingDetailView extends StatefulWidget {
   final ReadingEntity reading;
-  final bool isRetake; // 🔥 THÊM BIẾN NÀY
-  const _ReadingDetailView({required this.reading, this.isRetake = false});
+  final bool isRetake;
+  final bool embedded;
+  final bool disableTimer;
+  final VoidCallback? onPartComplete;
+  final Map<String, int>? initialSelectedAnswers;
+  final void Function(Map<String, int> answers, int totalQuestions)? onExamAnswersChanged;
+
+  const _ReadingDetailView({
+    required this.reading,
+    this.isRetake = false,
+    this.embedded = false,
+    this.disableTimer = false,
+    this.onPartComplete,
+    this.initialSelectedAnswers,
+    this.onExamAnswersChanged,
+  });
 
   @override
   State<_ReadingDetailView> createState() => _ReadingDetailViewState();
@@ -82,11 +115,16 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     _totalSeconds = widget.reading.minutesToRead * 60;
     _remainingSeconds = _totalSeconds;
 
-    // 🔥 NẾU LÀ RETAKE THÌ ÉP CHẾ ĐỘ LÀM BÀI MỚI (isReviewMode = false)
-    _isReviewMode = (widget.reading.progress?.status == ProgressStatus.completed) && !widget.isRetake;
+    final examPractice = widget.onExamAnswersChanged != null;
+    // Exam: never show practice review UI; retake also resets review.
+    _isReviewMode = !examPractice &&
+        (widget.reading.progress?.status == ProgressStatus.completed) &&
+        !widget.isRetake;
+    if (widget.initialSelectedAnswers != null) {
+      _selectedAnswers.addAll(widget.initialSelectedAnswers!);
+    }
 
-    // Chỉ chạy timer nếu chưa làm xong (hoặc đang Retake)
-    if (!_isReviewMode) {
+    if (!_isReviewMode && !widget.disableTimer) {
       _startTimer();
     }
   }
@@ -185,51 +223,69 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
         if (state.status == AttemptStatus.success) {
           final result = state.attemptResult;
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (ctx) {
-              final d = ctx.l10n;
-              return AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              title: Text(d.readingQuizResultTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
-              content: Text(
-                  d.readingQuizResultSummary(
+          if (widget.embedded && widget.onExamAnswersChanged != null) {
+            return;
+          }
+          if (widget.embedded) {
+            widget.onPartComplete?.call();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  context.l10n.readingQuizResultSummary(
                     result?.correctCount ?? 0,
                     result?.totalQuestions ?? 0,
                     (result?.score ?? 0).round(),
                   ),
-                  style: const TextStyle(fontSize: 16)
+                ),
               ),
-              actions: [
-                TextButton(
-                  child: Text(d.commonRetry, style: const TextStyle(color: Color(0xFF71717A))),
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    context.read<ReadingAttemptBloc>().add(ResetAttemptEvent());
-                    setState(() {
-                      _selectedAnswers.clear();
-                      _remainingSeconds = _totalSeconds;
-                      _expandedFeedback.clear();
-                      _isReviewMode = false;
-                      _showReadingTranslation = false;
-                    });
-                    _startTimer();
-                  },
-                ),
-                FilledButton(
-                  style: FilledButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
-                  ),
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  child: Text(d.commonOk),
-                ),
-              ],
             );
-            },
-          );
+          } else {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) {
+                final d = ctx.l10n;
+                return AlertDialog(
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  title: Text(d.readingQuizResultTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  content: Text(
+                    d.readingQuizResultSummary(
+                      result?.correctCount ?? 0,
+                      result?.totalQuestions ?? 0,
+                      (result?.score ?? 0).round(),
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: Text(d.commonRetry, style: const TextStyle(color: Color(0xFF71717A))),
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        context.read<ReadingAttemptBloc>().add(ResetAttemptEvent());
+                        setState(() {
+                          _selectedAnswers.clear();
+                          _remainingSeconds = _totalSeconds;
+                          _expandedFeedback.clear();
+                          _isReviewMode = false;
+                          _showReadingTranslation = false;
+                        });
+                        if (!widget.disableTimer) _startTimer();
+                      },
+                    ),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: Text(d.commonOk),
+                    ),
+                  ],
+                );
+              },
+            );
+          }
         }
         else if (state.status == AttemptStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -242,13 +298,57 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
       },
       builder: (context, state) {
         final bool isLoading = state.status == AttemptStatus.loading;
-        final bool isSubmitted =
-            state.status == AttemptStatus.review ||
+        final bool examPractice = widget.embedded && widget.onExamAnswersChanged != null;
+        final bool isSubmitted = examPractice
+            ? false
+            : state.status == AttemptStatus.review ||
                 state.status == AttemptStatus.success ||
                 _isReviewMode;
 
         final bool isSubmitting = isLoading && !_isReviewMode;
         final t = context.l10n;
+
+        final tabBar = TabBar(
+          controller: _tabController,
+          labelColor: primaryColor,
+          unselectedLabelColor: const Color(0xFF71717A),
+          indicatorColor: primaryColor,
+          indicatorSize: TabBarIndicatorSize.tab,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w600),
+          tabs: [
+            Tab(text: t.readingTabArticle),
+            Tab(text: t.readingTabQuestionsCount(widget.reading.questions.length)),
+          ],
+        );
+
+        final body = Column(
+          children: [
+            if (widget.embedded)
+              Material(color: Colors.white, child: tabBar)
+            else if (!widget.disableTimer && !_isReviewMode && state.status != AttemptStatus.success)
+              _buildTimerDisplay(context)
+            else if (_isReviewMode || state.status == AttemptStatus.success)
+              _buildReviewHeader(context, state),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildReadingTab(context, isSubmitted),
+                  _buildQuestionsTab(context, isSubmitted, isLoading && _isReviewMode),
+                ],
+              ),
+            ),
+            if (!examPractice &&
+                _tabController.index == 1 &&
+                widget.reading.questions.isNotEmpty &&
+                !isSubmitted)
+              _buildBottomActionBar(context, isSubmitting),
+          ],
+        );
+
+        if (widget.embedded) {
+          return body;
+        }
 
         return Scaffold(
           backgroundColor: bgPage,
@@ -268,42 +368,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: borderCol, width: 1)),
                 ),
-                child: TabBar(
-                  controller: _tabController,
-                  labelColor: primaryColor,
-                  unselectedLabelColor: const Color(0xFF71717A),
-                  indicatorColor: primaryColor,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w600),
-                  tabs: [
-                    Tab(text: t.readingTabArticle),
-                    Tab(text: t.readingTabQuestionsCount(widget.reading.questions.length)),
-                  ],
-                ),
+                child: tabBar,
               ),
             ),
           ),
-          body: Column(
-            children: [
-              if (!_isReviewMode && state.status != AttemptStatus.success)
-                _buildTimerDisplay(context)
-              else
-                _buildReviewHeader(context, state),
-
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildReadingTab(context, isSubmitted),
-                    _buildQuestionsTab(context, isSubmitted, isLoading && _isReviewMode),
-                  ],
-                ),
-              ),
-
-              if (_tabController.index == 1 && widget.reading.questions.isNotEmpty && !isSubmitted)
-                _buildBottomActionBar(context, isSubmitting),
-            ],
-          ),
+          body: body,
         );
       },
     );
@@ -438,12 +507,18 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
           SelectableText(
             widget.reading.content,
-            style: const TextStyle(
-              fontSize: 17,
-              height: 1.6,
-              color: Color(0xFF09090B),
-              fontFamily: 'Serif',
-            ),
+            style: ExamEmbeddedSkillScope.compactOf(context)
+                ? ExamSystemUi.embeddedBodyStyle.copyWith(
+                    fontSize: 14,
+                    height: 1.55,
+                    color: const Color(0xFF3F3F46),
+                  )
+                : const TextStyle(
+                    fontSize: 17,
+                    height: 1.6,
+                    color: Color(0xFF09090B),
+                    fontFamily: 'Serif',
+                  ),
           ),
 
           if (isSubmitted && _showReadingTranslation && translation != null) ...[
@@ -492,6 +567,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   Widget _buildQuestionCard(ReadingQuestionEntity question, int questionIndex, bool isSubmitted) {
     final theme = Theme.of(context);
+    final compact = ExamEmbeddedSkillScope.compactOf(context);
     final bool isExpanded = _expandedFeedback.contains(question.id);
     final translation = question.translation;
     final primaryColor = theme.colorScheme.primary;
@@ -512,12 +588,16 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               children: [
                 Text(
                   'Question ${questionIndex + 1}',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A), letterSpacing: 0.5),
+                  style: compact
+                      ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.3)
+                      : const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A), letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   question.questionText,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B), height: 1.4),
+                  style: compact
+                      ? ExamSystemUi.embeddedListTitle(context).copyWith(height: 1.4)
+                      : const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B), height: 1.4),
                 ),
                 if (isSubmitted && translation != null)
                   Padding(
@@ -565,6 +645,12 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                   setState(() {
                     _selectedAnswers[question.id] = optionIndex;
                   });
+                  if (widget.onExamAnswersChanged != null) {
+                    widget.onExamAnswersChanged!(
+                      Map<String, int>.from(_selectedAnswers),
+                      widget.reading.questions.length,
+                    );
+                  }
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
