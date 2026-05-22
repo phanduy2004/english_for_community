@@ -33,11 +33,15 @@ class WritingRemoteDataSource {
   startWriting({
     required String topicId,
     required String userId,
-    required String taskType, // 👈 THAY ĐỔI: Chỉ gửi taskType, không gửi generatedPrompt
+    required String taskType,
+    bool freshStart = false,
+    Map<String, dynamic>? fixedPrompt,
   }) async {
     final body = {
       'userId': userId,
-      'taskType': taskType, // Server sẽ dùng cái này để tạo prompt
+      'taskType': taskType,
+      if (freshStart) 'freshStart': true,
+      if (fixedPrompt != null) 'fixedPrompt': fixedPrompt,
     };
 
     final res = await dio.post('/writing/$topicId/start', data: body);

@@ -1,3 +1,6 @@
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -23,12 +26,48 @@ class ListeningHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = totalCount == 0 ? 0.0 : (doneCount / totalCount).clamp(0.0, 1.0);
+    final compact = ExamEmbeddedSkillScope.compactOf(context);
+
+    if (compact) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outlineMuted, width: 0.75),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: ExamSystemUi.embeddedListTitle(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+            if (levelText != null && levelText!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(levelText!, style: ExamSystemUi.embeddedCaptionStyle),
+            ],
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 5,
+                backgroundColor: AppColors.outlineMuted,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.listeningCueProgress(doneCount, totalCount),
+              style: ExamSystemUi.embeddedProgressLabel(context),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        // Sử dụng Zinc/Neutral dark theme chuẩn hiện đại
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,

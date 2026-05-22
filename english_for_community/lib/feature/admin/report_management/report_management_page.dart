@@ -1,4 +1,11 @@
 import 'dart:async';
+
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/report_management/widget/report_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,14 +40,6 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-
-  // Shadcn Palette
-  final bgPage = const Color(0xFFF8FAFC);
-  final textMain = const Color(0xFF0F172A);
-  final textMuted = const Color(0xFF64748B);
-  final borderCol = const Color(0xFFE2E8F0);
-  final white = Colors.white;
-  final primary = const Color(0xFF0F172A);
 
   @override
   void initState() {
@@ -86,128 +85,73 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgPage,
-      appBar: AppBar(
-        backgroundColor: white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textMain),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('Report Management', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 16)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: white,
-            // 🔥 SỬA PHẦN NÀY:
-            child: TabBar(
-              controller: _tabController,
-              labelColor: primary,
-              unselectedLabelColor: textMuted,
-              indicatorColor: primary,
-              indicatorWeight: 2,
-
-              // 1. Dùng .tab để gạch chân full chiều rộng tab
-              indicatorSize: TabBarIndicatorSize.tab,
-
-              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-
-              // 2. Tắt cuộn để tab tự giãn đều màn hình
-              isScrollable: false,
-
-              tabs: const [
-                Tab(text: 'Pending'),
-                Tab(text: 'Reviewed'),
-                Tab(text: 'Resolved'),
-                Tab(text: 'Rejected'),
-              ],
-            ),
-          ),
-        ),
+    final l10n = context.l10n;
+    return AdminPageScaffold(
+      title: l10n.adminReportManagementTitle,
+      scrollable: false,
+      maxWidth: AdminWebUi.contentMaxTable,
+      headerBottom: TabBar(
+        controller: _tabController,
+        labelColor: AppColors.primaryDark,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 2,
+        indicatorSize: TabBarIndicatorSize.tab,
+        labelStyle: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+        isScrollable: false,
+        tabs: const [
+          Tab(text: 'Pending'),
+          Tab(text: 'Reviewed'),
+          Tab(text: 'Resolved'),
+          Tab(text: 'Rejected'),
+        ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: white,
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderCol),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                style: TextStyle(color: textMain, fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'Search by title or sender...',
-                  hintStyle: TextStyle(color: textMuted),
-                  prefixIcon: Icon(Icons.search, size: 18, color: textMuted),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.s5),
+            child: AdminSearchField(
+              controller: _searchController,
+              hint: l10n.adminSearchReportsHint,
+              onChanged: _onSearchChanged,
+              width: double.infinity,
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-          // List Content
           Expanded(
             child: BlocConsumer<AdminBloc, AdminState>(
               listener: (context, state) {
                 if (state.status == AdminStatus.actionSuccess) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Status updated successfully'), backgroundColor: Color(0xFF10B981)),
+                    const SnackBar(content: Text('Status updated successfully'), backgroundColor: AppColors.success),
                   );
                 }
                 if (state.status == AdminStatus.error && state.errorMessage != null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.errorMessage!), backgroundColor: const Color(0xFFEF4444)),
+                    SnackBar(content: Text(state.errorMessage!), backgroundColor: AppColors.danger),
                   );
                 }
               },
               builder: (context, state) {
-                final paginatedData = state.reports;
-                final List<ReportEntity> reportsList = paginatedData?.data ?? [];
+                final reportsList = state.reports?.data ?? [];
 
                 if (state.status == AdminStatus.loading && reportsList.isEmpty) {
                   return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                 }
 
                 if (reportsList.isEmpty) {
-                  return _buildEmptyState();
+                  return AdminEmptyState(message: l10n.adminNoReportsFound);
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s7),
                   itemCount: reportsList.length,
-                  separatorBuilder: (c, i) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return ReportCard(report: reportsList[index]);
-                  },
+                  separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
+                  itemBuilder: (context, index) => ReportCard(report: reportsList[index]),
                 );
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inbox_rounded, size: 48, color: textMuted.withOpacity(0.5)),
-          const SizedBox(height: 12),
-          Text("No reports found in this status", style: TextStyle(color: textMuted, fontSize: 14)),
         ],
       ),
     );

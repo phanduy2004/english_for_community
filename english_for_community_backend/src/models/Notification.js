@@ -10,7 +10,14 @@ const notificationSchema = new mongoose.Schema({
 
   type: {
     type: String,
-    enum: ['COMMENT_REPLY', 'COMMENT_REACTION', 'DAILY_REMINDER', 'SYSTEM_ANNOUNCEMENT'],
+    enum: [
+      'COMMENT_REPLY',
+      'COMMENT_REACTION',
+      'DAILY_REMINDER',
+      'SYSTEM_ANNOUNCEMENT',
+      'CLASSROOM_JOIN_REQUEST',
+      'EXAM_RESULTS_RELEASED',
+    ],
     required: true
   },
 

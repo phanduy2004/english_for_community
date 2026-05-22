@@ -1,15 +1,18 @@
-import 'package:firebase_core/firebase_core.dart';
+  import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
 
+import 'core/api/api_config.dart';
 import 'core/get_it/get_it.dart';
 import 'core/locale/app_locale_controller.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'core/notification/local_notification_service.dart';
 import 'core/router/app_router.dart';
+import 'core/router/configure_web_url_strategy.dart';
 import 'core/sqflite/notification_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/ui/e4c_scroll_behavior.dart';
 
 // 1. Import Widget quản lý vòng đời Socket
 import 'core/socket/socket_lifecycle_manager.dart';
@@ -22,8 +25,10 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  configureWebUrlStrategy();
   await NotificationService.I.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await ApiConfig.init();
   setup(); // Khởi tạo Dependency Injection (GetIt)
   //await DictDb.I.db;
   //NotificationService.I.scheduleDaily9AMNotification();
@@ -54,6 +59,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'LearnLingo',
             theme: AppTheme.getTheme(),
+            scrollBehavior: const E4cScrollBehavior(),
             themeMode: ThemeMode.system,
             routerConfig: AppRouter.router,
 

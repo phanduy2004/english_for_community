@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:english_for_community/core/api/api_client.dart';
 import 'package:english_for_community/core/api/token_storage.dart';
 
 // Service để xử lý logout (bạn cần tự implement)
@@ -8,7 +9,7 @@ import 'package:english_for_community/core/api/token_storage.dart';
 //     // clear tokens
 //     await TokenStorage.clearAllTokens();
 //     // navigate to login screen
-//     // (sử dụng NavigasstorKey global hoặc Riverpod/Provider/GetX...)
+//     // (sử dụng Navigass torKey global hoặc Riverpod/Provider/GetX...)
 //   }
 // }
 
@@ -94,9 +95,7 @@ class AppJwtInterceptor extends Interceptor {
     try {
       // Tạo một Dio instance mới CHỈ để gọi refresh,
       // để tránh vòng lặp vô hạn của interceptor
-      final refreshDio = Dio(BaseOptions(
-        baseUrl: dio.options.baseUrl,
-      ));
+      final refreshDio = Dio(ApiClient.baseOptions(baseUrl: dio.options.baseUrl));
 
       final response = await refreshDio.post(
         'auth/refresh', // ĐÃ SỬA LỖI: Bỏ '/api/' vì nó đã có trong baseUrl

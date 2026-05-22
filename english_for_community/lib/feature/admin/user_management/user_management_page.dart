@@ -1,5 +1,11 @@
 import 'dart:async';
 
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/user_management/widgets/user_card..dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,14 +48,6 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
-
-  // Colors
-  final bgPage = const Color(0xFFF8FAFC);
-  final textMain = const Color(0xFF0F172A);
-  final textMuted = const Color(0xFF64748B);
-  final borderCol = const Color(0xFFE2E8F0);
-  final white = Colors.white;
-  final primary = const Color(0xFF0F172A);
 
   @override
   void initState() {
@@ -223,75 +221,48 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bgPage,
-      appBar: AppBar(
-        backgroundColor: white,
-        elevation: 0,
-        titleSpacing: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textMain),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text('User Management', style: TextStyle(color: textMain, fontWeight: FontWeight.w700, fontSize: 16)),
-        actions: [
-          IconButton(
-            tooltip: 'Trash',
-            onPressed: _openDeletedUsersSheet,
-            icon: const Icon(Icons.restore_from_trash_outlined),
+    final l10n = context.l10n;
+    return AdminPageScaffold(
+      title: l10n.adminUserManagementTitle,
+      scrollable: false,
+      maxWidth: AdminWebUi.contentMaxTable,
+      actions: [
+        OutlinedButton.icon(
+          onPressed: _openDeletedUsersSheet,
+          icon: const Icon(Icons.restore_from_trash_outlined, size: 16),
+          label: const Text('Trash'),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
           ),
+        ),
+      ],
+      headerBottom: TabBar(
+        controller: _tabController,
+        labelColor: AppColors.primaryDark,
+        unselectedLabelColor: AppColors.textSecondary,
+        indicatorColor: AppColors.primary,
+        indicatorWeight: 2,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelStyle: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+        tabs: const [
+          Tab(text: 'All'),
+          Tab(text: 'Today'),
+          Tab(text: 'Online'),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: white,
-            child: TabBar(
-              controller: _tabController,
-              labelColor: primary,
-              unselectedLabelColor: textMuted,
-              indicatorColor: primary,
-              indicatorWeight: 2,
-              indicatorSize: TabBarIndicatorSize.label,
-              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-              tabs: const [
-                Tab(text: 'All'),
-                Tab(text: 'Today'),
-                Tab(text: 'Online'),
-              ],
-            ),
-          ),
-        ),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: white,
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: borderCol),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                style: TextStyle(color: textMain, fontSize: 13),
-                decoration: InputDecoration(
-                  hintText: 'Search by name or email...',
-                  hintStyle: TextStyle(color: textMuted),
-                  prefixIcon: Icon(Icons.search, size: 18, color: textMuted),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.s5),
+            child: AdminSearchField(
+              controller: _searchController,
+              hint: l10n.adminSearchUsersHint,
+              onChanged: _onSearchChanged,
+              width: double.infinity,
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-
-          // List
           Expanded(
             child: BlocBuilder<AdminBloc, AdminState>(
               builder: (context, state) {
@@ -302,33 +273,18 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                 final users = state.users?.data ?? [];
 
                 if (users.isEmpty) {
-                  return _buildEmptyState();
+                  return AdminEmptyState(message: l10n.adminNoUsersFound, icon: Icons.search_off_rounded);
                 }
 
                 return ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s7),
                   itemCount: users.length,
-                  separatorBuilder: (c, i) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return UserCard(user: users[index]);
-                  },
+                  separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
+                  itemBuilder: (context, index) => UserCard(user: users[index]),
                 );
               },
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off_rounded, size: 48, color: textMuted.withValues(alpha: 0.5)),
-          const SizedBox(height: 12),
-          Text("No users found", style: TextStyle(color: textMuted, fontSize: 14)),
         ],
       ),
     );

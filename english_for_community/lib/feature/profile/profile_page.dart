@@ -14,6 +14,9 @@ import '../auth/bloc/user_state.dart';
 import '../auth/login_page.dart';
 import 'change_password_dialog.dart';
 import 'my_exercise_history/my_exercise_history_page.dart';
+import '../../feature/student/classes/my_classes_hub_page.dart';
+import '../../feature/teacher/teacher_apply_page.dart';
+import '../../feature/teacher/teacher_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -370,6 +373,38 @@ class _ProfilePageState extends State<ProfilePage> {
                         subtitle: t.exerciseHistorySubtitle,
                         onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
                       ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  _SectionTitle(t.profileTeacherSectionTitle),
+                  _ShadcnGroup(
+                    children: [
+                      _SettingsTile(
+                        icon: Icons.class_outlined,
+                        title: t.profileStudentClassesTitle,
+                        subtitle: t.profileStudentClassesSubtitle,
+                        onTap: () => context.push(MyClassesHubPage.routePath),
+                      ),
+                      if (user.role == 'teacher' || user.role == 'admin') ...[
+                        const _Divider(),
+                        _SettingsTile(
+                          icon: Icons.school_outlined,
+                          title: t.profileTeacherHubTitle,
+                          subtitle: t.profileTeacherHubSubtitle,
+                          onTap: () => context.push(TeacherDashboardPage.routePath),
+                        ),
+                      ],
+                      if (user.role == 'user') ...[
+                        const _Divider(),
+                        _SettingsTile(
+                          icon: Icons.person_add_alt_1_outlined,
+                          title: t.profileApplyTeacherTitle,
+                          subtitle: t.profileApplyTeacherSubtitle,
+                          onTap: () => context.push(TeacherApplyPage.routePath),
+                        ),
+                      ],
                     ],
                   ),
 

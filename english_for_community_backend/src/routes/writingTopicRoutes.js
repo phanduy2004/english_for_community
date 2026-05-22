@@ -43,7 +43,8 @@ router.post('/:id/review-approval', requirePermissions(Permission.CONTENT_APPROV
 router.post('/:id/restore', requirePermissions(Permission.CONTENT_UPDATE), restoreWritingTopic);
 router.get('/:id/versions', requirePermissions(Permission.CONTENT_VERSION_READ), getWritingTopicVersions);
 router.post('/:id/versions/:versionId/rollback', requirePermissions(Permission.CONTENT_VERSION_ROLLBACK), rollbackWritingTopicVersion);
-router.get('/:id', requirePermissions(Permission.CONTENT_READ), getWritingTopicDetail);
+// Learners need topic detail for practice & integrated exams (same as GET /reading/:id).
+router.get('/:id', getWritingTopicDetail);
 router.put('/:id', requirePermissions(Permission.CONTENT_UPDATE), updateWritingTopic);
 router.delete('/:id', requirePermissions(Permission.CONTENT_UPDATE), deleteWritingTopic);
 export default router;

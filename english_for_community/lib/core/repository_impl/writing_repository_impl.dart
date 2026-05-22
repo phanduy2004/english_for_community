@@ -42,14 +42,17 @@ class WritingRepositoryImpl extends WritingRepository { // ✍️ Sửa: impleme
   startWriting({
     required String topicId,
     required String userId,
-    // required GeneratedPrompt generatedPrompt, -> BỎ
-    required String taskType, // -> THÊM
+    required String taskType,
+    bool freshStart = false,
+    Map<String, dynamic>? fixedPrompt,
   }) async {
     try {
       final result = await writingRemoteDataSource.startWriting(
         topicId: topicId,
         userId: userId,
-        taskType: taskType, // Truyền taskType xuống datasource
+        taskType: taskType,
+        freshStart: freshStart,
+        fixedPrompt: fixedPrompt,
       );
       return Right(result);
     } on DioException catch (e) {

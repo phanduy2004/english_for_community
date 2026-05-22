@@ -1,12 +1,12 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../api/api_config.dart';
-import '../notification/local_notification_service.dart';
 
 // Import các phần mở rộng (extensions)
 part 'handlers/socket_user_handler.dart';
 part 'handlers/socket_listening_handler.dart';
 part 'handlers/socket_notification_handler.dart';
 part 'handlers/socket_admin_handler.dart';
+part 'handlers/socket_exam_handler.dart';
 
 class SocketService {
   late IO.Socket _socket;
@@ -16,6 +16,12 @@ class SocketService {
   String? _pendingUserId;
   String? _currentUserId; // 🔥 ID user hiện tại (để reconnect)
   String? _currentListeningRoomId; // 🔥 Room bài nghe hiện tại
+  String? _examAccessToken;
+  String? _currentExamSessionId;
+  final List<void Function(Map<String, dynamic>)> _examLiveProgressListeners = [];
+  final List<void Function(Map<String, dynamic>)> _examLiveScreenListeners = [];
+  bool _examLiveProgressBridgeAttached = false;
+  bool _examLiveScreenBridgeAttached = false;
 
   /// Getter để kiểm tra socket có đang kết nối không (dùng trong các file part)
   bool get isConnected => _isInitialized && _socket.connected;
@@ -69,10 +75,29 @@ class SocketService {
         print('🔄 [Socket] Auto Re-joining Listening Room: $_currentListeningRoomId');
         _socket.emit('join_listening_room', _currentListeningRoomId);
       }
+
+      reconnectExamSocket();
     });
 
     _socket.onDisconnect((_) => print('❌ [Socket] Disconnected'));
     _socket.onConnectError((data) => print('⚠️ [Socket] Connect Error: $data'));
     _socket.onError((data) => print('⚠️ [Socket] Error: $data'));
+
+    _socket.on('exam_session_error', (raw) {
+      print('❌ [Exam socket] exam_session_error: $raw');
+    });
+    _socket.on('exam_register_error', (raw) {
+      print('❌ [Exam socket] exam_register_error: $raw');
+    });
+  }
+
+  void reconnectExamSocket() {
+    if (!_isInitialized || !isConnected) return;
+    if (_examAccessToken != null && _examAccessToken!.isNotEmpty) {
+      _socket.emit('exam_register', {'accessToken': _examAccessToken});
+    }
+    if (_currentExamSessionId != null && _currentExamSessionId!.isNotEmpty) {
+      _socket.emit('join_exam_session', {'sessionId': _currentExamSessionId});
+    }
   }
 }

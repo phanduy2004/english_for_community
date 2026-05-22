@@ -76,15 +76,21 @@ export async function getWritingTopicsForUser(userId) {
   });
 }
 
-export async function startWritingForTopic(userId, topicId, taskType) {
+export async function startWritingForTopic(userId, topicId, taskType, opts = {}) {
   if (!userId) return { error: { status: 401, message: 'User not authenticated' } };
 
   const topic = await WritingTopic.findById(topicId).lean();
   if (!topic || !topic.isActive) return { error: { status: 404, message: 'Topic not found' } };
 
-  const existing = await WritingSubmission.findOne({
-    userId, topicId: topic._id, status: 'draft',
-  }).sort({ updatedAt: -1 });
+  const freshStart = opts.freshStart === true;
+
+  const existing = freshStart
+    ? null
+    : await WritingSubmission.findOne({
+        userId,
+        topicId: topic._id,
+        status: 'draft',
+      }).sort({ updatedAt: -1 });
 
   if (existing) {
     if (existing.content && existing.content.trim().length > 0) {
@@ -101,20 +107,30 @@ export async function startWritingForTopic(userId, topicId, taskType) {
   }
 
   let aiPromptData;
-  try {
-    aiPromptData = await aiService.generateWritingPrompt(
-      topic.name,
-      topic.aiConfig,
-      taskType || 'Essay',
-    );
-  } catch (aiError) {
-    console.error('Error generating prompt:', aiError);
+  if (opts.fixedPrompt && opts.fixedPrompt.text) {
+    // Use teacher-assigned fixed prompt — all students get the same question
     aiPromptData = {
-      title: topic.name,
-      text: `Write about ${topic.name}. Task Type: ${taskType}`,
-      taskType,
-      level: topic.aiConfig?.level || 'Intermediate',
+      title: opts.fixedPrompt.title || topic.name,
+      text: opts.fixedPrompt.text,
+      taskType: opts.fixedPrompt.taskType || taskType || 'Essay',
+      level: opts.fixedPrompt.level || topic.aiConfig?.level || 'Intermediate',
     };
+  } else {
+    try {
+      aiPromptData = await aiService.generateWritingPrompt(
+        topic.name,
+        topic.aiConfig,
+        taskType || 'Essay',
+      );
+    } catch (aiError) {
+      console.error('Error generating prompt:', aiError);
+      aiPromptData = {
+        title: topic.name,
+        text: `Write about ${topic.name}. Task Type: ${taskType}`,
+        taskType,
+        level: topic.aiConfig?.level || 'Intermediate',
+      };
+    }
   }
 
   const sub = await WritingSubmission.create({

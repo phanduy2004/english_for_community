@@ -443,6 +443,64 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adminConsoleTitle => 'Bảng quản trị';
 
   @override
+  String get adminShellAppName => 'Quản trị';
+
+  @override
+  String get adminShellNavGroup => 'Tổng quan';
+
+  @override
+  String get adminShellOpsGroup => 'Vận hành';
+
+  @override
+  String get adminShellContentGroup => 'Nội dung';
+
+  @override
+  String get adminShellDesktopTitle => 'Dùng trình duyệt trên máy tính';
+
+  @override
+  String get adminShellDesktopBody =>
+      'Bảng quản trị được tối ưu cho màn hình từ 768px trở lên. Hãy mở trên laptop hoặc máy tính để có trải nghiệm tốt nhất.';
+
+  @override
+  String get adminShellCollapseSidebar => 'Thu gọn thanh bên';
+
+  @override
+  String get adminShellExpandSidebar => 'Mở rộng thanh bên';
+
+  @override
+  String get adminNavSubmissions => 'Bài nộp';
+
+  @override
+  String get adminNavOps => 'Trung tâm vận hành';
+
+  @override
+  String get adminNavReleases => 'Phát hành app';
+
+  @override
+  String get adminOverviewTitle => 'Tổng quan';
+
+  @override
+  String get adminUserManagementTitle => 'Quản lý người dùng';
+
+  @override
+  String get adminReportManagementTitle => 'Quản lý báo cáo';
+
+  @override
+  String get adminActivityHistoryTitle => 'Lịch sử bài nộp';
+
+  @override
+  String get adminSearchUsersHint => 'Tìm theo tên hoặc email…';
+
+  @override
+  String get adminSearchReportsHint => 'Tìm theo tiêu đề hoặc người gửi…';
+
+  @override
+  String get adminNoUsersFound => 'Không tìm thấy người dùng';
+
+  @override
+  String get adminNoReportsFound => 'Không có báo cáo ở trạng thái này';
+
+  @override
   String get superAdminRole => 'Super Admin';
 
   @override
@@ -1388,6 +1446,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get dictationNextButton => 'Tiếp';
 
   @override
+  String get dictationSaveContinue => 'Lưu & tiếp';
+
+  @override
   String get dictationFinishButton => 'Hoàn thành';
 
   @override
@@ -1950,4 +2011,2723 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get appVersionLabel => 'Phiên bản ứng dụng';
+
+  @override
+  String get profileTeacherSectionTitle => 'Lớp học & giảng dạy';
+
+  @override
+  String get profileStudentClassesTitle => 'Lớp của tôi';
+
+  @override
+  String get profileStudentClassesSubtitle => 'Tham gia lớp bằng mã mời';
+
+  @override
+  String get profileTeacherHubTitle => 'Khu vực giáo viên';
+
+  @override
+  String get profileTeacherHubSubtitle => 'Lớp học và bài kiểm tra';
+
+  @override
+  String get profileApplyTeacherTitle => 'Đăng ký làm giáo viên';
+
+  @override
+  String get profileApplyTeacherSubtitle => 'Gửi yêu cầu tài khoản giáo viên';
+
+  @override
+  String get teacherApplyTitle => 'Trở thành giáo viên';
+
+  @override
+  String get teacherApplySubtitle =>
+      'Hãy mô tả ngắn gọn về kinh nghiệm giảng dạy. Quản trị viên sẽ xét duyệt.';
+
+  @override
+  String get teacherApplyBioLabel => 'Giới thiệu';
+
+  @override
+  String get teacherApplyOrgLabel => 'Trường / tổ chức (tuỳ chọn)';
+
+  @override
+  String get teacherApplySubmit => 'Gửi đơn';
+
+  @override
+  String get teacherApplySubmitted => 'Đã gửi đơn';
+
+  @override
+  String get teacherDashboardTitle => 'Khu vực giáo viên';
+
+  @override
+  String get teacherNavDashboard => 'Tổng quan';
+
+  @override
+  String get teacherNavExams => 'Ngân hàng đề';
+
+  @override
+  String get teacherShellAppName => 'Giáo viên';
+
+  @override
+  String get teacherShellNavGroup => 'Không gian làm việc';
+
+  @override
+  String get teacherShellDesktopTitle => 'Dùng trình duyệt trên máy tính';
+
+  @override
+  String get teacherShellDesktopBody =>
+      'Khu vực giáo viên được tối ưu cho màn hình từ 768px trở lên. Hãy mở trên laptop hoặc máy tính để có trải nghiệm tốt nhất.';
+
+  @override
+  String get teacherShellCollapseSidebar => 'Thu gọn thanh bên';
+
+  @override
+  String get teacherShellExpandSidebar => 'Mở rộng thanh bên';
+
+  @override
+  String get teacherAccountMenuTitle => 'Tài khoản & cài đặt';
+
+  @override
+  String get teacherAccountRoleTeacher => 'Giáo viên';
+
+  @override
+  String get teacherAccountSectionAbout => 'Thông tin ứng dụng';
+
+  @override
+  String get teacherAccountOpenMenu => 'Menu tài khoản';
+
+  @override
+  String get teacherAccountEditProfileSubtitle =>
+      'Cập nhật tên, ảnh đại diện và thông tin liên hệ.';
+
+  @override
+  String teacherDashboardGreeting(String name) {
+    return 'Xin chào, $name';
+  }
+
+  @override
+  String teacherDashboardTodayMeta(String time) {
+    return 'Hôm nay · $time';
+  }
+
+  @override
+  String get teacherDashboardActionNewExam => 'Đề mới';
+
+  @override
+  String get teacherClassFab => 'Lớp mới';
+
+  @override
+  String get teacherClassCreateTitle => 'Tạo lớp học';
+
+  @override
+  String get teacherClassNameLabel => 'Tên lớp';
+
+  @override
+  String get teacherClassCreated => 'Đã tạo lớp';
+
+  @override
+  String get teacherMyClassrooms => 'Lớp của tôi';
+
+  @override
+  String get teacherNoClassrooms => 'Chưa có lớp. Nhấn nút + để tạo.';
+
+  @override
+  String get teacherInviteCode => 'Mã mời';
+
+  @override
+  String get teacherClassroomDetailTitle => 'Lớp học';
+
+  @override
+  String get teacherNoExams => 'Hãy tạo đề mẫu từ khu vực giáo viên trước.';
+
+  @override
+  String get teacherAssignmentCreated => 'Đã giao bài kiểm tra cho lớp';
+
+  @override
+  String get teacherAssignFirstExam => 'Giao đề mới nhất cho lớp này';
+
+  @override
+  String teacherClassroomMemberCountActive(int count) {
+    return '$count học sinh trong lớp';
+  }
+
+  @override
+  String teacherClassroomMemberCountPending(int count) {
+    return '$count đang chờ duyệt';
+  }
+
+  @override
+  String get teacherAssignExamToClass => 'Giao đề cho lớp này';
+
+  @override
+  String get teacherPickExamToAssign => 'Chọn đề đã xuất bản';
+
+  @override
+  String get teacherNoPublishedExams =>
+      'Chưa có đề đã xuất bản. Hãy xuất bản đề trong mục Đề thi của tôi trước.';
+
+  @override
+  String get copyInviteCode => 'Sao chép mã mời';
+
+  @override
+  String get adminTeacherApplicationsTitle => 'Đơn xin làm giáo viên';
+
+  @override
+  String get adminTeacherApplicationsSubtitle => 'Xem và duyệt đơn chờ';
+
+  @override
+  String get adminTeacherApplicationsEmpty => 'Không có đơn ở trạng thái này.';
+
+  @override
+  String get adminTeacherApprove => 'Duyệt';
+
+  @override
+  String get adminTeacherReject => 'Từ chối';
+
+  @override
+  String get adminTeacherRejectReason => 'Lý do từ chối';
+
+  @override
+  String get studentClassesTitle => 'Lớp của tôi';
+
+  @override
+  String get studentClassesSubtitle =>
+      'Mở từng lớp để xem đúng bài tập của lớp đó.';
+
+  @override
+  String get studentJoinClassTitle => 'Tham gia bằng mã mời';
+
+  @override
+  String get studentJoinClassSubtitle =>
+      'Nhập mã giáo viên gửi. Bài tập sẽ hiển thị bên trong từng lớp.';
+
+  @override
+  String get studentInviteCodeLabel => 'Mã mời';
+
+  @override
+  String get studentJoinClassButton => 'Vào lớp';
+
+  @override
+  String get studentJoinClassSuccess => 'Đã tham gia lớp';
+
+  @override
+  String get studentMyClassesTitle => 'Các lớp bạn đang học';
+
+  @override
+  String get studentNoClasses => 'Bạn chưa tham gia lớp nào.';
+
+  @override
+  String get studentClassOpen => 'Mở lớp';
+
+  @override
+  String studentClassAssignmentsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bài tập',
+      one: '1 bài tập',
+      zero: 'Chưa có bài tập',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String studentClassLiveCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phòng trực tiếp',
+      one: '1 phòng trực tiếp',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassDetailTitle => 'Thông tin lớp';
+
+  @override
+  String get studentClassDetailAssignmentsTitle => 'Bài tập của lớp';
+
+  @override
+  String get studentClassDetailAssignmentsSubtitle =>
+      'Chỉ hiển thị bài tập thuộc lớp học này.';
+
+  @override
+  String get studentClassNoAssignments => 'Lớp này chưa có bài tập nào.';
+
+  @override
+  String get studentClassAssignmentNotYetOpen =>
+      'Chưa đến giờ mở bài — xem lịch giáo viên gửi.';
+
+  @override
+  String get studentClassAssignmentClosed => 'Bài tập đã hết thời gian làm.';
+
+  @override
+  String get studentClassInfoTitle => 'Thông tin lớp học';
+
+  @override
+  String studentClassMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count học sinh đang học',
+      one: '1 học sinh đang học',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassJoinPolicyOpen => 'Vào lớp tự do';
+
+  @override
+  String get studentClassJoinPolicyApproval => 'Cần giáo viên duyệt';
+
+  @override
+  String studentClassCreatedAt(String date) {
+    return 'Tạo ngày $date';
+  }
+
+  @override
+  String studentClassUpdatedAt(String date) {
+    return 'Cập nhật $date';
+  }
+
+  @override
+  String studentClassScheduleDue(String date) {
+    return 'Hạn: $date';
+  }
+
+  @override
+  String studentClassScheduleWindow(String opens, String closes) {
+    return '$opens – $closes';
+  }
+
+  @override
+  String get studentClassPublicJoin => 'Vào bài thi công khai';
+
+  @override
+  String studentClassTeacher(String name) {
+    return 'Giáo viên: $name';
+  }
+
+  @override
+  String get studentClassNoDescription => 'Lớp này chưa có mô tả.';
+
+  @override
+  String get teacherClassDetailAssignmentsTitle => 'Bài được giao';
+
+  @override
+  String get teacherClassDetailAssignmentsSubtitle =>
+      'Các bài thi trong lớp — lịch, định dạng và tiến độ học sinh.';
+
+  @override
+  String get teacherClassDetailActiveTitle => 'Bài đang hoạt động';
+
+  @override
+  String get teacherClassDetailActiveSubtitle =>
+      'Phiên đang mở và bài học sinh vẫn có thể làm.';
+
+  @override
+  String get teacherClassDetailHistoryTitle => 'Lịch sử phiên thi';
+
+  @override
+  String get teacherClassDetailHistorySubtitle =>
+      'Các bài thi trực tiếp đã kết thúc phiên gần nhất.';
+
+  @override
+  String get teacherClassHistoryOpenGrading => 'Chấm bài';
+
+  @override
+  String teacherClassHistorySessionEnded(String date) {
+    return 'Phiên gần nhất kết thúc: $date';
+  }
+
+  @override
+  String get teacherClassNoAssignments => 'Chưa có bài thi nào trong lớp.';
+
+  @override
+  String get teacherClassNoHistory =>
+      'Chưa có phiên thi trực tiếp đã kết thúc trong lớp này.';
+
+  @override
+  String get teacherClassTabOverview => 'Tổng quan';
+
+  @override
+  String get teacherClassTabAssignments => 'Bài đã giao';
+
+  @override
+  String get teacherClassTabMembers => 'Thành viên';
+
+  @override
+  String get teacherClassTabSettings => 'Cài đặt';
+
+  @override
+  String get teacherClassMembersEmpty => 'Chưa có thành viên.';
+
+  @override
+  String get teacherClassMemberRemove => 'Xóa';
+
+  @override
+  String get teacherClassMemberRemoveConfirm => 'Xóa học sinh này khỏi lớp?';
+
+  @override
+  String get teacherClassMemberStatusPending => 'Chờ duyệt';
+
+  @override
+  String get teacherClassSaveSettings => 'Lưu thay đổi';
+
+  @override
+  String get teacherClassSettingsSaved => 'Đã cập nhật lớp';
+
+  @override
+  String get teacherClassRotateInvite => 'Đổi mã mời';
+
+  @override
+  String get teacherClassRotateInviteConfirm =>
+      'Tạo mã mới? Mã cũ sẽ không còn hiệu lực.';
+
+  @override
+  String get teacherClassArchive => 'Lưu trữ lớp';
+
+  @override
+  String get teacherClassArchiveConfirm =>
+      'Lưu trữ lớp này? Học sinh sẽ không thấy bài giao mới.';
+
+  @override
+  String get teacherClassArchivedMessage => 'Đã lưu trữ lớp';
+
+  @override
+  String get teacherExamArchive => 'Lưu trữ đề';
+
+  @override
+  String get teacherExamArchiveConfirm =>
+      'Lưu trữ đề này? Không thể giao đề đã lưu trữ.';
+
+  @override
+  String get teacherExamArchived => 'Đã lưu trữ đề';
+
+  @override
+  String get teacherExamDelete => 'Xóa vĩnh viễn';
+
+  @override
+  String get teacherExamDeleteConfirm =>
+      'Xóa đề này vĩnh viễn? Các bài giao chưa có bài nộp sẽ bị xóa. Không thể hoàn tác.';
+
+  @override
+  String get teacherExamDeleted => 'Đã xóa đề';
+
+  @override
+  String get teacherExamRestore => 'Khôi phục đề';
+
+  @override
+  String get teacherExamRestoreConfirm => 'Khôi phục đề từ kho lưu trữ?';
+
+  @override
+  String get teacherExamRestored => 'Đã khôi phục đề';
+
+  @override
+  String get teacherExamsFilterAll => 'Tất cả';
+
+  @override
+  String get teacherExamsFilterDraft => 'Nháp';
+
+  @override
+  String get teacherExamsFilterPublished => 'Đã xuất bản';
+
+  @override
+  String get teacherExamsFilterArchived => 'Đã lưu trữ';
+
+  @override
+  String get teacherExamsFilterEmpty => 'Không có đề trong bộ lọc này.';
+
+  @override
+  String get teacherExamPublishConfirm => 'Xuất bản đề để có thể giao cho lớp?';
+
+  @override
+  String get teacherExamMoreActions => 'Thao tác khác';
+
+  @override
+  String get teacherAssignmentDelete => 'Xóa bài giao';
+
+  @override
+  String get teacherAssignmentDeleteConfirm =>
+      'Xóa bài giao này? Chỉ được phép khi chưa có học sinh nộp bài.';
+
+  @override
+  String get teacherAssignmentDeleted => 'Đã xóa bài giao';
+
+  @override
+  String get teacherAssignmentClose => 'Đóng bài giao';
+
+  @override
+  String get teacherAssignmentCloseConfirm =>
+      'Đóng bài giao? Học sinh không thể bắt đầu làm mới.';
+
+  @override
+  String get teacherAssignmentClosed => 'Đã đóng bài giao';
+
+  @override
+  String get teacherAssignmentAudience => 'Đối tượng';
+
+  @override
+  String get teacherAssignmentAudienceClassroom => 'Lớp';
+
+  @override
+  String get teacherAssignmentAudiencePublic => 'Link công khai';
+
+  @override
+  String get teacherAssignmentPublicMaxUsesHint => 'Giới hạn lượt (tuỳ chọn)';
+
+  @override
+  String get teacherAssignmentPublicExpiresHint => 'Chọn hết hạn (tuỳ chọn)';
+
+  @override
+  String get teacherAssignmentPublicTokenTitle => 'Mã tham gia công khai';
+
+  @override
+  String get teacherAssignmentPublicTokenBody =>
+      'Gửi mã này cho học sinh. Họ dán vào mục “Tham gia bài thi công khai”.';
+
+  @override
+  String get dashboardPublicCopyToken => 'Sao chép mã';
+
+  @override
+  String get dashboardPublicTokenCopied => 'Đã sao chép mã';
+
+  @override
+  String get dashboardPublicRotateLink => 'Link mới';
+
+  @override
+  String get dashboardPublicRotateConfirm =>
+      'Tạo mã công khai mới? Link cũ sẽ không còn hiệu lực.';
+
+  @override
+  String get dashboardPublicCloseLink => 'Đóng link';
+
+  @override
+  String get dashboardPublicCloseConfirm =>
+      'Đóng bài giao công khai? Người mới không thể bắt đầu.';
+
+  @override
+  String get teacherApplyStatusPending => 'Đơn của bạn đang chờ admin duyệt.';
+
+  @override
+  String get teacherApplyStatusApproved =>
+      'Bạn đã được duyệt làm giáo viên. Mở khu giáo viên từ hồ sơ.';
+
+  @override
+  String get teacherApplyStatusRejected => 'Đơn của bạn bị từ chối.';
+
+  @override
+  String get teacherApplyStatusWithdrawn =>
+      'Bạn đã rút đơn. Có thể gửi đơn mới.';
+
+  @override
+  String get teacherApplyStatusNone =>
+      'Chưa có đơn — mô tả ngắn về bạn bên dưới.';
+
+  @override
+  String get teacherApplyRejectReason => 'Ghi chú từ người duyệt';
+
+  @override
+  String get teacherApplyWithdraw => 'Rút đơn';
+
+  @override
+  String get teacherApplyWithdrawConfirm => 'Rút đơn đang chờ duyệt?';
+
+  @override
+  String get teacherApplyGoToHub => 'Mở khu giáo viên';
+
+  @override
+  String get homeQuickMyClasses => 'Lớp học';
+
+  @override
+  String get homeQuickPublicExam => 'Bài thi công khai';
+
+  @override
+  String get studentJoinClassByTokenLabel => 'Mã từ link mời';
+
+  @override
+  String get studentJoinClassByTokenHint =>
+      'Dán mã dài từ link lớp giáo viên gửi';
+
+  @override
+  String get studentJoinClassByTokenButton => 'Tham gia bằng link';
+
+  @override
+  String get studentExamsHubTitle => 'Tham gia bài thi công khai';
+
+  @override
+  String get studentExamsHubSubtitle =>
+      'Bài trong lớp nằm trong từng lớp. Màn hình này chỉ khi bạn có mã bài thi công khai từ giáo viên.';
+
+  @override
+  String studentExamTimeRemainingHM(int hours, int minutes) {
+    return '${hours}g ${minutes}p';
+  }
+
+  @override
+  String studentExamTimeRemainingMS(int minutes, int seconds) {
+    return '${minutes}p ${seconds}s';
+  }
+
+  @override
+  String studentExamTimeRemainingS(int seconds) {
+    return '${seconds}s';
+  }
+
+  @override
+  String get studentExamRunnerLoadFailed => 'Không tải được bài thi.';
+
+  @override
+  String get teacherMobileWorkspaceTitle => 'Khu giáo viên';
+
+  @override
+  String get teacherMobileWorkspaceBody =>
+      'Dùng thanh tab bên dưới để điều hướng nhanh. Chỉnh sửa đề phức tạp nên dùng màn hình rộng hơn.';
+
+  @override
+  String teacherClassOverviewMeta(int students, String policy) {
+    return '$students học sinh · $policy';
+  }
+
+  @override
+  String get teacherClassStatActiveAssignments => 'Đang mở';
+
+  @override
+  String get teacherClassStatHistoryAssignments => 'Lịch sử';
+
+  @override
+  String get teacherClassStatStudents => 'Học sinh';
+
+  @override
+  String get teacherClassStatPendingMembers => 'Chờ duyệt';
+
+  @override
+  String get teacherClassCreatedLabel => 'Tạo lúc';
+
+  @override
+  String get teacherClassUpdatedLabel => 'Cập nhật';
+
+  @override
+  String get teacherClassInviteCardHint =>
+      'Chia sẻ mã này để học sinh tham gia lớp.';
+
+  @override
+  String get teacherClassRecentAssignments => 'Bài giao gần đây';
+
+  @override
+  String get teacherClassViewAllAssignments => 'Xem tất cả bài giao';
+
+  @override
+  String get teacherClassSettingsAbout => 'Thông tin lớp';
+
+  @override
+  String get teacherClassSettingsJoin => 'Tham gia lớp';
+
+  @override
+  String get teacherClassAssignExamCta => 'Giao đề thi';
+
+  @override
+  String get examCardFormatClassic => 'Bài thi cổ điển';
+
+  @override
+  String get examCardFormatIntegrated => 'Tích hợp 4 kỹ năng';
+
+  @override
+  String get examCardFormatSkills => 'Kỹ năng + Ngữ pháp';
+
+  @override
+  String get examCardScheduleTitle => 'Lịch làm bài';
+
+  @override
+  String get examCardExamInfoTitle => 'Thông tin đề';
+
+  @override
+  String examCardQuestionsCount(int count) {
+    return '$count câu / phần';
+  }
+
+  @override
+  String examCardPointsMax(int points) {
+    return 'Tối đa $points điểm';
+  }
+
+  @override
+  String examCardGrammarSkillsCount(int grammar, int skills) {
+    return '$grammar ngữ pháp · $skills phần kỹ năng';
+  }
+
+  @override
+  String examCardAssignedAt(String date) {
+    return 'Giao lúc $date';
+  }
+
+  @override
+  String examCardRoomCode(String code) {
+    return 'Mã phòng: $code';
+  }
+
+  @override
+  String examCardOpensAt(String date) {
+    return 'Mở $date';
+  }
+
+  @override
+  String examCardClosesAt(String date) {
+    return 'Đóng $date';
+  }
+
+  @override
+  String examCardSessionStarted(String date) {
+    return 'Phiên bắt đầu $date';
+  }
+
+  @override
+  String get examCardStatusLobby => 'Phòng chờ — chờ giáo viên bắt đầu';
+
+  @override
+  String get examCardStatusLive => 'Đang diễn ra';
+
+  @override
+  String get examCardMyAttemptInProgress => 'Bạn đang làm dở';
+
+  @override
+  String get examCardMyAttemptSubmitted => 'Đã nộp — chờ kết quả';
+
+  @override
+  String get examCardMyAttemptVoid => 'Bài làm đã hủy';
+
+  @override
+  String examCardMyAttemptScore(num awarded, num max) {
+    return 'Điểm: $awarded / $max';
+  }
+
+  @override
+  String get examCardTeacherNoAttempts => 'Chưa có học sinh làm bài';
+
+  @override
+  String examCardTeacherAttemptsSummary(
+      int submitted, int inProgress, int total) {
+    return '$submitted đã nộp · $inProgress đang làm · $total lượt';
+  }
+
+  @override
+  String get examCardManageSession => 'Mở phiên';
+
+  @override
+  String get studentExamsPageSubtitle =>
+      'Bài tập theo từng lớp nằm trong mục Lớp của tôi. Chỉ dùng link công khai khi giáo viên gửi cho bạn.';
+
+  @override
+  String get studentExamsGoToClasses => 'Đến Lớp của tôi';
+
+  @override
+  String get studentExamsMenu => 'Bài thi';
+
+  @override
+  String get studentExamsTitle => 'Bài kiểm tra khả dụng';
+
+  @override
+  String get studentNoExams => 'Chưa có bài thi cho các lớp của bạn.';
+
+  @override
+  String get studentExamStart => 'Bắt đầu';
+
+  @override
+  String get studentExamUnknownTitle => 'Bài kiểm tra';
+
+  @override
+  String get studentExamRunnerTitle => 'Làm bài';
+
+  @override
+  String get studentExamSubmit => 'Nộp bài';
+
+  @override
+  String get studentExamSubmitted => 'Đã nộp bài';
+
+  @override
+  String get studentExamScore => 'Điểm';
+
+  @override
+  String studentExamQuestionProgress(int current, int total) {
+    return 'Câu $current/$total';
+  }
+
+  @override
+  String get studentExamPrevious => 'Trước';
+
+  @override
+  String get studentExamNext => 'Tiếp';
+
+  @override
+  String get studentExamItemUnsupported =>
+      'Dạng câu này chưa làm được trên app. Bỏ qua hoặc liên hệ giáo viên.';
+
+  @override
+  String get studentExamEssayPlaceholder => 'Viết bài làm của bạn…';
+
+  @override
+  String studentExamScoreTotals(Object earned, Object max) {
+    return 'Điểm: $earned / $max';
+  }
+
+  @override
+  String get studentExamNoQuestions =>
+      'Bài thi này chưa có câu hỏi có thể làm trên app.';
+
+  @override
+  String get examModeSelfPaced => 'Tự học';
+
+  @override
+  String get examModeScheduled => 'Theo lịch';
+
+  @override
+  String get examModeRealtime => 'Phòng thi trực tiếp';
+
+  @override
+  String get examOpenLobby => 'Vào phòng chờ';
+
+  @override
+  String get examWaitingForTeacher => 'Đang chờ giáo viên bắt đầu';
+
+  @override
+  String get examCardLiveSessionEnded =>
+      'Giáo viên đã kết thúc phiên thi trực tiếp.';
+
+  @override
+  String examCardLiveSessionEndedAt(String date) {
+    return 'Phiên kết thúc: $date';
+  }
+
+  @override
+  String get examCardViewMySubmission => 'Xem bài đã nộp';
+
+  @override
+  String get examSessionEndedByTeacher =>
+      'Giáo viên đã kết thúc phiên thi. Bài làm của bạn đã được lưu.';
+
+  @override
+  String get examJoinByLinkTitle => 'Tham gia bằng liên kết công khai';
+
+  @override
+  String get examJoinByLinkHint => 'Dán mã từ giáo viên';
+
+  @override
+  String get examJoinPreview => 'Xem trước';
+
+  @override
+  String get examJoinStart => 'Bắt đầu làm bài';
+
+  @override
+  String get examSessionRoomCode => 'Mã phòng';
+
+  @override
+  String get examSessionGo => 'Vào làm bài';
+
+  @override
+  String get studentExamLeaveRealtimeTitle => 'Thoát bài thi?';
+
+  @override
+  String get studentExamLeaveRealtimeMessage =>
+      'Nếu thoát bây giờ, bạn sẽ không được vào lại bài thi trực tiếp này. Bài làm của bạn sẽ bị đóng.';
+
+  @override
+  String get studentExamLeaveRealtimeConfirm => 'Thoát bài thi';
+
+  @override
+  String get studentExamLeaveRealtimeCancel => 'Tiếp tục làm';
+
+  @override
+  String get studentExamVoluntaryExitBlocked =>
+      'Bạn đã thoát bài thi này và không thể vào lại.';
+
+  @override
+  String get studentExamCannotRejoinAfterLeave =>
+      'Bạn không thể vào lại bài thi sau khi đã thoát.';
+
+  @override
+  String get teacherExamSessionLeavePageHint =>
+      'Rời màn hình này không kết thúc bài thi với học sinh. Hãy bấm kết thúc phiên khi bạn muốn dừng bài thi.';
+
+  @override
+  String get teacherAssignmentsSection => 'Bài đã giao';
+
+  @override
+  String get teacherNoAssignments => 'Chưa có bài giao.';
+
+  @override
+  String get teacherDashboardSubtitle =>
+      'Lớp, đề và chấm điểm trong một không gian gọn gàng.';
+
+  @override
+  String get teacherDashboardOverview => 'Tổng quan';
+
+  @override
+  String get teacherDashboardStatClasses => 'Lớp học';
+
+  @override
+  String get teacherDashboardStatAssignments => 'Bài đã giao';
+
+  @override
+  String get teacherDashboardStatLiveModes => 'Phòng trực tiếp';
+
+  @override
+  String get teacherDashboardStatDraftExams => 'Đề nháp';
+
+  @override
+  String get teacherDashboardStatPublishedExams => 'Đã xuất bản';
+
+  @override
+  String get teacherDashboardStatNeedsAction => 'Cần xử lý';
+
+  @override
+  String get teacherDashboardShortcuts => 'Lối tắt';
+
+  @override
+  String get teacherDashboardShortcutExamBank => 'Kho đề thi';
+
+  @override
+  String get teacherDashboardShortcutNewSkillsExam => 'Đề kỹ năng mới';
+
+  @override
+  String get teacherDashboardShortcutOpen => 'Mở';
+
+  @override
+  String get teacherDashboardSectionLive => 'Phòng trực tiếp';
+
+  @override
+  String get teacherDashboardLiveEmpty =>
+      'Chưa có bài giao ở chế độ trực tiếp. Giao đề ở chế độ Phòng thi trực tiếp để mở phiên.';
+
+  @override
+  String get teacherDashboardLiveWaitingSession =>
+      'Chưa có phiên — mở phòng thi để bắt đầu';
+
+  @override
+  String get teacherDashboardLiveStatusGrading => 'Đang kết thúc phiên';
+
+  @override
+  String teacherDashboardLiveSessionStatus(String status) {
+    return 'Phiên: $status';
+  }
+
+  @override
+  String get teacherDashboardSectionGrading => 'Chờ chấm / xử lý';
+
+  @override
+  String teacherDashboardViewAllQueue(int count) {
+    return 'Xem tất cả ($count)';
+  }
+
+  @override
+  String get teacherDashboardViewAllQueueShort => 'Xem tất cả';
+
+  @override
+  String teacherDashboardQueueMoreHidden(int count) {
+    return 'Còn thêm $count bài trong hàng chờ';
+  }
+
+  @override
+  String get teacherDashboardGradingQueueAllTitle => 'Hàng chờ chấm điểm';
+
+  @override
+  String teacherDashboardGradingQueueAllSubtitle(int count) {
+    return '$count bài cần bạn xử lý';
+  }
+
+  @override
+  String teacherDashboardViewAllLiveQueue(int count) {
+    return 'Tất cả phòng trực tiếp ($count)';
+  }
+
+  @override
+  String get teacherDashboardLiveQueueAllTitle => 'Phòng trực tiếp';
+
+  @override
+  String teacherDashboardLiveQueueAllSubtitle(int count) {
+    return '$count bài giao đang diễn ra realtime';
+  }
+
+  @override
+  String get teacherDashboardScrollHint => 'Vuốt ngang để xem thêm phòng';
+
+  @override
+  String get teacherDashboardGradingEmpty =>
+      'Hiện không có bài nộp nào cần bạn xử lý.';
+
+  @override
+  String get teacherDashboardGradingLoading => 'Đang tải hàng chờ chấm…';
+
+  @override
+  String get teacherDashboardSectionAssignments => 'Bài đã giao';
+
+  @override
+  String get teacherDashboardAssignmentsPerClassHint =>
+      'Lọc theo lớp — xem lịch sử trong từng lớp.';
+
+  @override
+  String get teacherDashboardFilterByClass => 'Lớp';
+
+  @override
+  String get teacherDashboardAllClasses => 'Tất cả lớp';
+
+  @override
+  String get teacherDashboardFilterAll => 'Tất cả';
+
+  @override
+  String get teacherDashboardFilterPublic => 'Liên kết công khai';
+
+  @override
+  String get teacherDashboardSearchHint => 'Tìm theo tên đề';
+
+  @override
+  String get teacherDashboardAudienceClass => 'Lớp';
+
+  @override
+  String get teacherDashboardAudiencePublic => 'Công khai';
+
+  @override
+  String teacherDashboardDue(String date) {
+    return 'Hạn: $date';
+  }
+
+  @override
+  String teacherDashboardWindow(String opens, String closes) {
+    return '$opens – $closes';
+  }
+
+  @override
+  String teacherDashboardClassLabel(String name) {
+    return 'Lớp: $name';
+  }
+
+  @override
+  String get teacherDashboardOpenConsole => 'Mở phòng thi';
+
+  @override
+  String get teacherDashboardOpenGrading => 'Mở chấm điểm';
+
+  @override
+  String get teacherDashboardStudentUnknown => 'Học viên';
+
+  @override
+  String get teacherDashboardGradingChipManual => 'Chấm tay';
+
+  @override
+  String get teacherDashboardGradingChipAi => 'Chấm AI';
+
+  @override
+  String get teacherDashboardGradingChipRelease => 'Công bố điểm';
+
+  @override
+  String get teacherExamConsoleTitle => 'Phòng thi trực tiếp';
+
+  @override
+  String get teacherExamSessionLiveRosterTitle => 'Học sinh trong phòng chờ';
+
+  @override
+  String get teacherExamSessionLiveRosterHint =>
+      'Số lượng và danh sách cập nhật theo thời gian thực khi học sinh vào phòng.';
+
+  @override
+  String teacherExamSessionJoinedCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count học sinh đã vào',
+      one: '1 học sinh đã vào',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get teacherExamSessionNoParticipantsYet =>
+      'Chưa có học sinh trong phòng chờ.';
+
+  @override
+  String get teacherExamSessionTabControl => 'Điều khiển phiên';
+
+  @override
+  String get teacherExamSessionTabLiveMonitor => 'Giám sát trực tiếp';
+
+  @override
+  String get teacherExamSessionShowDetails => 'Chi tiết';
+
+  @override
+  String get teacherExamSessionHideDetails => 'Thu gọn';
+
+  @override
+  String teacherLiveMonitorSummaryInProgress(int count) {
+    return '$count đang làm';
+  }
+
+  @override
+  String teacherLiveMonitorSummarySubmitted(int count) {
+    return '$count đã nộp';
+  }
+
+  @override
+  String teacherLiveMonitorSummaryFlagged(int count) {
+    return '$count cảnh báo';
+  }
+
+  @override
+  String teacherLiveMonitorSummaryAvgProgress(double percent) {
+    return 'TB $percent%';
+  }
+
+  @override
+  String teacherLiveMonitorSummaryLine(
+      int inProgress, int submitted, int flagged, String avg) {
+    return '$inProgress đang làm · $submitted đã nộp · $flagged cảnh báo · TB $avg%';
+  }
+
+  @override
+  String get teacherLiveMonitorFilterAll => 'Tất cả';
+
+  @override
+  String get teacherLiveMonitorFilterInProgress => 'Đang làm';
+
+  @override
+  String get teacherLiveMonitorFilterSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherLiveMonitorFilterFlagged => 'Cảnh báo';
+
+  @override
+  String get teacherLiveMonitorNoStudents =>
+      'Không có học sinh phù hợp bộ lọc.';
+
+  @override
+  String teacherLiveMonitorProgressLabel(
+      int answered, int total, double percent) {
+    return '$answered/$total · $percent%';
+  }
+
+  @override
+  String get teacherLiveMonitorIntegrityHigh => 'Rủi ro gian lận cao';
+
+  @override
+  String get teacherLiveMonitorIntegrityMedium => 'Rủi ro gian lận trung bình';
+
+  @override
+  String get teacherLiveMonitorCurrentQuestion => 'Đang làm';
+
+  @override
+  String get teacherLiveMonitorStatusSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherLiveMonitorIntegrityLabel => 'Giám sát';
+
+  @override
+  String get teacherLiveMonitorTabSwitches => 'Chuyển tab';
+
+  @override
+  String get teacherLiveMonitorFocusLoss => 'Mất tiêu điểm';
+
+  @override
+  String get teacherLiveMonitorCopyPaste => 'Copy/paste';
+
+  @override
+  String get teacherLiveMonitorDetailProgress => 'Tiến độ';
+
+  @override
+  String get teacherLiveMonitorDetailSections => 'Kỹ năng';
+
+  @override
+  String get teacherLiveMonitorDetailGrammar => 'Đáp án ngữ pháp';
+
+  @override
+  String get teacherLiveMonitorGrammarQuestion => 'Câu';
+
+  @override
+  String get teacherLiveMonitorGrammarNotAnswered => 'Chưa trả lời';
+
+  @override
+  String get teacherLiveMonitorGrammarCorrect => 'Đúng';
+
+  @override
+  String get teacherLiveMonitorGrammarWrong => 'Sai';
+
+  @override
+  String get teacherLiveMonitorWatchScreen => 'Xem màn hình trực tiếp';
+
+  @override
+  String get teacherLiveMonitorQuestionStripLegend =>
+      'Xanh: đúng · Đỏ: sai · Xám: chưa làm';
+
+  @override
+  String teacherLiveMirrorPageTitle(String name, String exam) {
+    return '$name — $exam';
+  }
+
+  @override
+  String teacherLiveMirrorPageTitleSimple(String name) {
+    return 'Giám sát — $name';
+  }
+
+  @override
+  String get teacherLiveMirrorLiveBadge =>
+      'Trực tiếp — đang theo dõi màn hình học sinh';
+
+  @override
+  String get teacherLiveMirrorNoContent => 'Không có nội dung bài thi.';
+
+  @override
+  String get teacherLiveMirrorWritingDraft => 'Bài viết nháp (trực tiếp)';
+
+  @override
+  String get teacherLiveMirrorWritingEmpty => 'Học sinh chưa bắt đầu viết.';
+
+  @override
+  String teacherLiveMirrorWordCount(int count) {
+    return '$count từ';
+  }
+
+  @override
+  String get teacherLiveMirrorSkillCompleted => 'Đã hoàn thành phần kỹ năng';
+
+  @override
+  String teacherLiveMirrorSkillInProgress(String skill) {
+    return 'Đang làm $skill…';
+  }
+
+  @override
+  String teacherLiveMirrorBrowsingPart(String part) {
+    return 'Đang xem: $part';
+  }
+
+  @override
+  String get teacherLiveMirrorFollowStudent => 'Theo học sinh';
+
+  @override
+  String get teacherLiveMirrorWritingPrompt => 'Đề bài';
+
+  @override
+  String get teacherLiveMirrorListeningEmpty =>
+      'Học sinh chưa nhập dictation nào.';
+
+  @override
+  String teacherLiveMirrorListeningProgress(int saved, int total) {
+    return 'Tiến độ dictation: $saved / $total câu';
+  }
+
+  @override
+  String teacherLiveMirrorListeningCue(int number) {
+    return 'Câu $number';
+  }
+
+  @override
+  String get teacherLiveMirrorSpeakingInProgress =>
+      'Học sinh đang làm bài speaking.';
+
+  @override
+  String get teacherLiveMirrorReadingEmpty =>
+      'Học sinh chưa trả lời câu reading nào.';
+
+  @override
+  String teacherLiveMirrorReadingQuestion(int number) {
+    return 'Câu $number';
+  }
+
+  @override
+  String get examSessionStatusLobby => 'Phòng chờ';
+
+  @override
+  String get examSessionStatusLive => 'Đang làm bài';
+
+  @override
+  String get examSessionStatusClosed => 'Đã kết thúc';
+
+  @override
+  String get examSessionStatusCanceled => 'Đã hủy';
+
+  @override
+  String examSessionCreatedAt(String date) {
+    return 'Tạo phiên lúc $date';
+  }
+
+  @override
+  String examSessionScheduledEndAt(String date) {
+    return 'Kết thúc dự kiến: $date';
+  }
+
+  @override
+  String examSessionTimeLimitOnStart(int minutes) {
+    return 'Giới hạn: $minutes phút (bắt đầu đếm khi bạn mở phiên)';
+  }
+
+  @override
+  String get examSessionEndsWhenTeacherEnds =>
+      'Không giới hạn thời gian — kết thúc khi giáo viên dừng phiên';
+
+  @override
+  String examSessionReadyCount(int ready, int total) {
+    return '$ready sẵn sàng · $total trong phòng';
+  }
+
+  @override
+  String get examSessionStudentReady => 'Sẵn sàng';
+
+  @override
+  String get examSessionStudentNotReady => 'Chưa sẵn sàng';
+
+  @override
+  String get examSessionMarkReady => 'Tôi đã sẵn sàng';
+
+  @override
+  String get examSessionMarkNotReady => 'Chưa sẵn sàng';
+
+  @override
+  String get examSessionCancelReady => 'Hủy sẵn sàng';
+
+  @override
+  String get examSessionReadyHint =>
+      'Báo giáo viên bạn đã sẵn sàng. Cập nhật theo thời gian thực.';
+
+  @override
+  String get examSessionKickStudentTitle => 'Đưa học sinh ra khỏi phòng?';
+
+  @override
+  String examSessionKickStudentConfirm(String name) {
+    return 'Đưa $name ra khỏi phòng thi? Học sinh sẽ thoát phòng chờ ngay.';
+  }
+
+  @override
+  String get examSessionKickStudentAction => 'Đưa ra';
+
+  @override
+  String get examSessionKickStudentDone => 'Đã đưa học sinh ra khỏi phòng.';
+
+  @override
+  String get examSessionKickedByTeacher =>
+      'Giáo viên đã đưa bạn ra khỏi phiên thi này.';
+
+  @override
+  String get examSessionLobbyParticipantsTitle => 'Người tham gia';
+
+  @override
+  String get examSessionLobbyParticipantsHint =>
+      'Ai đã vào phòng chờ (cập nhật trực tiếp).';
+
+  @override
+  String get teacherExamCreateSession => 'Tạo / làm mới phòng chờ';
+
+  @override
+  String get teacherExamStartSession => 'Bắt đầu cho mọi người';
+
+  @override
+  String get teacherExamEndSession => 'Kết thúc và nộp tất cả';
+
+  @override
+  String get teacherExamGradingTitle => 'Chấm điểm';
+
+  @override
+  String get teacherExamRunAi => 'Gợi ý AI';
+
+  @override
+  String get teacherExamReleaseResults => 'Công bố điểm';
+
+  @override
+  String get teacherExamGradingConsole => 'Phòng thi';
+
+  @override
+  String get teacherExamGradingGrade => 'Chấm';
+
+  @override
+  String get teacherMyExamsTitle => 'Đề thi của tôi';
+
+  @override
+  String get teacherExamNewExam => 'Đề mới';
+
+  @override
+  String get teacherExamsListEmpty => 'Chưa có đề nào. Nhấn + để tạo bản nháp.';
+
+  @override
+  String get teacherExamUntitled => 'Đề chưa đặt tên';
+
+  @override
+  String get teacherExamStatusDraft => 'Nháp';
+
+  @override
+  String get teacherExamStatusPublished => 'Đã xuất bản';
+
+  @override
+  String get teacherExamStatusArchived => 'Đã lưu trữ';
+
+  @override
+  String get teacherExamEditorTitle => 'Soạn đề';
+
+  @override
+  String get teacherExamSaveDraft => 'Lưu nháp';
+
+  @override
+  String get teacherExamPublish => 'Xuất bản';
+
+  @override
+  String get teacherExamAddMcq => 'Trắc nghiệm';
+
+  @override
+  String get teacherExamAddEssay => 'Tự luận';
+
+  @override
+  String get teacherExamStemLabel => 'Câu hỏi';
+
+  @override
+  String get teacherExamOptionsHint => 'Phương án';
+
+  @override
+  String get teacherExamOptionsPipeHint => 'Ngăn cách phương án bằng dấu |';
+
+  @override
+  String get teacherExamCorrectIndex => 'Chỉ số đáp án đúng (bắt đầu từ 0)';
+
+  @override
+  String get teacherExamEssayPrompt => 'Đề bài tự luận';
+
+  @override
+  String get teacherExamPoints => 'Điểm';
+
+  @override
+  String get teacherExamItemsTitle => 'Câu hỏi';
+
+  @override
+  String get teacherExamNoItemsHint =>
+      'Thêm ít nhất một câu trước khi xuất bản.';
+
+  @override
+  String get teacherExamPublishNeedItems =>
+      'Thêm ít nhất một câu trước khi xuất bản.';
+
+  @override
+  String get teacherExamDraftSaved => 'Đã lưu nháp';
+
+  @override
+  String get teacherExamPublished => 'Đã xuất bản đề';
+
+  @override
+  String get teacherExamOnlyDraftEditable =>
+      'Chỉ đề ở trạng thái nháp mới chỉnh sửa được.';
+
+  @override
+  String get teacherExamReadOnlyPublished =>
+      'Đề đã xuất bản. Tạo đề nháp mới để đổi nội dung.';
+
+  @override
+  String get teacherExamTitleLabel => 'Tiêu đề';
+
+  @override
+  String get teacherExamTitleHint => 'vd. Kiểm tra giữa kỳ — Đọc & Nghe';
+
+  @override
+  String get teacherExamDescriptionLabel => 'Mô tả';
+
+  @override
+  String get teacherExamResultsPolicy => 'Khi nào học viên xem điểm';
+
+  @override
+  String get teacherExamPolicyAfterSubmit =>
+      'Ngay sau khi nộp (nếu chấm tự động)';
+
+  @override
+  String get teacherExamPolicyAfterRelease => 'Sau khi giáo viên công bố điểm';
+
+  @override
+  String get teacherExamPolicyNever => 'Không hiển thị';
+
+  @override
+  String get teacherAssignmentWizardTitle => 'Giao bài kiểm tra';
+
+  @override
+  String get teacherAssignExamDialogSubtitle =>
+      'Chọn lớp, hình thức và thời gian giao bài.';
+
+  @override
+  String teacherAssignExamDialogSubtitleExam(String examTitle) {
+    return 'Giao đề «$examTitle» cho lớp hoặc link.';
+  }
+
+  @override
+  String get teacherAssignExamModeHintSelfPaced =>
+      'Học sinh tự bắt đầu trước hạn nộp.';
+
+  @override
+  String get teacherAssignExamModeHintScheduled =>
+      'Mở và đóng theo ngày giờ (hiện trên Lịch Schedule).';
+
+  @override
+  String get teacherAssignExamModeHintRealtime =>
+      'Bạn mở phòng trên dashboard — không phải chấm «Đang diễn ra» trên lịch.';
+
+  @override
+  String get teacherAssignExamModeHintPractice =>
+      'Luyện tập — không tính điểm chính thức.';
+
+  @override
+  String get teacherAssignExamRealtimeNote =>
+      'Sau khi giao, mở Phòng trực tiếp trên tổng quan để bắt đầu phiên.';
+
+  @override
+  String get teacherAssignExamCalendarNote =>
+      'Lịch Schedule hiển thị Mở / Hạn nộp / Đóng. «Đang diễn ra» trên lịch = đang trong khung giờ, không phải thi trực tiếp.';
+
+  @override
+  String get teacherAssignExamAdvancedRules => 'Lượt làm & kết quả';
+
+  @override
+  String get teacherAssignExamAdvancedRulesHint =>
+      'Số lần làm, lúc xem điểm, nộp từng phần';
+
+  @override
+  String get teacherAssignExamRulesShow => 'Tùy chỉnh';
+
+  @override
+  String get teacherAssignExamRulesHide => 'Thu gọn';
+
+  @override
+  String get teacherAssignmentClassroom => 'Lớp học';
+
+  @override
+  String get teacherAssignmentPickClass => 'Hãy chọn lớp.';
+
+  @override
+  String get teacherAssignmentMode => 'Hình thức';
+
+  @override
+  String get teacherAssignmentDueDate => 'Hạn nộp (tuỳ chọn)';
+
+  @override
+  String get teacherAssignmentOpensAt => 'Mở lúc';
+
+  @override
+  String get teacherAssignmentClosesAt => 'Đóng lúc';
+
+  @override
+  String get teacherAssignmentTimeLimitSec =>
+      'Giới hạn thời gian (giây, tuỳ chọn)';
+
+  @override
+  String get teacherAssignmentTimeLimitMinutes => 'Thời gian làm bài (phút)';
+
+  @override
+  String get teacherAssignmentTimeLimitMinutesHint => 'vd: 60';
+
+  @override
+  String get teacherAssignmentTimeLimitHelp =>
+      'Đồng hồ bắt đầu khi học sinh vào làm (hoặc khi bạn bắt đầu phòng live). Để trống nếu không giới hạn từng lượt — chỉ áp dụng hạn nộp / khung giờ thi.';
+
+  @override
+  String teacherAssignmentTimeLimitPresetMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
+  String get teacherAssignmentCreate => 'Tạo bài giao';
+
+  @override
+  String get teacherAssignmentExamNotPublished =>
+      'Hãy xuất bản đề trước, rồi mới giao.';
+
+  @override
+  String get teacherAssignmentOptional => 'Tuỳ chọn';
+
+  @override
+  String get teacherAssignmentAllowPartialSubmit =>
+      'Cho phép nộp khi chưa làm hết';
+
+  @override
+  String get teacherAssignmentAllowPartialSubmitHint =>
+      'Học sinh có thể nộp dù còn phần chưa làm; phần chưa làm được 0 điểm.';
+
+  @override
+  String get teacherAssignmentSectionAudience => 'Đối tượng';
+
+  @override
+  String get teacherAssignmentSectionDelivery => 'Hình thức & thời gian';
+
+  @override
+  String get teacherAssignmentSectionRules => 'Lượt làm & kết quả';
+
+  @override
+  String get teacherAssignmentAttemptPolicy => 'Số lần làm bài';
+
+  @override
+  String get teacherAssignmentAttemptSingle => 'Một lần';
+
+  @override
+  String get teacherAssignmentAttemptUnlimited => 'Không giới hạn';
+
+  @override
+  String get teacherAssignmentAttemptLimited => 'Giới hạn';
+
+  @override
+  String get teacherAssignmentMaxAttempts => 'Số lần tối đa';
+
+  @override
+  String get teacherAssignmentShowResults => 'Xem kết quả';
+
+  @override
+  String get examPartialSubmitTitle => 'Nộp bài chưa hoàn thành?';
+
+  @override
+  String get examPartialSubmitMessage =>
+      'Bạn chưa hoàn thành mọi phần. Phần chưa làm sẽ không được tính điểm.';
+
+  @override
+  String get examPartialSubmitIncompleteHeader => 'Còn thiếu:';
+
+  @override
+  String get examPartialSubmitConfirm => 'Vẫn nộp bài';
+
+  @override
+  String get teacherGradingHubFilterAll => 'Tất cả';
+
+  @override
+  String get teacherGradingHubFilterInProgress => 'Đang làm';
+
+  @override
+  String get teacherGradingHubFilterSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherGradingHubFilterPendingManual => 'Cần chấm';
+
+  @override
+  String get teacherGradingHubFilterFinalized => 'Đã chấm';
+
+  @override
+  String get teacherGradingHubFilterReleased => 'Đã công bố';
+
+  @override
+  String get teacherGradingHubFilterPartial => 'Nộp thiếu';
+
+  @override
+  String get teacherGradingHubPartialBadge => 'Nộp thiếu';
+
+  @override
+  String get teacherGradingHubForceEndBadge => 'Kết thúc phiên';
+
+  @override
+  String get teacherGradingHubBatchAi => 'Chấm AI tất cả bài đã nộp';
+
+  @override
+  String get teacherGradingHubBatchAiDone =>
+      'Đã chạy chấm AI cho các bài đã nộp';
+
+  @override
+  String get teacherGradingHubNotReleased => 'Chưa công bố';
+
+  @override
+  String teacherGradingHubScoreLine(String awarded, String max) {
+    return 'Điểm: $awarded / $max';
+  }
+
+  @override
+  String teacherGradingHubSubmittedAt(String date) {
+    return 'Nộp lúc $date';
+  }
+
+  @override
+  String teacherGradingHubStatsLine(
+      int submitted, int inProgress, int partial) {
+    return '$submitted đã nộp · $inProgress đang làm · $partial nộp thiếu';
+  }
+
+  @override
+  String get teacherGradingHubEmpty => 'Chưa có bài làm cho bài giao này.';
+
+  @override
+  String get teacherGradingHubOpenGrade => 'Chấm bài';
+
+  @override
+  String get teacherGradingHubBatchRelease => 'Công bố tất cả';
+
+  @override
+  String get teacherGradingHubBatchReleaseDone => 'Đã công bố kết quả';
+
+  @override
+  String get teacherGradingHubBatchFinalize => 'Hoàn tất tất cả';
+
+  @override
+  String get teacherGradingHubBatchFinalizeDone => 'Đã hoàn tất bài nộp';
+
+  @override
+  String get teacherExamDuplicate => 'Nhân bản';
+
+  @override
+  String get teacherExamDuplicated => 'Đã nhân bản đề thi (bản nháp)';
+
+  @override
+  String get teacherAssignmentDuplicate => 'Nhân bản giao bài';
+
+  @override
+  String get teacherAssignmentDuplicated => 'Đã nhân bản giao bài';
+
+  @override
+  String get teacherAssignmentExtendDeadline => 'Gia hạn hạn nộp';
+
+  @override
+  String get teacherAssignmentDeadlineSaved => 'Đã cập nhật hạn';
+
+  @override
+  String get teacherMemberApprove => 'Duyệt';
+
+  @override
+  String get teacherMemberReject => 'Từ chối';
+
+  @override
+  String get teacherMemberApproved => 'Đã duyệt học sinh';
+
+  @override
+  String get teacherMemberRejected => 'Đã từ chối yêu cầu';
+
+  @override
+  String get teacherGradebookTitle => 'Sổ điểm';
+
+  @override
+  String get teacherGradebookStudent => 'Học sinh';
+
+  @override
+  String get teacherGradebookExport => 'Xuất CSV';
+
+  @override
+  String get teacherGradebookExportCopied =>
+      'Đã sao chép sổ điểm (dán vào Excel)';
+
+  @override
+  String get teacherGradebookNoAssignments => 'Lớp chưa có bài giao nào.';
+
+  @override
+  String get teacherGradebookKpiStudents => 'Học sinh';
+
+  @override
+  String get teacherGradebookKpiAssignments => 'Bài giao';
+
+  @override
+  String get teacherGradebookKpiClassAvg => 'Điểm TB lớp';
+
+  @override
+  String get teacherGradebookKpiPending => 'Ô cần chấm';
+
+  @override
+  String get teacherGradebookSearchHint => 'Tìm tên hoặc email học sinh';
+
+  @override
+  String get teacherGradebookFilterMode => 'Hình thức bài';
+
+  @override
+  String get teacherGradebookFilterAllModes => 'Tất cả hình thức';
+
+  @override
+  String get teacherGradebookSortLabel => 'Sắp xếp';
+
+  @override
+  String get teacherGradebookSortName => 'Tên A→Z';
+
+  @override
+  String get teacherGradebookSortAvg => 'Điểm TB';
+
+  @override
+  String get teacherGradebookHideEmpty => 'Ẩn HS chưa nộp bài';
+
+  @override
+  String teacherGradebookShowingCount(int count) {
+    return 'Hiển thị $count học sinh';
+  }
+
+  @override
+  String get teacherGradebookNoStudentsMatch =>
+      'Không có học sinh khớp bộ lọc.';
+
+  @override
+  String get teacherGradebookNoColumnsForFilter =>
+      'Không có bài giao theo hình thức đã chọn.';
+
+  @override
+  String get teacherGradebookColAvg => 'TB';
+
+  @override
+  String get teacherGradebookClassAverage => 'Trung bình lớp';
+
+  @override
+  String get teacherGradebookCellNotStarted => 'Chưa làm';
+
+  @override
+  String get teacherGradebookCellPendingGrading => 'Chờ chấm';
+
+  @override
+  String get teacherGradebookTapHint =>
+      'Chạm điểm để mở chấm bài; chạm ô trống để mở hub bài giao.';
+
+  @override
+  String get teacherNavCalendar => 'Lịch';
+
+  @override
+  String get teacherCalendarEmpty =>
+      'Không có sự kiện nào trong khoảng thời gian này.';
+
+  @override
+  String get teacherCalendarKindDue => 'Hạn nộp';
+
+  @override
+  String get teacherCalendarKindOpens => 'Mở';
+
+  @override
+  String get teacherCalendarKindCloses => 'Đóng';
+
+  @override
+  String get teacherCalendarKindLive => 'Đang diễn ra';
+
+  @override
+  String get teacherCalendarViewMonth => 'Tháng';
+
+  @override
+  String get teacherCalendarViewList => 'Danh sách';
+
+  @override
+  String get teacherCalendarToday => 'Hôm nay';
+
+  @override
+  String get teacherCalendarNoDayEvents => 'Không có sự kiện ngày này.';
+
+  @override
+  String get teacherCalendarGoToAssignment => 'Xem bài giao';
+
+  @override
+  String get teacherDashboardActionItems => 'Cần xử lý';
+
+  @override
+  String get teacherDashboardPendingJoins => 'Chờ duyệt vào lớp';
+
+  @override
+  String get teacherDashboardDueSoon => 'Sắp đến hạn';
+
+  @override
+  String teacherDashboardNeedsGrading(int count) {
+    return '$count bài cần chấm';
+  }
+
+  @override
+  String get teacherAssignmentPresetLabel => 'Mẫu cấu hình';
+
+  @override
+  String get teacherAssignmentPresetSave => 'Lưu mẫu';
+
+  @override
+  String get teacherAssignmentPresetSaved => 'Đã lưu mẫu';
+
+  @override
+  String get teacherAssignmentPresetNone => 'Chưa có mẫu';
+
+  @override
+  String get examModePractice => 'Luyện tập (không tính điểm)';
+
+  @override
+  String get teacherAnalyticsTitle => 'Phân tích';
+
+  @override
+  String get teacherAnalyticsSubmissionsChart => 'Bài nộp theo ngày';
+
+  @override
+  String get teacherAnalyticsScoreChart => 'Phân bố điểm';
+
+  @override
+  String get teacherAnalyticsIntegrityChart => 'Cảnh báo gian lận';
+
+  @override
+  String get teacherAnalyticsIntegrityHigh => 'Rủi ro cao';
+
+  @override
+  String get teacherAnalyticsIntegrityMedium => 'Trung bình';
+
+  @override
+  String get teacherAnalyticsIntegrityLow => 'Thấp';
+
+  @override
+  String get teacherAnalyticsNoData => 'Chưa đủ dữ liệu';
+
+  @override
+  String get teacherAnalyticsPeriod7d => '7 ngày';
+
+  @override
+  String get teacherAnalyticsPeriod14d => '14 ngày';
+
+  @override
+  String get teacherAnalyticsPeriod30d => '30 ngày';
+
+  @override
+  String get teacherAnalyticsActiveStudents => 'Học sinh đang học';
+
+  @override
+  String get teacherAnalyticsActiveAssignments => 'Bài đang giao';
+
+  @override
+  String get teacherAnalyticsSubmissions => 'Bài đã nộp';
+
+  @override
+  String get teacherAnalyticsPendingGrading => 'Chờ chấm';
+
+  @override
+  String get teacherAnalyticsAvgScore => 'Điểm TB';
+
+  @override
+  String get teacherAnalyticsSkillBreakdown => 'Điểm TB từng kỹ năng';
+
+  @override
+  String get teacherAnalyticsSkillListening => 'Nghe';
+
+  @override
+  String get teacherAnalyticsSkillReading => 'Đọc';
+
+  @override
+  String get teacherAnalyticsSkillWriting => 'Viết';
+
+  @override
+  String get teacherAnalyticsSkillSpeaking => 'Nói';
+
+  @override
+  String get teacherAnalyticsSkillGrammar => 'Ngữ pháp';
+
+  @override
+  String teacherAnalyticsWeakSkillHint(String skill, String score) {
+    return 'Kỹ năng $skill TB $score/10 — nên bổ sung bài luyện tập.';
+  }
+
+  @override
+  String get teacherAnalyticsModeBreakdown => 'Loại bài giao';
+
+  @override
+  String get teacherAnalyticsModeHomework => 'Bài tập về nhà';
+
+  @override
+  String get teacherAnalyticsModeLive => 'Kiểm tra trực tiếp';
+
+  @override
+  String get teacherAnalyticsModeSelfPaced => 'Tự luyện';
+
+  @override
+  String get teacherNavAnalytics => 'Phân tích';
+
+  @override
+  String get teacherClassTabActivity => 'Hoạt động';
+
+  @override
+  String get teacherClassActivityEmpty => 'Chưa có hoạt động nào.';
+
+  @override
+  String get teacherCoTeacherAdd => 'Thêm giáo viên phụ';
+
+  @override
+  String get teacherCoTeacherEmailHint => 'Email giáo viên';
+
+  @override
+  String get teacherCoTeacherAdded => 'Đã thêm giáo viên phụ';
+
+  @override
+  String get teacherCoTeacherRemoved => 'Đã gỡ giáo viên phụ';
+
+  @override
+  String get teacherIntegrationsTitle => 'Tích hợp';
+
+  @override
+  String get teacherGoogleClassroomLink => 'Liên kết Google Classroom';
+
+  @override
+  String get teacherGoogleClassroomUnlink => 'Hủy liên kết Google Classroom';
+
+  @override
+  String get teacherGoogleClassroomCourseId => 'Mã khóa Google';
+
+  @override
+  String get teacherRubricTitle => 'Chấm theo rubric';
+
+  @override
+  String get teacherRubricCriterion => 'Tiêu chí';
+
+  @override
+  String get teacherAdaptiveEnabled => 'Độ khó thích ứng';
+
+  @override
+  String get teacherGradingLiveProgress => 'Tiến độ trực tiếp';
+
+  @override
+  String get teacherClassViewStudentAttempts => 'Bài làm học sinh';
+
+  @override
+  String get teacherClassTapToViewAttempts => 'Chạm để xem danh sách bài nộp';
+
+  @override
+  String get teacherClassOpenAttemptsList => 'Xem bài làm';
+
+  @override
+  String get teacherGradingStudentAttemptsTitle => 'Danh sách bài làm';
+
+  @override
+  String get teacherGradingStatusInProgress => 'Đang làm';
+
+  @override
+  String get teacherGradingStatusSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherGradingStatePendingAuto => 'Chấm tự động';
+
+  @override
+  String get teacherGradingStatePendingAi => 'Chờ AI';
+
+  @override
+  String get teacherGradingStatePendingManual => 'Cần chấm tay';
+
+  @override
+  String get teacherGradingStateFinalized => 'Đã chấm';
+
+  @override
+  String teacherGradingStartedAt(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String get teacherGradingFinalize => 'Hoàn tất chấm';
+
+  @override
+  String get teacherGradingFinalized => 'Đã hoàn tất chấm';
+
+  @override
+  String get teacherGradingCompletenessComplete => 'Nộp đủ';
+
+  @override
+  String get teacherGradingCompletenessPartial => 'Nộp thiếu';
+
+  @override
+  String get teacherGradingCompletenessForceEnd => 'Giáo viên kết thúc phiên';
+
+  @override
+  String get teacherGradingAiRationale => 'Nhận xét AI';
+
+  @override
+  String get teacherGradingIntegratedScores => 'Điểm từng phần';
+
+  @override
+  String get teacherGradingDetailTitle => 'Chấm bài làm';
+
+  @override
+  String get teacherGradingSaveScores => 'Lưu điểm';
+
+  @override
+  String get teacherGradingSaved => 'Đã lưu điểm';
+
+  @override
+  String get teacherGradingNotesHint => 'Nhận xét';
+
+  @override
+  String get teacherGradingAwardedPoints => 'Điểm cho';
+
+  @override
+  String get teacherGradingOnlySubmitted =>
+      'Chỉnh điểm sau khi học viên đã nộp bài.';
+
+  @override
+  String get teacherAttemptGradeHeaderSubtitle =>
+      'Xem bài làm, chỉnh điểm và công bố kết quả khi sẵn sàng.';
+
+  @override
+  String get teacherAttemptGradeExamLabel => 'Đề';
+
+  @override
+  String teacherAttemptGradeStartedLine(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
+  String teacherAttemptGradeSubmittedLine(String date) {
+    return 'Nộp lúc $date';
+  }
+
+  @override
+  String get teacherAttemptGradeReleasedYes => 'Đã công bố cho học sinh';
+
+  @override
+  String get teacherAttemptGradeReleasedNo => 'Chưa công bố';
+
+  @override
+  String get teacherAttemptGradeTotalScore => 'Điểm theo kỹ năng';
+
+  @override
+  String integratedSkillScoreLabel(String score) {
+    return '$score / 10';
+  }
+
+  @override
+  String get integratedSkillScorePending => 'Chờ chấm';
+
+  @override
+  String get integratedSkillFinalAvg => 'Điểm TB';
+
+  @override
+  String get integratedSkillFinalPartial => 'TB tạm tính';
+
+  @override
+  String get integratedSkillGrammar => 'Ngữ pháp';
+
+  @override
+  String get integratedSkillListening => 'Nghe';
+
+  @override
+  String get integratedSkillReading => 'Đọc';
+
+  @override
+  String get integratedSkillWriting => 'Viết';
+
+  @override
+  String get integratedSkillSpeaking => 'Nói';
+
+  @override
+  String get integratedSkillEnterScore => 'Nhập điểm (0–10)';
+
+  @override
+  String get integratedSkillScoreSaved => 'Đã lưu điểm';
+
+  @override
+  String get integratedSkillSaveScore => 'Lưu điểm';
+
+  @override
+  String get integratedScoresAwaiting =>
+      'Điểm đang được tính. Nếu lâu quá, hãy tải lại trang.';
+
+  @override
+  String get integratedGradingAvgFormulaHint =>
+      'Điểm cuối = trung bình cộng các kỹ năng đã chấm (mỗi kỹ năng 0–10). Kỹ năng chờ chấm chưa tính vào TB.';
+
+  @override
+  String get integratedGradingColumnSkill => 'Kỹ năng';
+
+  @override
+  String get integratedGradingColumnScore => 'Điểm';
+
+  @override
+  String get integratedWritingGradingEssayLabel => 'Bài viết học sinh';
+
+  @override
+  String integratedWritingGradingWordCount(String count) {
+    return '$count từ';
+  }
+
+  @override
+  String get integratedWritingGradingNoDraft =>
+      'Chưa có nội dung bài viết trong lượt làm này.';
+
+  @override
+  String get integratedWritingGradingRunAi => 'Chấm bằng AI';
+
+  @override
+  String get integratedWritingGradingApplyAi => 'Dùng điểm AI';
+
+  @override
+  String get integratedWritingGradingManual => 'Chấm tay';
+
+  @override
+  String integratedWritingGradingAiBand(String band) {
+    return 'Band AI: $band / 9';
+  }
+
+  @override
+  String integratedWritingGradingAiExamScore(String score) {
+    return 'Điểm đề xuất: $score / 10';
+  }
+
+  @override
+  String integratedGrammarItemResult(String awarded, String max) {
+    return '$awarded / $max đúng';
+  }
+
+  @override
+  String get teacherAttemptGradeSectionBreakdown => 'Câu hỏi & chấm điểm';
+
+  @override
+  String teacherAttemptGradeItemKind(String kind) {
+    return 'Dạng: $kind';
+  }
+
+  @override
+  String teacherAttemptGradeMaxPts(int n) {
+    return 'Tối đa $n điểm';
+  }
+
+  @override
+  String get teacherAttemptGradeStudentFallback => 'Học sinh';
+
+  @override
+  String teacherAttemptGradePointsShort(Object awarded, Object max) {
+    return '$awarded / $max điểm';
+  }
+
+  @override
+  String get teacherAttemptGradeAnswerLabel => 'Bài làm';
+
+  @override
+  String get teacherAttemptGradeWorkAndScores => 'Xem bài làm & chấm điểm';
+
+  @override
+  String get teacherAttemptGradeCorrectAnswer => 'Đáp án đúng';
+
+  @override
+  String get teacherAttemptGradeSkillLinkedWork => 'Bài tập gắn với kỹ năng';
+
+  @override
+  String get teacherAttemptGradeSkillCmsHint =>
+      'Học sinh làm bài trong màn kỹ năng và đánh dấu hoàn thành ở đây. Chi tiết bài làm nằm trong lịch sử bài tập kỹ năng, không gửi kèm payload bài thi.';
+
+  @override
+  String teacherAttemptGradeQuestionN(int n) {
+    return 'Câu $n';
+  }
+
+  @override
+  String get teacherAttemptGradeMarkedComplete => 'Đã đánh dấu hoàn thành';
+
+  @override
+  String get teacherAttemptGradeNotMarkedComplete => 'Chưa đánh dấu hoàn thành';
+
+  @override
+  String get teacherAttemptGradeInstructions => 'Hướng dẫn';
+
+  @override
+  String get teacherAttemptGradeChoicesLabel => 'Các đáp án';
+
+  @override
+  String get teacherAttemptGradeNoSkillWork =>
+      'Không có bài làm trong thời gian làm bài thi này.';
+
+  @override
+  String get teacherAttemptGradeOnlyMarkedComplete =>
+      'Học sinh đã đánh dấu hoàn thành phần này, nhưng không tìm thấy bài làm đã lưu cho nội dung liên kết.';
+
+  @override
+  String get teacherAttemptGradeSkillWorkExamInline =>
+      'Bài làm được lưu trực tiếp trong lượt thi tích hợp (không qua bài luyện CMS riêng).';
+
+  @override
+  String get teacherAttemptGradeSkillWorkNearSession =>
+      'Hiển thị bài làm gần thời gian thi (có thể lệch vài phút so với khung giờ chính xác).';
+
+  @override
+  String get teacherAttemptGradeSkillWorkLatestLinked =>
+      'Hiển thị bài làm gần nhất của học sinh cho bài tập liên kết này.';
+
+  @override
+  String teacherAttemptGradeWordCount(int count) {
+    return '$count từ';
+  }
+
+  @override
+  String get teacherAttemptGradeViewSkillWork => 'Xem bài làm';
+
+  @override
+  String get teacherAttemptGradeHideSkillWork => 'Ẩn bài làm';
+
+  @override
+  String get teacherAttemptGradeListeningCue => 'Câu';
+
+  @override
+  String teacherAttemptGradeDictationScore(Object correct, Object total) {
+    return 'Đúng từ: $correct / $total';
+  }
+
+  @override
+  String teacherAttemptGradeSpeakingLine(String id) {
+    return 'Câu $id';
+  }
+
+  @override
+  String teacherAttemptGradeWritingScore(String score) {
+    return 'Điểm: $score';
+  }
+
+  @override
+  String get teacherAttemptGradeSkillOther => 'Phần';
+
+  @override
+  String get teacherExamTimeRemaining => 'Còn lại';
+
+  @override
+  String get teacherExamMcqNeedsStem =>
+      'Mỗi câu trắc nghiệm cần có nội dung câu hỏi.';
+
+  @override
+  String get teacherExamEssayNeedsPrompt => 'Mỗi bài tự luận cần có đề bài.';
+
+  @override
+  String get teacherExamIntegratedUntitled => 'Bộ luyện 4 kỹ năng';
+
+  @override
+  String get teacherExamIntegratedNew => 'Đề 4 kỹ năng';
+
+  @override
+  String get teacherExamIntegratedBadge => '4 kỹ năng';
+
+  @override
+  String get teacherExamIntegratedEditorTitle => 'Đề 4 kỹ năng';
+
+  @override
+  String get teacherExamIntegratedPartsTitle =>
+      'Các phần (Đọc → Nghe → Viết → Nói)';
+
+  @override
+  String get teacherExamIntegratedPartsHint =>
+      'Chọn một bài đã có cho mỗi kỹ năng. Học sinh mở từng bài trong app, làm xong rồi đánh dấu hoàn thành trước khi nộp.';
+
+  @override
+  String get teacherExamIntegratedTapToPick => 'Chạm để chọn bài';
+
+  @override
+  String get teacherExamIntegratedPickAll =>
+      'Hãy chọn đủ 4 bài trước khi xuất bản.';
+
+  @override
+  String get teacherExamIntegratedSkillListening => 'Nghe (chép chính tả)';
+
+  @override
+  String get teacherExamIntegratedSkillSpeaking => 'Nói (đọc to)';
+
+  @override
+  String get teacherExamIntegratedSkillReading => 'Đọc';
+
+  @override
+  String get teacherExamIntegratedSkillWriting => 'Viết';
+
+  @override
+  String get teacherExamIntegratedChooseExercise => 'Chọn bài tập';
+
+  @override
+  String get teacherExamIntegratedEmptyList => 'Không có mục nào.';
+
+  @override
+  String get teacherExamSkillsEditorTitle => 'Đề kiểm tra theo kỹ năng';
+
+  @override
+  String get teacherExamSkillsPartsTitle =>
+      'Kỹ năng (chọn phần nào có trong đề)';
+
+  @override
+  String get teacherExamSkillsPartsHint =>
+      'Tắt kỹ năng nếu đề không kiểm tra phần đó. Với mỗi kỹ năng bật, hãy thêm một hoặc nhiều bài từ thư viện.';
+
+  @override
+  String get teacherExamSkillsIncludeSubtitle => 'Đưa kỹ năng này vào đề';
+
+  @override
+  String get teacherExamGrammarTitle => 'Ngữ pháp';
+
+  @override
+  String get teacherExamGrammarHint =>
+      'Tuỳ chọn. Có thể thêm đục lỗ, điền từ, nối cặp, sắp xếp câu hoặc trắc nghiệm; đều chấm tự động. Nếu đề có cả kỹ năng, tổng điểm phần Ngữ pháp không được vượt quá 100.';
+
+  @override
+  String get teacherExamGrammarAdd => 'Thêm câu';
+
+  @override
+  String get teacherExamGrammarEdit => 'Câu ngữ pháp';
+
+  @override
+  String get teacherExamPublishNeedSelection =>
+      'Bật ít nhất một kỹ năng và chọn bài, hoặc thêm ít nhất một câu Ngữ pháp.';
+
+  @override
+  String get teacherExamPublishPickEachIncludedSkill =>
+      'Hãy thêm ít nhất một bài cho mọi kỹ năng đang bật.';
+
+  @override
+  String get teacherExamWritingPromptSectionTitle => 'Đề bài Writing';
+
+  @override
+  String get teacherExamWritingPromptEmptyHint =>
+      'Tất cả học sinh sẽ nhận cùng một đề bài. Chọn đề AI gợi ý hoặc tự soạn đề của bạn.';
+
+  @override
+  String get teacherExamWritingGenerateWithAI => 'Tạo đề bằng AI';
+
+  @override
+  String get teacherExamWritingWriteManually => 'Tự soạn đề';
+
+  @override
+  String get teacherExamWritingPromptNeedTopic =>
+      'Vui lòng chọn chủ đề Writing trước để AI tạo đề.';
+
+  @override
+  String get teacherExamWritingPickPromptTitle => 'Chọn đề bài Writing';
+
+  @override
+  String get teacherExamWritingPickPromptSubtitle =>
+      'Chọn một trong các đề AI gợi ý bên dưới. Tất cả học sinh sẽ nhận cùng đề này.';
+
+  @override
+  String get teacherExamWritingSelectThisPrompt => 'Chọn đề này';
+
+  @override
+  String get teacherExamWritingManualPromptTitle => 'Tự soạn đề bài';
+
+  @override
+  String get teacherExamWritingPromptTitleLabel => 'Tiêu đề đề bài';
+
+  @override
+  String get teacherExamWritingPromptTitleHint =>
+      'VD: Công nghệ trong Giáo dục';
+
+  @override
+  String get teacherExamWritingPromptTaskTypeLabel => 'Dạng bài';
+
+  @override
+  String get teacherExamWritingPromptTextLabel => 'Nội dung đề bài';
+
+  @override
+  String get teacherExamWritingPromptTextHint =>
+      'Viết toàn bộ câu hỏi thi ở đây. Bao gồm bối cảnh và hướng dẫn cụ thể cho học sinh...';
+
+  @override
+  String get teacherExamWritingPromptTextRequired =>
+      'Hãy nhập nội dung đề Writing trước khi lưu.';
+
+  @override
+  String get teacherExamWritingPromptRequired =>
+      'Vui lòng đặt đề bài Writing trước khi xuất bản.';
+
+  @override
+  String get teacherExamWritingPromptNotSet =>
+      'Chưa có đề bài. Học sinh sẽ không thể hoàn thành phần này.';
+
+  @override
+  String get teacherExamWritingCustomPrompt => 'Đề tự soạn';
+
+  @override
+  String get teacherExamGrammarPointsCap100 =>
+      'Tổng điểm Ngữ pháp không được quá 100 khi đề có phần kỹ năng.';
+
+  @override
+  String get teacherExamSkillsBadge => 'Đề kỹ năng';
+
+  @override
+  String get integratedExamGrammarSectionTitle => 'Ngữ pháp';
+
+  @override
+  String get integratedExamSubmitBlockedAll =>
+      'Hoàn thành mọi phần kỹ năng và mọi câu Ngữ pháp trước khi nộp.';
+
+  @override
+  String get teacherExamSkillsWebSubtitle =>
+      'Bố cục như đề giấy: Ngữ pháp trước, sau đó Đọc, Nghe, Viết, Nói. Mỗi kỹ năng bật có thể thêm một hoặc nhiều bài từ thư viện.';
+
+  @override
+  String get teacherExamSkillsBrowseContent => 'Duyệt thư viện';
+
+  @override
+  String get teacherExamSkillsNoGrammarYet =>
+      'Chưa có câu Ngữ pháp. Nhấn Thêm câu để mở trình soạn.';
+
+  @override
+  String get teacherExamSkillsAddExercise => 'Thêm bài tập';
+
+  @override
+  String get teacherExamSkillsCreateNew => 'Tạo bài tập mới';
+
+  @override
+  String get teacherExamSkillsExercisesSelected => 'bài tập đã chọn';
+
+  @override
+  String get teacherExamSkillsAllAdded => 'Tất cả bài tập có sẵn đã được thêm.';
+
+  @override
+  String get teacherExamCreateMenuLabel => 'Tạo đề';
+
+  @override
+  String get teacherExamIntegratedCreateClassicHint =>
+      'Trắc nghiệm & tự luận trong một trình soạn';
+
+  @override
+  String get teacherExamIntegratedCreateFourHint =>
+      'Bốn phần gắn với bài học có sẵn';
+
+  @override
+  String get integratedExamRunnerTitle => 'Bộ bài tập';
+
+  @override
+  String get integratedExamMetaClass => 'Lớp';
+
+  @override
+  String get integratedExamMetaSubject => 'Môn';
+
+  @override
+  String get integratedExamMetaTeacher => 'Giáo viên';
+
+  @override
+  String get integratedExamMetaStudent => 'Học sinh';
+
+  @override
+  String get integratedExamMetaDelivery => 'Hình thức';
+
+  @override
+  String get integratedExamMetaModeHomework => 'Bài tập về nhà';
+
+  @override
+  String get integratedExamMetaModeScheduled => 'Theo lịch / giờ thi';
+
+  @override
+  String get integratedExamMetaModeLive => 'Trực tiếp (phòng thi)';
+
+  @override
+  String get integratedExamMetaPublic => 'Liên kết công khai';
+
+  @override
+  String get integratedExamMetaTimeLimit => 'Giới hạn thời gian';
+
+  @override
+  String integratedExamMetaTimeLimitMinutes(int minutes) {
+    return '$minutes phút';
+  }
+
+  @override
+  String get integratedExamMetaNoTimeLimit => 'Không giới hạn thời gian làm';
+
+  @override
+  String get integratedExamMetaDeadline => 'Còn lại';
+
+  @override
+  String get integratedExamMetaDue => 'Hạn nộp';
+
+  @override
+  String get integratedExamMetaWindow => 'Đóng lúc';
+
+  @override
+  String get integratedExamMetaOpens => 'Mở lúc';
+
+  @override
+  String get integratedExamMetaStarted => 'Bắt đầu lúc';
+
+  @override
+  String get integratedExamSubjectDefault => 'Tiếng Anh';
+
+  @override
+  String get integratedExamNoClassName => '—';
+
+  @override
+  String get integratedExamGrammarNavHint =>
+      'Viền đậm = đang làm; xanh = đã trả lời.';
+
+  @override
+  String integratedExamGrammarQuestionLabel(int n, int total) {
+    return 'Câu $n / $total';
+  }
+
+  @override
+  String get integratedExamTimeUpShort => 'Hết giờ';
+
+  @override
+  String get integratedExamGrammarPrevious => 'Câu ngữ pháp trước';
+
+  @override
+  String get integratedExamGrammarNext => 'Câu ngữ pháp sau';
+
+  @override
+  String get integratedExamOpenExercise => 'Mở bài';
+
+  @override
+  String get integratedExamMarkDone => 'Đã xong phần này';
+
+  @override
+  String get integratedExamUndoPart => 'Huỷ đánh dấu';
+
+  @override
+  String get integratedExamSubmit => 'Nộp cả bộ';
+
+  @override
+  String get integratedExamSubmitShort => 'Nộp bài';
+
+  @override
+  String get integratedExamSubmitBlocked =>
+      'Hãy đánh dấu đủ 4 phần trước khi nộp.';
+
+  @override
+  String integratedExamProgress(int done, int total) {
+    return 'Đã sẵn sàng $done/$total phần';
+  }
+
+  @override
+  String integratedExamScoreSummary(Object earned) {
+    return 'Điểm TB: $earned / 10';
+  }
+
+  @override
+  String get integratedExamSkillsSectionTitle => 'Kỹ năng';
+
+  @override
+  String get integratedExamDetailsTitle => 'Thông tin bài kiểm tra';
+
+  @override
+  String get integratedExamSelectPartHint =>
+      'Chọn một phần bên dưới. Làm từng phần một cho dễ theo dõi.';
+
+  @override
+  String get integratedExamPartDone => 'Xong';
+
+  @override
+  String get integratedExamPartNotStarted => 'Chưa làm';
+
+  @override
+  String get integratedExamEmbeddedHint =>
+      'Làm bài tập ngay bên dưới. Chỉ dùng đồng hồ của bài kiểm tra.';
+
+  @override
+  String get integratedExamEmbeddedLocked =>
+      'Phần này đã khóa sau khi bạn nộp bài.';
+
+  @override
+  String get integratedExamEmbeddedNoResource =>
+      'Chưa gắn bài tập cho phần này.';
+
+  @override
+  String get integratedExamGrammarUnsupported =>
+      'Ứng dụng chưa hỗ trợ dạng câu này.';
+
+  @override
+  String get integratedExamMatchPick => 'Nối với';
+
+  @override
+  String get integratedExamReorderHint => 'Kéo các dòng để sắp đúng thứ tự.';
+
+  @override
+  String get teacherExamGrammarKindMcqSingle => 'Trắc nghiệm (một đáp án)';
+
+  @override
+  String get teacherExamGrammarKindMcqMulti => 'Trắc nghiệm (nhiều đáp án)';
+
+  @override
+  String get teacherExamGrammarKindCloze => 'Đục lỗ — điền trong đoạn văn';
+
+  @override
+  String get teacherExamGrammarKindGap => 'Điền từ — thiếu một chỗ trống';
+
+  @override
+  String get teacherExamGrammarKindMatching => 'Nối cặp';
+
+  @override
+  String get teacherExamGrammarKindReorder => 'Sắp xếp mảnh câu';
+
+  @override
+  String get teacherExamGrammarQuestionType => 'Dạng câu';
+
+  @override
+  String get teacherExamGrammarPassageLabel =>
+      'Đoạn văn (đánh dấu ô trống bằng hai dấu ngoặc nhọn và số, ví dụ 0 và 1)';
+
+  @override
+  String get teacherExamGrammarTextBefore => 'Phần trước chỗ trống';
+
+  @override
+  String get teacherExamGrammarTextAfter => 'Phần sau chỗ trống';
+
+  @override
+  String get teacherExamGrammarAcceptedAnswers =>
+      'Đáp án chấp nhận (cách nhau bởi dấu phẩy)';
+
+  @override
+  String get teacherExamGrammarBlankId => 'Mã ô trống';
+
+  @override
+  String get teacherExamGrammarLeftColumn => 'Cột trái';
+
+  @override
+  String get teacherExamGrammarRightColumn => 'Cột phải';
+
+  @override
+  String teacherExamGrammarPairCorrect(int row) {
+    return 'Đáp án đúng cho dòng $row';
+  }
+
+  @override
+  String get teacherExamGrammarFragments =>
+      'Các mảnh câu (mỗi dòng một mảnh, theo thứ tự đọc đúng)';
+
+  @override
+  String get teacherExamGrammarReorderInstruction =>
+      'Kéo các thẻ bên dưới để đặt thứ tự câu đúng mà học sinh cần xếp được.';
+
+  @override
+  String get teacherExamGrammarSaveItem => 'Lưu câu';
+
+  @override
+  String get teacherExamGrammarNewItem => 'Câu mới';
+
+  @override
+  String get teacherExamGrammarPanelTitle => 'Soạn câu ngữ pháp';
+
+  @override
+  String get teacherExamGrammarCloseEditor => 'Đóng';
+
+  @override
+  String get teacherExamGrammarImport => 'Nhập câu hỏi';
+
+  @override
+  String teacherExamGrammarImportSuccess(int count) {
+    return 'Đã nhập $count câu hỏi thành công.';
+  }
+
+  @override
+  String get teacherExamGrammarImportError =>
+      'Không thể đọc file. Vui lòng kiểm tra định dạng và thử lại.';
+
+  @override
+  String get teacherExamGrammarImportEmpty =>
+      'Không tìm thấy câu hỏi hợp lệ nào trong file.';
+
+  @override
+  String get teacherExamGrammarImportFormatTitle => 'Định dạng import (JSON)';
+
+  @override
+  String get teacherExamGrammarImportFormatHint =>
+      'Tạo file .json chứa mảng các đối tượng câu hỏi. Mỗi đối tượng phải có trường \"kind\". Các loại hỗ trợ:';
+
+  @override
+  String get teacherExamGrammarDownloadSample => 'Sao chép mẫu vào clipboard';
+
+  @override
+  String get teacherExamGrammarImportPickFile => 'Chọn file .json';
+
+  @override
+  String get teacherExamGrammarAddOption => 'Thêm phương án';
+
+  @override
+  String get teacherExamGrammarCorrectOptions => 'Phương án đúng';
+
+  @override
+  String get studentExamExpired => 'Hết giờ';
+
+  @override
+  String get teacherAssignmentEditTitle => 'Chỉnh sửa bài giao';
+
+  @override
+  String get teacherAssignmentEditSubtitle =>
+      'Điều chỉnh lịch, thời gian làm và quy tắc';
+
+  @override
+  String get teacherAssignmentEditSaved => 'Đã cập nhật bài giao';
+
+  @override
+  String get teacherAssignmentEditScheduleSection => 'Lịch nộp bài';
+
+  @override
+  String get teacherAssignmentEditRulesSection => 'Số lần nộp & kết quả';
+
+  @override
+  String get teacherAssignmentEditTooltip => 'Chỉnh sửa bài giao';
+
+  @override
+  String get teacherAssignmentModeFixed =>
+      'Chế độ đã được chốt và không thể thay đổi sau khi tạo.';
+
+  @override
+  String get teacherAssignmentRealtimeLobbyOpens => 'Mở phòng chờ lúc';
+
+  @override
+  String get teacherAssignmentRealtimeScheduledStart => 'Bắt đầu theo lịch';
+
+  @override
+  String get teacherAssignmentRealtimeHardEnd => 'Kết thúc cứng';
+
+  @override
+  String get teacherAssignmentEditPracticeNote =>
+      'Chế độ luyện tập không có lịch — học sinh có thể làm bài bất cứ lúc nào.';
 }

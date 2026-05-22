@@ -46,15 +46,21 @@ class LoadCuesAndAttempts extends CueEvent {
   final String listeningId;
   final String? initialCueId;
   final bool isRetake; // 🔥 THÊM BIẾN NÀY
+  /// In integrated exams: any saved answer counts as done (no pass/fail UI).
+  final bool examPracticeMode;
+  /// Exam-only answers from [ExamAttempt.answers] (never from practice DictationAttempt).
+  final Map<int, String>? initialCueTexts;
 
   const LoadCuesAndAttempts({
     required this.listeningId,
     this.initialCueId,
     this.isRetake = false, // Mặc định là false
+    this.examPracticeMode = false,
+    this.initialCueTexts,
   });
 
   @override
-  List<Object?> get props => [listeningId, initialCueId, isRetake];
+  List<Object?> get props => [listeningId, initialCueId, isRetake, examPracticeMode, initialCueTexts];
 }
 // 🔥 EVENT MỚI: Load danh sách comment của câu hiện tại
 class LoadCommentsEvent extends CueEvent {

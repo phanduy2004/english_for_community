@@ -46,8 +46,10 @@ class AppCard extends StatelessWidget {
         break;
       case AppCardVariant.outline:
         bg = scheme.surface;
-        border = Border.all(color: scheme.outlineVariant);
-        boxShadow = null;
+        border = Border.all(color: scheme.outlineVariant.withValues(alpha: 0.55), width: 0.5);
+        boxShadow = const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 12, offset: Offset(0, 4)),
+        ];
         break;
       case AppCardVariant.danger:
         bg = scheme.errorContainer;

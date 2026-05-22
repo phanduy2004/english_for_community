@@ -1,3 +1,6 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -565,16 +568,11 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
     final permissionRows = _permissionRows;
     final allPerms = _allPermissions;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9), // Màu nền tổng thể dịu hơn
-      appBar: AppBar(
-        title: const Text('Ops Center', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 0,
-        centerTitle: false,
-        shape: const Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-      ),
+    return AdminPageScaffold(
+      title: context.l10n.adminNavOps,
+      subtitle: 'Monitor moderation, roles, and export system data.',
+      scrollable: false,
+      maxWidth: AdminWebUi.contentMaxTable,
       body: RefreshIndicator(
         onRefresh: _loadAll,
         child: ListView(

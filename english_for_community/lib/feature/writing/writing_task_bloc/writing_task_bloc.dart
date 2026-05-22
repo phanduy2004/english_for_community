@@ -80,7 +80,9 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
       final startResultEither = await _writingRepo.startWriting(
         topicId: event.topic.id,
         userId: event.userId,
-        taskType: event.taskType, // Chỉ cần gửi taskType
+        taskType: event.taskType,
+        freshStart: event.freshStart,
+        fixedPrompt: event.fixedPrompt,
       );
 
       await startResultEither.fold(

@@ -1,4 +1,5 @@
-import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // For Clipboard
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +25,8 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   UserEntity? _profile;
-  File? _pickedImageFile;
+  XFile? _pickedAvatar;
+  Uint8List? _pickedAvatarBytes;
 
   // Controllers
   final TextEditingController _dobController = TextEditingController();
@@ -72,8 +74,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
     if (file != null) {
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
       setState(() {
-        _pickedImageFile = File(file.path);
+        _pickedAvatar = file;
+        _pickedAvatarBytes = bytes;
         _isDirty = true;
       });
     }
@@ -111,7 +116,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       phone: _phoneController.text.trim(),
       bio: _bioController.text.trim(),
       dateOfBirth: _profile!.dateOfBirth,
-      avatarFile: _pickedImageFile,
+      avatarFile: _pickedAvatar,
       gender: _selectedGender,
 
       // Giữ nguyên các settings cũ
@@ -206,8 +211,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 border: Border.all(color: const Color(0xFFE4E4E7), width: 1), // Zinc 200 Border
                                 image: DecorationImage(
                                   fit: BoxFit.cover,
-                                  image: _pickedImageFile != null
-                                      ? FileImage(_pickedImageFile!)
+                                  image: _pickedAvatarBytes != null
+                                      ? MemoryImage(_pickedAvatarBytes!)
                                       : (_profile!.avatarUrl != null && _profile!.avatarUrl!.isNotEmpty)
                                       ? NetworkImage(_profile!.avatarUrl!) as ImageProvider
                                       : const AssetImage('assets/avatar.png'),

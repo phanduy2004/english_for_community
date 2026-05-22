@@ -3,89 +3,32 @@ import 'package:flutter/services.dart';
 
 import 'app_color.dart';
 import 'app_fonts.dart';
+import 'app_typography.dart';
 
 class AppTheme {
+  /// Theme gốc: **mobile-first** (học sinh) — `docs/ui-ux-system/03-mobile-foundations.md`.
   static ThemeData getTheme() {
+    final baseText = AppTypography.mobileTextTheme;
+
     final colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: AppColors.onPrimary,
-      primaryContainer: AppColors.primary.withValues(alpha: 0.12),
-      onPrimaryContainer: AppColors.primaryDark,
-      secondary: AppColors.secondary,
-      onSecondary: Colors.white,
-      tertiary: AppColors.tertiary,
+      primaryContainer: AppColors.primaryTint,
+      onPrimaryContainer: AppColors.textPrimary,
+      secondary: AppColors.accent,
+      onSecondary: AppColors.onAccent,
+      tertiary: AppColors.info,
       onTertiary: Colors.white,
-      error: const Color(0xFFDC2626),
+      error: AppColors.danger,
       onError: Colors.white,
       surface: AppColors.surfaceCard,
       onSurface: AppColors.textPrimary,
       surfaceContainerHighest: AppColors.surface,
       onSurfaceVariant: AppColors.textSecondary,
       outline: AppColors.outline,
+      outlineVariant: AppColors.outlineMuted,
       shadow: Colors.black.withValues(alpha: 0.08),
-    );
-
-    final baseText = TextTheme(
-      displaySmall: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 28,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.6,
-        height: 1.15,
-        color: AppColors.textPrimary,
-      ),
-      headlineMedium: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 22,
-        fontWeight: FontWeight.w700,
-        letterSpacing: -0.4,
-        height: 1.2,
-        color: AppColors.textPrimary,
-      ),
-      titleLarge: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.3,
-        color: AppColors.textPrimary,
-      ),
-      titleMedium: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.35,
-        color: AppColors.textPrimary,
-      ),
-      bodyLarge: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        height: 1.45,
-        color: AppColors.textPrimary,
-      ),
-      bodyMedium: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 15,
-        fontWeight: FontWeight.w400,
-        height: 1.45,
-        color: AppColors.textSecondary,
-      ),
-      bodySmall: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-        color: AppColors.textMuted,
-      ),
-      labelLarge: TextStyle(
-        fontFamily: AppFonts.fontFamily,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.1,
-        color: AppColors.textPrimary,
-      ),
     );
 
     return ThemeData(
@@ -111,23 +54,23 @@ class AppTheme {
         color: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(10),
           side: const BorderSide(color: AppColors.outline, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        height: 68,
+        height: 60,
         backgroundColor: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+        indicatorColor: AppColors.primaryTint,
         labelTextStyle: WidgetStateProperty.resolveWith((s) {
           final selected = s.contains(WidgetState.selected);
           return TextStyle(
             fontFamily: AppFonts.fontFamily,
-            fontSize: 12,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: AppTypography.mobileLabel,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             color: selected ? AppColors.primary : AppColors.textMuted,
           );
         }),
@@ -142,11 +85,16 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          minimumSize: const Size(64, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
-          textStyle: baseText.labelLarge,
+          textStyle: baseText.labelLarge?.copyWith(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: AppTypography.mobileLabel,
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -154,39 +102,112 @@ class AppTheme {
           elevation: 0,
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
-          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.35),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          disabledBackgroundColor: AppColors.outlineStrong,
+          disabledForegroundColor: AppColors.textMuted,
+          minimumSize: const Size(64, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          textStyle: baseText.labelLarge?.copyWith(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: AppTypography.mobileLabel,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.textPrimary,
+          side: const BorderSide(color: AppColors.outlineStrong),
+          minimumSize: const Size(64, 40),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: baseText.labelLarge,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
-          textStyle: baseText.labelLarge?.copyWith(color: AppColors.primary),
+          foregroundColor: AppColors.textPrimary,
+          textStyle: baseText.labelLarge,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceCard,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.outline),
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: AppColors.outlineStrong),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
+        hintStyle: baseText.bodySmall,
+        labelStyle: baseText.bodyMedium?.copyWith(color: AppColors.textSecondary),
       ),
-      splashColor: AppColors.primary.withValues(alpha: 0.08),
-      highlightColor: AppColors.primary.withValues(alpha: 0.06),
+      splashColor: AppColors.primaryStrong,
+      highlightColor: AppColors.primaryTint,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: CupertinoPageTransitionsBuilder(),
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         },
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbVisibility: WidgetStatePropertyAll(true),
+        radius: const Radius.circular(4),
+        thickness: WidgetStatePropertyAll(6),
+        crossAxisMargin: 2,
+        mainAxisMargin: 4,
+        interactive: true,
+      ),
+    );
+  }
+
+  /// Typography + input/button chữ cho vùng **teacher/admin web** (ghi đè lên theme mobile).
+  static ThemeData mergeWorkspaceWeb(BuildContext context) {
+    final base = Theme.of(context);
+    final web = AppTypography.webTextTheme;
+    return base.copyWith(
+      textTheme: web,
+      primaryTextTheme: web,
+      appBarTheme: base.appBarTheme.copyWith(
+        titleTextStyle: web.titleLarge,
+        toolbarTextStyle: web.bodyMedium,
+      ),
+      inputDecorationTheme: base.inputDecorationTheme.copyWith(
+        hintStyle: web.bodySmall,
+        labelStyle: web.bodyMedium?.copyWith(color: AppColors.textSecondary),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 12, vertical: 6)),
+          textStyle: WidgetStatePropertyAll(
+            web.labelMedium!.copyWith(color: AppColors.onPrimary, fontWeight: FontWeight.w600),
+          ),
+        ).merge(base.filledButtonTheme.style),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(0, 28)),
+          padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 10, vertical: 5)),
+          textStyle: WidgetStatePropertyAll(web.bodyMedium!.copyWith(fontWeight: FontWeight.w500)),
+        ).merge(base.outlinedButtonTheme.style),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(Size(0, 32)),
+          textStyle: WidgetStatePropertyAll(
+            web.labelMedium!.copyWith(color: AppColors.onPrimary, fontWeight: FontWeight.w600),
+          ),
+        ).merge(base.elevatedButtonTheme.style),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: ButtonStyle(
+          textStyle: WidgetStatePropertyAll(web.labelMedium!),
+        ).merge(base.textButtonTheme.style),
       ),
     );
   }

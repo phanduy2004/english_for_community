@@ -113,8 +113,9 @@ class CueBloc extends Bloc<CueEvent, CueState> {
       final latest = <int, DictationAttemptEntity>{};
       final completedSet = <int>{};
 
-      // 🔥 LOGIC RETAKE: Nếu KHÔNG PHẢI retake thì mới gọi API lấy lịch sử
-      if (!e.isRetake) {
+      // Practice history only — exams use [initialCueTexts] / ExamAttempt, not DictationAttempt.
+      final skipPracticeHistory = e.isRetake || e.examPracticeMode;
+      if (!skipPracticeHistory) {
         final attemptsResult = await listeningRepository.getDictationAttempts(e.listeningId);
 
         final attempts = attemptsResult.fold(
@@ -127,12 +128,31 @@ class CueBloc extends Bloc<CueEvent, CueState> {
             int idx = a.cueIdx!;
             if (idx >= 0 && idx < cues.length) {
               latest[idx] = a;
-              final isPassed = (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
-              if (isPassed) completedSet.add(idx);
+              if (e.examPracticeMode) {
+                if ((a.userText ?? '').trim().isNotEmpty) completedSet.add(idx);
+              } else {
+                final isPassed = (a.score?.passed == true) || ((a.score?.wer ?? 1.0) <= 0.25);
+                if (isPassed) completedSet.add(idx);
+              }
             }
           }
         }
-      } // Nếu isRetake == true -> latest và completedSet sẽ hoàn toàn trống rỗng!
+      }
+
+      if (e.initialCueTexts != null) {
+        e.initialCueTexts!.forEach((idx, text) {
+          if (idx < 0 || idx >= cues.length) return;
+          final trimmed = text.trim();
+          if (trimmed.isEmpty) return;
+          latest[idx] = DictationAttemptEntity(
+            id: 'exam_$idx',
+            listeningId: e.listeningId,
+            cueIdx: idx,
+            userText: trimmed,
+          );
+          completedSet.add(idx);
+        });
+      }
 
       // 🔥 LOGIC CHỌN CUE BAN ĐẦU
       int selectedIndex = 0;
@@ -240,12 +260,30 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     required String userText,
     int? playedMs,
     required int durationInSeconds,
+    bool examSilentMode = false,
   }) async {
     if (cueIdx < 0 || cueIdx >= state.cues.length) {
       return SubmitResult(passed: false, wer: 0, cer: 0);
     }
 
     final currentCueId = state.cues[cueIdx].id;
+
+    if (examSilentMode) {
+      final newLatest = Map<int, DictationAttemptEntity>.from(state.latestAttempts);
+      newLatest[cueIdx] = DictationAttemptEntity(
+        id: 'exam_$cueIdx',
+        listeningId: listeningId,
+        cueIdx: cueIdx,
+        userText: userText,
+      );
+      final newCompleted = Set<int>.from(state.completedIdx)..add(cueIdx);
+      emit(state.copyWith(
+        latestAttempts: newLatest,
+        completedIdx: newCompleted,
+        justCompletedAll: newCompleted.length >= state.cues.length,
+      ));
+      return SubmitResult(passed: true, wer: 0, cer: 0);
+    }
 
     final result = await listeningRepository.submitAttempt(
       listeningId: listeningId,
@@ -276,7 +314,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
         );
 
         final newCompleted = Set<int>.from(state.completedIdx);
-        if (isCorrect) newCompleted.add(cueIdx);
+        if (examSilentMode || isCorrect) newCompleted.add(cueIdx);
 
         final isAllDone = state.cues.isNotEmpty && newCompleted.length == state.cues.length;
 

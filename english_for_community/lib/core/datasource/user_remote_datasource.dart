@@ -1,7 +1,14 @@
-import 'dart:io';
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import '../entity/user_entity.dart';
+
+Future<MultipartFile> _avatarMultipart(XFile avatarFile) async {
+  final bytes = await avatarFile.readAsBytes();
+  final name = avatarFile.name.trim().isNotEmpty ? avatarFile.name : 'avatar.jpg';
+  return MultipartFile.fromBytes(bytes, filename: name);
+}
 
 class UserRemoteDatasource {
   final Dio dio;
@@ -35,7 +42,7 @@ class UserRemoteDatasource {
     String? phone,
     DateTime? dateOfBirth,
     String? bio,
-    dynamic avatarFile, // File hoặc XFile
+    XFile? avatarFile,
     String? goal,
     String? cefr,
     int? dailyMinutes,
@@ -73,12 +80,9 @@ class UserRemoteDatasource {
     // 2. Tạo FormData từ Map
     final formData = FormData.fromMap(mapData);
 
-    // 3. Xử lý Avatar (Chỉ gửi nếu có file mới)
+    // 3. Avatar — XFile/bytes on web (File.path throws UnsupportedError on web)
     if (avatarFile != null) {
-      formData.files.add(MapEntry(
-        'avatar',
-        await MultipartFile.fromFile(avatarFile.path),
-      ));
+      formData.files.add(MapEntry('avatar', await _avatarMultipart(avatarFile)));
     }
 
     // 4. Gửi Request PUT

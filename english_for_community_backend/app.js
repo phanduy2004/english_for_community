@@ -16,6 +16,9 @@ import notificationRoutes from "./src/routes/notificationRoutes.js";
 import listeningCompRoutes from "./src/routes/listeningCompRoutes.js";
 import appVersionRoutes from "./src/routes/appVersionRoutes.js";
 import adminAppReleaseRoutes from "./src/routes/adminAppReleaseRoutes.js";
+import teacherRoutes from "./src/routes/teacherRoutes.js";
+import classroomRoutes from "./src/routes/classroomRoutes.js";
+import examRoutes from "./src/routes/examRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -36,6 +39,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/listening-comp', listeningCompRoutes);
 app.use('/api/app', appVersionRoutes);
 app.use('/api/admin/app-releases', adminAppReleaseRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/classrooms', classroomRoutes);
+app.use('/api/exams', examRoutes);
 
 
 export default app;
