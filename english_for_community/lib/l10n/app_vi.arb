@@ -1435,6 +1435,16 @@
   "teacherGradingHubBatchReleaseDone": "Đã công bố kết quả",
   "teacherGradingHubBatchFinalize": "Hoàn tất tất cả",
   "teacherGradingHubBatchFinalizeDone": "Đã hoàn tất bài nộp",
+  "teacherGradingHubExportExcel": "Xuất điểm Excel",
+  "teacherGradingHubExportDone": "Đã tải file Excel",
+  "teacherGradingHubExportEmpty": "Chưa có bài làm để xuất",
+  "teacherGradingHubExportMobileHint": "Xuất Excel trên web giáo viên; file: {filename}",
+  "@teacherGradingHubExportMobileHint": {
+    "placeholders": {
+      "filename": { "type": "String" }
+    }
+  },
+  "teacherGradingHubExportMobileCopied": "Xuất file trên web; đã sao chép gợi ý",
   "teacherExamDuplicate": "Nhân bản",
   "teacherExamDuplicated": "Đã nhân bản đề thi (bản nháp)",
   "teacherAssignmentDuplicate": "Nhân bản giao bài",
@@ -1449,6 +1459,7 @@
   "teacherGradebookStudent": "Học sinh",
   "teacherGradebookExport": "Xuất CSV",
   "teacherGradebookExportCopied": "Đã sao chép sổ điểm (dán vào Excel)",
+  "teacherGradebookExportDownloaded": "Đã tải file CSV sổ điểm",
   "teacherGradebookNoAssignments": "Lớp chưa có bài giao nào.",
   "teacherGradebookKpiStudents": "Học sinh",
   "teacherGradebookKpiAssignments": "Bài giao",

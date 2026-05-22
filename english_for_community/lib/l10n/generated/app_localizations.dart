@@ -6635,6 +6635,36 @@ abstract class AppLocalizations {
   /// **'Submitted attempts finalized'**
   String get teacherGradingHubBatchFinalizeDone;
 
+  /// No description provided for @teacherGradingHubExportExcel.
+  ///
+  /// In en, this message translates to:
+  /// **'Export scores to Excel'**
+  String get teacherGradingHubExportExcel;
+
+  /// No description provided for @teacherGradingHubExportDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel file downloaded'**
+  String get teacherGradingHubExportDone;
+
+  /// No description provided for @teacherGradingHubExportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No student attempts to export'**
+  String get teacherGradingHubExportEmpty;
+
+  /// No description provided for @teacherGradingHubExportMobileHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Excel export on mobile: open teacher web app or use file: {filename}'**
+  String teacherGradingHubExportMobileHint(String filename);
+
+  /// No description provided for @teacherGradingHubExportMobileCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Export is available on web; hint copied'**
+  String get teacherGradingHubExportMobileCopied;
+
   /// No description provided for @teacherExamDuplicate.
   ///
   /// In en, this message translates to:
@@ -6718,6 +6748,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gradebook copied to clipboard (paste into Excel)'**
   String get teacherGradebookExportCopied;
+
+  /// No description provided for @teacherGradebookExportDownloaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Gradebook CSV downloaded'**
+  String get teacherGradebookExportDownloaded;
 
   /// No description provided for @teacherGradebookNoAssignments.
   ///

@@ -3,6 +3,7 @@ import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import { classroomService } from './classroomService.js';
+import { percentFromScore, scoreOfAttempt } from '../lib/examAttemptScoreUtils.js';
 
 function httpError(statusCode, message) {
   const e = new Error(message);
@@ -14,49 +15,6 @@ function shortTitle(title, max = 36) {
   const t = String(title || 'Exam').trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
-}
-
-function isIntegratedScores(scores) {
-  if (!scores || typeof scores !== 'object') return false;
-  const fmt = scores.examFormat;
-  return (
-    fmt === 'integrated_four_skills' ||
-    fmt === 'skills_exam' ||
-    scores.finalScore != null ||
-    scores.finalMax != null
-  );
-}
-
-/** Same rules as grading hub: integrated → finalScore/10; classic → totalAwarded/totalMax. */
-function scoreOfAttempt(att) {
-  if (!att) return null;
-  const scores = att.scores || {};
-
-  if (isIntegratedScores(scores)) {
-    const awarded = scores.finalScore;
-    const max = Number(scores.finalMax ?? 10);
-    if (awarded == null) return { awarded: null, max, scale: 'ten' };
-    return { awarded: Number(awarded), max, scale: 'ten' };
-  }
-
-  let awarded = scores.totalAwarded;
-  let max = scores.totalMax;
-  if ((awarded == null && max == null) || (Number(max ?? 0) <= 0 && scores.finalScore != null)) {
-    if (scores.finalScore != null) {
-      return {
-        awarded: Number(scores.finalScore),
-        max: Number(scores.finalMax ?? 10),
-        scale: 'ten',
-      };
-    }
-    return null;
-  }
-  return { awarded: Number(awarded ?? 0), max: Number(max ?? 0), scale: 'points' };
-}
-
-function percentFromScore(score) {
-  if (!score || score.max <= 0) return null;
-  return Math.round((score.awarded / score.max) * 1000) / 10;
 }
 
 function pickBestAttempt(attempts) {

@@ -7,6 +7,7 @@ import 'package:english_for_community/feature/teacher/layout/teacher_edit_assign
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_assignment_grading_hub_view.dart';
+import 'package:english_for_community/feature/teacher/teacher_grading_hub_export.dart';
 import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_grading_hub_labels.dart';
@@ -97,7 +98,7 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
                   },
                 ),
               ),
-            ...gradingHubBatchActions(context, state),
+            ...gradingHubBatchActions(context, state, assignmentId: assignmentId),
           ],
           body: TeacherAssignmentGradingHubView(
             assignmentId: assignmentId,
@@ -110,14 +111,27 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
   }
 }
 
-List<Widget> gradingHubBatchActions(BuildContext context, TeacherGradingHubState state) {
+List<Widget> gradingHubBatchActions(
+  BuildContext context,
+  TeacherGradingHubState state, {
+  required String assignmentId,
+}) {
   final l10n = context.l10n;
   if (state.batchAiRunning || state.batchOpsRunning) {
     return const [
       SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
     ];
   }
+  final canExport =
+      state.status == TeacherGradingHubStatus.success && state.attempts.isNotEmpty;
   return [
+    IconButton(
+      tooltip: l10n.teacherGradingHubExportExcel,
+      onPressed: canExport
+          ? () => exportAssignmentScoresExcel(context, assignmentId: assignmentId)
+          : null,
+      icon: const Icon(Icons.download_outlined),
+    ),
     IconButton(
       tooltip: l10n.teacherGradingHubBatchAi,
       onPressed: () => context.read<TeacherGradingHubBloc>().add(const TeacherGradingHubBatchAiRequested()),

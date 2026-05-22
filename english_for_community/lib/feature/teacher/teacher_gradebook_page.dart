@@ -11,6 +11,10 @@ import 'package:english_for_community/feature/teacher/teacher_classroom_detail_p
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_gradebook_view.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
+import 'package:english_for_community/core/util/file_download.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class TeacherGradebookPage extends StatefulWidget {
@@ -62,9 +66,22 @@ class _TeacherGradebookPageState extends State<TeacherGradebookPage> {
     r.fold(
       (f) => TeacherCornerToast.show(context, f.message, error: true),
       (csv) async {
-        await Clipboard.setData(ClipboardData(text: csv));
-        if (!mounted) return;
-        TeacherCornerToast.show(context, context.l10n.teacherGradebookExportCopied);
+        final name = (_data?['classroom'] is Map)
+            ? '${((_data!['classroom'] as Map)['name'] as String?) ?? 'gradebook'}-gradebook.csv'
+            : 'gradebook.csv';
+        if (kIsWeb) {
+          await downloadBytes(
+            filename: name.replaceAll(RegExp(r'[^\w\-.]'), '_'),
+            bytes: utf8.encode(csv),
+            mimeType: 'text/csv;charset=utf-8',
+          );
+          if (!mounted) return;
+          TeacherCornerToast.show(context, context.l10n.teacherGradebookExportDownloaded);
+        } else {
+          await Clipboard.setData(ClipboardData(text: csv));
+          if (!mounted) return;
+          TeacherCornerToast.show(context, context.l10n.teacherGradebookExportCopied);
+        }
       },
     );
   }

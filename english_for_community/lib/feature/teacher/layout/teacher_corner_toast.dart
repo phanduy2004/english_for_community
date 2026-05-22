@@ -32,15 +32,16 @@ class TeacherCornerToast {
       maxLines: 3,
     )..layout(maxWidth: _maxWidth - _horizontalPadding * 2);
 
-    final width = (painter.size.width + _horizontalPadding * 2).clamp(_minWidth, _maxWidth);
+    final estimatedWidth =
+        (painter.size.width + _horizontalPadding * 2).clamp(_minWidth, _maxWidth);
     final screenWidth = MediaQuery.sizeOf(context).width;
     final bottomSafe = MediaQuery.paddingOf(context).bottom;
 
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       SnackBar(
-        content: SizedBox(
-          width: width,
+        content: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: Text(message, style: textStyle),
         ),
         backgroundColor: error ? AppColors.danger : AppColors.success,
@@ -51,7 +52,7 @@ class TeacherCornerToast {
         margin: EdgeInsets.only(
           right: _edgeInset,
           bottom: bottomSafe + _edgeInset,
-          left: screenWidth - width - _edgeInset,
+          left: screenWidth - estimatedWidth - _edgeInset,
         ),
       ),
     );

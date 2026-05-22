@@ -4,6 +4,7 @@ import { examAttemptService } from '../services/examAttemptService.js';
 import { examSessionService } from '../services/examSessionService.js';
 import { examGradingService } from '../services/examGradingService.js';
 import { teacherGradebookService } from '../services/teacherGradebookService.js';
+import { teacherAssignmentScoresExportService } from '../services/teacherAssignmentScoresExportService.js';
 import { teacherDashboardService } from '../services/teacherDashboardService.js';
 import { teacherAssignmentPresetService } from '../services/teacherAssignmentPresetService.js';
 import { teacherAnalyticsChartsService } from '../services/teacherAnalyticsChartsService.js';
@@ -287,6 +288,23 @@ export const listAssignmentAttempts = async (req, res) => {
   try {
     const hub = await examAttemptService.getAssignmentGradingHub(req.user._id, req.params.assignmentId);
     return res.status(200).json(hub);
+  } catch (error) {
+    return res.status(getStatusCode(error)).json({ message: error.message });
+  }
+};
+
+export const exportAssignmentAttemptsXlsx = async (req, res) => {
+  try {
+    const { buffer, filename } = await teacherAssignmentScoresExportService.buildXlsx(
+      req.user._id,
+      req.params.assignmentId
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.status(200).send(Buffer.from(buffer));
   } catch (error) {
     return res.status(getStatusCode(error)).json({ message: error.message });
   }
