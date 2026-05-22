@@ -3648,6 +3648,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherGradingHubBatchFinalizeDone => 'Đã hoàn tất bài nộp';
 
   @override
+  String get teacherGradingHubExportExcel => 'Xuất điểm Excel';
+
+  @override
+  String get teacherGradingHubExportDone => 'Đã tải file Excel';
+
+  @override
+  String get teacherGradingHubExportEmpty => 'Chưa có bài làm để xuất';
+
+  @override
+  String teacherGradingHubExportMobileHint(String filename) {
+    return 'Xuất Excel trên web giáo viên; file: $filename';
+  }
+
+  @override
+  String get teacherGradingHubExportMobileCopied =>
+      'Xuất file trên web; đã sao chép gợi ý';
+
+  @override
   String get teacherExamDuplicate => 'Nhân bản';
 
   @override
@@ -3689,6 +3707,9 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get teacherGradebookExportCopied =>
       'Đã sao chép sổ điểm (dán vào Excel)';
+
+  @override
+  String get teacherGradebookExportDownloaded => 'Đã tải file CSV sổ điểm';
 
   @override
   String get teacherGradebookNoAssignments => 'Lớp chưa có bài giao nào.';

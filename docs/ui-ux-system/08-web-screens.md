@@ -102,6 +102,7 @@
 - **Page header** (`TeacherPageScaffold`): tiêu đề = **tên đề**; subtitle = `Lớp · Hình thức · Loại đề` (vd. `Lớp 10A · Live session · Đề 4 kỹ năng`); breadcrumb Dashboard → Lớp → Bài làm học sinh; actions = batch AI / Finalize / Release (icon 32).
 - **Context card** (`TeacherGradingHubContextHeader`): chip **Lớp** (tap → classroom detail), **Mode** (self-paced / scheduled / **live session** / practice), **Format** (integrated / skills / classic), **Audience**; dòng lịch từ `assignment.config` (due / opens–closes / time limit).
 - **KPI trong card:** Đã nộp · Đang làm · Cần chấm · Nộp thiếu (4 cột mini, `web.kpi`).
+- **Export Excel:** icon tải trên header → `GET …/assignments/:id/attempts/export.xlsx` → file `.xlsx` (cột HS, email, trạng thái, điểm /10 hoặc %, thời gian).
 - **Filter chips** (`TeacherWebUi` outline / `primaryTint` khi chọn).
 - **Danh sách:** `TeacherGradingAttemptCard` — `AppCard` outline, avatar, status pills, điểm 0–10, meta thời gian, CTA `Grade` (`compactFilledStyle` 32).
 - API: `GET …/assignments/:id/attempts` → `assignment.classroomName`, `classroomId`, `mode`, `examFormat`, `config`.

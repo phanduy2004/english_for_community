@@ -127,6 +127,11 @@ router.get(
   teacherExamController.listAssignmentAttempts
 );
 router.get(
+  '/exams/assignments/:assignmentId/attempts/export.xlsx',
+  requirePermissions(Permission.TEACHER_GRADING_READ),
+  teacherExamController.exportAssignmentAttemptsXlsx
+);
+router.get(
   '/exams/assignments/:assignmentId/integrity-summary',
   requirePermissions(Permission.TEACHER_GRADING_READ),
   teacherExamController.getAssignmentIntegritySummary

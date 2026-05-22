@@ -3666,6 +3666,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Submitted attempts finalized';
 
   @override
+  String get teacherGradingHubExportExcel => 'Export scores to Excel';
+
+  @override
+  String get teacherGradingHubExportDone => 'Excel file downloaded';
+
+  @override
+  String get teacherGradingHubExportEmpty => 'No student attempts to export';
+
+  @override
+  String teacherGradingHubExportMobileHint(String filename) {
+    return 'Excel export on mobile: open teacher web app or use file: $filename';
+  }
+
+  @override
+  String get teacherGradingHubExportMobileCopied =>
+      'Export is available on web; hint copied';
+
+  @override
   String get teacherExamDuplicate => 'Duplicate';
 
   @override
@@ -3707,6 +3725,9 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teacherGradebookExportCopied =>
       'Gradebook copied to clipboard (paste into Excel)';
+
+  @override
+  String get teacherGradebookExportDownloaded => 'Gradebook CSV downloaded';
 
   @override
   String get teacherGradebookNoAssignments =>

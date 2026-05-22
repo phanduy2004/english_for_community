@@ -741,6 +741,19 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
+  Future<Either<Failure, ({List<int> bytes, String filename})>> downloadAssignmentScoresXlsx(
+    String assignmentId,
+  ) async {
+    try {
+      return Right(await remote.downloadAssignmentScoresXlsx(assignmentId));
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _dioMsg(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, Map<String, dynamic>>> getTeacherDashboardActionItems() async {
     try {
       return Right(await remote.getTeacherDashboardActionItems());

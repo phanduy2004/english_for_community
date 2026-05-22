@@ -75,6 +75,9 @@ abstract class TeacherExamRepository {
   Future<Either<Failure, dynamic>> rejectClassroomMember(String classroomId, String userId);
   Future<Either<Failure, Map<String, dynamic>>> getClassroomGradebook(String classroomId);
   Future<Either<Failure, String>> downloadClassroomGradebookCsv(String classroomId);
+  Future<Either<Failure, ({List<int> bytes, String filename})>> downloadAssignmentScoresXlsx(
+    String assignmentId,
+  );
   Future<Either<Failure, Map<String, dynamic>>> getTeacherDashboardActionItems();
   Future<Either<Failure, Map<String, dynamic>>> getTeacherAnalyticsSummary();
   Future<Either<Failure, Map<String, dynamic>>> getTeacherCalendarEvents({String? from, String? to});

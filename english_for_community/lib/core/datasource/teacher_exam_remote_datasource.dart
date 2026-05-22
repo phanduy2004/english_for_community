@@ -321,6 +321,22 @@ class TeacherExamRemoteDatasource {
     return r.data ?? '';
   }
 
+  Future<({List<int> bytes, String filename})> downloadAssignmentScoresXlsx(
+    String assignmentId,
+  ) async {
+    final r = await dio.get<List<int>>(
+      'teacher/exams/assignments/$assignmentId/attempts/export.xlsx',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    var filename = 'scores.xlsx';
+    final disposition = r.headers.value('content-disposition');
+    if (disposition != null) {
+      final match = RegExp(r'filename="([^"]+)"').firstMatch(disposition);
+      if (match != null) filename = match.group(1)!;
+    }
+    return (bytes: r.data ?? <int>[], filename: filename);
+  }
+
   Future<Map<String, dynamic>> getTeacherDashboardActionItems() async {
     final r = await dio.get('teacher/dashboard/action-items');
     return Map<String, dynamic>.from(r.data as Map);

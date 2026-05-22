@@ -1659,6 +1659,16 @@
   "teacherGradingHubBatchReleaseDone": "Results released for submitted attempts",
   "teacherGradingHubBatchFinalize": "Finalize all submitted",
   "teacherGradingHubBatchFinalizeDone": "Submitted attempts finalized",
+  "teacherGradingHubExportExcel": "Export scores to Excel",
+  "teacherGradingHubExportDone": "Excel file downloaded",
+  "teacherGradingHubExportEmpty": "No student attempts to export",
+  "teacherGradingHubExportMobileHint": "Excel export on mobile: open teacher web app or use file: {filename}",
+  "@teacherGradingHubExportMobileHint": {
+    "placeholders": {
+      "filename": { "type": "String" }
+    }
+  },
+  "teacherGradingHubExportMobileCopied": "Export is available on web; hint copied",
   "teacherExamDuplicate": "Duplicate",
   "teacherExamDuplicated": "Exam duplicated as draft",
   "teacherAssignmentDuplicate": "Duplicate assignment",
@@ -1673,6 +1683,7 @@
   "teacherGradebookStudent": "Student",
   "teacherGradebookExport": "Export CSV",
   "teacherGradebookExportCopied": "Gradebook copied to clipboard (paste into Excel)",
+  "teacherGradebookExportDownloaded": "Gradebook CSV downloaded",
   "teacherGradebookNoAssignments": "No assignments in this class yet.",
   "teacherGradebookKpiStudents": "Students",
   "teacherGradebookKpiAssignments": "Assignments",
