@@ -66,6 +66,25 @@
 | `chartTrend` | `#EF4444` | Đường xu hướng giảm |
 | `chartGrid` | `#E7E5E4` | Grid line, axis |
 
+### 1.8 Skill Palette — **Student Vibrancy** (chỉ dùng cho vai trò `user`)
+
+> Mỗi kỹ năng học có identity màu riêng — giúp học sinh nhận ra kỹ năng ngay lập tức, tăng hứng thú học tập (Duolingo principle).
+
+| Kỹ năng | `color` (icon) | `tint` (bg) | `dark` (label) |
+|---------|----------------|-------------|----------------|
+| **Listening** | `#3B82F6` Blue-500 | `#EFF6FF` Blue-50 | `#1D4ED8` Blue-700 |
+| **Speaking** | `#10B981` Emerald-500 | `#ECFDF5` Emerald-50 | `#047857` Emerald-700 |
+| **Reading** | `#EA580C` Orange-600 | `#FFF7ED` Orange-50 | `#C2410C` Orange-700 |
+| **Writing** | `#7C3AED` Violet-600 | `#F5F3FF` Violet-50 | `#5B21B6` Violet-700 |
+| **Vocabulary** | `#E11D48` Rose-600 | `#FFF1F2` Rose-50 | `#BE123C` Rose-700 |
+
+**Quy tắc dùng:**
+- Chỉ dùng cho **học sinh** (`user`). Teacher/Admin giữ `primary` (đen).
+- Card **background** vẫn `surfaceCard` — chỉ icon box bg, progress bar fill, left border accent dùng skill color.
+- Heading/body text vẫn `textPrimary` — không tô chữ bằng skill color.
+- Không trộn 2 skill color cạnh nhau trong cùng 1 row.
+- `AppSkillColors.of(SkillType)` → trả về `SkillColorSet(color, tint, dark)`.
+
 ### 1.7 Anti-patterns (cấm)
 
 - ❌ Dùng teal `#0D9488` ở bất cứ đâu.
@@ -73,6 +92,7 @@
 - ❌ Filled button nền amber — amber **không** phải brand.
 - ❌ AppBar nền đen toàn phần. AppBar mặc định `surface` (`#FAFAF9`).
 - ❌ Đặt 2 màu primary cạnh nhau.
+- ❌ Dùng skill color cho teacher/admin UI — chỉ dành cho student screens.
 
 ---
 

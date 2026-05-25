@@ -138,13 +138,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get labelEmail => 'Email';
 
   @override
+  String get loginEmailOrUsername => 'Email hoặc tên đăng nhập';
+
+  @override
+  String get hintLoginEmailOrUsername => 'Nhập email hoặc tên đăng nhập';
+
+  @override
   String get labelPassword => 'Mật khẩu';
 
   @override
   String get hintEmail => 'ten@email.com';
 
   @override
-  String get hintPassword => 'Nhập mật khẩu...';
+  String get hintPassword => 'Nhập mật khẩu của bạn';
 
   @override
   String get rememberMe => 'Ghi nhớ đăng nhập';
@@ -474,7 +480,28 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adminNavOps => 'Trung tâm vận hành';
 
   @override
+  String get adminNavOpsSub => 'Kiểm duyệt, xuất dữ liệu, quyền';
+
+  @override
   String get adminNavReleases => 'Phát hành app';
+
+  @override
+  String get adminNavReleasesSub => 'Duyệt, lên lịch, phát hành';
+
+  @override
+  String get adminContentItemCount => 'chủ đề';
+
+  @override
+  String get adminListeningDictation => 'Nghe chép';
+
+  @override
+  String get adminListeningDictationSub => 'Nghe chép chính tả (cues)';
+
+  @override
+  String get adminListeningComprehension => 'Nghe hiểu';
+
+  @override
+  String get adminListeningComprehensionSub => 'Trắc nghiệm nghe hiểu';
 
   @override
   String get adminOverviewTitle => 'Tổng quan';
@@ -499,6 +526,23 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get adminNoReportsFound => 'Không có báo cáo ở trạng thái này';
+
+  @override
+  String get adminUsersTrash => 'Thùng rác';
+
+  @override
+  String adminUserRestored(String name) {
+    return 'Đã khôi phục $name';
+  }
+
+  @override
+  String get adminReportStatusUpdated => 'Đã cập nhật trạng thái';
+
+  @override
+  String get adminActionSuccess => 'Thao tác thành công';
+
+  @override
+  String get adminReleaseConfirmCodeInvalid => 'Mã xác nhận không đúng';
 
   @override
   String get superAdminRole => 'Super Admin';
@@ -1315,6 +1359,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get profileUpdatedSuccess => 'Đã cập nhật hồ sơ';
 
   @override
+  String get changePhotoHint => 'Chạm để đổi ảnh';
+
+  @override
   String get sectionPublicInfo => 'Thông tin công khai';
 
   @override
@@ -2097,6 +2144,38 @@ class AppLocalizationsVi extends AppLocalizations {
       'Cập nhật tên, ảnh đại diện và thông tin liên hệ.';
 
   @override
+  String get adminAccountRoleAdmin => 'Quản trị viên';
+
+  @override
+  String get adminAccountOpenMenu => 'Menu tài khoản';
+
+  @override
+  String get adminUserRoleStudent => 'Học sinh';
+
+  @override
+  String get adminUserRoleTeacher => 'Giáo viên';
+
+  @override
+  String get adminUserRoleAdmin => 'Quản trị viên';
+
+  @override
+  String get adminUserStatusOnline => 'Online';
+
+  @override
+  String get adminUserStatusOffline => 'Offline';
+
+  @override
+  String get adminUserActiveNow => 'Đang hoạt động';
+
+  @override
+  String get adminUserNeverActive => 'Chưa từng hoạt động';
+
+  @override
+  String adminUserLastActive(String when) {
+    return 'Hoạt động lần cuối: $when';
+  }
+
+  @override
   String teacherDashboardGreeting(String name) {
     return 'Xin chào, $name';
   }
@@ -2731,6 +2810,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studentExamStart => 'Bắt đầu';
 
   @override
+  String get studentExamResume => 'Tiếp tục làm';
+
+  @override
+  String get studentExamResumeHint => 'Đang làm dở — bấm để tiếp tục';
+
+  @override
+  String get examCardAlreadySubmitted => 'Đã nộp bài';
+
+  @override
   String get studentExamUnknownTitle => 'Bài kiểm tra';
 
   @override
@@ -3023,8 +3111,29 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherExamSessionLiveRosterTitle => 'Học sinh trong phòng chờ';
 
   @override
+  String get teacherExamSessionLiveRosterTitleLive => 'Học sinh trong bài thi';
+
+  @override
   String get teacherExamSessionLiveRosterHint =>
       'Số lượng và danh sách cập nhật theo thời gian thực khi học sinh vào phòng.';
+
+  @override
+  String get teacherExamParticipantNotReady => 'Chưa sẵn sàng';
+
+  @override
+  String get teacherExamParticipantReady => 'Sẵn sàng';
+
+  @override
+  String get teacherExamParticipantInProgress => 'Đang làm';
+
+  @override
+  String get teacherExamParticipantSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherExamParticipantExpired => 'Hết giờ';
+
+  @override
+  String get teacherExamParticipantVoided => 'Đã rời';
 
   @override
   String teacherExamSessionJoinedCount(int count) {
@@ -4335,8 +4444,44 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherExamGrammarTitle => 'Ngữ pháp';
 
   @override
+  String get teacherExamGrammarIncludeSubtitle => 'Bật phần Ngữ pháp';
+
+  @override
+  String teacherExamGrammarQuestionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count câu hỏi',
+      one: '1 câu hỏi',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get teacherExamGrammarEnabledNoItems =>
+      'Đã bật Ngữ pháp nhưng chưa có câu hỏi. Hãy thêm ít nhất một câu hoặc tắt Ngữ pháp.';
+
+  @override
   String get teacherExamGrammarHint =>
       'Tuỳ chọn. Có thể thêm đục lỗ, điền từ, nối cặp, sắp xếp câu hoặc trắc nghiệm; đều chấm tự động. Nếu đề có cả kỹ năng, tổng điểm phần Ngữ pháp không được vượt quá 100.';
+
+  @override
+  String get teacherExamWritingPublishNeedPrompt =>
+      'Đã bật Writing: cần đặt đề bài (AI hoặc tự soạn). Chỉ chọn chủ đề thư viện là chưa đủ.';
+
+  @override
+  String get teacherExamWritingAiPickTaskTypeTitle => 'Dạng bài cho AI tạo đề';
+
+  @override
+  String get teacherExamWritingAiPickTaskTypeHint =>
+      'Tuỳ chọn. Chọn “Bất kỳ” để nhận tối đa 3 dạng bài khác nhau.';
+
+  @override
+  String get teacherExamWritingAiTaskTypeAny => 'Bất kỳ (nhiều dạng)';
+
+  @override
+  String get teacherExamWritingAiNeedTopicOrTitle =>
+      'Chọn chủ đề Writing hoặc nhập tiêu đề đề thi phía trên trước khi dùng AI tạo đề.';
 
   @override
   String get teacherExamGrammarAdd => 'Thêm câu';
@@ -4351,6 +4496,10 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get teacherExamPublishPickEachIncludedSkill =>
       'Hãy thêm ít nhất một bài cho mọi kỹ năng đang bật.';
+
+  @override
+  String get teacherExamSpeakingExerciseRequired =>
+      'Đã bật Nói nhưng chưa gắn bài. Bấm \"Thêm bài tập\" và chọn một Speaking set.';
 
   @override
   String get teacherExamWritingPromptSectionTitle => 'Đề bài Writing';
@@ -4600,11 +4749,32 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chưa gắn bài tập cho phần này.';
 
   @override
+  String get integratedExamEmbeddedNoSpeakingResource =>
+      'Chưa gắn bài Nói. Nhờ giáo viên thêm bài Speaking trong soạn đề, rồi bắt đầu phiên thi mới.';
+
+  @override
   String get integratedExamGrammarUnsupported =>
       'Ứng dụng chưa hỗ trợ dạng câu này.';
 
   @override
   String get integratedExamMatchPick => 'Nối với';
+
+  @override
+  String get integratedExamMatchHint =>
+      'Chạm mục bên trái, rồi chạm mục bên phải để nối — hoặc giữ lâu và kéo sang đáp án đúng. Đường nối hiển thị từng cặp của bạn.';
+
+  @override
+  String get integratedExamMatchHintCompact =>
+      'Chạm cụm bên trái, rồi chạm đáp án bên dưới — hoặc kéo thả vào ô đứt nét. Mỗi cặp một màu riêng.';
+
+  @override
+  String get integratedExamMatchAnswersPool => 'Đáp án';
+
+  @override
+  String get integratedExamMatchTapAnswer => 'Chạm đáp án bên dưới';
+
+  @override
+  String get integratedExamMatchDropHere => 'Thả đáp án vào đây';
 
   @override
   String get integratedExamReorderHint => 'Kéo các dòng để sắp đúng thứ tự.';

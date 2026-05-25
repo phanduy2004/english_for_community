@@ -9,6 +9,8 @@ Tài liệu này là **bản tóm tắt nghiệp vụ cấp sản phẩm** cho h
 
 **Cách dùng:** đọc file này để nắm **luồng nghiệp vụ đầy đủ** và **còn thiếu gì**; đọc các file `01–11` trong từng thư mục để có **đặc tả kỹ thuật / màn hình / API** đầy đủ.
 
+**Agent tự chạy qua đêm:** playbook detect → fix → verify và backlog đầy đủ → [`agent-autonomous-workflow.md`](agent-autonomous-workflow.md).
+
 ---
 
 ## 1) Hệ thống Giáo viên – Lớp – Thi

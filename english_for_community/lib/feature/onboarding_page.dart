@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/locale/l10n_context.dart';
+import '../core/theme/app_color.dart';
+import '../core/theme/app_skill_colors.dart';
+import '../core/theme/app_spacing.dart';
+import '../core/theme/app_typography.dart';
+import '../core/ui/student_mobile_ui.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'auth/login_page.dart';
+import 'auth/widgets/auth_form_widgets.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -36,133 +42,113 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
-  void _onSignIn() => context.pushNamed(LoginPage.routeName);
-
   List<_SlideContent> _slides(AppLocalizations t) => [
-    _SlideContent(
-      title: t.onboardingSlide1Title,
-      subtitle: t.onboardingSlide1Subtitle,
-      icon: Icons.timeline_rounded,
-    ),
-    _SlideContent(
-      title: t.onboardingSlide2Title,
-      subtitle: t.onboardingSlide2Subtitle,
-      icon: Icons.psychology_rounded,
-    ),
-    _SlideContent(
-      title: t.onboardingSlide3Title,
-      subtitle: t.onboardingSlide3Subtitle,
-      icon: Icons.emoji_events_rounded,
-    ),
-  ];
+        _SlideContent(
+          title: t.onboardingSlide1Title,
+          subtitle: t.onboardingSlide1Subtitle,
+          icon: Icons.timeline_rounded,
+          skill: SkillType.reading,
+        ),
+        _SlideContent(
+          title: t.onboardingSlide2Title,
+          subtitle: t.onboardingSlide2Subtitle,
+          icon: Icons.psychology_rounded,
+          skill: SkillType.speaking,
+        ),
+        _SlideContent(
+          title: t.onboardingSlide3Title,
+          subtitle: t.onboardingSlide3Subtitle,
+          icon: Icons.emoji_events_rounded,
+          useAccent: true,
+        ),
+      ];
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
     final slides = _slides(t);
-    final scheme = Theme.of(context).colorScheme;
-    final text = Theme.of(context).textTheme;
 
     return Scaffold(
+      backgroundColor: AppColors.surface,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            // Gradient background
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF19DB8A), Color(0x4C19DB8A)],
-                  begin: Alignment(1, 1),
-                  end: Alignment(-1, -1),
+            Align(
+              alignment: Alignment.topRight,
+              child: TextButton(
+                onPressed: () => context.pushNamed(LoginPage.routeName),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  minimumSize: const Size(44, 44),
+                ),
+                child: Text(t.onboardingSkip, style: AppTypography.label()),
+              ),
+            ),
+            _LogoTitle(brand: t.appNameBrand, tagline: t.appTagline),
+            const SizedBox(height: AppSpacing.s7),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: StudentMobileUi.pageHPadding,
+                ),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: slides.length,
+                        onPageChanged: (i) => setState(() => _current = i),
+                        itemBuilder: (_, i) => _Slide(data: slides[i]),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s5),
+                    _Dots(active: _current, total: slides.length, slides: slides),
+                    const SizedBox(height: AppSpacing.s3),
+                  ],
                 ),
               ),
             ),
-            // Content
-            Column(
-              children: [
-                // Skip
-                Align(
-                  alignment: Alignment.topRight,
-                  child: TextButton(
-                    onPressed: () => context.pushNamed(LoginPage.routeName),
-                    child: Text(t.onboardingSkip, style: const TextStyle(color: Colors.white)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Logo & title
-                _LogoTitle(brand: t.appNameBrand, tagline: t.appTagline),
-
-                const SizedBox(height: 24),
-
-                // Slides + dots
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: slides.length,
-                            onPageChanged: (i) => setState(() => _current = i),
-                            itemBuilder: (_, i) => _Slide(data: slides[i]),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _Dots(active: _current, total: slides.length),
-                        const SizedBox(height: 8),
-                      ],
+            Padding(
+              padding: StudentMobileUi.pagePadding.copyWith(top: 0),
+              child: Column(
+                children: [
+                  FilledButton(
+                    onPressed: () => _onPrimaryCta(slides),
+                    style: AuthFormUi.primaryButtonStyle().copyWith(
+                      minimumSize: const WidgetStatePropertyAll(
+                        Size(double.infinity, 48),
+                      ),
+                    ),
+                    child: Text(
+                      _current < slides.length - 1 ? t.next : t.continueAction,
                     ),
                   ),
-                ),
-
-                // CTA
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
-                  child: Column(
+                  const SizedBox(height: AppSpacing.s4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: ElevatedButton(
-                          onPressed: () => _onPrimaryCta(slides),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF19DB8A),
-                            textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 0,
-                          ),
-                          child: Text(_current < slides.length - 1 ? t.next : t.continueAction),
+                      Text(
+                        t.alreadyHaveAccount,
+                        style: StudentMobileUi.body(context).copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            t.alreadyHaveAccount,
-                            style: text.bodyMedium!.copyWith(color: Colors.white.withOpacity(.85)),
+                      TextButton(
+                        onPressed: () => context.pushNamed(LoginPage.routeName),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.s3,
                           ),
-                          InkWell(
-                            onTap: () => context.pushNamed(LoginPage.routeName),
-                            child: Text(
-                              t.signInAction,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
+                          minimumSize: const Size(44, 36),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(t.signInAction, style: AppTypography.label()),
                       ),
                     ],
                   ),
-                )
-
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -179,29 +165,30 @@ class _LogoTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
     return Column(
       children: [
-        Container(
-          width: 112, height: 112,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [BoxShadow(blurRadius: 20, color: Color(0x40000000), offset: Offset(0, 8))],
-          ),
-          child: const Icon(Icons.school_rounded, color: Color(0xFF19DB8A), size: 56),
+        StudentMobileUi.roundIconBox(
+          Icons.school_rounded,
+          size: 96,
+          color: AppColors.accent,
+          bg: AppColors.accentTint,
         ),
-        const SizedBox(height: 12),
-        Text(brand,
-            textAlign: TextAlign.center,
-            style: text.displayMedium?.copyWith(color: Colors.white, fontSize: 42, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          brand,
+          textAlign: TextAlign.center,
+          style: context.h1Style.copyWith(
+            fontSize: AppTypography.mobileDisplay,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s3),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s7),
           child: Text(
             tagline,
             textAlign: TextAlign.center,
-            style: text.bodyLarge?.copyWith(color: Colors.white.withOpacity(.92), fontSize: 16, height: 1.3),
+            style: StudentMobileUi.body(context),
           ),
         ),
       ],
@@ -213,7 +200,16 @@ class _SlideContent {
   final String title;
   final String subtitle;
   final IconData icon;
-  const _SlideContent({required this.title, required this.subtitle, required this.icon});
+  final SkillType? skill;
+  final bool useAccent;
+
+  const _SlideContent({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    this.skill,
+    this.useAccent = false,
+  });
 }
 
 class _Slide extends StatelessWidget {
@@ -222,36 +218,66 @@ class _Slide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
+    final colors = data.useAccent
+        ? null
+        : (data.skill != null ? AppSkillColors.of(data.skill!) : null);
+    final fg = data.useAccent ? AppColors.accent : colors?.color ?? AppColors.primary;
+    final bg = data.useAccent ? AppColors.accentTint : colors?.tint ?? AppColors.primaryTint;
+
     return Column(
       children: [
-        const SizedBox(height: 8),
-        Container(
-          width: 84, height: 84,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 1),
+        const SizedBox(height: AppSpacing.s3),
+        SizedBox(
+          width: 240,
+          height: 240,
+          child: Center(
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: bg,
+                shape: BoxShape.circle,
+                border: Border.all(color: fg.withValues(alpha: 0.25)),
+              ),
+              child: Icon(data.icon, color: fg, size: 56),
+            ),
           ),
-          child: Icon(data.icon, color: Colors.white, size: 40),
         ),
-        const SizedBox(height: 18),
-        Text(data.title,
-            textAlign: TextAlign.center,
-            style: text.headlineSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
-        Text(data.subtitle,
-            textAlign: TextAlign.center,
-            style: text.bodyMedium?.copyWith(color: Colors.white.withOpacity(.9), height: 1.4)),
+        const SizedBox(height: AppSpacing.s6),
+        Text(
+          data.title,
+          textAlign: TextAlign.center,
+          style: context.h2Style,
+        ),
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          data.subtitle,
+          textAlign: TextAlign.center,
+          style: StudentMobileUi.body(context),
+        ),
       ],
     );
   }
 }
 
 class _Dots extends StatelessWidget {
-  const _Dots({required this.active, required this.total});
+  const _Dots({
+    required this.active,
+    required this.total,
+    required this.slides,
+  });
+
   final int active;
   final int total;
+  final List<_SlideContent> slides;
+
+  Color _dotColor(int index, bool isActive) {
+    if (!isActive) return AppColors.outlineStrong;
+    final slide = slides[index];
+    if (slide.useAccent) return AppColors.accent;
+    if (slide.skill != null) return AppSkillColors.of(slide.skill!).color;
+    return AppColors.primary;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -261,11 +287,11 @@ class _Dots extends StatelessWidget {
         final isActive = i == active;
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 6),
-          width: isActive ? 12 : 8,
-          height: isActive ? 12 : 8,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: 6,
+          height: 6,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.white.withOpacity(0.45),
+            color: _dotColor(i, isActive),
             shape: BoxShape.circle,
           ),
         );

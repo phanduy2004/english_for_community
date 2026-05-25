@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../core/entity/report_entity.dart';
 
 class ReportDetailDialog extends StatelessWidget {
@@ -9,7 +9,7 @@ class ReportDetailDialog extends StatelessWidget {
   void _openImageViewer(BuildContext context, List<String> images, int initialIndex) {
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.9),
+      barrierColor: Colors.black.withValues(alpha: 0.9),
       builder: (ctx) => _FullScreenImageViewer(images: images, initialIndex: initialIndex),
     );
   }
@@ -226,7 +226,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.6), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
               child: Text('${_currentIndex + 1} / ${widget.images.length}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, decoration: TextDecoration.none)),
             ),
           ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../../../core/entity/dictation_attempt_entity.dart';
 
 class ListeningDetailView extends StatelessWidget {
@@ -78,7 +78,7 @@ class ListeningDetailView extends StatelessWidget {
       children: [
         Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color.withOpacity(0.7))),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -95,8 +95,8 @@ class ListeningDetailView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isPerfect ? Colors.green.withOpacity(0.3) : Colors.orange.withOpacity(0.3)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: isPerfect ? Colors.green.withValues(alpha: 0.3) : Colors.orange.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +109,7 @@ class ListeningDetailView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isPerfect ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                  color: isPerfect ? Colors.green.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(

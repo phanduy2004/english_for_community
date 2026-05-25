@@ -467,33 +467,67 @@ export const batchFinalizeExamAttempts = async (req, res) => {
  * Body: { topicId, taskType? }
  * Generates 3 writing prompt variations for a topic (for teacher to pick one).
  */
+const WRITING_TASK_TYPE_ALIASES = {
+  Opinion: 'Agree or Disagree',
+  Discussion: 'Discuss both views',
+  'Advantages-Disadvantages': 'Advantages and Disadvantages',
+  'Problem-Solution': 'Problem and Solution',
+  'Discuss both views and give your own opinion': 'Discuss both views',
+  'Two-part question': 'Essay',
+};
+
+function normalizeWritingTaskTypeForExam(tt) {
+  const s = String(tt || '').trim();
+  if (!s) return 'Essay';
+  return WRITING_TASK_TYPE_ALIASES[s] || s;
+}
+
 export const generateWritingPromptOptions = async (req, res) => {
   try {
-    const { topicId, taskType } = req.body;
-    if (!topicId) return res.status(400).json({ message: 'topicId is required' });
+    const { topicId, taskType, topicName } = req.body;
+    let topic;
+    if (topicId) {
+      topic = await WritingTopic.findById(topicId).lean();
+      if (!topic) return res.status(404).json({ message: 'Writing topic not found' });
+    } else {
+      const name = String(topicName || '').trim();
+      if (!name) {
+        return res.status(400).json({ message: 'topicId or topicName is required' });
+      }
+      topic = {
+        name,
+        aiConfig: {
+          level: 'Intermediate',
+          defaultTaskType: 'Essay',
+          taskTypes: ['Essay', 'Agree or Disagree', 'Discuss both views'],
+        },
+      };
+    }
 
-    const topic = await WritingTopic.findById(topicId).lean();
-    if (!topic) return res.status(404).json({ message: 'Writing topic not found' });
-
-    const resolvedTaskType = taskType || topic.aiConfig?.defaultTaskType || 'Essay';
-    const taskTypes = topic.aiConfig?.taskTypes?.length
-      ? topic.aiConfig.taskTypes
+    const resolvedTaskType = normalizeWritingTaskTypeForExam(
+      taskType || topic.aiConfig?.defaultTaskType || 'Essay'
+    );
+    const rawTypes = topic.aiConfig?.taskTypes?.length
+      ? topic.aiConfig.taskTypes.map((t) => normalizeWritingTaskTypeForExam(t))
       : [resolvedTaskType, 'Discuss both views', 'Agree or Disagree'];
+    const taskTypes = [...new Set(rawTypes)];
 
     const generateOne = async (tt) => {
+      const normalized = normalizeWritingTaskTypeForExam(tt);
       try {
-        return await aiService.generateWritingPrompt(topic.name, topic.aiConfig, tt);
+        const row = await aiService.generateWritingPrompt(topic.name, topic.aiConfig, normalized);
+        return { ...row, taskType: normalized };
       } catch {
         return {
           title: topic.name,
-          text: `Write about "${topic.name}". ${tt} — give your opinion and support it with examples.`,
-          taskType: tt,
+          text: `Write about "${topic.name}". ${normalized} — give your opinion and support it with examples.`,
+          taskType: normalized,
           level: topic.aiConfig?.level || 'Intermediate',
         };
       }
     };
 
-    const types = taskTypes.slice(0, 3);
+    const types = (taskType ? [resolvedTaskType, ...taskTypes] : taskTypes).slice(0, 3);
     const options = await Promise.all(types.map((tt) => generateOne(tt)));
     return res.status(200).json({ options });
   } catch (error) {

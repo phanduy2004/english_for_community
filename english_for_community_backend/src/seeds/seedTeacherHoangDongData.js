@@ -7,7 +7,6 @@
  */
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import Classroom from '../models/Classroom.js';
@@ -17,9 +16,9 @@ import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import Listening from '../models/Listening.js';
 import Reading from '../models/Reading.js';
+import SpeakingSet from '../models/SpeakingSet.js';
 import { buildIntegratedScores, computeFinal } from '../services/examIntegratedScoring.js';
-
-dotenv.config();
+import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
 
 const SEED_TAG = '[SEED:HoangDong]';
 const TEACHER_EMAIL = process.env.HOANGDONG_TEACHER_EMAIL || 'hoangdong.teacher@e4c.dev';
@@ -34,6 +33,16 @@ const SECTION_IDS = {
 };
 
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+async function findUserForSeed(email) {
+  const normalized = normalizeEmail(email);
+  let user = await User.findOne({ email: normalized });
+  if (user) return user;
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return User.findOne({ email: new RegExp(`^${escaped}$`, 'i') });
+}
 
 function httpError(statusCode, message) {
   const e = new Error(message);
@@ -347,7 +356,8 @@ async function upsertTeacher() {
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(TEACHER_PASSWORD, salt);
 
-  let user = await User.findOne({ email: TEACHER_EMAIL });
+  const teacherEmail = normalizeEmail(TEACHER_EMAIL);
+  let user = await findUserForSeed(teacherEmail);
   if (!user) {
     let username = TEACHER_USERNAME;
     if (await User.findOne({ username })) {
@@ -356,7 +366,7 @@ async function upsertTeacher() {
     user = await User.create({
       fullName: 'Đồ Đàng Hoàng',
       username,
-      email: TEACHER_EMAIL,
+      email: teacherEmail,
       password: hashedPassword,
       role: 'teacher',
       goal: 'Giảng dạy tiếng Anh THPT',
@@ -367,9 +377,11 @@ async function upsertTeacher() {
     });
     console.log('✅ Created teacher Đồ Đàng Hoàng');
   } else {
+    user.email = teacherEmail;
     user.fullName = 'Đồ Đàng Hoàng';
     user.role = 'teacher';
     user.isVerified = true;
+    user._destroy = false;
     user.password = hashedPassword;
     await user.save();
     console.log('✅ Updated teacher Đồ Đàng Hoàng');
@@ -428,12 +440,13 @@ async function upsertStudents() {
   const students = [];
 
   for (const p of STUDENT_PROFILES) {
-    let u = await User.findOne({ email: p.email });
+    const studentEmail = normalizeEmail(p.email);
+    let u = await findUserForSeed(studentEmail);
     if (!u) {
       u = await User.create({
         fullName: p.fullName,
         username: p.username,
-        email: p.email,
+        email: studentEmail,
         password: defaultHash,
         role: 'user',
         isVerified: true,
@@ -442,6 +455,15 @@ async function upsertStudents() {
         dateOfBirth: daysFromNow(-8000 - Math.floor(Math.random() * 2000)),
         totalPoints: Math.floor(Math.random() * 3000),
       });
+    } else {
+      u.email = studentEmail;
+      u.fullName = p.fullName;
+      u.username = p.username;
+      u.password = defaultHash;
+      u.role = 'user';
+      u.isVerified = true;
+      u._destroy = false;
+      await u.save();
     }
     students.push(u);
   }
@@ -490,7 +512,16 @@ async function loadCmsResources() {
   if (reading) console.log(`📖 Reading CMS: ${reading.title} (${reading.questions?.length ?? 0} questions)`);
   else console.log('⚠️ No Reading in DB — reading sections will be no_content');
 
-  return { listening, reading };
+  const speaking = await SpeakingSet.findOne({
+    _destroy: { $ne: true },
+    'lessons.0': { $exists: true },
+  })
+    .select('title lessons')
+    .lean();
+  if (speaking) console.log(`🎤 Speaking CMS: ${speaking.title}`);
+  else console.log('⚠️ No Speaking set in DB — speaking sections need a linked exercise in exam editor');
+
+  return { listening, reading, speaking };
 }
 
 function buildExamDoc(teacherId, blueprint, cms) {
@@ -512,6 +543,10 @@ function buildExamDoc(teacherId, blueprint, cms) {
     if (skill === 'reading' && cms.reading) {
       resourceId = cms.reading._id.toString();
       resourceTitle = cms.reading.title;
+    }
+    if (skill === 'speaking' && cms.speaking) {
+      resourceId = cms.speaking._id.toString();
+      resourceTitle = cms.speaking.title;
     }
     sections.push(buildSkillSection(skill, order, resourceId, resourceTitle, extra));
     order += 1;
@@ -677,14 +712,14 @@ async function createAttemptsForAssignment(assignment, exam, students, cms) {
 }
 
 async function run() {
-  const uri = process.env.MONGO_URI;
+  const uri = getMongoUri();
   if (!uri) {
     console.error('❌ Missing MONGO_URI in .env');
     process.exit(1);
   }
 
   await mongoose.connect(uri);
-  console.log('🔌 Connected to MongoDB\n');
+  console.log(`🔌 Connected to MongoDB (${getMongoUriForLog(uri)})\n`);
 
   const teacher = await upsertTeacher();
   await cleanupTeacherSeedData(teacher._id);

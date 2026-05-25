@@ -6,7 +6,9 @@ import 'package:english_for_community/feature/student/bloc/classroom_detail/stud
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_state.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/student_exam_assignment_tile.dart';
 import 'package:flutter/material.dart';
@@ -27,8 +29,23 @@ class StudentClassroomDetailPage extends StatefulWidget {
 }
 
 class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage> {
+  late final StudentClassroomDetailBloc _bloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = getIt<StudentClassroomDetailBloc>(param1: widget.classroomId)
+      ..add(const StudentClassroomDetailLoadRequested());
+  }
+
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
+  }
+
   void _reload() {
-    context.read<StudentClassroomDetailBloc>().add(const StudentClassroomDetailLoadRequested());
+    _bloc.add(const StudentClassroomDetailLoadRequested());
   }
 
   String? _formatDate(BuildContext context, dynamic raw) {
@@ -68,6 +85,13 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     return int.tryParse('$v') ?? 0;
   }
 
+  String? _attemptIdFromAssignment(Map<String, dynamic> assignment) {
+    final att = assignment['myAttempt'];
+    if (att is! Map) return null;
+    final id = att['id'] as String? ?? '';
+    return id.isNotEmpty ? id : null;
+  }
+
   Future<void> _open(
     String assignmentId,
     String mode,
@@ -75,16 +99,25 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     Map<String, dynamic> assignment,
   ) async {
     final hint = assignment['studentStatusHint'] as String?;
-    if (hint == 'session_ended') {
-      final att = assignment['myAttempt'];
-      if (att is Map) {
-        final attemptId = att['id'] as String? ?? '';
-        if (attemptId.isNotEmpty) {
-          await context.push('/student/exam-run/$attemptId');
-          _reload();
-          return;
-        }
+    final existingAttemptId = _attemptIdFromAssignment(assignment);
+    final attStatus = assignment['myAttempt'] is Map
+        ? (assignment['myAttempt'] as Map)['status'] as String?
+        : null;
+
+    if (hint == 'already_submitted' ||
+        hint == 'session_ended' ||
+        attStatus == 'submitted') {
+      if (existingAttemptId != null) {
+        await context.push('/student/exam-run/$existingAttemptId');
+        _reload();
+        return;
       }
+      if (hint == 'session_ended') return;
+    }
+
+    if (hint == 'resume' && existingAttemptId != null) {
+      await context.push('/student/exam-run/$existingAttemptId');
+      _reload();
       return;
     }
     if (mode == 'realtime' && activeSession != null) {
@@ -115,69 +148,38 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     final pending = _memberCount(c, 'memberCountPending');
     final policy = c['joinPolicy'] as String?;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.primary, AppColors.primaryDark],
-        ),
-        boxShadow: ExamSystemUi.softCardShadow,
-      ),
+    return AppCard(
+      variant: AppCardVariant.filled,
+      padding: const EdgeInsets.all(AppSpacing.s5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            name,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.onPrimary,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                  height: 1.15,
-                ),
-          ),
-          if (teacherLine.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Icon(Icons.person_outline, size: 18, color: AppColors.onPrimary.withValues(alpha: 0.9)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    teacherLine,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.onPrimary.withValues(alpha: 0.92),
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _heroChip(
-                context,
-                Icons.groups_outlined,
-                l10n.studentClassMemberCount(active),
-              ),
-              _heroChip(
-                context,
-                Icons.policy_outlined,
-                _joinPolicyLabel(l10n, policy),
-              ),
-              if (pending > 0)
-                _heroChip(
-                  context,
-                  Icons.hourglass_empty_rounded,
-                  l10n.teacherClassroomMemberCountPending(pending),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: StudentMobileUi.sectionTitle(context)),
+                    if (teacherLine.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.s3),
+                      Text(teacherLine, style: StudentMobileUi.body(context)),
+                    ],
+                  ],
                 ),
+              ),
+              StudentMobileUi.skillIconBox(Icons.class_outlined, size: 48),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          Wrap(
+            spacing: AppSpacing.s3,
+            runSpacing: AppSpacing.s3,
+            children: [
+              _metaChip(l10n.studentClassMemberCount(active)),
+              _metaChip(_joinPolicyLabel(l10n, policy)),
+              if (pending > 0) _metaChip(l10n.teacherClassroomMemberCountPending(pending)),
             ],
           ),
         ],
@@ -185,38 +187,23 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     );
   }
 
-  Widget _heroChip(BuildContext context, IconData icon, String text) {
+  Widget _metaChip(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s2),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.outline),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: AppColors.onPrimary.withValues(alpha: 0.95)),
-          const SizedBox(width: 6),
-          Text(
-            text,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onPrimary,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-          ),
-        ],
-      ),
+      child: Text(text, style: AppTypography.label(color: AppColors.textSecondary)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return BlocProvider(
-      create: (_) => getIt<StudentClassroomDetailBloc>(param1: widget.classroomId)
-        ..add(const StudentClassroomDetailLoadRequested()),
+    return BlocProvider.value(
+      value: _bloc,
       child: BlocBuilder<StudentClassroomDetailBloc, StudentClassroomDetailState>(
         builder: (context, state) {
           final loading = state.status == StudentClassroomDetailStatus.loading;
@@ -226,30 +213,33 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
 
           return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: ExamSystemUi.appBar(context, title: l10n.studentClassDetailTitle),
+      appBar: StudentMobileUi.appBar(context, title: l10n.studentClassDetailTitle),
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : error != null
               ? Center(
                   child: Padding(
-                    padding: ExamSystemUi.pagePadding,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(error, textAlign: TextAlign.center, style: ExamSystemUi.captionSecondary),
-                        const SizedBox(height: ExamSystemUi.blockGap),
-                        FilledButton(onPressed: _reload, child: Text(l10n.retry)),
-                      ],
+                    padding: StudentMobileUi.pagePadding,
+                    child: StudentMobileUi.errorBanner(
+                      message: error,
+                      onRetry: _reload,
+                      retryLabel: l10n.retry,
                     ),
                   ),
                 )
               : RefreshIndicator(
-                  onRefresh: () async => _reload(),
+                  color: AppColors.primary,
+                  onRefresh: () async {
+                    _reload();
+                    await _bloc.stream.firstWhere(
+                      (s) => s.status != StudentClassroomDetailStatus.loading,
+                    );
+                  },
                   child: ListView(
-                    padding: ExamSystemUi.pagePadding,
+                    padding: StudentMobileUi.pagePadding,
                     children: [
                       if (classroom != null) _heroHeader(context, l10n, classroom),
-                      const SizedBox(height: ExamSystemUi.sectionGap),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
                       AppCard(
                         variant: AppCardVariant.outline,
                         child: Padding(
@@ -257,17 +247,16 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(l10n.studentClassInfoTitle, style: ExamSystemUi.sectionTitle(context)),
-                              const SizedBox(height: ExamSystemUi.blockGap),
+                              Text(l10n.studentClassInfoTitle, style: StudentMobileUi.sectionTitle(context)),
+                              const SizedBox(height: AppSpacing.s5),
                               Builder(
                                 builder: (ctx) {
                                   final desc = (classroom?['description'] as String?)?.trim() ?? '';
                                   final emptyHint = l10n.studentClassNoDescription;
                                   return Text(
                                     desc.isNotEmpty ? desc : emptyHint,
-                                    style: ExamSystemUi.captionSecondary.copyWith(
+                                    style: StudentMobileUi.body(context).copyWith(
                                       color: desc.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
-                                      fontSize: 14,
                                       height: 1.45,
                                     ),
                                   );
@@ -286,13 +275,13 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                                         if (created != null)
                                           Text(
                                             l10n.studentClassCreatedAt(created),
-                                            style: ExamSystemUi.captionMuted,
+                                            style: StudentMobileUi.caption(context),
                                           ),
                                         if (updated != null) ...[
                                           if (created != null) const SizedBox(height: 6),
                                           Text(
                                             l10n.studentClassUpdatedAt(updated),
-                                            style: ExamSystemUi.captionMuted,
+                                            style: StudentMobileUi.caption(context),
                                           ),
                                         ],
                                       ],
@@ -304,27 +293,15 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                           ),
                         ),
                       ),
-                      const SizedBox(height: ExamSystemUi.sectionGap),
-                      Text(l10n.studentClassDetailAssignmentsTitle, style: ExamSystemUi.sectionTitle(context)),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+                      StudentMobileUi.sectionHeader(context, title: l10n.studentClassDetailAssignmentsTitle),
+                      const SizedBox(height: AppSpacing.s4),
                       if (assignments.isEmpty)
-                        AppCard(
-                          variant: AppCardVariant.outline,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 12),
-                            child: Column(
-                              children: [
-                                Icon(Icons.assignment_turned_in_outlined,
-                                    size: 40, color: AppColors.primary.withValues(alpha: 0.35)),
-                                const SizedBox(height: 12),
-                                Text(
-                                  l10n.studentClassNoAssignments,
-                                  textAlign: TextAlign.center,
-                                  style: ExamSystemUi.captionSecondary,
-                                ),
-                              ],
-                            ),
-                          ),
+                        StudentMobileUi.emptyState(
+                          context,
+                          icon: Icons.assignment_turned_in_outlined,
+                          title: l10n.studentClassNoAssignments,
+                          body: '',
                         )
                       else
                         ...assignments.map((raw) {

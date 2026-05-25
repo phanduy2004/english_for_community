@@ -1,5 +1,4 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -559,7 +558,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
           color: kWhite,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kBorder),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 1))]
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 1))]
       ),
       child: Column(
         children: [
@@ -616,7 +615,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
                         height: 48,
                         width: 48,
                         decoration: BoxDecoration(
-                          color: isPlaying ? Colors.red.withOpacity(0.1) : kTextMain.withOpacity(0.1),
+                          color: isPlaying ? Colors.red.withValues(alpha: 0.1) : kTextMain.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: isPlaying ? Colors.red : kTextMain),
                         ),
@@ -649,7 +648,6 @@ class _CompactTableInput extends StatefulWidget {
   final String hint;
   final Function(String) onChanged;
   final bool isNumber;
-  final TextAlign textAlign;
   final int? maxLines;
 
   const _CompactTableInput({
@@ -657,7 +655,6 @@ class _CompactTableInput extends StatefulWidget {
     required this.onChanged,
     this.value,
     this.isNumber = false,
-    this.textAlign = TextAlign.start,
     this.maxLines = 1,
   });
 
@@ -699,7 +696,7 @@ class _CompactTableInputState extends State<_CompactTableInput> {
       keyboardType: widget.isNumber ? TextInputType.number : TextInputType.multiline,
       maxLines: widget.maxLines,
       minLines: 1,
-      textAlign: widget.textAlign,
+      textAlign: TextAlign.start,
       style: const TextStyle(fontSize: 14, height: 1.3),
       decoration: InputDecoration(
         isDense: true,

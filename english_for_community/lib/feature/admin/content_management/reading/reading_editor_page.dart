@@ -83,7 +83,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
 
   void _populateData(ReadingEntity reading) {
     _titleCtrl.text = reading.title;
-    _summaryCtrl.text = reading.summary ?? '';
+    _summaryCtrl.text = reading.summary;
     _imageUrlCtrl.text = reading.imageUrl ?? '';
     _minutesCtrl.text = reading.minutesToRead.toString();
     _difficulty = reading.difficulty?.name ?? 'medium';
@@ -545,24 +545,28 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                   const Text("Options & Correct Answer", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: kTextMuted)),
                   const SizedBox(height: 8),
 
-                  ...List.generate(4, (optIdx) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Transform.scale(
-                              scale: 1.1,
-                              child: Radio<int>(
-                                value: optIdx,
-                                groupValue: q['correctAnswerIndex'],
-                                activeColor: Colors.green,
-                                onChanged: _isEditingMode ? (val) => setState(() => q['correctAnswerIndex'] = val) : null,
+                  RadioGroup<int>(
+                    groupValue: q['correctAnswerIndex'] as int?,
+                    onChanged: (val) {
+                      if (_isEditingMode) setState(() => q['correctAnswerIndex'] = val);
+                    },
+                    child: Column(
+                      children: List.generate(4, (optIdx) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Transform.scale(
+                                  scale: 1.1,
+                                  child: Radio<int>(
+                                    value: optIdx,
+                                    fillColor: const WidgetStatePropertyAll(Colors.green),
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
                           Expanded(
                             child: Column(
                               children: [
@@ -587,7 +591,9 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         ],
                       ),
                     );
-                  }),
+                      }),
+                    ),
+                  ),
 
                   const SizedBox(height: 12),
 

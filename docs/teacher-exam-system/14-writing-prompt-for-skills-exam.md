@@ -44,12 +44,14 @@ Trong `sections[]`, section có `skill: "writing"`:
 ## 3. Luồng giáo viên (soạn đề)
 
 1. Mở editor **Skills exam** / **Four-skill exam**.
-2. Bật kỹ năng **Writing** → **Thêm bài tập** (chọn topic từ thư viện).
-3. Trong khối **Writing Prompt**:
-   - **Generate with AI** — gọi API tạo 3 đề gợi ý từ topic đã chọn → GV chọn một đề.
-   - **Write manually** — dialog *Write your own prompt* (title, task type, nội dung đề) → **Save**.
-4. **Save draft** / **Publish** — `fixedWritingPrompt` nằm trong section Writing của snapshot.
-5. **Publish:** nếu Writing được bật mà chưa có `fixedWritingPrompt.text` → chặn, báo lỗi.
+2. Bật kỹ năng **Writing** (topic thư viện **không bắt buộc** nếu đã có đề cố định).
+3. Tuỳ chọn: **Thêm bài tập** — chọn topic CMS (hỗ trợ AI theo rubric topic).
+4. Trong khối **Đề bài Writing** (bắt buộc trước Publish):
+   - **Tạo đề bằng AI** — chọn dạng bài (hoặc “Bất kỳ”) → API tạo tối đa 3 đề (cần topic **hoặc** tiêu đề đề thi).
+   - **Tự soạn đề** — title, task type, nội dung → **Lưu**.
+5. **Grammar** — toggle bật/tắt giống từng kỹ năng; khi bật phải có ≥ 1 câu.
+6. **Save draft** / **Publish** — `fixedWritingPrompt` trong section Writing; `grammarEnabled` + `grammarItems` trong settings.
+7. **Publish:** Writing bật mà thiếu `fixedWritingPrompt.text` → chặn (không dùng lỗi “thêm bài tập” chung).
 
 **Code:** `teacher_integrated_exam_editor_page.dart` — `_showWritingPromptManualDialog`, `_generateWritingPromptOptions`.
 

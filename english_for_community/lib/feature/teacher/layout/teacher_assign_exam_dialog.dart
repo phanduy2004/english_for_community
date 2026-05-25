@@ -578,7 +578,8 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
           _formGroup(
             label: l10n.teacherAssignmentMaxAttempts,
             child: DropdownButtonFormField<int>(
-              value: _maxAttempts,
+              key: ValueKey(_maxAttempts),
+              initialValue: _maxAttempts,
               isExpanded: true,
               decoration: _textDec(),
               items: _maxAttemptChoices.map((n) => DropdownMenuItem(value: n, child: Text('$n'))).toList(),
@@ -592,7 +593,8 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         _formGroup(
           label: l10n.teacherAssignmentShowResults,
           child: DropdownButtonFormField<String>(
-            value: _showResultsPolicy,
+            key: ValueKey(_showResultsPolicy),
+            initialValue: _showResultsPolicy,
             isExpanded: true,
             decoration: _textDec(),
             items: [
@@ -694,7 +696,8 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
             _formGroup(
               label: l10n.teacherAssignmentClassroom,
               child: DropdownButtonFormField<String>(
-                value: _classrooms.isEmpty ? null : _classroomId,
+                key: ValueKey(_classroomId),
+                initialValue: _classrooms.isEmpty ? null : _classroomId,
                 isExpanded: true,
                 decoration: _textDec(),
                 items: _classrooms.map((raw) {

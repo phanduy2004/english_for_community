@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -6,6 +6,7 @@ import '../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/entity/user_entity.dart';
 import '../../../../core/get_it/get_it.dart';
 import '../../../../core/repository/user_repository.dart';
+import 'user_role_badge.dart';
 
 class AdminUserDetailsDialog extends StatefulWidget {
   final String userId;
@@ -160,6 +161,8 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                     Row(
                       children: [
                         _StatusBadge(label: user.isOnline ? 'Online' : 'Offline', color: user.isOnline ? Colors.green : Colors.grey),
+                        const SizedBox(width: 8),
+                        UserRoleBadge(role: user.role),
                         const SizedBox(width: 8),
                         _StatusBadge(label: 'Level ${user.level ?? 1}', color: Colors.blue),
                         _StatusBadge(label: '${user.totalPoints ?? 1} Exp', color: Colors.amber[700]!),
@@ -480,7 +483,7 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.label, required this.value, required this.icon, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE4E4E7)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF09090B))), Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A)))]));
+    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE4E4E7)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF09090B))), Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A)))]));
   }
 }
 class _StatSmallItem extends StatelessWidget {
@@ -496,6 +499,6 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.label, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)), child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)), child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)));
   }
 }

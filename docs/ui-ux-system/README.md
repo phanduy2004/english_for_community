@@ -33,6 +33,8 @@
 | [`12-ai-guardrails.md`](12-ai-guardrails.md) | Rules cho AI agent: được/không được làm gì, checklist trước khi commit |
 | [`13-teacher-live-session-console-layout.md`](13-teacher-live-session-console-layout.md) | Live session console: tabs-first, metadata thu gọn, list HS dày |
 | [`14-teacher-dialogs.md`](14-teacher-dialogs.md) | **Dialog giáo viên:** shell, account hub, edit profile, password, picker |
+| [`15-mobile-smart-patterns.md`](15-mobile-smart-patterns.md) | **Mobile patterns thông minh:** micro-interactions, haptic, bottom sheet, carousel, gamification, badge, transitions, coachmark, offline, dark mode prep |
+| [`16-teacher-live-participant-status.md`](16-teacher-live-participant-status.md) | **Live session:** chip trạng thái HS (lobby + đang làm / đã nộp) — Session control & Live monitor |
 
 ## Cách dùng tài liệu
 

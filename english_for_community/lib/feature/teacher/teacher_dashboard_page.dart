@@ -501,7 +501,8 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: DropdownButtonFormField<String?>(
-                          value: _classroomFilterId,
+                          key: ValueKey(_classroomFilterId),
+                          initialValue: _classroomFilterId,
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: l10n.teacherDashboardFilterByClass,

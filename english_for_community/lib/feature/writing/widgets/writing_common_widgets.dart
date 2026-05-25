@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
 
 // --- Header ---
 class WritingHeader extends StatelessWidget {
@@ -13,14 +14,10 @@ class WritingHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF18181B), Color(0xFF27272A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.primary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: AppColors.primary.withValues(alpha: 0.15),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -35,7 +32,7 @@ class WritingHeader extends StatelessWidget {
                 Text(
                   context.l10n.writingHeaderEssayTitle,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
@@ -44,7 +41,7 @@ class WritingHeader extends StatelessWidget {
                 Text(
                   context.l10n.writingHeaderEssaySubtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.onPrimary.withValues(alpha: 0.8),
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -53,13 +50,13 @@ class WritingHeader extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: AppColors.onPrimary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.onPrimary.withValues(alpha: 0.2)),
                   ),
                   child: Text(
                     context.l10n.writingAiFeedbackBadge,
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: AppColors.onPrimary, fontSize: 11, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -69,10 +66,10 @@ class WritingHeader extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.onPrimary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.edit_note_rounded, color: Colors.white, size: 32),
+            child: const Icon(Icons.edit_note_rounded, color: AppColors.onPrimary, size: 32),
           ),
         ],
       ),
@@ -89,17 +86,14 @@ class WritingSearchBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const borderColor = Color(0xFFE4E4E7);
-    const textMuted = Color(0xFF71717A);
-
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: AppColors.primary.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -110,8 +104,8 @@ class WritingSearchBox extends StatelessWidget {
         style: const TextStyle(fontSize: 14),
         decoration: InputDecoration(
           hintText: context.l10n.writingSearchTopicsTasksHint,
-          hintStyle: const TextStyle(fontSize: 14, color: textMuted),
-          prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
+          hintStyle: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           isDense: true,
@@ -157,15 +151,15 @@ class WritingFilterRow extends StatelessWidget {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: selected ? primaryColor : Colors.white,
+                  color: selected ? primaryColor : AppColors.surfaceCard,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: selected ? primaryColor : const Color(0xFFE4E4E7),
+                    color: selected ? primaryColor : AppColors.outline,
                   ),
                   boxShadow: selected ? [
-                    BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                    BoxShadow(color: primaryColor.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))
                   ] : [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 2, offset: const Offset(0, 1))
+                    BoxShadow(color: AppColors.primary.withValues(alpha: 0.03), blurRadius: 2, offset: const Offset(0, 1))
                   ],
                 ),
                 child: Text(
@@ -173,7 +167,7 @@ class WritingFilterRow extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: selected ? Colors.white : const Color(0xFF52525B),
+                    color: selected ? AppColors.onPrimary : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -191,7 +185,6 @@ class WritingEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const textMuted = Color(0xFF71717A);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -200,14 +193,14 @@ class WritingEmptyView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surfaceCard,
               shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE4E4E7)),
+              border: Border.all(color: AppColors.outline),
             ),
-            child: const Icon(Icons.edit_off_outlined, size: 40, color: textMuted),
+            child: const Icon(Icons.edit_off_outlined, size: 40, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
-          Text(context.l10n.writingNoTopicsFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(context.l10n.writingNoTopicsFound, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -224,9 +217,9 @@ class WritingErrorView extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 32, color: Color(0xFFEF4444)),
+          const Icon(Icons.error_outline, size: 32, color: AppColors.danger),
           const SizedBox(height: 12),
-          Text(message, style: const TextStyle(color: Color(0xFF71717A))),
+          Text(message, style: const TextStyle(color: AppColors.textSecondary)),
         ],
       ),
     );

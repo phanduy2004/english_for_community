@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:translator_plus/translator_plus.dart';
 
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
 
 class WordDetailsDialog extends StatefulWidget {
   final String word;
@@ -189,12 +190,12 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Color(0xFFE4E4E7))),
+                border: Border(top: BorderSide(color: AppColors.outline)),
               ),
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFF09090B),
-                  side: const BorderSide(color: Color(0xFFE4E4E7)),
+                  foregroundColor: AppColors.textPrimary,
+                  side: const BorderSide(color: AppColors.outline),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -215,12 +216,12 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 40),
+            const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
             const SizedBox(height: 16),
             Text(
               _error,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF71717A)),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),
@@ -235,8 +236,8 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
 
     final t = context.l10n;
     final primaryColor = Theme.of(context).colorScheme.primary;
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    const textMain = AppColors.textPrimary;
+    const textMuted = AppColors.textSecondary;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -268,7 +269,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
               IconButton(
                 onPressed: _pronounceWord,
                 style: IconButton.styleFrom(
-                  backgroundColor: primaryColor.withOpacity(0.1),
+                  backgroundColor: primaryColor.withValues(alpha: 0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 icon: Icon(Icons.volume_up_rounded, color: primaryColor),
@@ -282,9 +283,9 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE4E4E7)),
+                border: Border.all(color: AppColors.outline),
               ),
               child: Row(
                 children: [
@@ -312,8 +313,8 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
   }
 
   Widget _buildMeaningSection(WordMeaning meaning) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    const textMain = AppColors.textPrimary;
+    const textMuted = AppColors.textSecondary;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),

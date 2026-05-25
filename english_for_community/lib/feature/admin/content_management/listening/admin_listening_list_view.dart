@@ -43,7 +43,6 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
   final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
 
   void _openEditor(BuildContext context, String? id) async {
-    print("DEBUG LIST VIEW - Opening Editor for ID: $id"); // 👇 Log kiểm tra
 
     await context.pushNamed(
       'ContentEditorRoute',

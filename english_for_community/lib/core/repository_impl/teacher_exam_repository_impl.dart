@@ -953,11 +953,16 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
 
   @override
   Future<Either<Failure, List<Map<String, dynamic>>>> generateWritingPromptOptions({
-    required String topicId,
+    String? topicId,
+    String? topicName,
     String? taskType,
   }) async {
     try {
-      return Right(await remote.generateWritingPromptOptions(topicId: topicId, taskType: taskType));
+      return Right(await remote.generateWritingPromptOptions(
+        topicId: topicId,
+        topicName: topicName,
+        taskType: taskType,
+      ));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {

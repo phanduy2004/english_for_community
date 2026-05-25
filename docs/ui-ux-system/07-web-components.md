@@ -71,6 +71,18 @@
 - Sticky tabs khi scroll.
 - Có thể kèm count: `Lượt nộp · 24` (count `web.micro` trong pill nhỏ).
 
+## 6.1 `TeacherExamParticipantStatusChip` (live session)
+
+> Spec đầy đủ: [`16-teacher-live-participant-status.md`](16-teacher-live-participant-status.md).
+
+| Variant | Khi dùng |
+|---------|----------|
+| Lobby | `Not ready` · `Ready` |
+| Live | `In progress` · `Submitted` · `Time expired` · `Removed` |
+
+- Dùng trong **Session control** roster và **Live monitor** student card — **một component**, map từ server.
+- Integrity risk = icon flag riêng, không thay chip chính.
+
 ## 7. Form
 
 ### 7.1 Field

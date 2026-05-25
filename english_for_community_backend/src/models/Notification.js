@@ -16,6 +16,13 @@ const notificationSchema = new mongoose.Schema({
       'DAILY_REMINDER',
       'SYSTEM_ANNOUNCEMENT',
       'CLASSROOM_JOIN_REQUEST',
+      'CLASSROOM_JOIN_APPROVED',
+      'CLASSROOM_JOIN_REJECTED',
+      'EXAM_ASSIGNED',
+      'EXAM_ASSIGNMENT_UPDATED',
+      'EXAM_ASSIGNMENT_CLOSED',
+      'EXAM_SESSION_LIVE',
+      'EXAM_SUBMISSION_RECEIVED',
       'EXAM_RESULTS_RELEASED',
     ],
     required: true
@@ -24,13 +31,8 @@ const notificationSchema = new mongoose.Schema({
   title: { type: String, required: true },
   message: { type: String, required: true },
 
-  // Dữ liệu payload để Client biết đường navigate
-  data: {
-    listeningId: String,
-    cueId: String,        // 🔥 THÊM DÒNG NÀY VÀO ĐÂY
-    commentId: String,
-    url: String
-  },
+  // Payload for deep links (classroomId, assignmentId, listeningId, …)
+  data: { type: mongoose.Schema.Types.Mixed, default: {} },
 
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }

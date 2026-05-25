@@ -1,12 +1,7 @@
 // feature/progress/bloc/progress_bloc.dart
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/entity/progress_summary_entity.dart';
-// ⚠️ Cần import entity mới
-// import '../../../core/entity/progress_detail_entity.dart';
-import '../../../core/model/failure.dart';
 import '../../../core/repository/progress_repository.dart';
 
 

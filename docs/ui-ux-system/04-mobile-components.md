@@ -40,6 +40,18 @@
 - Khoảng cách 2 card kề nhau trong list: **12**.
 - Card có header + body: dòng header 14/600 + body 13/400, gap 8.
 
+### 2.3 Skill accent card (Student Vibrancy)
+
+> Chỉ dùng trên **màn học sinh**. Xem `02` §1.8 và `StudentMobileUi.skillAccentCard`.
+
+| Element | Spec |
+|---------|------|
+| Background | `surfaceCard` (không đổi) |
+| Viền trái | 3px skill `color` |
+| Icon box | `skillIconBox(..., skill:)` — nền skill `tint`, icon skill `color` |
+| Chevron | skill `color` (không `textSecondary`) |
+| Text title/body | Luôn `textPrimary` |
+
 ## 3. List item
 
 ### 3.1 1-line

@@ -1,3 +1,4 @@
+import { setUserOfflineAndNotify } from '../socket/socketManager.js';
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../lib/jwt_token.js';
@@ -46,6 +47,44 @@ const generateOtp = (length = 6) => {
   for (let i = 0; i < length; i++) otp += Math.floor(Math.random() * 10);
   return otp;
 };
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+
+const isBcryptHash = (value) =>
+  typeof value === 'string' && /^\$2[aby]\$\d{2}\$/.test(value);
+
+async function findUserByEmailForLogin(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return null;
+
+  let user = await User.findOne({ email: normalized, _destroy: { $ne: true } });
+  if (user) return user;
+
+  const escaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return User.findOne({
+    email: new RegExp(`^${escaped}$`, 'i'),
+    _destroy: { $ne: true },
+  });
+}
+
+/** Đăng nhập bằng email hoặc username (seed: seed_hd_s04). */
+async function findUserForLogin(identifier) {
+  const raw = String(identifier || '').trim();
+  if (!raw) return null;
+
+  if (raw.includes('@')) {
+    return findUserByEmailForLogin(raw);
+  }
+
+  let user = await User.findOne({ username: raw, _destroy: { $ne: true } });
+  if (user) return user;
+
+  const escaped = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return User.findOne({
+    username: new RegExp(`^${escaped}$`, 'i'),
+    _destroy: { $ne: true },
+  });
+}
 
 // --- 1. Đăng ký User mới ---
 const registerUser = async (data) => {
@@ -176,13 +215,23 @@ const verifyOtp = async (email, otp, purpose) => {
 };
 // --- 4. Login ---
 const loginUser = async (email, password) => {
-  const user = await User.findOne({ email });
+  if (!email || !password) {
+    throw createError(400, 'Email and password are required');
+  }
+
+  const user = await findUserForLogin(email);
+  if (!user) throw createError(400, 'Invalid credentials');
   if (!user.isVerified) {
     throw createError(403, 'Please verify your email address to log in.');
   }
-  if (!user) throw createError(400, 'Invalid credentials');
+  if (!isBcryptHash(user.password)) {
+    throw createError(
+      400,
+      'This account was created with Google sign-in. Please use Continue with Google.'
+    );
+  }
 
-  const ok = await bcrypt.compare(password, user.password);
+  const ok = await bcrypt.compare(String(password), user.password);
   if (!ok) throw createError(400, 'Invalid credentials');
 
   // Check Ban Status (Giữ nguyên logic cũ)
@@ -206,7 +255,6 @@ const loginUser = async (email, password) => {
 
   // Cập nhật trạng thái DB (Vẫn giữ lại isOnline/lastActivityDate)
   user.refreshToken = refreshToken;
-  user.isOnline = true;
   user.lastActivityDate = new Date();
   await user.save();
 
@@ -228,6 +276,11 @@ const logoutUser = async (userId) => {
     user.refreshToken = null;
     user.isOnline = false;
     await user.save();
+  }
+  try {
+    await setUserOfflineAndNotify(userId);
+  } catch (e) {
+    console.error('setUserOfflineAndNotify failed:', e.message);
   }
 };
 
@@ -339,7 +392,6 @@ const loginWithGoogle = async (idToken) => {
     const refreshToken = generateRefreshToken(user._id);
 
     user.refreshToken = refreshToken;
-    user.isOnline = true;
     user.lastActivityDate = new Date();
     await user.save();
 

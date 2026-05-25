@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 
 enum AppCardVariant { elevated, filled, outline, danger }
 
@@ -9,8 +10,8 @@ class AppCard extends StatelessWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(16),
     this.margin,
-    this.variant = AppCardVariant.elevated,
-    this.radius = 16,
+    this.variant = AppCardVariant.outline,
+    this.radius = 12,
   });
 
   final Widget child;
@@ -22,38 +23,39 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    // Màu nền & viền theo biến thể
     Color bg;
     Border? border;
     List<BoxShadow>? boxShadow;
 
     switch (variant) {
       case AppCardVariant.elevated:
-        bg = Theme.of(context).cardColor; // gần giống Home
+        bg = AppColors.surfaceCard;
+        border = Border.all(color: AppColors.outline, width: 1);
         boxShadow = const [
           BoxShadow(
-            blurRadius: 8,
-            color: Color(0x1A000000),
-            offset: Offset(0, 2),
+            color: Color(0x0A000000),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 1,
+            offset: Offset(0, 1),
           ),
         ];
         break;
       case AppCardVariant.filled:
-        bg = scheme.surface;
+        bg = AppColors.surfaceSubtle;
         boxShadow = null;
         break;
       case AppCardVariant.outline:
-        bg = scheme.surface;
-        border = Border.all(color: scheme.outlineVariant.withValues(alpha: 0.55), width: 0.5);
-        boxShadow = const [
-          BoxShadow(color: Color(0x06000000), blurRadius: 12, offset: Offset(0, 4)),
-        ];
+        bg = AppColors.surfaceCard;
+        border = Border.all(color: AppColors.outline, width: 1);
+        boxShadow = null;
         break;
       case AppCardVariant.danger:
-        bg = scheme.errorContainer;
-        border = Border.all(color: scheme.error);
+        bg = AppColors.dangerBg;
+        border = Border.all(color: AppColors.danger);
         boxShadow = null;
         break;
     }
@@ -74,6 +76,7 @@ class AppCard extends StatelessWidget {
             : InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(radius),
+          splashColor: AppColors.primary.withValues(alpha: 0.08),
           child: content,
         ),
       ),

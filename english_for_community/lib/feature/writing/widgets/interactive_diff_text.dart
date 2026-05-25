@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
 
 class InteractiveDiffText extends StatelessWidget {
   final String text;
@@ -34,7 +35,7 @@ class InteractiveDiffText extends StatelessWidget {
           style: const TextStyle(
             fontSize: 15,
             height: 1.6,
-            color: Color(0xFF09090B), // Màu đen chuẩn
+            color: AppColors.textPrimary, // Màu đen chuẩn
           ),
         ));
       }
@@ -46,7 +47,7 @@ class InteractiveDiffText extends StatelessWidget {
       if (oldText.trim().toLowerCase() == newText.trim().toLowerCase()) {
         spans.add(TextSpan(
           text: newText, // Hiển thị luôn từ đó bình thường
-          style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF09090B)),
+          style: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary),
         ));
         lastMatchEnd = match.end;
         continue; // Bỏ qua, chạy vòng lặp tiếp theo
@@ -72,7 +73,7 @@ class InteractiveDiffText extends StatelessWidget {
         style: const TextStyle(
           fontSize: 15,
           height: 1.6,
-          color: Color(0xFF09090B),
+          color: AppColors.textPrimary,
         ),
       ));
     }
@@ -86,20 +87,20 @@ class InteractiveDiffText extends StatelessWidget {
         return PrettyDiffText(
           oldText: oldText,
           newText: newText,
-          defaultTextStyle: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF09090B)),
+          defaultTextStyle: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary),
           addedTextStyle: const TextStyle(
-            backgroundColor: Color(0xFFDCFCE7),
-            color: Color(0xFF14532D),
+            backgroundColor: AppColors.successBg,
+            color: AppColors.success,
             fontWeight: FontWeight.w600,
           ),
           deletedTextStyle: const TextStyle(
-            backgroundColor: Color(0xFFFEE2E2),
-            color: Color(0xFF991B1B),
+            backgroundColor: AppColors.dangerBg,
+            color: AppColors.danger,
             decoration: TextDecoration.lineThrough,
           ),
         );
       }
-      return Text(newText, style: const TextStyle(fontSize: 15, height: 1.6, color: Color(0xFF09090B)));
+      return Text(newText, style: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary));
     }
 
     return RichText(
@@ -138,9 +139,9 @@ class _ErrorToken extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: const Color(0xFFFEF2F2), // Nền đỏ rất nhạt
+          color: AppColors.dangerBg, // Nền đỏ rất nhạt
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: const Color(0xFFFECACA)), // Viền đỏ nhạt
+          border: Border.all(color: AppColors.dangerBg), // Viền đỏ nhạt
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -151,9 +152,9 @@ class _ErrorToken extends StatelessWidget {
                 oldText,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: Color(0xFFDC2626), // Đỏ đậm
+                  color: AppColors.danger, // Đỏ đậm
                   decoration: TextDecoration.lineThrough,
-                  decorationColor: Color(0xFFDC2626),
+                  decorationColor: AppColors.danger,
                 ),
               ),
               const SizedBox(width: 4),
@@ -165,7 +166,7 @@ class _ErrorToken extends StatelessWidget {
               newText,
               style: const TextStyle(
                 fontSize: 14,
-                color: Color(0xFF16A34A), // Xanh lá đậm
+                color: AppColors.success, // Xanh lá đậm
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -194,7 +195,7 @@ class _CuteReasonPopup extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -209,10 +210,10 @@ class _CuteReasonPopup extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: AppColors.infoBg,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.auto_fix_high, color: Color(0xFF3B82F6)),
+                child: const Icon(Icons.auto_fix_high, color: AppColors.info),
               ),
               const SizedBox(width: 12),
               Text(
@@ -227,9 +228,9 @@ class _CuteReasonPopup extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9FAFB),
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE4E4E7)),
+              border: Border.all(color: AppColors.outline),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -254,7 +255,7 @@ class _CuteReasonPopup extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             reason,
-            style: const TextStyle(fontSize: 15, color: Color(0xFF1F2937), height: 1.5),
+            style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.5),
             textAlign: TextAlign.left,
           ),
           const SizedBox(height: 24),
@@ -265,7 +266,7 @@ class _CuteReasonPopup extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF18181B),
+                backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

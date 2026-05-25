@@ -9,18 +9,24 @@ import 'package:english_for_community/feature/vocabulary/bloc/vocabulary_state.d
 import '../../core/get_it/get_it.dart';
 import '../../core/repository/dictionary_repository.dart';
 import '../../core/router/app_router.dart';
-import 'vocabulary_tutorial_dialog.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import 'vocabulary_tutorial_dialog.dart';
 
 class VocabularyHomePage extends StatefulWidget {
   final int? initialIndex;
-  const VocabularyHomePage({super.key,this.initialIndex});
+  const VocabularyHomePage({super.key, this.initialIndex});
 
   @override
   State<VocabularyHomePage> createState() => _VocabularyHomePageState();
 }
 
-class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTickerProviderStateMixin {
+class _VocabularyHomePageState extends State<VocabularyHomePage>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late final VocabularyBloc _vocabularyBloc;
   late final DictionaryRepository _dictionaryRepository;
@@ -48,85 +54,113 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
   }
 
   void _showTutorial() {
-    showDialog(context: context, builder: (context) => const VocabularyTutorialDialog());
+    showDialog(
+      context: context,
+      builder: (context) => const VocabularyTutorialDialog(),
+    );
   }
 
   Future<void> _navigateToDetail(String headword) async {
-    // ... Logic giữ nguyên
     try {
       final result = await _dictionaryRepository.searchWord(headword, limit: 1);
       result.fold(
-            (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabErrorWithMessage(failure.message))));
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(context.l10n.vocabErrorWithMessage(failure.message)),
+            ),
+          );
         },
-            (entries) {
+        (entries) {
           if (entries.isNotEmpty && entries.first.headword == headword) {
             if (mounted) {
-              context.pushNamed(kDictDetailRouteName, extra: entries.first).then((_) => _loadData());
+              context
+                  .pushNamed(kDictDetailRouteName, extra: entries.first)
+                  .then((_) => _loadData());
             }
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabNoDetailsForWord(headword))));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.l10n.vocabNoDetailsForWord(headword)),
+              ),
+            );
           }
         },
       );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.vocabErrorWithMessage(e.toString()))));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.l10n.vocabErrorWithMessage(e.toString()))),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    const bgPage = Color(0xFFF9FAFB);
-    const textMain = Color(0xFF09090B);
-    const borderCol = Color(0xFFE4E4E7);
+    final vocabAccent = AppSkillColors.of(SkillType.vocabulary).color;
 
     return BlocProvider.value(
       value: _vocabularyBloc,
       child: Scaffold(
-        backgroundColor: bgPage,
+        backgroundColor: AppColors.surface,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          toolbarHeight: StudentMobileUi.appBarHeight,
           elevation: 0,
           scrolledUnderElevation: 0,
-          centerTitle: false,
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
           title: Text(
             t.vocabularyScreenTitle,
-            style: const TextStyle(color: textMain, fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
+            style: StudentMobileUi.sectionTitle(context),
           ),
           actions: [
-            IconButton(
-              icon: Icon(Icons.help_outline_rounded, color: Colors.blue[600]), // Icon màu xanh
+            StudentMobileUi.headerIconButton(
+              icon: Icons.help_outline_rounded,
               tooltip: t.vocabTutorialTooltip,
               onPressed: _showTutorial,
             ),
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(color: Colors.grey[100], shape: BoxShape.circle),
-              child: IconButton(
-                icon: const Icon(Icons.search, color: textMain),
+            Padding(
+              padding: const EdgeInsets.only(right: StudentMobileUi.pageHPadding),
+              child: StudentMobileUi.headerIconButton(
+                icon: Icons.search_rounded,
                 tooltip: t.vocabSearchDictionaryTooltip,
-                onPressed: () => context.pushNamed(kDictDemoRouteName).then((_) => _loadData()),
+                onPressed: () =>
+                    context.pushNamed(kDictDemoRouteName).then((_) => _loadData()),
               ),
             ),
           ],
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(48),
-            child: Container(
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: borderCol)),
-                color: Colors.white,
-              ),
-              child: TabBar(
-                controller: _tabController,
-                labelColor: textMain,
-                unselectedLabelColor: const Color(0xFF71717A),
-                indicatorColor: textMain,
-                indicatorWeight: 3,
-                indicatorSize: TabBarIndicatorSize.tab,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                tabs: [Tab(text: t.vocabTabRecently), Tab(text: t.vocabTabLearning), Tab(text: t.vocabTabSaved)],
-              ),
+            preferredSize: const Size.fromHeight(50),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  height: 2,
+                  color: vocabAccent.withValues(alpha: 0.55),
+                ),
+                Container(
+                  decoration: const BoxDecoration(
+                    border: Border(bottom: BorderSide(color: AppColors.outline)),
+                    color: AppColors.surfaceCard,
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    labelColor: AppColors.textPrimary,
+                    unselectedLabelColor: AppColors.textSecondary,
+                    indicatorColor: vocabAccent,
+                    indicatorWeight: 3,
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    labelStyle: AppTypography.label(),
+                    tabs: [
+                      Tab(text: t.vocabTabRecently),
+                      Tab(text: t.vocabTabLearning),
+                      Tab(text: t.vocabTabSaved),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -136,7 +170,14 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
               return const Center(child: CircularProgressIndicator(strokeWidth: 2));
             }
             if (state.status == VocabularyStatus.error) {
-              return _ErrorView(message: state.errorMessage ?? t.vocabUnknownError);
+              return Padding(
+                padding: StudentMobileUi.pagePadding,
+                child: StudentMobileUi.errorBanner(
+                  message: state.errorMessage ?? t.vocabUnknownError,
+                  onRetry: _loadData,
+                  retryLabel: t.commonRetry,
+                ),
+              );
             }
             return TabBarView(
               controller: _tabController,
@@ -144,13 +185,15 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
                 _RecentTab(
                   words: state.recentWords,
                   onTap: _navigateToDetail,
-                  onLearn: (w) => context.read<VocabularyBloc>().add(StartLearningWordEvent(w)),
+                  onLearn: (w) =>
+                      context.read<VocabularyBloc>().add(StartLearningWordEvent(w)),
                 ),
                 _LearningTab(words: state.learningWords, onTap: _navigateToDetail),
                 _SavedTab(
                   words: state.savedWords,
                   onTap: _navigateToDetail,
-                  onLearn: (w) => context.read<VocabularyBloc>().add(StartLearningWordEvent(w)),
+                  onLearn: (w) =>
+                      context.read<VocabularyBloc>().add(StartLearningWordEvent(w)),
                 ),
               ],
             );
@@ -158,33 +201,46 @@ class _VocabularyHomePageState extends State<VocabularyHomePage> with SingleTick
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => context.pushNamed(kReviewSessionRouteName),
-          backgroundColor: textMain,
-          foregroundColor: Colors.white,
-          elevation: 4,
+          backgroundColor: AppSkillColors.vocabulary.color,
+          foregroundColor: AppColors.textInverse,
+          elevation: 0,
           icon: const Icon(Icons.play_lesson_rounded),
-          label: Text(t.vocabReviewNowFab, style: const TextStyle(fontWeight: FontWeight.w700)),
+          label: Text(
+            t.vocabReviewNowFab,
+            style: AppTypography.label(color: AppColors.textInverse),
+          ),
         ),
       ),
     );
   }
 }
 
-// --- SUB TABS ---
-
 class _RecentTab extends StatelessWidget {
   final List<UserWordEntity> words;
   final Function(String) onTap;
   final Function(UserWordEntity) onLearn;
-  const _RecentTab({required this.words, required this.onTap, required this.onLearn});
+  const _RecentTab({
+    required this.words,
+    required this.onTap,
+    required this.onLearn,
+  });
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (words.isEmpty) return _EmptyView(message: t.vocabNoRecentWords, icon: Icons.history_rounded, color: Colors.blue);
+    if (words.isEmpty) {
+      return StudentMobileUi.emptyState(
+        context,
+        icon: Icons.history_rounded,
+        title: t.vocabNoRecentWords,
+        body: t.vocabSearchDictionaryTooltip,
+        skill: SkillType.vocabulary,
+      );
+    }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: StudentMobileUi.pagePadding,
       itemCount: words.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.cardGap),
       itemBuilder: (context, index) {
         final word = words[index];
         final isLearning = word.status == 'learning';
@@ -192,11 +248,10 @@ class _RecentTab extends StatelessWidget {
           word: word,
           onTap: () => onTap(word.headword),
           showMeaning: true,
-          // Recent Tab Action: Learn Button
           action: _ActionButton(
             icon: isLearning ? Icons.check_circle_rounded : Icons.school_rounded,
-            color: isLearning ? Colors.green : const Color(0xFF71717A),
-            bgColor: isLearning ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+            color: isLearning ? AppColors.success : AppColors.textSecondary,
+            bgColor: isLearning ? AppColors.successBg : AppColors.surfaceSubtle,
             onPressed: isLearning ? null : () => onLearn(word),
           ),
         );
@@ -213,56 +268,81 @@ class _LearningTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (words.isEmpty) return _EmptyView(message: t.vocabLearningEmpty, icon: Icons.school_rounded, color: const Color(0xFF10B981));
+    if (words.isEmpty) {
+      return StudentMobileUi.emptyState(
+        context,
+        icon: Icons.school_rounded,
+        title: t.vocabLearningEmpty,
+        body: t.vocabReviewNowFab,
+        skill: SkillType.vocabulary,
+      );
+    }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: StudentMobileUi.pagePadding,
       itemCount: words.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.cardGap),
       itemBuilder: (context, index) {
         final word = words[index];
         final isDue = word.nextReviewDate.isBefore(DateTime.now());
-        final nextReviewStr = "${word.nextReviewDate.day}/${word.nextReviewDate.month}";
+        final nextReviewStr =
+            '${word.nextReviewDate.day}/${word.nextReviewDate.month}';
 
         return _WordCard(
           word: word,
           onTap: () => onTap(word.headword),
           showMeaning: false,
           leadingIcon: Icons.school_rounded,
-          leadingColor: const Color(0xFF10B981), // Emerald
           customSubtitle: Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.s3,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
-                  color: isDue ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: isDue ? const Color(0xFFFECACA) : const Color(0xFFA7F3D0)),
+                  color: isDue ? AppColors.dangerBg : AppColors.successBg,
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
+                  border: Border.all(
+                    color: isDue
+                        ? AppColors.danger.withValues(alpha: 0.35)
+                        : AppColors.success.withValues(alpha: 0.35),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(isDue ? Icons.access_time_filled : Icons.check_circle,
-                        size: 12,
-                        color: isDue ? const Color(0xFFDC2626) : const Color(0xFF059669)),
-                    const SizedBox(width: 4),
+                    Icon(
+                      isDue ? Icons.access_time_filled : Icons.check_circle,
+                      size: 12,
+                      color: isDue ? AppColors.danger : AppColors.success,
+                    ),
+                    const SizedBox(width: AppSpacing.s2),
                     Text(
-                      isDue ? t.vocabReviewNowBadge : t.vocabReviewOnDate(nextReviewStr),
-                      style: TextStyle(
-                        fontSize: 11, fontWeight: FontWeight.w700,
-                        color: isDue ? const Color(0xFFDC2626) : const Color(0xFF059669),
+                      isDue
+                          ? t.vocabReviewNowBadge
+                          : t.vocabReviewOnDate(nextReviewStr),
+                      style: AppTypography.label(
+                        color: isDue ? AppColors.danger : AppColors.success,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(t.vocabLevelShort(word.learningLevel), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A))),
+              const SizedBox(width: AppSpacing.s3),
+              Text(
+                t.vocabLevelShort(word.learningLevel),
+                style: StudentMobileUi.caption(context),
+              ),
             ],
           ),
           action: isDue
               ? Container(
-            width: 10, height: 10,
-            decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-          )
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: AppColors.danger,
+                    shape: BoxShape.circle,
+                  ),
+                )
               : null,
         );
       },
@@ -274,16 +354,28 @@ class _SavedTab extends StatelessWidget {
   final List<UserWordEntity> words;
   final Function(String) onTap;
   final Function(UserWordEntity) onLearn;
-  const _SavedTab({required this.words, required this.onTap, required this.onLearn});
+  const _SavedTab({
+    required this.words,
+    required this.onTap,
+    required this.onLearn,
+  });
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (words.isEmpty) return _EmptyView(message: t.vocabSavedEmpty, icon: Icons.bookmark_rounded, color: Colors.amber);
+    if (words.isEmpty) {
+      return StudentMobileUi.emptyState(
+        context,
+        icon: Icons.bookmark_rounded,
+        title: t.vocabSavedEmpty,
+        body: t.vocabSearchDictionaryTooltip,
+        skill: SkillType.vocabulary,
+      );
+    }
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: StudentMobileUi.pagePadding,
       itemCount: words.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.cardGap),
       itemBuilder: (context, index) {
         final word = words[index];
         final isLearning = word.status == 'learning';
@@ -292,11 +384,10 @@ class _SavedTab extends StatelessWidget {
           onTap: () => onTap(word.headword),
           showMeaning: true,
           leadingIcon: Icons.bookmark_rounded,
-          leadingColor: Colors.amber[700], // Amber for Save
           action: _ActionButton(
             icon: isLearning ? Icons.check_circle_rounded : Icons.school_rounded,
-            color: isLearning ? Colors.green : const Color(0xFF71717A),
-            bgColor: isLearning ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+            color: isLearning ? AppColors.success : AppColors.textSecondary,
+            bgColor: isLearning ? AppColors.successBg : AppColors.surfaceSubtle,
             onPressed: isLearning ? null : () => onLearn(word),
           ),
         );
@@ -305,23 +396,29 @@ class _SavedTab extends StatelessWidget {
   }
 }
 
-// --- WIDGETS ---
-
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final Color color;
   final Color bgColor;
   final VoidCallback? onPressed;
-  const _ActionButton({required this.icon, required this.color, required this.bgColor, this.onPressed});
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.bgColor,
+    this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.all(AppSpacing.s3),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(AppRadius.input),
+        ),
         child: Icon(icon, color: color, size: 20),
       ),
     );
@@ -334,104 +431,80 @@ class _WordCard extends StatelessWidget {
   final bool showMeaning;
   final Widget? action;
   final IconData? leadingIcon;
-  final Color? leadingColor;
   final Widget? customSubtitle;
 
   const _WordCard({
-    required this.word, required this.onTap, this.showMeaning = true,
-    this.action, this.leadingIcon, this.leadingColor, this.customSubtitle,
+    required this.word,
+    required this.onTap,
+    this.showMeaning = true,
+    this.action,
+    this.leadingIcon,
+    this.customSubtitle,
   });
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // Bo tròn nhiều hơn
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+    return StudentMobileUi.skillAccentCard(
+      skill: SkillType.vocabulary,
+      onTap: onTap,
+      child: Row(
+        children: [
+          if (leadingIcon != null) ...[
+            StudentMobileUi.skillIconBox(
+              leadingIcon!,
+              size: 36,
+              skill: SkillType.vocabulary,
+            ),
+            const SizedBox(width: AppSpacing.s4),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (leadingIcon != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: (leadingColor ?? Colors.grey).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(leadingIcon, size: 20, color: leadingColor ?? const Color(0xFF71717A)),
-                  ),
-                  const SizedBox(width: 14),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                RichText(
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  text: TextSpan(
                     children: [
-                      RichText(
-                        maxLines: 1, overflow: TextOverflow.ellipsis,
-                        text: TextSpan(children: [
-                          TextSpan(text: word.headword, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF09090B), fontFamily: 'Inter')),
-                          if (word.ipa != null && word.ipa!.isNotEmpty)
-                            TextSpan(text: ' /${word.ipa}/', style: const TextStyle(fontSize: 14, color: Color(0xFF71717A), fontFamily: 'NotoSans', fontStyle: FontStyle.italic)),
-                        ]),
+                      TextSpan(
+                        text: word.headword,
+                        style: StudentMobileUi.cardTitle(context),
                       ),
-                      const SizedBox(height: 4),
-                      if (customSubtitle != null) customSubtitle!
-                      else if (showMeaning)
-                        Text(word.shortDefinition ?? t.wordNoDefinition, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B)))
-                      else
-                        Text(word.pos ?? t.wordUnknownType, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
+                      if (word.ipa != null && word.ipa!.isNotEmpty)
+                        TextSpan(
+                          text: ' /${word.ipa}/',
+                          style: StudentMobileUi.body(context).copyWith(
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                     ],
                   ),
                 ),
-                if (action != null) action!,
+                const SizedBox(height: AppSpacing.s2),
+                if (customSubtitle != null)
+                  customSubtitle!
+                else if (showMeaning)
+                  Text(
+                    word.shortDefinition ?? t.wordNoDefinition,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: StudentMobileUi.body(context),
+                  )
+                else
+                  Text(
+                    word.pos ?? t.wordUnknownType,
+                    style: StudentMobileUi.caption(context).copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  final String message;
-  final IconData icon;
-  final Color color;
-  const _EmptyView({required this.message, required this.icon, this.color = Colors.grey});
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(icon, size: 48, color: color),
-          ),
-          const SizedBox(height: 16),
-          Text(message, style: const TextStyle(color: Color(0xFF71717A), fontSize: 15, fontWeight: FontWeight.w500)),
+          if (action != null) action!,
         ],
       ),
     );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  const _ErrorView({required this.message});
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text(message, style: const TextStyle(color: Colors.red)));
   }
 }

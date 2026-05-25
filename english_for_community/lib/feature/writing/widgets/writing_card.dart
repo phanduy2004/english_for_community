@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_skill_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/ui/student_mobile_ui.dart';
 
 class WritingCard extends StatelessWidget {
   final String title;
@@ -11,7 +16,6 @@ class WritingCard extends StatelessWidget {
   final String? level;
   final int? submissions;
   final double? avgScore;
-  final Color primaryColor; // 🔥 Đây là màu của ICON (Màu gốc)
 
   const WritingCard({
     super.key,
@@ -23,205 +27,136 @@ class WritingCard extends StatelessWidget {
     this.level,
     this.submissions,
     this.avgScore,
-    required this.primaryColor,
   });
-
-  // 👇 Hàm lấy màu riêng cho Badge Level
-  Color _getBadgeColor(String? lvl) {
-    switch (lvl?.toLowerCase()) {
-      case 'beginner': return const Color(0xFF16A34A); // Green
-      case 'intermediate': return const Color(0xFFEA580C); // Orange
-      case 'advanced': return const Color(0xFFDC2626); // Red
-      default: return const Color(0xFF71717A); // Grey
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    final badgeColor = StudentMobileUi.difficultyColor(level);
 
-    // Màu Icon: Dùng primaryColor (Màu tím/xanh gốc của app)
-    final iconBg = primaryColor.withOpacity(0.08);
-
-    // Màu Badge: Tự tính theo level
-    final badgeColor = _getBadgeColor(level);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderCol),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+    return StudentMobileUi.skillAccentCard(
+      skill: SkillType.writing,
+      onTap: onTap,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StudentMobileUi.skillIconBox(
+            leadingIcon,
+            size: 48,
+            skill: SkillType.writing,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
+          const SizedBox(width: AppSpacing.s5),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. ICON: Giữ màu Gốc (primaryColor)
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: primaryColor.withOpacity(0.1)),
-                  ),
-                  child: Icon(leadingIcon, color: primaryColor, size: 24),
+                Text(
+                  title,
+                  style: StudentMobileUi.cardTitle(context),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-
-                const SizedBox(width: 16),
-
-                // 2. NỘI DUNG
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: textMain,
-                          height: 1.3,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                const SizedBox(height: AppSpacing.s3),
+                Wrap(
+                  spacing: AppSpacing.s3,
+                  runSpacing: AppSpacing.s2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (level != null && level!.isNotEmpty)
+                      _Badge(
+                        text: level!,
+                        color: badgeColor,
                       ),
-
-                      const SizedBox(height: 8),
-
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 6,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                    if (submissions != null && submissions! > 0)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 👇 BADGE LEVEL: Dùng màu riêng (badgeColor)
-                          if (level != null && level!.isNotEmpty)
-                            _Badge(
-                              text: level!,
-                              bgColor: badgeColor.withOpacity(0.1),
-                              textColor: badgeColor,
-                            ),
-
-                          if (submissions != null && submissions! > 0)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const SizedBox(width: 4),
-                                Icon(Icons.description_outlined, size: 14, color: textMuted),
-                                const SizedBox(width: 4),
-                                Text(
-                                  context.l10n.writingSubmissionsCount(submissions!),
-                                  style: TextStyle(fontSize: 12, color: textMuted, fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
+                          const Icon(
+                            Icons.description_outlined,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: AppSpacing.s2),
+                          Text(
+                            context.l10n.writingSubmissionsCount(submissions!),
+                            style: StudentMobileUi.caption(context),
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-
-                // 3. CỘT PHẢI
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (onHistoryTap != null)
-                      InkWell(
-                        onTap: onHistoryTap,
-                        borderRadius: BorderRadius.circular(8),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6.0),
-                          child: Icon(Icons.history, color: textMuted.withOpacity(0.6), size: 22),
-                        ),
-                      ),
-
-                    if (avgScore != null) ...[
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: avgScore! >= 7.0 ? const Color(0xFFECFDF5) : const Color(0xFFFFF7ED),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: avgScore! >= 7.0 ? const Color(0xFF86EFAC) : const Color(0xFFFFEDD5),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.star_rate_rounded,
-                              size: 14,
-                              color: avgScore! >= 7.0 ? const Color(0xFF16A34A) : const Color(0xFFEA580C),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              avgScore!.toStringAsFixed(1),
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: avgScore! >= 7.0 ? const Color(0xFF15803D) : const Color(0xFFC2410C),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ],
             ),
           ),
-        ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (onHistoryTap != null)
+                IconButton(
+                  icon: const Icon(Icons.history, color: AppColors.textMuted, size: 22),
+                  onPressed: onHistoryTap,
+                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                ),
+              if (avgScore != null) ...[
+                const SizedBox(height: AppSpacing.s3),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.s3,
+                    vertical: AppSpacing.s2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: avgScore! >= 7.0 ? AppColors.successBg : AppColors.warningBg,
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
+                    border: Border.all(
+                      color: avgScore! >= 7.0
+                          ? AppColors.success.withValues(alpha: 0.35)
+                          : AppColors.warning.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.star_rate_rounded,
+                        size: 14,
+                        color: avgScore! >= 7.0 ? AppColors.success : AppColors.warning,
+                      ),
+                      const SizedBox(width: AppSpacing.s2),
+                      Text(
+                        avgScore!.toStringAsFixed(1),
+                        style: AppTypography.label(
+                          color: avgScore! >= 7.0 ? AppColors.success : AppColors.warning,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-// Widget _Badge
 class _Badge extends StatelessWidget {
   final String text;
-  final Color bgColor;
-  final Color textColor;
+  final Color color;
 
-  const _Badge({
-    required this.text,
-    required this.bgColor,
-    required this.textColor,
-  });
+  const _Badge({required this.text, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 3),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: textColor.withOpacity(0.2)),
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         text.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: textColor,
-          letterSpacing: 0.3,
-        ),
+        style: AppTypography.label(color: color),
       ),
     );
   }

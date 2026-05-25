@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -313,7 +313,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
           color: kWhite,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: kBorder),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))]
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))]
       ),
       child: Column(
         children: [

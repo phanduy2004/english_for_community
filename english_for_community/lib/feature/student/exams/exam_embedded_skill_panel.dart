@@ -11,6 +11,7 @@ import 'package:english_for_community/feature/listening/listening_skill/bloc/cue
 import 'package:english_for_community/feature/listening/listening_skill/listening_skills_page.dart';
 import 'package:english_for_community/feature/reading/reading_detail_page.dart';
 import 'package:english_for_community/feature/speaking/speaking_skills_page.dart';
+import 'package:english_for_community/feature/student/exams/exam_embedded_fixed_writing_panel.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:english_for_community/feature/writing/writing_task_page.dart';
 import 'package:flutter/material.dart';
@@ -32,6 +33,7 @@ class ExamEmbeddedSkillPanel extends StatefulWidget {
     this.initialListeningCueTexts,
     this.initialWritingDraft,
     this.fixedWritingPrompt,
+    this.examPracticeMode = true,
   });
 
   final String skill;
@@ -48,6 +50,7 @@ class ExamEmbeddedSkillPanel extends StatefulWidget {
   final String? initialWritingDraft;
   /// Teacher-assigned fixed writing prompt. All students get the same question.
   final Map<String, dynamic>? fixedWritingPrompt;
+  final bool examPracticeMode;
 
   @override
   State<ExamEmbeddedSkillPanel> createState() => _ExamEmbeddedSkillPanelState();
@@ -80,7 +83,8 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
     final panel = w ?? widget;
     if (panel.resources.isEmpty) return '';
     final idx = _resourceIndex.clamp(0, panel.resources.length - 1);
-    return panel.resources[idx]['id'] as String? ?? '';
+    final raw = panel.resources[idx]['id'] ?? panel.resources[idx]['_id'];
+    return raw?.toString().trim() ?? '';
   }
 
   Future<void> _loadCurrent() async {
@@ -222,6 +226,7 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           setId: _currentResourceId(),
           isRetake: true,
           embedded: true,
+          examPracticeMode: widget.examPracticeMode,
           onPartComplete: _onExerciseFinished,
         );
       case 'reading':
@@ -241,7 +246,7 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           topic: topic,
           selectedTaskType: widget.fixedWritingPrompt?['taskType'] as String? ?? _taskTypeForWriting(topic),
           embedded: true,
-          examPracticeMode: true,
+          examPracticeMode: widget.examPracticeMode,
           initialExamDraft: widget.initialWritingDraft,
           onPartComplete: _onExerciseFinished,
           onEmbeddedDraftChanged: widget.onWritingDraftChanged,
@@ -256,6 +261,19 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final resources = widget.resources;
+
+    if (widget.skill == 'writing' &&
+        resources.isEmpty &&
+        widget.fixedWritingPrompt != null &&
+        (widget.fixedWritingPrompt!['text'] as String?)?.trim().isNotEmpty == true) {
+      return ExamEmbeddedFixedWritingPanel(
+        fixedWritingPrompt: widget.fixedWritingPrompt!,
+        locked: widget.locked,
+        initialDraft: widget.initialWritingDraft,
+        onDraftChanged: widget.onWritingDraftChanged,
+        onPartComplete: widget.locked ? null : widget.onPartComplete,
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -307,7 +325,12 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
         else if (resources.isEmpty)
           AppCard(
             variant: AppCardVariant.outline,
-            child: Text(l10n.integratedExamEmbeddedNoResource, style: ExamSystemUi.captionSecondary),
+            child: Text(
+              widget.skill == 'speaking'
+                  ? l10n.integratedExamEmbeddedNoSpeakingResource
+                  : l10n.integratedExamEmbeddedNoResource,
+              style: ExamSystemUi.captionSecondary,
+            ),
           )
         else
           Expanded(

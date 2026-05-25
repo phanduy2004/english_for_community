@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_color.dart';
 import '../../../core/entity/comment_entity.dart';
 import '../../../core/locale/l10n_context.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -137,9 +138,9 @@ class _DiscussionTabState extends State<DiscussionTab> {
                 // Tô màu nền nhẹ nếu là comment đang tìm kiếm
                 decoration: shouldHighlight
                     ? BoxDecoration(
-                    color: Colors.yellow.withOpacity(0.15),
+                    color: Colors.yellow.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3))
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3))
                 )
                     : null,
                 padding: shouldHighlight ? const EdgeInsets.all(8) : EdgeInsets.zero,
@@ -162,8 +163,8 @@ class _DiscussionTabState extends State<DiscussionTab> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: Color(0xFFE4E4E7))),
-            color: Colors.white,
+            border: Border(top: BorderSide(color: AppColors.outline)),
+            color: AppColors.surfaceCard,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,10 +173,10 @@ class _DiscussionTabState extends State<DiscussionTab> {
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8), border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3))),
+                  decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(8), border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3))),
                   child: Row(children: [Expanded(child: Text(t.replyingToUser(_replyingTo!.userName), style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600))), InkWell(onTap: () => setState(() => _replyingTo = null), child: const Icon(Icons.close, size: 16, color: Colors.grey))]),
                 ),
-              Row(children: [Expanded(child: TextField(controller: _commentCtrl, decoration: InputDecoration(hintText: _replyingTo != null ? t.commentHintReply : t.commentHintAsk, isDense: true, filled: true, fillColor: const Color(0xFFF9FAFB), contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)))), const SizedBox(width: 8), CircleAvatar(backgroundColor: Theme.of(context).primaryColor, child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)))]),
+              Row(children: [Expanded(child: TextField(controller: _commentCtrl, decoration: InputDecoration(hintText: _replyingTo != null ? t.commentHintReply : t.commentHintAsk, isDense: true, filled: true, fillColor: AppColors.surface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)))), const SizedBox(width: 8), CircleAvatar(backgroundColor: Theme.of(context).primaryColor, child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)))]),
             ],
           ),
         ),
@@ -239,8 +240,8 @@ class CommentItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               // 🔥 Đổi màu nền đậm hơn xíu nếu là target
-              color: isHighlighted ? Colors.yellow.shade100 : const Color(0xFFF3F4F6),
-              border: isHighlighted ? Border.all(color: Colors.orange.withOpacity(0.5)) : null,
+              color: isHighlighted ? Colors.yellow.shade100 : AppColors.surfaceSubtle,
+              border: isHighlighted ? Border.all(color: Colors.orange.withValues(alpha: 0.5)) : null,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -262,7 +263,7 @@ class CommentItem extends StatelessWidget {
     for (final match in regex.allMatches(content)) {
       final text = match.group(0)!;
       if (text.startsWith('@') && text.contains('\u200B')) spans.add(TextSpan(text: text, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold)));
-      else spans.add(TextSpan(text: text, style: const TextStyle(color: Color(0xFF1F2937))));
+      else spans.add(TextSpan(text: text, style: const TextStyle(color: AppColors.textPrimary)));
     }
     return spans;
   }

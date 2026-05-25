@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 // --- COLORS PALETTE (Shadcn / Slate Theme) ---
 const kBgPage = Color(0xFFF8FAFC);      // Slate-50
@@ -25,7 +25,7 @@ class ShadcnCard extends StatelessWidget {
         border: Border.all(color: kBorder),
         boxShadow: [
           BoxShadow(
-              color: kTextMain.withOpacity(0.04),
+              color: kTextMain.withValues(alpha: 0.04),
               blurRadius: 4,
               offset: const Offset(0, 2))
         ],
@@ -94,7 +94,7 @@ class ShadcnInput extends StatelessWidget {
             style: const TextStyle(fontSize: 14, color: kTextMain),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: kTextMuted.withOpacity(0.6)),
+              hintStyle: TextStyle(color: kTextMuted.withValues(alpha: 0.6)),
               border: InputBorder.none,
               contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -159,9 +159,9 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         text,

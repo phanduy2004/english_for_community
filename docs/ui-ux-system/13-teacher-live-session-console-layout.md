@@ -58,8 +58,8 @@
 | Thành phần | Spec |
 |------------|------|
 | Chiều cao mục tiêu | ~100–160px (có/không skill strips) |
-| Header row | Tên + cờ integrity + icon **Watch** + icon Kick |
-| Progress | Bar 4px + `answered/total · %` 11px |
+| Header row | Tên + **`TeacherExamParticipantStatusChip`** + cờ integrity + icon **Watch** + icon Kick |
+| Progress | Bar 4px + `answered/total · %` 11px (chỉ khi `inProgress`; khi `submitted` chip đủ) |
 | Strips | `TeacherExamSkillStripsPanel(compact: true)` |
 | **Không** dùng | `FilledButton` full-width "Watch live screen" |
 
@@ -70,9 +70,12 @@
 Thứ tự scroll:
 
 1. `TeacherExamSessionCompactStrip`
-2. Hint rời trang (khi live)
-3. Copy link (lobby)
-4. Danh sách chờ (`_rosterSection`)
+2. **Summary line** khi live (`1 in progress · 0 submitted · …`) — cùng copy với Live monitor
+3. Hint rời trang (khi live)
+4. Copy link (lobby)
+5. Danh sách HS (`_rosterSection`) — mỗi row có **`TeacherExamParticipantStatusChip`** ([`16-teacher-live-participant-status.md`](16-teacher-live-participant-status.md))
+
+**Lobby:** chip Ready / Not ready. **Live:** chip Đang làm / Đã nộp / Hết giờ / Đã rời — **không** chỉ hiện Kick.
 
 ---
 
@@ -93,6 +96,7 @@ Thứ tự scroll:
 | Compact strip | `teacher_exam_session_compact_strip.dart` |
 | Full card (legacy lobby) | `teacher_exam_session_context_card.dart` |
 | Live monitor list | `widgets/teacher_live_monitor_panel.dart` |
+| Participant status chip | `widgets/teacher_exam_participant_status_chip.dart` — [`16`](16-teacher-live-participant-status.md) |
 
 ---
 

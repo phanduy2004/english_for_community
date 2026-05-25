@@ -7,6 +7,7 @@ import Listening from '../models/Listening.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import Reading from '../models/Reading.js';
 import WritingTopic from '../models/WritingTopics.js';
+import { primaryResourceIdFromSection } from './examSkillSectionResources.js';
 
 function httpError(statusCode, message) {
   const e = new Error(message);
@@ -35,9 +36,8 @@ export function walkSkillContentSections(sections) {
   const out = [];
   if (!Array.isArray(sections)) return out;
   for (const sec of sections) {
-    if (sec && sec.sectionKind === 'skill_content' && sec.skill && sec.resourceId) {
-      out.push(sec);
-    }
+    if (!sec || sec.sectionKind !== 'skill_content' || !sec.skill) continue;
+    if (primaryResourceIdFromSection(sec)) out.push(sec);
   }
   return out;
 }
@@ -79,10 +79,11 @@ async function validateIntegratedFourSkillsExam(exam) {
     if (!sec.sectionId || !String(sec.sectionId).trim()) {
       throw httpError(400, `Section ${i + 1} needs a stable sectionId`);
     }
-    if (!sec.resourceId || !String(sec.resourceId).trim()) {
+    const resourceId = primaryResourceIdFromSection(sec);
+    if (!resourceId) {
       throw httpError(400, `Section ${expected} needs a selected exercise (resourceId)`);
     }
-    await assertSkillResourceExists(expected, sec.resourceId);
+    await assertSkillResourceExists(expected, resourceId);
   }
 }
 
@@ -174,12 +175,17 @@ function validateGrammarItem(it, idx) {
   throw httpError(400, `${label} has unsupported kind "${kind}"`);
 }
 
+function allSkillContentSections(sections) {
+  if (!Array.isArray(sections)) return [];
+  return sections
+    .filter((s) => s && (s.sectionKind === 'skill_content' || s.sectionKind == null) && s.skill)
+    .sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0));
+}
+
 /** Subset of four CMS-linked skills + optional Grammar (MCQ in settings.grammarItems). */
 async function validateSkillsExam(exam) {
   if (!exam.title || !String(exam.title).trim()) throw httpError(400, 'Exam title is required');
-  const sections = walkSkillContentSections(exam.sections || []).sort(
-    (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0)
-  );
+  const sections = allSkillContentSections(exam.sections);
   const grammarItems = Array.isArray(exam.settings?.grammarItems) ? exam.settings.grammarItems : [];
   if (sections.length === 0 && grammarItems.length === 0) {
     throw httpError(400, 'Enable at least one skill with content or add at least one Grammar question');
@@ -201,10 +207,20 @@ async function validateSkillsExam(exam) {
     if (!sec.sectionId || !String(sec.sectionId).trim()) {
       throw httpError(400, `Section for ${sk} needs sectionId`);
     }
-    if (!sec.resourceId || !String(sec.resourceId).trim()) {
+    if (sk === 'writing') {
+      const promptText = sec.fixedWritingPrompt?.text ?? sec.fixedPrompt?.text;
+      const resourceId = primaryResourceIdFromSection(sec);
+      if (!resourceId && !String(promptText || '').trim()) {
+        throw httpError(400, 'Writing needs a linked topic or a fixed writing prompt');
+      }
+      if (resourceId) await assertSkillResourceExists('writing', resourceId);
+      continue;
+    }
+    const resourceId = primaryResourceIdFromSection(sec);
+    if (!resourceId) {
       throw httpError(400, `Skill ${sk} needs a selected exercise (resourceId)`);
     }
-    await assertSkillResourceExists(sk, sec.resourceId);
+    await assertSkillResourceExists(sk, resourceId);
   }
   grammarItems.forEach((it, i) => validateGrammarItem(it, i));
   const grammarPointsSum = grammarItems.reduce((s, it) => s + Number(it.points ?? 1), 0);
@@ -306,10 +322,18 @@ export const teacherExamService = {
 
   async updateDraft(teacherId, examId, body) {
     const exam = await this.assertTeacherOwnsExam(teacherId, examId);
-    if (exam.status !== 'draft') throw httpError(400, 'Only draft exams can be edited with this endpoint');
+    if (exam.status === 'archived') {
+      throw httpError(400, 'Archived exams cannot be edited. Restore the exam first.');
+    }
     if (body.title != null) exam.title = String(body.title).trim();
     if (body.description != null) exam.description = String(body.description);
-    if (body.sections != null) exam.sections = body.sections;
+    if (body.sections != null) {
+      exam.sections = body.sections;
+      if (exam.status === 'published') {
+        const candidate = exam.toObject ? exam.toObject() : { ...exam };
+        await validatePublishedExam(candidate);
+      }
+    }
     if (body.settings != null) exam.settings = { ...defaultSettings, ...exam.settings, ...body.settings };
     exam.contentVersion = (exam.contentVersion || 1) + 1;
     await exam.save();

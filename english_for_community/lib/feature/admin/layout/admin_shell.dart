@@ -5,6 +5,7 @@ import 'package:english_for_community/core/theme/app_theme.dart';
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:english_for_community/feature/admin/content_management/content_dashboard_page.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
+import 'package:english_for_community/feature/admin/layout/admin_account_menu.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/ops_center/admin_ops_center_page.dart';
 import 'package:english_for_community/feature/admin/release_management/release_management_page.dart';
@@ -13,7 +14,6 @@ import 'package:english_for_community/feature/admin/submission_managerment/activ
 import 'package:english_for_community/feature/admin/teacher_applications/admin_teacher_applications_page.dart';
 import 'package:english_for_community/feature/admin/user_management/user_management_page.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
-import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -277,7 +277,7 @@ class _AdminSidebar extends StatelessWidget {
                         Expanded(
                           child: Text(
                             l10n.adminShellAppName,
-                            style: AdminWebUi.webH2(context).copyWith(fontSize: 15),
+                            style: AdminWebUi.webBody(context).copyWith(fontSize: 14, fontWeight: FontWeight.w600),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -349,7 +349,7 @@ class _SidebarNavTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: SizedBox(
-            height: 36,
+            height: AdminWebUi.sidebarItemHeight,
             child: Row(
               children: [
                 const SizedBox(width: 12),
@@ -391,13 +391,23 @@ class _SidebarUserFooter extends StatelessWidget {
         final email = user?.email ?? '';
         if (collapsed) {
           return Padding(
-            padding: const EdgeInsets.all(10),
-            child: CircleAvatar(
-              radius: 14,
-              backgroundColor: AppColors.primaryTint,
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: Center(
+              child: Tooltip(
+                message: name,
+                waitDuration: const Duration(milliseconds: 400),
+                child: InkWell(
+                  onTap: () => showAdminAccountMenu(context),
+                  borderRadius: BorderRadius.circular(20),
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppColors.primaryTint,
+                    child: Text(
+                      name.isNotEmpty ? name[0].toUpperCase() : '?',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                    ),
+                  ),
+                ),
               ),
             ),
           );
@@ -424,15 +434,12 @@ class _SidebarUserFooter extends StatelessWidget {
                   ],
                 ),
               ),
-              PopupMenuButton<String>(
+              IconButton(
+                tooltip: context.l10n.adminAccountOpenMenu,
                 icon: const Icon(Icons.more_vert, size: 18, color: AppColors.textSecondary),
                 padding: EdgeInsets.zero,
-                onSelected: (v) {
-                  if (v == 'logout') context.read<UserBloc>().add(SignOutEvent());
-                },
-                itemBuilder: (ctx) => [
-                  PopupMenuItem(value: 'logout', child: Text(context.l10n.signOut)),
-                ],
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () => showAdminAccountMenu(context),
               ),
             ],
           ),
@@ -467,6 +474,7 @@ class _AdminTopBar extends StatelessWidget {
             ),
           Expanded(child: _RouteContextLabel()),
           IconButton(
+            style: AdminWebUi.compactHeaderIconStyle(),
             icon: const Icon(Icons.notifications_outlined, size: 18),
             color: AppColors.textSecondary,
             onPressed: () {},

@@ -1,4 +1,8 @@
+import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/notification/app_notification_listener.dart';
+import 'package:english_for_community/feature/home/bloc_noti/notification_bloc.dart';
+import 'package:english_for_community/feature/home/bloc_noti/notification_state.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_theme.dart';
@@ -483,10 +487,20 @@ class _TeacherTopBar extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           Expanded(child: _RouteContextLabel()),
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined, size: 18),
-            color: AppColors.textSecondary,
-            onPressed: () {},
+          BlocBuilder<NotificationBloc, NotificationState>(
+            bloc: getIt<NotificationBloc>(),
+            builder: (context, state) {
+              final unread = state.unreadCount;
+              return IconButton(
+                icon: Badge(
+                  isLabelVisible: unread > 0,
+                  label: Text(unread > 99 ? '99+' : '$unread'),
+                  child: const Icon(Icons.notifications_outlined, size: 18),
+                ),
+                color: AppColors.textSecondary,
+                onPressed: () => showAppNotificationsDialog(context),
+              );
+            },
           ),
         ],
       ),

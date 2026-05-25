@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../api/api_config.dart';
 
@@ -34,13 +35,14 @@ class SocketService {
       final url = ApiConfig.Socket_URL;
       print('🔌 [Socket] Connecting to: $url');
 
+      final transports = kIsWeb ? ['websocket', 'polling'] : ['websocket'];
       _socket = IO.io(
         url,
         IO.OptionBuilder()
-            .setTransports(['websocket'])
+            .setTransports(transports)
             .disableAutoConnect()
             .enableForceNew()
-            .enableReconnection() // Bật tự động kết nối lại
+            .enableReconnection()
             .setReconnectionAttempts(10)
             .build(),
       );

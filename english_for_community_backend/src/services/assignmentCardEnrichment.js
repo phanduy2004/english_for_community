@@ -1,4 +1,5 @@
 import ExamAttempt from '../models/ExamAttempt.js';
+import { resolveAttemptPolicy, allowsAnotherAttemptAfterSubmit } from './assignmentPolicy.js';
 import { walkItems, walkSkillContentSections } from './teacherExamService.js';
 
 function iso(d) {
@@ -88,6 +89,30 @@ export function serializeMyAttempt(att) {
     resultsReleased: !!doc.resultsReleased,
     gradingState: doc.gradingState || null,
   };
+}
+
+/**
+ * Gắn studentCanStart / studentStatusHint theo bài làm hiện có (resume / đã nộp).
+ */
+export function applyStudentAttemptGate(plain, assignment, myAttemptDoc) {
+  if (!myAttemptDoc || !plain) return plain;
+  const status = myAttemptDoc.status;
+  const exam = assignment.examId;
+
+  if (status === 'in_progress') {
+    plain.studentCanStart = true;
+    plain.studentStatusHint = 'resume';
+    return plain;
+  }
+
+  if (status === 'submitted' || status === 'expired') {
+    const policy = resolveAttemptPolicy(assignment, exam);
+    if (assignment.mode !== 'practice' && !allowsAnotherAttemptAfterSubmit(policy)) {
+      plain.studentCanStart = false;
+      plain.studentStatusHint = 'already_submitted';
+    }
+  }
+  return plain;
 }
 
 export function buildAssignmentCardFields(assignment, { activeSession, myAttempt, attemptStats } = {}) {

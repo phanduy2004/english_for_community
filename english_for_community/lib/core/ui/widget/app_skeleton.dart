@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 
 /// Nền shimmer dùng chung — cảm giác “app thương mại” khi chờ API.
 class AppSkeleton {
   AppSkeleton._();
-
-  static const Color base = Color(0xFFE4E4E7);
-  static const Color highlight = Color(0xFFF4F4F5);
 
   static Widget box({
     required double height,
@@ -17,12 +15,12 @@ class AppSkeleton {
     return Container(
       width: width,
       height: height,
-      decoration: BoxDecoration(color: base, borderRadius: r),
+      decoration: BoxDecoration(color: AppColors.outlineMuted, borderRadius: r),
     )
         .animate(onPlay: (c) => c.repeat())
         .shimmer(
           duration: 1400.ms,
-          color: highlight.withValues(alpha: 0.85),
+          color: AppColors.outline.withValues(alpha: 0.85),
         );
   }
 }
@@ -52,9 +50,9 @@ class _HistoryCardSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,9 +101,9 @@ class WeeklyStudyChartSkeleton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

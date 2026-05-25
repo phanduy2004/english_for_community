@@ -1,4 +1,4 @@
-// lib/feature/admin/report_management/widget/report_card.dart
+﻿// lib/feature/admin/report_management/widget/report_card.dart
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +28,7 @@ class ReportCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 2))
         ],
       ),
       child: Material(
@@ -49,7 +49,7 @@ class ReportCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: typeColor.withOpacity(0.1),
+                    color: typeColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(typeIcon, size: 20, color: typeColor),
@@ -117,7 +117,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(

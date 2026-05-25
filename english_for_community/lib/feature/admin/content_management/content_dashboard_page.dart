@@ -1,14 +1,16 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skill_palette.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/get_it/get_it.dart';
-import 'content_widgets.dart';
 
 class ContentDashboardPage extends StatelessWidget {
   static const String routeName = 'ContentDashboardPage';
@@ -23,6 +25,13 @@ class ContentDashboardPage extends StatelessWidget {
       title: l10n.contentManagerTile,
       subtitle: l10n.contentManagerSub,
       scrollable: false,
+      breadcrumbs: [
+        AdminBreadcrumb(
+          label: l10n.adminOverviewTitle,
+          location: AdminDashboardPage.routePath,
+        ),
+        AdminBreadcrumb(label: l10n.contentManagerTile),
+      ],
       body: FutureBuilder<Map<String, int>>(
         future: getIt<AdminRemoteDatasource>().getContentSummary(),
         builder: (context, snapshot) {
@@ -35,31 +44,35 @@ class ContentDashboardPage extends StatelessWidget {
               };
           return AdminCardGrid(
             children: [
-              _SkillCard(
+              AdminSkillCard(
                 title: l10n.writingTitle,
                 count: counts['writing'] ?? 0,
-                color: const Color(0xFFEF4444),
+                countLabel: l10n.adminContentItemCount,
+                color: AdminSkillPalette.writing,
                 icon: Icons.edit_note,
                 onTap: () => _navToList(context, 'writing'),
               ),
-              _SkillCard(
+              AdminSkillCard(
                 title: l10n.speakingPracticeTitle,
                 count: counts['speaking'] ?? 0,
-                color: const Color(0xFF3B82F6),
+                countLabel: l10n.adminContentItemCount,
+                color: AdminSkillPalette.speaking,
                 icon: Icons.mic_none,
                 onTap: () => _navToList(context, 'speaking'),
               ),
-              _SkillCard(
+              AdminSkillCard(
                 title: l10n.readingPracticeTitle,
                 count: counts['reading'] ?? 0,
-                color: AppColors.chartHighlight,
+                countLabel: l10n.adminContentItemCount,
+                color: AdminSkillPalette.reading,
                 icon: Icons.menu_book,
                 onTap: () => _navToList(context, 'reading'),
               ),
-              _SkillCard(
+              AdminSkillCard(
                 title: l10n.listeningTitle,
                 count: counts['listening'] ?? 0,
-                color: const Color(0xFF8B5CF6),
+                countLabel: l10n.adminContentItemCount,
+                color: AdminSkillPalette.listening,
                 icon: Icons.headphones,
                 onTap: () => _showListeningTypeDialog(context),
               ),
@@ -75,6 +88,7 @@ class ContentDashboardPage extends StatelessWidget {
   }
 
   void _showListeningTypeDialog(BuildContext context) {
+    final l10n = context.l10n;
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
@@ -84,9 +98,9 @@ class ContentDashboardPage extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
           title: Row(
             children: [
-              const Icon(Icons.headphones_outlined, size: 20, color: Color(0xFF8B5CF6)),
+              const Icon(Icons.headphones_outlined, size: 20, color: AdminSkillPalette.listening),
               const SizedBox(width: 8),
-              Expanded(child: Text('Listening', style: AdminWebUi.webH2(ctx))),
+              Expanded(child: Text(l10n.listeningTitle, style: AdminWebUi.webH2(ctx))),
               IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close, size: 20)),
             ],
           ),
@@ -94,8 +108,9 @@ class ContentDashboardPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildDialogOption(
-                title: 'Dictation',
-                subtitle: 'Nghe chép chính tả (Cues)',
+                ctx,
+                title: l10n.adminListeningDictation,
+                subtitle: l10n.adminListeningDictationSub,
                 icon: Icons.edit_document,
                 onTap: () {
                   Navigator.pop(ctx);
@@ -104,8 +119,9 @@ class ContentDashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.s4),
               _buildDialogOption(
-                title: 'Comprehension',
-                subtitle: 'Nghe hiểu (Trắc nghiệm)',
+                ctx,
+                title: l10n.adminListeningComprehension,
+                subtitle: l10n.adminListeningComprehensionSub,
                 icon: Icons.quiz_outlined,
                 onTap: () {
                   Navigator.pop(ctx);
@@ -119,7 +135,8 @@ class ContentDashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDialogOption({
+  Widget _buildDialogOption(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -139,70 +156,24 @@ class ContentDashboardPage extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                color: AdminSkillPalette.listening.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: const Color(0xFF8B5CF6), size: 24),
+              child: Icon(icon, color: AdminSkillPalette.listening, size: 24),
             ),
             const SizedBox(width: AppSpacing.s5),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text(title, style: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600)),
+                  Text(subtitle, style: AdminWebUi.webCaption(context)),
                 ],
               ),
             ),
             const Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SkillCard extends StatelessWidget {
-  const _SkillCard({
-    required this.title,
-    required this.count,
-    required this.color,
-    required this.icon,
-    required this.onTap,
-  });
-
-  final String title;
-  final int count;
-  final Color color;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return ShadcnCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(AppSpacing.s5),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.input),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: AdminWebUi.webH2(context)),
-              const SizedBox(height: 4),
-              Text('$count topics', style: AdminWebUi.webCaption(context)),
-            ],
-          ),
-        ],
       ),
     );
   }

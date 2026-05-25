@@ -16,8 +16,13 @@ import Enrollment from '../models/Enrollment.js';
 import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
 // Model Word
 import Word from '../models/Word.js';
+import { getMongoUri } from '../lib/mongoUri.js';
 
-const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/english_community';
+const MONGO_URI = getMongoUri();
+if (!MONGO_URI) {
+  console.error('Missing MONGO_URI in .env');
+  process.exit(1);
+}
 
 const runMigration = async () => {
   try {

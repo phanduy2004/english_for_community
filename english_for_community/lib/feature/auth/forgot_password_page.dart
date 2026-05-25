@@ -1,14 +1,21 @@
-// forgot_password_page.dart
 import 'dart:async';
-import 'package:english_for_community/feature/auth/reset_password_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/locale/l10n_context.dart';
-import '../../feature/auth/bloc/user_bloc.dart';
-import '../../feature/auth/bloc/user_event.dart';
-import '../../feature/auth/bloc/user_state.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import 'bloc/user_bloc.dart';
+import 'bloc/user_event.dart';
+import 'bloc/user_state.dart';
+import 'reset_password_page.dart';
+import 'widgets/auth_form_widgets.dart';
+
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
 
@@ -21,27 +28,14 @@ class ForgotPasswordPage extends StatefulWidget {
 
 class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _emailController = TextEditingController();
-  final _textController = TextEditingController(); // For OTP
-  final _focusNode = FocusNode(); // For OTP
+  final _textController = TextEditingController();
+  final _focusNode = FocusNode();
 
   bool _showOtpInput = false;
   String? _email;
   Timer? _timer;
   int _start = 60;
   bool _canResend = false;
-
-  // --- SHADCN COLORS ---
-  static const Color bgPage = Color(0xFFF9FAFB);
-  static const Color textMain = Color(0xFF09090B);
-  static const Color textMuted = Color(0xFF71717A);
-  static const Color borderCol = Color(0xFFE4E4E7);
-  static const Color primaryCol = Color(0xFF18181B);
-  static const Color accentCol = Color(0xFF16A34A);
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -76,7 +70,12 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     final t = context.l10n;
     if (email.isEmpty) {
-      _showShadcnDialog(context, title: t.errorTitle, message: t.enterEmailRequired, isError: true);
+      showAuthFeedbackDialog(
+        context,
+        title: t.errorTitle,
+        message: t.enterEmailRequired,
+        isError: true,
+      );
       return;
     }
 
@@ -88,12 +87,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     final otp = _textController.text;
 
     if (otp.length < 6) {
-      _showShadcnDialog(context, title: context.l10n.errorTitle, message: context.l10n.otpSixDigitsRequired, isError: true);
+      showAuthFeedbackDialog(
+        context,
+        title: context.l10n.errorTitle,
+        message: context.l10n.otpSixDigitsRequired,
+        isError: true,
+      );
       return;
     }
 
-    // Chuyển sang ResetPasswordPage với email và otp
-    context.pushNamed(ResetPasswordPage.routeName, extra: {'email': _email, 'otp': otp});
+    context.pushNamed(
+      ResetPasswordPage.routeName,
+      extra: {'email': _email, 'otp': otp},
+    );
   }
 
   void _onResend() {
@@ -101,7 +107,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     context.read<UserBloc>().add(RequestForgotPasswordEvent(email: _email!));
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.resendingCodeSnack)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.resendingCodeSnack)),
+    );
     startTimer();
   }
 
@@ -110,19 +118,28 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: context.l10n.errorTitle, message: state.errorMessage!, isError: true);
+          showAuthFeedbackDialog(
+            context,
+            title: context.l10n.errorTitle,
+            message: state.errorMessage!,
+            isError: true,
+          );
         }
 
         if (state.status == UserStatus.otpRequired) {
           setState(() {
-            _email = state.errorMessage; // Lưu email từ state
+            _email = state.errorMessage;
             _showOtpInput = true;
           });
-          if (!(_timer?.isActive ?? false)) { startTimer(); }
+          if (!(_timer?.isActive ?? false)) {
+            startTimer();
+          }
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _focusNode.requestFocus();
           });
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.otpSentEmailSnack)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.otpSentEmailSnack)),
+          );
         }
       },
       builder: (context, state) {
@@ -130,144 +147,166 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         final t = context.l10n;
 
         return Scaffold(
-          backgroundColor: bgPage,
+          backgroundColor: AppColors.surface,
           appBar: AppBar(
-            backgroundColor: bgPage,
+            toolbarHeight: StudentMobileUi.appBarHeight,
             elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: textMain),
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
               onPressed: () => context.pop(),
             ),
           ),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 1. Icon & Title
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: borderCol),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
+          body: SingleChildScrollView(
+            padding: StudentMobileUi.pagePadding,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: StudentMobileUi.skillIconBox(
+                      Icons.lock_reset_outlined,
+                      size: 64,
+                      colors: SkillColorSet(
+                        color: AppColors.accent,
+                        tint: AppColors.accentTint,
+                        dark: AppColors.accentDark,
                       ),
-                      child: const Icon(Icons.lock_reset_outlined, size: 32, color: accentCol),
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      t.forgotHeroTitle,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
+                  ),
+                  const SizedBox(height: AppSpacing.s7),
+                  Text(
+                    t.forgotHeroTitle,
+                    textAlign: TextAlign.center,
+                    style: context.h1Style,
+                  ),
+                  const SizedBox(height: AppSpacing.s3),
+                  Text(
+                    t.forgotHeroSubtitle,
+                    textAlign: TextAlign.center,
+                    style: StudentMobileUi.body(context).copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t.forgotHeroSubtitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: textMuted),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // 2. Email Input with Send Button
-                    _Label(t.labelEmail),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _ShadcnInput(
-                            controller: _emailController,
-                            hintText: t.hintEmail,
-                            icon: Icons.email_outlined,
-                            enabled: !isLoading && !_showOtpInput, // Disable after send
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        SizedBox(
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _showOtpInput ? null : () => _onSend(isLoading),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryCol,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            child: isLoading && !_showOtpInput
-                                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : Text(t.sendButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-
-                    // 3. OTP Input (Show after send)
-                    if (_showOtpInput) ...[
-                      Text(
-                        t.enterVerificationCode,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: textMain),
-                      ),
-                      const SizedBox(height: 8),
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: const TextStyle(fontSize: 14, color: textMuted, height: 1.5),
-                          children: [
-                            TextSpan(text: t.otpSentPrefix),
-                            TextSpan(
-                              text: _email,
-                              style: const TextStyle(fontWeight: FontWeight.w600, color: textMain),
-                            ),
-                            TextSpan(text: t.otpSentSuffix),
-                          ],
+                  ),
+                  const SizedBox(height: StudentMobileUi.sectionGap),
+                  AuthFieldLabel(t.labelEmail),
+                  const SizedBox(height: AppSpacing.s3),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AuthTextField(
+                          controller: _emailController,
+                          hintText: t.hintEmail,
+                          prefixIcon: Icons.email_outlined,
+                          enabled: !isLoading && !_showOtpInput,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      _CustomOtpInput(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        length: 6,
-                        onCompleted: (_) => _onNext(isLoading),
-                      ),
-                      const SizedBox(height: 32),
+                      const SizedBox(width: AppSpacing.s4),
                       SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () => _onNext(isLoading),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryCol,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        height: AuthFormUi.fieldHeight,
+                        child: FilledButton(
+                          onPressed: _showOtpInput
+                              ? null
+                              : () => _onSend(isLoading),
+                          style: AuthFormUi.primaryButtonStyle().copyWith(
+                            minimumSize: const WidgetStatePropertyAll(
+                              Size(88, AuthFormUi.fieldHeight),
+                            ),
                           ),
-                          child: isLoading
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                              : Text(t.next, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          child: isLoading && !_showOtpInput
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.onPrimary,
+                                  ),
+                                )
+                              : Text(t.sendButton),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(t.didNotReceiveCode, style: const TextStyle(fontSize: 14, color: textMuted)),
-                          _canResend
-                              ? GestureDetector(
-                            onTap: _onResend,
-                            child: Text(t.resendAction, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMain)),
-                          )
-                              : Text(
-                            t.resendCooldown(_start),
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMuted),
-                          ),
-                        ],
                       ),
                     ],
+                  ),
+                  if (_showOtpInput) ...[
+                    const SizedBox(height: StudentMobileUi.sectionGap),
+                    Text(
+                      t.enterVerificationCode,
+                      textAlign: TextAlign.center,
+                      style: context.h2Style,
+                    ),
+                    const SizedBox(height: AppSpacing.s3),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: StudentMobileUi.body(context).copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                        children: [
+                          TextSpan(text: t.otpSentPrefix),
+                          TextSpan(
+                            text: _email,
+                            style: AppTypography.label(),
+                          ),
+                          TextSpan(text: t.otpSentSuffix),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s7),
+                    AuthOtpInput(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      onCompleted: (_) => _onNext(isLoading),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    FilledButton(
+                      onPressed: () => _onNext(isLoading),
+                      style: AuthFormUi.primaryButtonStyle(),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.onPrimary,
+                              ),
+                            )
+                          : Text(t.next),
+                    ),
+                    const SizedBox(height: AppSpacing.s7),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          t.didNotReceiveCode,
+                          style: StudentMobileUi.body(context).copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        if (_canResend)
+                          TextButton(
+                            onPressed: _onResend,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.s3,
+                              ),
+                              minimumSize: const Size(44, 36),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(t.resendAction, style: AppTypography.label()),
+                          )
+                        else
+                          Text(
+                            t.resendCooldown(_start),
+                            style: StudentMobileUi.caption(context),
+                          ),
+                      ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -275,198 +314,4 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       },
     );
   }
-}
-
-// 🔥 WIDGET CUSTOM OTP: Copied from otp_verification_page.dart
-class _CustomOtpInput extends StatefulWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final int length;
-  final Function(String)? onCompleted;
-
-  const _CustomOtpInput({
-    required this.controller,
-    required this.focusNode,
-    this.length = 6,
-    this.onCompleted,
-  });
-
-  @override
-  State<_CustomOtpInput> createState() => _CustomOtpInputState();
-}
-
-class _CustomOtpInputState extends State<_CustomOtpInput> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(() {
-      setState(() {});
-      if (widget.controller.text.length == widget.length) {
-        widget.onCompleted?.call(widget.controller.text);
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        // 1. HIDDEN TEXTFIELD: Captures input events
-        SizedBox(
-          width: double.infinity,
-          height: 50,
-          child: TextField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            keyboardType: TextInputType.number,
-            maxLength: widget.length,
-            showCursor: false,
-            enableInteractiveSelection: false,
-            style: const TextStyle(color: Colors.transparent),
-            decoration: const InputDecoration(
-              counterText: '',
-              border: InputBorder.none,
-              fillColor: Colors.transparent,
-              filled: true,
-            ),
-          ),
-        ),
-
-        // 2. DISPLAY LAYOUT: Renders the boxes
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.length, (index) {
-            final text = widget.controller.text;
-            final char = index < text.length ? text[index] : '';
-            final isFocused = index == text.length && widget.focusNode.hasFocus;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: 44,
-              height: 50,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isFocused
-                      ? const Color(0xFF18181B)
-                      : (char.isNotEmpty ? const Color(0xFF52525B) : const Color(0xFFE4E4E7)),
-                  width: isFocused ? 1.5 : 1.0,
-                ),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x08000000), blurRadius: 2, offset: Offset(0, 1))
-                ],
-              ),
-              child: Text(
-                char,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF09090B),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-}
-
-// _Label and _ShadcnInput: Copied from login_page.dart or register_page.dart
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
-  @override
-  Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B)));
-  }
-}
-
-class _ShadcnInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final IconData icon;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final bool enabled;
-  final Function(String)? onSubmitted;
-
-  const _ShadcnInput({
-    required this.controller,
-    required this.hintText,
-    required this.icon,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.enabled = true,
-    this.onSubmitted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1))],
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        enabled: enabled,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
-        onSubmitted: onSubmitted,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
-          prefixIcon: Icon(icon, size: 18, color: const Color(0xFF71717A)),
-          suffixIcon: suffixIcon,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.2)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-      ),
-    );
-  }
-}
-
-// Helper Dialog: Copied
-void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
-  final t = context.l10n;
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: const EdgeInsets.all(24),
-      title: Row(
-        children: [
-          Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
-              color: isError ? Colors.red : Colors.green, size: 24),
-          const SizedBox(width: 12),
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ],
-      ),
-      content: Text(message, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
-      actions: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              side: const BorderSide(color: Color(0xFFE4E4E7)),
-              foregroundColor: const Color(0xFF09090B),
-            ),
-            child: Text(t.close),
-          ),
-        )
-      ],
-    ),
-  );
 }

@@ -3,7 +3,8 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
@@ -256,13 +257,20 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
 
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: ExamSystemUi.appBar(context, title: l10n.examModeRealtime),
+      appBar: StudentMobileUi.appBar(context, title: l10n.examModeRealtime),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
           : ListView(
-              padding: ExamSystemUi.pagePadding,
+              padding: StudentMobileUi.pagePadding,
               children: [
-                if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.w400)),
+                if (_error != null) ...[
+                  StudentMobileUi.errorBanner(
+                    message: _error!,
+                    onRetry: _bootstrap,
+                    retryLabel: l10n.retry,
+                  ),
+                  const SizedBox(height: StudentMobileUi.cardGap),
+                ],
                 AppCard(
                   variant: AppCardVariant.outline,
                   child: Column(
@@ -271,29 +279,32 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                       ExamSessionStatusBanner(status: st),
                       if (examTitle != null && examTitle.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Text(examTitle, style: ExamSystemUi.listTitle(context)),
+                        Text(examTitle, style: StudentMobileUi.sectionTitle(context)),
                       ],
                       if (className != null && className.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(l10n.teacherDashboardClassLabel(className), style: ExamSystemUi.captionSecondary),
+                        Text(l10n.teacherDashboardClassLabel(className), style: StudentMobileUi.body(context)),
                       ],
                       if (teacherName != null && teacherName.isNotEmpty) ...[
                         const SizedBox(height: 4),
-                        Text(l10n.studentClassTeacher(teacherName), style: ExamSystemUi.captionMuted),
+                        Text(l10n.studentClassTeacher(teacherName), style: StudentMobileUi.caption(context)),
                       ],
                       const SizedBox(height: 10),
-                      Text('${l10n.examSessionRoomCode}: ${_roomCode ?? '—'}', style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 12),
-                      Text(l10n.examSessionLobbyParticipantsTitle, style: ExamSystemUi.listTitle(context)),
+                      Text(
+                        '${l10n.examSessionRoomCode}: ${_roomCode ?? '—'}',
+                        style: StudentMobileUi.cardTitle(context),
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      Text(l10n.examSessionLobbyParticipantsTitle, style: StudentMobileUi.sectionTitle(context)),
                       const SizedBox(height: 8),
                       Text(
                         l10n.teacherExamSessionJoinedCount(_joinedCount),
-                        style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
+                        style: StudentMobileUi.body(context).copyWith(fontWeight: FontWeight.w600),
                       ),
                       if (st == 'lobby' && _joinedCount > 0)
                         Text(
                           l10n.examSessionReadyCount(_readyCount, _joinedCount),
-                          style: ExamSystemUi.captionMuted,
+                          style: StudentMobileUi.caption(context),
                         ),
                       if (_participants.isNotEmpty) ...[
                         const SizedBox(height: 10),
@@ -321,21 +332,22 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                                     children: [
                                       Text(
                                         name.isEmpty ? l10n.teacherDashboardStudentUnknown : name,
-                                        style: ExamSystemUi.captionSecondary.copyWith(
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.textPrimary,
-                                        ),
+                                        style: StudentMobileUi.cardTitle(context),
                                       ),
                                       if (sub.isNotEmpty)
-                                        Text(sub, style: ExamSystemUi.captionMuted, maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        Text(
+                                          sub,
+                                          style: StudentMobileUi.caption(context),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                     ],
                                   ),
                                 ),
                                 if (st == 'lobby')
                                   Text(
                                     ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady,
-                                    style: ExamSystemUi.captionMuted.copyWith(
-                                      fontSize: 11,
+                                    style: StudentMobileUi.caption(context).copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: ready ? AppColors.primary : AppColors.textMuted,
                                     ),
@@ -345,19 +357,19 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                           );
                         }),
                       ],
-                      const SizedBox(height: ExamSystemUi.cardGap),
+                      const SizedBox(height: StudentMobileUi.cardGap),
                       Text(
                         st == 'live'
                             ? l10n.examSessionGo
                             : st == 'closed' || st == 'grading'
                                 ? l10n.examSessionStatusClosed
                                 : l10n.examWaitingForTeacher,
-                        style: ExamSystemUi.captionSecondary,
+                        style: StudentMobileUi.body(context),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: ExamSystemUi.sectionGap),
+                const SizedBox(height: StudentMobileUi.sectionGap),
                 if (st == 'lobby') ...[
                   SizedBox(
                     width: double.infinity,
@@ -371,7 +383,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                             child: Text(l10n.examSessionMarkReady),
                           ),
                   ),
-                  const SizedBox(height: ExamSystemUi.cardGap),
+                  const SizedBox(height: StudentMobileUi.cardGap),
                 ],
                 SizedBox(
                   width: double.infinity,

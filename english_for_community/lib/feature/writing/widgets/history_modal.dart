@@ -7,9 +7,9 @@ import 'package:english_for_community/feature/writing/writing_task_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-// Tái sử dụng ErrorView từ common widgets nếu cần, hoặc import
-import 'writing_common_widgets.dart';
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
+import 'writing_common_widgets.dart';
 
 class HistoryModal extends StatelessWidget {
   final String topicName;
@@ -27,7 +27,7 @@ class HistoryModal extends StatelessWidget {
     return Container(
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -37,14 +37,14 @@ class HistoryModal extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: Row(
               children: [
-                const Icon(Icons.history, color: Color(0xFF09090B)),
+                const Icon(Icons.history, color: AppColors.textPrimary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.submissionHistoryTitle, style: const TextStyle(fontSize: 14, color: Color(0xFF71717A))),
-                      Text(topicName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF09090B))),
+                      Text(t.submissionHistoryTitle, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                      Text(topicName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                     ],
                   ),
                 ),
@@ -55,7 +55,7 @@ class HistoryModal extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFE4E4E7)),
+          const Divider(height: 1, color: AppColors.outline),
 
           // Body: BlocBuilder lắng nghe History State
           Expanded(
@@ -77,9 +77,9 @@ class HistoryModal extends StatelessWidget {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.inbox_outlined, size: 48, color: Color(0xFFE4E4E7)),
+                        const Icon(Icons.inbox_outlined, size: 48, color: AppColors.outline),
                         const SizedBox(height: 12),
-                        Text(t.writingNoHistoryForTopic, style: const TextStyle(color: Color(0xFF71717A))),
+                        Text(t.writingNoHistoryForTopic, style: const TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
                   );
@@ -122,8 +122,8 @@ class HistoryItemCard extends StatelessWidget {
     final score = submission.score ?? 0;
     final isDraft = submission.status.toLowerCase() == 'draft';
     // Màu sắc theo điểm số
-    final color = score >= 7.0 ? const Color(0xFF16A34A) : (score >= 5.0 ? const Color(0xFFEA580C) : const Color(0xFFDC2626));
-    final bg = score >= 7.0 ? const Color(0xFFDCFCE7) : (score >= 5.0 ? const Color(0xFFFFEDD5) : const Color(0xFFFEE2E2));
+    final color = score >= 7.0 ? AppColors.success : (score >= 5.0 ? AppColors.warning : AppColors.danger);
+    final bg = score >= 7.0 ? AppColors.successBg : (score >= 5.0 ? AppColors.warningBg : AppColors.dangerBg);
 
     return GestureDetector(
       onTap: () {
@@ -155,8 +155,8 @@ class HistoryItemCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: const Color(0xFFE4E4E7)),
+          color: AppColors.surfaceCard,
+          border: Border.all(color: AppColors.outline),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -183,17 +183,17 @@ class HistoryItemCard extends StatelessWidget {
                           submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: Color(0xFF09090B)),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: isDraft ? const Color(0xFFFFF7ED) : const Color(0xFFECFDF5),
+                          color: isDraft ? AppColors.warningBg : AppColors.successBg,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: isDraft ? const Color(0xFFFFEDD5) : const Color(0xFFBBF7D0),
+                            color: isDraft ? AppColors.warningBg : AppColors.success,
                           ),
                         ),
                         child: Text(
@@ -201,7 +201,7 @@ class HistoryItemCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
-                            color: isDraft ? const Color(0xFFC2410C) : const Color(0xFF15803D),
+                            color: isDraft ? AppColors.warning : AppColors.success,
                           ),
                         ),
                       ),
@@ -210,13 +210,13 @@ class HistoryItemCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_today, size: 12, color: Color(0xFF71717A)),
+                      const Icon(Icons.calendar_today, size: 12, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text(dateStr, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
+                      Text(dateStr, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       const SizedBox(width: 12),
-                      const Icon(Icons.short_text, size: 14, color: Color(0xFF71717A)),
+                      const Icon(Icons.short_text, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text(t.wordCountN(submission.wordCount ?? 0), style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
+                      Text(t.wordCountN(submission.wordCount ?? 0), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                     ],
                   )
                 ],
@@ -224,7 +224,7 @@ class HistoryItemCard extends StatelessWidget {
             ),
             Icon(
               isDraft ? Icons.play_arrow_rounded : Icons.chevron_right,
-              color: const Color(0xFFE4E4E7),
+              color: AppColors.outline,
             ),
           ],
         ),

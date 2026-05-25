@@ -1,10 +1,13 @@
+import 'package:english_for_community/core/entity/progress_summary_entity.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
+import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
+import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// Đảm bảo import đúng đường dẫn
-import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
-import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
-import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
-import '../../core/entity/progress_summary_entity.dart';
+
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -27,25 +30,33 @@ class StatDetailDialog extends StatefulWidget {
 }
 
 class _StatDetailDialogState extends State<StatDetailDialog> {
-
-  // ... (Các hàm _rangeToString, _getTitle, initState giữ nguyên)
   String _rangeToString(StatDetailRange range) {
     switch (range) {
-      case StatDetailRange.day: return 'day';
-      case StatDetailRange.week: return 'week';
-      case StatDetailRange.month: return 'month';
+      case StatDetailRange.day:
+        return 'day';
+      case StatDetailRange.week:
+        return 'week';
+      case StatDetailRange.month:
+        return 'month';
     }
   }
 
   String _getTitle(AppLocalizations t) {
     switch (widget.statKey) {
-      case 'vocab': return t.statDetailVocab;
-      case 'reading': return t.statDetailReading;
-      case 'dictation': return t.statDetailDictation;
-      case 'speaking': return t.statDetailSpeaking;
-      case 'writing': return t.statDetailWriting;
-      case 'lessons': return t.statDetailLessons;
-      default: return t.statDetailGeneric;
+      case 'vocab':
+        return t.statDetailVocab;
+      case 'reading':
+        return t.statDetailReading;
+      case 'dictation':
+        return t.statDetailDictation;
+      case 'speaking':
+        return t.statDetailSpeaking;
+      case 'writing':
+        return t.statDetailWriting;
+      case 'lessons':
+        return t.statDetailLessons;
+      default:
+        return t.statDetailGeneric;
     }
   }
 
@@ -54,15 +65,14 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ProgressBloc>().add(
-        FetchStatDetail(
-          statKey: widget.statKey,
-          range: _rangeToString(widget.range),
-        ),
-      );
+            FetchStatDetail(
+              statKey: widget.statKey,
+              range: _rangeToString(widget.range),
+            ),
+          );
     });
   }
 
-  // Helper: Định dạng ngày
   String _formatDate(String? isoDate) {
     if (isoDate == null || isoDate.isEmpty) return '';
     try {
@@ -74,8 +84,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     }
   }
 
-  // 🔥 1. Widget Item đơn lẻ (Đã tinh chỉnh cho Grouped List)
-  Widget _buildDetailItem(ProgressDetailEntity item, String statKey, Color primaryColor, AppLocalizations t) {
+  Widget _buildDetailItem(ProgressDetailEntity item, String statKey, AppLocalizations t) {
     final dateDisplay = _formatDate(item.date);
 
     String subtitle;
@@ -83,9 +92,8 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     String unit;
     IconData icon;
 
-    // Logic cho lessons (Khi đã nằm trong nhóm, không cần hiện Type ở subtitle nữa)
     if (statKey == 'lessons') {
-      icon = Icons.check_circle_outline_rounded; // Icon mặc định cho item con
+      icon = Icons.check_circle_outline_rounded;
       subtitle = dateDisplay.isEmpty ? '' : t.statDetailDateOnly(dateDisplay);
       valueDisplay = '';
       unit = '';
@@ -96,11 +104,10 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
         subtitle: subtitle,
         value: valueDisplay,
         unit: unit,
-        isCompact: true, // Flag để render nhỏ gọn hơn
+        isCompact: true,
       );
     }
 
-    // ... (Giữ nguyên logic cho các statKey khác: reading, speaking, vocab...)
     if (statKey == 'reading') {
       final scoreDisplay = (item.score).toString();
       subtitle = t.statDetailReadingSubtitle(scoreDisplay, dateDisplay);
@@ -138,89 +145,89 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     );
   }
 
-  // 🔥 2. Hàm xây dựng danh sách gom nhóm (Dành riêng cho Lessons)
-  Widget _buildGroupedLessonsList(List<ProgressDetailEntity> data, Color primaryColor, AppLocalizations t) {
-    // Gom nhóm data theo item.type
-    Map<String, List<ProgressDetailEntity>> groupedData = {};
+  Widget _buildGroupedLessonsList(List<ProgressDetailEntity> data, AppLocalizations t) {
+    final groupedData = <String, List<ProgressDetailEntity>>{};
     for (var item in data) {
-      // Nếu type rỗng thì cho vào nhóm 'Other'
-      String key = (item.type.isEmpty) ? t.statDetailLessonsGroupOther : item.type;
-      if (!groupedData.containsKey(key)) {
-        groupedData[key] = [];
-      }
-      groupedData[key]!.add(item);
+      final key = (item.type.isEmpty) ? t.statDetailLessonsGroupOther : item.type;
+      groupedData.putIfAbsent(key, () => []).add(item);
     }
 
-    // Dựng UI từ Map
     return ListView(
-      shrinkWrap: true, // Quan trọng để nằm trong Column
-      physics: const NeverScrollableScrollPhysics(), // Để cha (Dialog) scroll
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       children: groupedData.entries.map((entry) {
-        String groupTitle = entry.key;
-        List<ProgressDetailEntity> groupItems = entry.value;
+        final groupTitle = entry.key;
+        final groupItems = entry.value;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- Header Nhóm (Ví dụ: Reading) ---
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4, horizontal: AppSpacing.s2),
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: Color(0xFFF4F4F5), width: 1)),
+                border: Border(bottom: BorderSide(color: AppColors.outlineMuted, width: 1)),
               ),
               child: Text(
                 groupTitle.toUpperCase(),
-                style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: primaryColor,
-                    letterSpacing: 0.5
+                style: StudentMobileUi.caption(context).copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primary,
+                  letterSpacing: 0.5,
                 ),
               ),
             ),
-
-            // --- Danh sách item trong nhóm ---
-            ...groupItems.map((item) => _buildDetailItem(item, 'lessons', primaryColor, t)),
-
-            const SizedBox(height: 8), // Khoảng cách giữa các nhóm
+            ...groupItems.map((item) => _buildDetailItem(item, 'lessons', t)),
+            const SizedBox(height: AppSpacing.s3),
           ],
         );
       }).toList(),
     );
   }
 
-  // 🔥 3. Hàm dựng list chính
   Widget _buildDetailList(BuildContext context, ProgressState state) {
-    const textMuted = Color(0xFF71717A);
-    final primaryColor = Theme.of(context).colorScheme.primary;
     final t = context.l10n;
 
     if (state.detailStatus == ProgressDetailStatus.loading) {
-      return const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()));
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.s8),
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
     }
 
     if (state.detailStatus == ProgressDetailStatus.error) {
-      return Center(child: Padding(padding: EdgeInsets.all(20), child: Text(state.errorMessage ?? t.genericLoadError)));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s5),
+          child: Text(
+            state.errorMessage ?? t.genericLoadError,
+            style: StudentMobileUi.body(context),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
 
     if (state.detailStatus == ProgressDetailStatus.success) {
       final List<ProgressDetailEntity> data = state.detailData.cast<ProgressDetailEntity>();
 
       if (data.isEmpty) {
-        return Center(child: Padding(padding: EdgeInsets.all(40), child: Text(t.statDetailNoData, style: TextStyle(color: textMuted))));
+        return StudentMobileUi.emptyState(
+          context,
+          icon: Icons.inbox_outlined,
+          title: t.statDetailNoData,
+          body: '',
+        );
       }
 
-      // 🔥 NẾU LÀ LESSONS => GỌI HÀM GOM NHÓM
       if (widget.statKey == 'lessons') {
-        return _buildGroupedLessonsList(data, primaryColor, t);
+        return _buildGroupedLessonsList(data, t);
       }
 
-      // Các trường hợp khác giữ nguyên list phẳng
       return Column(
-        children: data
-            .map((item) => _buildDetailItem(item, widget.statKey, primaryColor, t))
-            .toList(),
+        children: data.map((item) => _buildDetailItem(item, widget.statKey, t)).toList(),
       );
     }
     return const SizedBox.shrink();
@@ -229,69 +236,59 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    const textMain = Color(0xFF09090B);
-    const borderCol = Color(0xFFE4E4E7);
 
     return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 600), // Giới hạn chiều cao
+      backgroundColor: AppColors.surfaceCard,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet + 2)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400, maxHeight: 560),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 16, 12),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s7, AppSpacing.s6, AppSpacing.s4, AppSpacing.s3),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_getTitle(t), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textMain)),
-                        const SizedBox(height: 4),
-                        Text(t.statDetailPeriodLog(widget.rangeLabel), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A))),
+                        Text(_getTitle(t), style: StudentMobileUi.sectionTitle(context)),
+                        const SizedBox(height: AppSpacing.s2),
+                        Text(
+                          t.statDetailPeriodLog(widget.rangeLabel),
+                          style: StudentMobileUi.body(context),
+                        ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFFA1A1AA), size: 20),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 20),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
               ),
             ),
-            const Divider(color: borderCol, height: 1),
-
-            // Content
+            const Divider(height: 1, color: AppColors.outline),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6, vertical: AppSpacing.s3),
                 child: BlocBuilder<ProgressBloc, ProgressState>(
                   builder: (context, state) => _buildDetailList(context, state),
                 ),
               ),
             ),
-
-            const Divider(color: borderCol, height: 1),
+            const Divider(height: 1, color: AppColors.outline),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.s5),
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: textMain,
-                    side: const BorderSide(color: borderCol),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: Text(t.close, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(t.close),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -299,14 +296,13 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
   }
 }
 
-// Widget DetailRow có thêm cờ isCompact để hiển thị nhỏ gọn hơn trong list gom nhóm
 class _DetailRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
   final String value;
   final String unit;
-  final bool isCompact; // Thêm cờ này
+  final bool isCompact;
 
   const _DetailRow({
     required this.icon,
@@ -319,31 +315,25 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const textMuted = Color(0xFF71717A);
-    const borderCol = Color(0xFFF4F4F5);
-
     return Container(
-      padding: EdgeInsets.symmetric(vertical: isCompact ? 12 : 16), // Compact thì padding ít hơn
+      padding: EdgeInsets.symmetric(vertical: isCompact ? AppSpacing.s4 : AppSpacing.s5),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: borderCol, width: 1)),
+        border: Border(bottom: BorderSide(color: AppColors.outlineMuted, width: 1)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: isCompact ? Colors.grey : Theme.of(context).colorScheme.primary, size: 20),
-          const SizedBox(width: 12),
+          StudentMobileUi.skillIconBox(icon, size: isCompact ? 36 : 40),
+          const SizedBox(width: AppSpacing.s4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                    title,
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: Color(0xFF09090B))
-                ),
+                Text(title, style: StudentMobileUi.cardTitle(context)),
                 if (subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: const TextStyle(fontSize: 11, color: textMuted)),
-                ]
+                  const SizedBox(height: AppSpacing.s2),
+                  Text(subtitle, style: StudentMobileUi.caption(context)),
+                ],
               ],
             ),
           ),
@@ -352,9 +342,11 @@ class _DetailRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(value, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: Color(0xFF09090B))),
-                const SizedBox(width: 2),
-                Text(unit, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: textMuted)),
+                Text(value, style: StudentMobileUi.kpi(context)),
+                if (unit.isNotEmpty) ...[
+                  const SizedBox(width: AppSpacing.s2),
+                  Text(unit, style: StudentMobileUi.caption(context)),
+                ],
               ],
             ),
         ],

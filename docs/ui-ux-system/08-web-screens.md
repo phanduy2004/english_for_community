@@ -133,8 +133,10 @@
 - **Tabs only** dưới page header — không card metadata cố định trên tabs.
 - **Live monitor:** toolbar tóm tắt + filter (~56px) → list HS scroll (`Expanded`).
 - **Metadata:** `TeacherExamSessionCompactStrip` (mặc định thu gọn) trong tab Session control / lobby.
+- **Trạng thái HS (cả 2 tab):** `TeacherExamParticipantStatusChip` — lobby: Ready / Not ready; live: **Đang làm** / **Đã nộp** / Hết giờ / Đã rời. Chi tiết [`16-teacher-live-participant-status.md`](16-teacher-live-participant-status.md).
+- **Session control khi live:** summary `N in progress · M submitted` + roster có **cùng chip** (không chỉ nút Kick).
 - Actions: [Start session] [End and submit all] — header web / bottom bar mobile.
-- Thẻ HS compact: progress + skill strips + icon watch (không nút full-width).
+- Thẻ HS compact: status chip + progress + skill strips + icon watch (không nút full-width).
 
 ### A7. My exams list
 
@@ -146,21 +148,43 @@
 
 ## B. ADMIN CONSOLE
 
+> **v3 compact** — cùng shell/token với teacher (`06-web-foundations`, `07-web-components`): sidebar 212px, top bar 44px, page header 52px min, nút 32px. Toast góc phải qua `AdminCornerToast` (= teacher). **Giữ** bảng màu icon kỹ năng CMS (`AdminSkillPalette`).
+
+### B0. Admin shell
+
+| Thuộc tính | Giá trị |
+|------------|---------|
+| Sidebar | 212 expanded / 48 collapsed; nav item **30px**; group label `web.tableHead` |
+| Top bar | 44px — menu (khi collapsed) + route label + notification icon 32 |
+| Fallback | &lt;768px: full-screen “dùng desktop” |
+| Theme | `WorkspaceLayoutScope` + `AppTheme.mergeWorkspaceWeb` |
+
+**Files:** `admin_shell.dart`, `admin_web_ui.dart`, `admin_page_scaffold.dart`.
+
 ### B1. Admin dashboard
 
-- 4 KPI: DAU / WAU / Lessons today / Pending approvals.
-- 2 chart row: signup trend + lesson completion trend.
-- 2 list: most-recent reports + most-recent teacher applications.
+**Route:** `/admin-dashboard` — `AdminDashboardPage`.
+
+| Khối | Nội dung |
+|------|----------|
+| Header | `adminOverviewTitle` + ngày (caption) + segmented Day/Week/Month (32px) |
+| KPI (4) | Submissions · AI cost · Reports · Active users — `AdminKpiCard`, icon 32×32 màu accent |
+| Chart | Activity by skill — legend màu `AdminSkillPalette`; bar chart scroll ngang |
+| Hub | `managementSection` (`sectionTitle`) + grid `AdminNavTile` — **icon 40×40 màu accent** (content, reports, users, teacher apps, ops, releases) |
 
 ### B2. User management
 
-- Bảng users với search/filter mạnh (role, status, period).
-- Drawer detail: profile, audit log, action `Suspend`, `Promote to teacher`.
+- `AdminPageScaffold`: breadcrumb Overview → Users; `AdminSearchField`; tabs All/Today/Online; trash = compact outlined.
+- List: `UserCard`; empty `AdminEmptyState`.
 
 ### B3. Content management (CMS)
 
-- Sidebar phụ (nested): Reading · Listening · ListeningComp · Speaking · Writing · Vocabulary.
-- Mỗi mục: list + editor (theo pattern A3 — 2 cột editor + preview).
+**Hub** `/admin/content` — `ContentDashboardPage`:
+- Breadcrumb Overview → Content Manager.
+- Grid 4× `AdminSkillCard` — **màu icon giữ nguyên:** Writing `#EF4444`, Speaking `#3B82F6`, Reading chart highlight, Listening `#8B5CF6`.
+- Listening → dialog chọn Dictation / Comprehension.
+
+**List/editor:** nested routes theo skill; editor pattern 2 cột khi có preview (giống A3).
 
 ### B4. Submission management
 

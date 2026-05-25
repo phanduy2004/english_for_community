@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Exam from '../models/Exam.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamSession from '../models/ExamSession.js';
@@ -20,6 +21,11 @@ import {
   integratedAutoScoresStale,
   mergePreservedSkillScores,
 } from './examIntegratedScoring.js';
+import {
+  healExamSnapshotFromLiveExam,
+  normalizeExamSnapshot,
+  resourcesFromSkillSection,
+} from './examSkillSectionResources.js';
 
 function httpError(statusCode, message) {
   const e = new Error(message);
@@ -39,18 +45,64 @@ async function assertLiveSessionAllowsEdits(attempt) {
 const { walkItems, walkSkillContentSections } = teacherExamService;
 
 async function afterAttemptActivity(attempt, assignment) {
-  if (!assignment?.classroomId) return;
-  const { classroomActivityService } = await import('./classroomActivityService.js');
-  await classroomActivityService.log({
-    classroomId: assignment.classroomId,
-    actorId: attempt.userId,
-    type: 'attempt_submitted',
-    message: 'Student submitted work',
-    meta: {
-      attemptId: attempt._id.toString(),
-      assignmentId: assignment._id.toString(),
-    },
-  });
+  if (assignment?.classroomId) {
+    const { classroomActivityService } = await import('./classroomActivityService.js');
+    await classroomActivityService.log({
+      classroomId: assignment.classroomId,
+      actorId: attempt.userId,
+      type: 'attempt_submitted',
+      message: 'Student submitted work',
+      meta: {
+        attemptId: attempt._id.toString(),
+        assignmentId: assignment._id.toString(),
+      },
+    });
+  }
+
+  if (attempt.status !== 'submitted') return;
+
+  try {
+    const {
+      notifyTeacherExamSubmission,
+      notifyStudentResultsReleased,
+      studentDisplayName,
+      assignmentNotificationContext,
+    } = await import('./teacherNotificationHelper.js');
+
+    let examTitle = attempt.examSnapshot?.title || '';
+    if (!examTitle && assignment) {
+      await assignment.populate?.('examId', 'title');
+      const ctx = await assignmentNotificationContext(assignment);
+      examTitle = ctx.examTitle;
+    }
+
+    const studentName = await studentDisplayName(attempt.userId);
+    const teacherId = assignment?.teacherId;
+    if (teacherId) {
+      await notifyTeacherExamSubmission({
+        teacherId,
+        studentId: attempt.userId,
+        studentName,
+        assignmentId: assignment._id,
+        attemptId: attempt._id,
+        examTitle,
+        classroomId: assignment.classroomId?._id || assignment.classroomId || null,
+      });
+    }
+
+    if (attempt.resultsReleased) {
+      await notifyStudentResultsReleased({
+        studentId: attempt.userId,
+        teacherId,
+        examTitle,
+        attemptId: attempt._id,
+        assignmentId: assignment._id,
+        classroomId: assignment.classroomId?._id || assignment.classroomId || null,
+      });
+    }
+  } catch {
+    /* optional notifications */
+  }
 }
 
 function normalizeAnswer(s, { caseInsensitive = true, trim = true } = {}) {
@@ -247,6 +299,31 @@ async function attachRuntimeContextToAttempt(attemptDoc) {
 
   const student = await User.findById(plain.userId).select('fullName username').lean();
 
+  if (plain.examSnapshot && typeof plain.examSnapshot === 'object') {
+    let snap = normalizeExamSnapshot(plain.examSnapshot);
+    const examRef = assignment?.examId;
+    const examId =
+      examRef && typeof examRef === 'object' && examRef._id
+        ? examRef._id
+        : examRef;
+    if (examId) {
+      const liveExam = await Exam.findById(examId).lean();
+      if (liveExam) {
+        const healed = healExamSnapshotFromLiveExam(snap, liveExam);
+        snap = healed;
+        if (attemptDoc?.save && attemptDoc.examSnapshot) {
+          const before = JSON.stringify(attemptDoc.examSnapshot?.sections ?? []);
+          const after = JSON.stringify(healed.sections ?? []);
+          if (before !== after) {
+            attemptDoc.examSnapshot = healed;
+            attemptDoc.markModified('examSnapshot');
+            await attemptDoc.save();
+          }
+        }
+      }
+    }
+    plain.examSnapshot = snap;
+  }
   const snap = plain.examSnapshot || {};
   const classRoom = assignment?.classroomId;
   const classroomName =
@@ -278,20 +355,6 @@ async function attachRuntimeContextToAttempt(attemptDoc) {
   };
 
   return plain;
-}
-
-function resourcesFromSkillSection(sec) {
-  if (Array.isArray(sec.resources) && sec.resources.length > 0) {
-    return sec.resources
-      .map((r) => ({
-        id: String(r.id || r._id || '').trim(),
-        title: r.title != null ? String(r.title).trim() : '',
-      }))
-      .filter((r) => r.id);
-  }
-  const id = sec.resourceId ? String(sec.resourceId).trim() : '';
-  if (!id) return [];
-  return [{ id, title: sec.resourceTitle ? String(sec.resourceTitle).trim() : '' }];
 }
 
 /** Normalizes populated or raw user refs to a MongoDB ObjectId for queries. */
@@ -779,27 +842,27 @@ export const examAttemptService = {
       throw httpError(400, 'Realtime exams use the session join flow');
     }
 
-    if (assignment.mode !== 'practice') {
-    if (assignment.mode === 'scheduled') {
-      const opens = assignment.config?.opensAt ? new Date(assignment.config.opensAt).getTime() : null;
-      const closes = assignment.config?.closesAt ? new Date(assignment.config.closesAt).getTime() : null;
-      const now = Date.now();
-      if (opens != null && now < opens) throw httpError(400, 'Exam has not opened yet');
-      if (closes != null && now > closes) throw httpError(400, 'Exam window is closed');
-    }
-
-    if (assignment.mode === 'self_paced') {
-      const due = assignment.config?.dueAt ? new Date(assignment.config.dueAt) : null;
-      if (due && due.getTime() < Date.now()) throw httpError(400, 'Assignment is past due date');
-    }
-    }
-
     const existing = await ExamAttempt.findOne({
       assignmentId: assignment._id,
       userId,
       status: 'in_progress',
     });
     if (existing) return existing;
+
+    if (assignment.mode !== 'practice') {
+      if (assignment.mode === 'scheduled') {
+        const opens = assignment.config?.opensAt ? new Date(assignment.config.opensAt).getTime() : null;
+        const closes = assignment.config?.closesAt ? new Date(assignment.config.closesAt).getTime() : null;
+        const now = Date.now();
+        if (opens != null && now < opens) throw httpError(400, 'Exam has not opened yet');
+        if (closes != null && now > closes) throw httpError(400, 'Exam window is closed');
+      }
+
+      if (assignment.mode === 'self_paced') {
+        const due = assignment.config?.dueAt ? new Date(assignment.config.dueAt).getTime() : null;
+        if (due && due < Date.now()) throw httpError(400, 'Assignment is past due date');
+      }
+    }
 
     const exam = assignment.examId;
     if (!exam) throw httpError(500, 'Exam missing on assignment');
@@ -825,8 +888,9 @@ export const examAttemptService = {
       await teacherExamAssignmentService.consumePublicStartSlot(assignment._id);
     }
 
-    const snapshot = exam.toObject ? exam.toObject() : exam;
+    let snapshot = exam.toObject ? exam.toObject() : exam;
     delete snapshot._id;
+    snapshot = normalizeExamSnapshot(snapshot);
 
     const startedAt = new Date();
     const attemptDeadlineAt = computeAttemptDeadline(assignment, startedAt);

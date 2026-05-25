@@ -45,17 +45,15 @@ class VocabularyBloc extends Bloc<VocabularyEvent, VocabularyState> {
 
     // 2. Gọi đồng thời 3
     // phương thức repository
-    final results = await Future.wait([
+    final results = await Future.wait<Either<Failure, List<UserWordEntity>>>([
       userVocabRepository.getRecentWords(),
       userVocabRepository.getLearningWords(),
       userVocabRepository.getSavedWords(),
     ]);
 
-    // 3. Gán kết quả (vẫn đang ở dạng Either)
-    // 🔽 ✍️ SỬA LỖI Ở ĐÂY: Sửa List<String> thành List<UserWordEntity>
-    final recentResult = results[0] as Either<Failure, List<UserWordEntity>>;
-    final learningResult = results[1] as Either<Failure, List<UserWordEntity>>;
-    final savedResult = results[2] as Either<Failure, List<UserWordEntity>>;
+    final recentResult = results[0];
+    final learningResult = results[1];
+    final savedResult = results[2];
 
     // 4. Xử lý kết quả (Fold lồng nhau để đảm bảo cả 3 đều thành công)
     recentResult.fold(

@@ -27,30 +27,42 @@ class NotificationEntity extends Equatable {
     this.data,
   });
 
-  factory NotificationEntity.fromJson(Map<String, dynamic> json) {
+  static DateTime _parseCreatedAt(dynamic raw) {
+    if (raw == null) return DateTime.now();
+    if (raw is DateTime) return raw;
+    if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
+    final s = raw.toString();
+    if (s.isEmpty) return DateTime.now();
+    return DateTime.tryParse(s) ?? DateTime.now();
+  }
 
-    // Parse Sender info an toàn
+  factory NotificationEntity.fromJson(Map<String, dynamic> json) {
     String sName = 'Hệ thống';
     String? sAvatar;
-    if (json['senderId'] != null && json['senderId'] is Map) {
-      sName = json['senderId']['fullName'] ?? 'Người dùng ẩn danh';
-      sAvatar = json['senderId']['avatarUrl'];
+    final sender = json['senderId'];
+    if (sender is Map) {
+      sName = sender['fullName']?.toString() ?? 'Người dùng ẩn danh';
+      sAvatar = sender['avatarUrl']?.toString();
     }
 
+    Map<String, dynamic>? dataMap;
+    final rawData = json['data'];
+    if (rawData is Map) {
+      dataMap = Map<String, dynamic>.from(rawData);
+    }
+
+    final id = json['_id']?.toString() ?? json['id']?.toString() ?? '';
+
     return NotificationEntity(
-      id: json['_id'] ?? json['id'] ?? '',
-      title: json['title'] ?? 'Thông báo',
-      message: json['message'] ?? '',
-      type: json['type'] ?? 'SYSTEM',
-      isRead: json['isRead'] ?? false,
-
-      senderName: sName,   // ✅ Luôn hiển thị tên đẹp
+      id: id,
+      title: json['title']?.toString() ?? 'Thông báo',
+      message: json['message']?.toString() ?? '',
+      type: json['type']?.toString() ?? 'SYSTEM',
+      isRead: json['isRead'] == true,
+      senderName: sName,
       senderAvatar: sAvatar,
-
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'])
-          : DateTime.now(),
-      data: json['data'] != null ? Map<String, dynamic>.from(json['data']) : null,
+      createdAt: _parseCreatedAt(json['createdAt']),
+      data: dataMap,
     );
   }
 

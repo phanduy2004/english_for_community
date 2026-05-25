@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
+import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
 
 dotenv.config();
 
@@ -81,33 +82,71 @@ const normalUsers = [
   }
 ];
 
-mongoose.connect(process.env.MONGO_URI)
+/** Tài khoản admin để test console (đăng nhập → redirect /admin). */
+const ADMIN_ACCOUNTS = [
+  {
+    fullName: 'Super Admin',
+    username: 'admin',
+    email: 'admin@englishapp.com',
+    password: 'adminpassword123',
+  },
+  {
+    fullName: 'Test Admin',
+    username: 'testuser_admin',
+    email: 'testuser@example.com',
+    password: 'Test@1234',
+  },
+  {
+    fullName: 'Test Admin (legacy email)',
+    username: 'test_admin',
+    email: 'test@example.com',
+    password: 'Test@1234',
+  },
+];
+
+async function upsertAdminAccount(spec, salt) {
+  const hashed = await bcrypt.hash(spec.password, salt);
+  let user = await User.findOne({ email: spec.email });
+  if (!user) {
+    user = await User.create({
+      fullName: spec.fullName,
+      username: spec.username,
+      email: spec.email,
+      password: hashed,
+      role: 'admin',
+      isVerified: true,
+      goal: 'Manage System',
+      totalPoints: 99999,
+      gender: 'male',
+      dateOfBirth: new Date('1990-01-01'),
+    });
+    console.log(`✅ Created admin: ${spec.email}`);
+    return;
+  }
+  user.fullName = spec.fullName;
+  user.username = spec.username;
+  user.password = hashed;
+  user.role = 'admin';
+  user.isVerified = true;
+  user._destroy = false;
+  await user.save();
+  console.log(`🔄 Updated admin: ${spec.email}`);
+}
+
+const mongoUri = getMongoUri();
+if (!mongoUri) {
+  console.error('❌ Missing MONGO_URI in .env');
+  process.exit(1);
+}
+
+mongoose.connect(mongoUri)
   .then(async () => {
-    console.log('🔌 Connected to DB');
+    console.log(`🔌 Connected to DB (${getMongoUriForLog(mongoUri)})`);
 
-    // --- PHẦN 1: TẠO ADMIN ---
-    const adminEmail = 'admin@englishapp.com';
-    const adminPassword = 'adminpassword123';
-
-    const adminExists = await User.findOne({ email: adminEmail });
-    if (!adminExists) {
-      const salt = await bcrypt.genSalt(10);
-      const hashedAdminPassword = await bcrypt.hash(adminPassword, salt);
-
-      await User.create({
-        fullName: 'Super Admin',
-        username: 'admin',
-        email: adminEmail,
-        password: hashedAdminPassword,
-        role: 'admin',
-        goal: 'Manage System',
-        totalPoints: 99999,
-        gender: 'male', // Mặc định cho admin
-        dateOfBirth: new Date('1990-01-01')
-      });
-      console.log('✅ Admin account created successfully');
-    } else {
-      console.log('⚠️  Admin account already exists');
+    // --- PHẦN 1: ADMIN (console) ---
+    const salt = await bcrypt.genSalt(10);
+    for (const spec of ADMIN_ACCOUNTS) {
+      await upsertAdminAccount(spec, salt);
     }
 
     // --- PHẦN 2: TẠO USER THƯỜNG ---
@@ -128,6 +167,7 @@ mongoose.connect(process.env.MONGO_URI)
           email: user.email,
           password: hashedPassword,
           role: 'user',
+          isVerified: true,
           goal: user.goal,
           totalPoints: user.totalPoints,
           gender: user.gender,           // 🔥 Thêm gender
@@ -135,10 +175,13 @@ mongoose.connect(process.env.MONGO_URI)
         });
         console.log(`✅ Created user: ${user.username} (${user.gender}, Born: ${user.dateOfBirth.getFullYear()})`);
       } else {
-        // CẬP NHẬT XP, DOB và GENDER (Nếu user đã có thì update luôn để test tính năng mới)
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(commonPassword, salt);
+        userExists.password = hashedPassword;
+        userExists.isVerified = true;
         userExists.totalPoints = user.totalPoints;
-        userExists.gender = user.gender;          // 🔥 Update gender
-        userExists.dateOfBirth = user.dateOfBirth; // 🔥 Update DOB
+        userExists.gender = user.gender;
+        userExists.dateOfBirth = user.dateOfBirth;
 
         await userExists.save();
         console.log(`🔄 Updated info for existing user: ${user.username}`);

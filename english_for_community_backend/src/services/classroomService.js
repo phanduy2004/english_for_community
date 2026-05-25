@@ -272,6 +272,18 @@ export const classroomService = {
       message: 'Student join approved',
       meta: { userId: studentUserId },
     });
+    try {
+      const classroom = await Classroom.findById(classroomId).select('name teacherId');
+      const { notifyStudentJoinApproved } = await import('./teacherNotificationHelper.js');
+      await notifyStudentJoinApproved({
+        studentId: studentUserId,
+        teacherId,
+        classroomId,
+        classroomName: classroom?.name,
+      });
+    } catch {
+      /* optional */
+    }
     return m;
   },
 
@@ -283,6 +295,18 @@ export const classroomService = {
     m.status = 'removed';
     m.leftAt = new Date();
     await m.save();
+    try {
+      const classroom = await Classroom.findById(classroomId).select('name');
+      const { notifyStudentJoinRejected } = await import('./teacherNotificationHelper.js');
+      await notifyStudentJoinRejected({
+        studentId: studentUserId,
+        teacherId,
+        classroomId,
+        classroomName: classroom?.name,
+      });
+    } catch {
+      /* optional */
+    }
     return m;
   },
 

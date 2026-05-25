@@ -1,4 +1,4 @@
-// lib/core/widgets/common_cards.dart
+﻿// lib/core/widgets/common_cards.dart
 import 'package:flutter/material.dart';
 
 /// Card chung với gradient header
@@ -175,7 +175,7 @@ class InfoCard extends StatelessWidget {
                 height: 48,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: cs.surfaceVariant.withOpacity(.6),
+                  color: cs.surfaceContainerHighest.withValues(alpha: .6),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(leadingIcon, color: cs.onSurfaceVariant),
@@ -198,7 +198,7 @@ class InfoCard extends StatelessWidget {
                       children: tags
                           .map((t) => TagChip(
                         text: t,
-                        background: cs.primary.withOpacity(.12),
+                        background: cs.primary.withValues(alpha: .12),
                         foreground: cs.primary,
                       ))
                           .toList(),

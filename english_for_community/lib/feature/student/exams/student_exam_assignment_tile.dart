@@ -30,14 +30,20 @@ class StudentExamAssignmentTile extends StatelessWidget {
     String? actionLabel;
     var actionEnabled = false;
 
-    if (hint == 'session_ended') {
+    if (hint == 'session_ended' || hint == 'already_submitted') {
       if (hasSubmittedAttempt) {
         actionLabel = l10n.examCardViewMySubmission;
         actionEnabled = true;
       }
+    } else if (hint == 'resume' && attemptId.isNotEmpty) {
+      actionLabel = l10n.studentExamResume;
+      actionEnabled = true;
     } else if (isRealtime) {
       actionLabel = l10n.examOpenLobby;
       actionEnabled = id.isNotEmpty && canStart;
+    } else if (hasSubmittedAttempt && !canStart) {
+      actionLabel = l10n.examCardViewMySubmission;
+      actionEnabled = attemptId.isNotEmpty;
     } else {
       actionLabel = l10n.studentExamStart;
       actionEnabled = id.isNotEmpty && canStart;

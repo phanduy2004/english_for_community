@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -86,12 +88,18 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
 
     // Register callback: When alert received, reload list
     socket.listenToUserStatus((data) {
-      print("⚡ Socket Alert: User status changed. Reloading list...");
-
-      // Check mounted to avoid setState error if widget is closed
-      if (mounted) {
-        _fetchUsers(); // Reload list immediately
+      if (!mounted) return;
+      if (data is Map) {
+        final userId = data['userId']?.toString();
+        final isOnline = data['isOnline'] == true;
+        if (userId != null && userId.isNotEmpty) {
+          context.read<AdminBloc>().add(
+                PatchUserOnlineStatusEvent(userId: userId, isOnline: isOnline),
+              );
+          return;
+        }
       }
+      _fetchUsers();
     });
   }
 
@@ -116,6 +124,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
   }
 
   Future<void> _openDeletedUsersSheet() async {
+    final l10n = context.l10n;
     final datasource = getIt<AdminRemoteDatasource>();
     await showDialog(
       context: context,
@@ -178,9 +187,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                                 onPressed: () async {
                                   await datasource.restoreUser(u.id);
                                   if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Restored ${u.fullName}')),
-                                  );
+                                  AdminCornerToast.show(context, l10n.adminUserRestored(u.fullName));
                                   Navigator.pop(ctx);
                                   _fetchUsers();
                                 },
@@ -224,17 +231,19 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     final l10n = context.l10n;
     return AdminPageScaffold(
       title: l10n.adminUserManagementTitle,
+      subtitle: l10n.usersMenuSub,
       scrollable: false,
       maxWidth: AdminWebUi.contentMaxTable,
+      breadcrumbs: [
+        AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+        AdminBreadcrumb(label: l10n.usersMenuTitle),
+      ],
       actions: [
         OutlinedButton.icon(
           onPressed: _openDeletedUsersSheet,
           icon: const Icon(Icons.restore_from_trash_outlined, size: 16),
-          label: const Text('Trash'),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(0, 36),
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-          ),
+          label: Text(l10n.adminUsersTrash),
+          style: AdminWebUi.compactOutlinedStyle(context),
         ),
       ],
       headerBottom: TabBar(

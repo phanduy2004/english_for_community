@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 
 class AppNavItem {
   const AppNavItem({
@@ -95,43 +96,49 @@ class AppNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: currentIndex,
-      labelBehavior: labelBehavior,
-      onDestinationSelected: (i) {
-        if (useGoRouter && items[i].routeName != null) {
-          context.goNamed(items[i].routeName!);
-          return;
-        }
-        onIndexSelected(i);
-      },
-      destinations: items.map((it) {
-        final icon = Icon(it.icon);
-        final selected = Icon(it.selectedIcon);
+    return SizedBox(
+      height: 60,
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+        labelBehavior: labelBehavior,
+        backgroundColor: AppColors.surfaceCard,
+        indicatorColor: AppColors.primaryTint,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        onDestinationSelected: (i) {
+          if (useGoRouter && items[i].routeName != null) {
+            context.goNamed(items[i].routeName!);
+            return;
+          }
+          onIndexSelected(i);
+        },
+        destinations: items.map((it) {
+          final icon = Icon(it.icon, size: 22);
+          final selected = Icon(it.selectedIcon, size: 22);
 
-        // Nếu có badge, bọc icon bằng Badge (Material 3)
-        final iconWithBadge = it.badge == null
-            ? icon
-            : Badge(
-          alignment: Alignment.topRight,
-          label: it.badge is Text ? it.badge as Text? : null,
-          child: icon,
-        );
+          final iconWithBadge = it.badge == null
+              ? icon
+              : Badge(
+            alignment: Alignment.topRight,
+            label: it.badge is Text ? it.badge as Text? : null,
+            child: icon,
+          );
 
-        final selectedWithBadge = it.badge == null
-            ? selected
-            : Badge(
-          alignment: Alignment.topRight,
-          label: it.badge is Text ? it.badge as Text? : null,
-          child: selected,
-        );
+          final selectedWithBadge = it.badge == null
+              ? selected
+              : Badge(
+            alignment: Alignment.topRight,
+            label: it.badge is Text ? it.badge as Text? : null,
+            child: selected,
+          );
 
-        return NavigationDestination(
-          icon: iconWithBadge,
-          selectedIcon: selectedWithBadge,
-          label: it.label,
-        );
-      }).toList(),
+          return NavigationDestination(
+            icon: iconWithBadge,
+            selectedIcon: selectedWithBadge,
+            label: it.label,
+          );
+        }).toList(),
+      ),
     );
   }
 }

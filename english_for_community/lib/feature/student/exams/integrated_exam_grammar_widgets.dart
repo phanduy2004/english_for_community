@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_answer_review_widgets.dart';
 import 'package:flutter/material.dart';
@@ -380,16 +383,14 @@ class _McqBody extends StatelessWidget {
       return Column(
         children: [
           for (var i = 0; i < options.length; i++)
-            RadioListTile<int>(
-              dense: true,
-              value: i,
-              groupValue: group,
-              onChanged: locked
+            StudentMobileUi.mcqOption(
+              context: context,
+              index: i,
+              text: options[i],
+              selected: group == i,
+              onTap: locked
                   ? null
-                  : (v) {
-                      if (v != null) onPartialPatch({'selectedIndexes': [v]});
-                    },
-              title: Text(options[i], style: ExamSystemUi.captionSecondary),
+                  : () => onPartialPatch({'selectedIndexes': [i]}),
             ),
         ],
       );
@@ -398,23 +399,24 @@ class _McqBody extends StatelessWidget {
     return Column(
       children: [
         for (var i = 0; i < options.length; i++)
-          CheckboxListTile(
-            dense: true,
-            value: sel.contains(i),
-            onChanged: locked
+          StudentMobileUi.mcqOption(
+            context: context,
+            index: i,
+            text: options[i],
+            multiSelect: true,
+            checked: sel.contains(i),
+            onTap: locked
                 ? null
-                : (on) {
+                : () {
                     final next = {...sel};
-                    if (on == true) {
-                      next.add(i);
-                    } else {
+                    if (next.contains(i)) {
                       next.remove(i);
+                    } else {
+                      next.add(i);
                     }
                     final list = List<int>.from(next)..sort();
                     onPartialPatch({'selectedIndexes': list});
                   },
-            title: Text(options[i], style: ExamSystemUi.captionSecondary),
-            controlAffinity: ListTileControlAffinity.leading,
           ),
       ],
     );
@@ -440,22 +442,33 @@ class _ClozeBody extends StatefulWidget {
 
 class _ClozeBodyState extends State<_ClozeBody> {
   final Map<String, TextEditingController> _controllers = {};
+  bool _hydratedFromAnswer = false;
 
   @override
   void initState() {
     super.initState();
-    _syncControllers();
+    _ensureControllersForPassage();
+    _hydrateFromAnswerIfNeeded();
   }
 
   @override
   void didUpdateWidget(covariant _ClozeBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.answer != widget.answer || oldWidget.item['passage'] != widget.item['passage']) {
-      _syncControllers();
+    if (oldWidget.item['passage'] != widget.item['passage']) {
+      _ensureControllersForPassage();
+      _hydratedFromAnswer = false;
+      _hydrateFromAnswerIfNeeded();
+      return;
+    }
+    if (!_hydratedFromAnswer && widget.answer != null) {
+      _hydrateFromAnswerIfNeeded();
+    }
+    if (!oldWidget.locked && widget.locked) {
+      _hydrateFromAnswerIfNeeded(force: true);
     }
   }
 
-  void _syncControllers() {
+  void _ensureControllersForPassage() {
     final passage = '${widget.item['passage'] ?? ''}';
     final reg = RegExp(r'\{\{([0-9]+)\}\}');
     final ids = reg.allMatches(passage).map((m) => m.group(1) ?? '0').toSet();
@@ -464,14 +477,30 @@ class _ClozeBodyState extends State<_ClozeBody> {
         _controllers.remove(k)?.dispose();
       }
     }
-    final blanks = (widget.answer?['blanks'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
     for (final id in ids) {
-      final t = blanks[id] ?? '';
       _controllers.putIfAbsent(id, () => TextEditingController());
-      if (_controllers[id]!.text != t) {
-        _controllers[id]!.text = t;
+    }
+  }
+
+  void _hydrateFromAnswerIfNeeded({bool force = false}) {
+    if (!force && _hydratedFromAnswer) return;
+    final blanks = (widget.answer?['blanks'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
+    if (!force && blanks.isEmpty) return;
+    for (final e in _controllers.entries) {
+      final t = blanks[e.key] ?? '';
+      if (e.value.text != t) {
+        e.value.text = t;
       }
     }
+    _hydratedFromAnswer = true;
+  }
+
+  Map<String, String> _allBlanks() {
+    return {for (final e in _controllers.entries) e.key: e.value.text};
+  }
+
+  void _emitBlanks() {
+    widget.onPartialPatch({'blanks': _allBlanks()});
   }
 
   @override
@@ -496,11 +525,12 @@ class _ClozeBodyState extends State<_ClozeBody> {
       final ctl = _controllers[id]!;
       pieces.add(
         SizedBox(
-          width: 100,
+          width: 108,
           child: TextField(
+            key: ValueKey('cloze_${widget.item['itemId']}_$id'),
             enabled: !widget.locked,
             controller: ctl,
-            onChanged: widget.locked ? null : (v) => widget.onPartialPatch({'blanks': {id: v}}),
+            onChanged: widget.locked ? null : (_) => _emitBlanks(),
             style: ExamSystemUi.captionSecondary,
             decoration: InputDecoration(
               isDense: true,
@@ -559,19 +589,24 @@ class _GapBodyState extends State<_GapBody> {
   @override
   void initState() {
     super.initState();
-    _applyAnswer();
+    _applyAnswer(force: true);
   }
+
+  bool _hydrated = false;
 
   @override
   void didUpdateWidget(covariant _GapBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.answer != widget.answer) _applyAnswer();
+    if (!_hydrated && widget.answer != null) _applyAnswer();
+    if (!oldWidget.locked && widget.locked) _applyAnswer(force: true);
   }
 
-  void _applyAnswer() {
+  void _applyAnswer({bool force = false}) {
+    if (!force && _hydrated) return;
     final blanks = (widget.answer?['blanks'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
     final t = blanks[_blankId] ?? '';
     if (_ctl.text != t) _ctl.text = t;
+    if (t.isNotEmpty || force) _hydrated = true;
   }
 
   @override
@@ -613,7 +648,7 @@ class _GapBodyState extends State<_GapBody> {
   }
 }
 
-class _MatchingBody extends StatelessWidget {
+class _MatchingBody extends StatefulWidget {
   const _MatchingBody({
     required this.item,
     required this.answer,
@@ -627,63 +662,333 @@ class _MatchingBody extends StatelessWidget {
   final void Function(Map<String, dynamic> partial) onPartialPatch;
 
   @override
+  State<_MatchingBody> createState() => _MatchingBodyState();
+}
+
+class _MatchingBodyState extends State<_MatchingBody> {
+  final GlobalKey _canvasKey = GlobalKey();
+  final Map<String, GlobalKey> _leftKeys = {};
+  final Map<String, GlobalKey> _rightKeys = {};
+  late Map<String, String> _matching;
+  String? _selectedLeftId;
+  List<_MatchLine> _lines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _matching = _readMatching();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
+  }
+
+  @override
+  void didUpdateWidget(covariant _MatchingBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.answer != widget.answer && widget.locked) {
+      setState(() => _matching = _readMatching());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
+    }
+  }
+
+  Map<String, String> _readMatching() {
+    return (widget.answer?['matching'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
+  }
+
+  List<Map<String, dynamic>> get _leftRows =>
+      ((widget.item['leftItems'] ?? widget.item['leftColumn']) as List?)
+          ?.whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList() ??
+      [];
+
+  List<Map<String, dynamic>> get _rightRows =>
+      ((widget.item['rightItems'] ?? widget.item['rightColumn']) as List?)
+          ?.whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList() ??
+      [];
+
+  void _emitMatching() {
+    widget.onPartialPatch({'matching': Map<String, String>.from(_matching)});
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
+  }
+
+  void _setPair(String leftId, String rightId) {
+    if (widget.locked) return;
+    setState(() {
+      _matching.removeWhere((_, r) => r == rightId);
+      _matching[leftId] = rightId;
+      _selectedLeftId = null;
+    });
+    _emitMatching();
+  }
+
+  void _clearLeft(String leftId) {
+    if (widget.locked) return;
+    setState(() {
+      _matching.remove(leftId);
+      if (_selectedLeftId == leftId) _selectedLeftId = null;
+    });
+    _emitMatching();
+  }
+
+  void _refreshLines() {
+    if (!mounted) return;
+    final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
+    if (canvasBox == null) return;
+    final origin = canvasBox.localToGlobal(Offset.zero);
+    final next = <_MatchLine>[];
+    for (final entry in _matching.entries) {
+      final lBox = _leftKeys[entry.key]?.currentContext?.findRenderObject() as RenderBox?;
+      final rBox = _rightKeys[entry.value]?.currentContext?.findRenderObject() as RenderBox?;
+      if (lBox == null || rBox == null) continue;
+      final lCenter = lBox.localToGlobal(Offset(lBox.size.width, lBox.size.height / 2));
+      final rCenter = rBox.localToGlobal(Offset(0, rBox.size.height / 2));
+      next.add(_MatchLine(start: lCenter - origin, end: rCenter - origin));
+    }
+    setState(() => _lines = next);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final left = (item['leftItems'] ?? item['leftColumn']) as List? ?? [];
-    final right = (item['rightItems'] ?? item['rightColumn']) as List? ?? [];
-    final m = (answer?['matching'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? <String, String>{};
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
+    final l10n = context.l10n;
+    for (final row in _leftRows) {
+      final id = '${row['id']}';
+      _leftKeys.putIfAbsent(id, () => GlobalKey());
+    }
+    for (final row in _rightRows) {
+      final id = '${row['id']}';
+      _rightKeys.putIfAbsent(id, () => GlobalKey());
+    }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (final row in left)
-            if (row is Map)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          if (!widget.locked)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                l10n.integratedExamMatchHint,
+                style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
+              ),
+            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final h = math.max(120.0, math.max(_leftRows.length, _rightRows.length) * 52.0);
+              return SizedBox(
+                height: h,
+                child: Stack(
+                  key: _canvasKey,
+                  clipBehavior: Clip.none,
                   children: [
-                    Expanded(
-                      flex: 2,
-                      child: Text('${row['text'] ?? ''}', style: ExamSystemUi.captionSecondary),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        value: m['${row['id']}']?.isNotEmpty == true ? m['${row['id']}'] : null,
-                        decoration: InputDecoration(
-                          labelText: context.l10n.integratedExamMatchPick,
-                          isDense: true,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        ),
-                        items: [
-                          for (final r in right)
-                            if (r is Map)
-                              DropdownMenuItem(
-                                value: '${r['id']}',
-                                child: Text('${r['text'] ?? ''}', overflow: TextOverflow.ellipsis),
-                              ),
-                        ],
-                        onChanged: locked
-                            ? null
-                            : (v) {
-                                if (v == null) return;
-                                onPartialPatch({
-                                  'matching': {'${row['id']}': v},
-                                });
-                              },
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _MatchingLinesPainter(lines: _lines),
                       ),
+                    ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (final row in _leftRows) _buildLeftCard(row),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              for (final row in _rightRows) _buildRightCard(row),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
+
+  Widget _buildLeftCard(Map<String, dynamic> row) {
+    final id = '${row['id']}';
+    final text = '${row['text'] ?? ''}'.trim();
+    final matchedRight = _matching[id];
+    final selected = _selectedLeftId == id;
+    final paired = matchedRight != null;
+
+    Widget card = Material(
+      key: _leftKeys[id],
+      color: selected ? AppColors.primaryTint : (paired ? AppColors.surfaceSubtle : AppColors.surface),
+      borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: widget.locked ? null : () => setState(() => _selectedLeftId = selected ? null : id),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: selected ? AppColors.primary : (paired ? AppColors.outline : AppColors.outlineMuted),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                paired ? Icons.link_outlined : Icons.drag_indicator,
+                size: 16,
+                color: paired ? AppColors.textSecondary : AppColors.textMuted,
+              ),
+              const SizedBox(width: 8),
+              Expanded(child: Text(text, style: ExamSystemUi.captionSecondary)),
+              if (!widget.locked && paired)
+                IconButton(
+                  onPressed: () => _clearLeft(id),
+                  icon: const Icon(Icons.close, size: 16),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  color: AppColors.textMuted,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (widget.locked) return Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: LongPressDraggable<String>(
+        data: id,
+        feedback: Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(8),
+          color: AppColors.surfaceCard,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(text, style: ExamSystemUi.captionSecondary),
+          ),
+        ),
+        childWhenDragging: Opacity(opacity: 0.35, child: card),
+        child: card,
+      ),
+    );
+  }
+
+  Widget _buildRightCard(Map<String, dynamic> row) {
+    final id = '${row['id']}';
+    final text = '${row['text'] ?? ''}'.trim();
+    final isLinked = _matching.containsValue(id);
+    final highlight = _selectedLeftId != null;
+
+    Widget card = Material(
+      key: _rightKeys[id],
+      color: isLinked ? AppColors.surfaceSubtle : AppColors.surface,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: highlight && !isLinked ? AppColors.primary.withValues(alpha: 0.35) : AppColors.outlineMuted,
+            width: 1,
+          ),
+        ),
+        child: Text(text, style: ExamSystemUi.captionSecondary),
+      ),
+    );
+
+    if (widget.locked) return Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: DragTarget<String>(
+        onWillAcceptWithDetails: (_) => !widget.locked,
+        onAcceptWithDetails: (d) => _setPair(d.data, id),
+        builder: (context, candidate, _) {
+          final active = candidate.isNotEmpty;
+          return InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: _selectedLeftId == null ? null : () => _setPair(_selectedLeftId!, id),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 120),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: active
+                    ? Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1)
+                    : null,
+              ),
+              child: card,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MatchLine {
+  const _MatchLine({required this.start, required this.end});
+  final Offset start;
+  final Offset end;
+}
+
+/// Thin curved connector between matched left/right cards.
+class _MatchingLinesPainter extends CustomPainter {
+  const _MatchingLinesPainter({required this.lines});
+  final List<_MatchLine> lines;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.textSecondary.withValues(alpha: 0.55)
+      ..strokeWidth = 1.15
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    for (final line in lines) {
+      final dy = (line.end.dy - line.start.dy).abs();
+      final flat = dy < 6;
+      if (flat) {
+        canvas.drawLine(line.start, line.end, paint);
+        _drawArrowHead(canvas, line.end, line.start, paint);
+        continue;
+      }
+      final dx = (line.end.dx - line.start.dx) * 0.38;
+      final c1 = Offset(line.start.dx + dx, line.start.dy);
+      final c2 = Offset(line.end.dx - dx, line.end.dy);
+      final path = Path()
+        ..moveTo(line.start.dx, line.start.dy)
+        ..cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, line.end.dx, line.end.dy);
+      canvas.drawPath(path, paint);
+      _drawArrowHead(canvas, line.end, line.start, paint);
+    }
+  }
+
+  void _drawArrowHead(Canvas canvas, Offset tip, Offset from, Paint paint) {
+    final dir = tip - from;
+    if (dir.distance < 1) return;
+    final n = dir / dir.distance;
+    const len = 5.0;
+    const spread = 0.32;
+    final ortho = Offset(-n.dy, n.dx) * spread;
+    final base = tip - n * len;
+    canvas.drawLine(tip, base + ortho, paint);
+    canvas.drawLine(tip, base - ortho, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MatchingLinesPainter old) => old.lines != lines;
 }
 
 class _ReorderBody extends StatefulWidget {

@@ -7,46 +7,90 @@ import { teacherExamAssignmentService } from '../services/teacherExamAssignmentS
 
 let io;
 
+/** userId -> Set<socketId> — only mark offline when no active sockets remain. */
+const onlineSocketIdsByUser = new Map();
+
+const updateUserStatus = async (userId, isOnline) => {
+  try {
+    await User.findByIdAndUpdate(userId, {
+      isOnline: isOnline,
+      lastActivityDate: new Date(),
+    });
+    io.to('admin_room').emit('user_status_change', {
+      userId: String(userId),
+      isOnline,
+    });
+  } catch (error) {
+    console.error(`Error updating status for ${userId}:`, error);
+  }
+};
+
+const addUserSocket = async (userId, socketId) => {
+  const key = String(userId);
+  if (!onlineSocketIdsByUser.has(key)) {
+    onlineSocketIdsByUser.set(key, new Set());
+  }
+  const set = onlineSocketIdsByUser.get(key);
+  const wasOffline = set.size === 0;
+  set.add(socketId);
+  if (wasOffline) {
+    await updateUserStatus(userId, true);
+  }
+};
+
+const removeUserSocket = async (userId, socketId) => {
+  const key = String(userId);
+  const set = onlineSocketIdsByUser.get(key);
+  if (!set) return;
+  set.delete(socketId);
+  if (set.size === 0) {
+    onlineSocketIdsByUser.delete(key);
+    await updateUserStatus(userId, false);
+  }
+};
+
+/** HTTP logout / force offline — disconnect all sockets for user. */
+export const setUserOfflineAndNotify = async (userId) => {
+  if (!io) return;
+  const key = String(userId);
+  const set = onlineSocketIdsByUser.get(key);
+  if (set) {
+    for (const socketId of [...set]) {
+      const sock = io.sockets.sockets.get(socketId);
+      if (sock) {
+        sock.userId = null;
+        sock.disconnect(true);
+      }
+    }
+    onlineSocketIdsByUser.delete(key);
+  }
+  await updateUserStatus(userId, false);
+};
+
 export const initSocket = (httpServer) => {
   io = new Server(httpServer, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+    cors: { origin: '*', methods: ['GET', 'POST'] },
   });
-
-  // Hàm phụ: Cập nhật trạng thái User (Tránh viết lặp lại)
-  const updateUserStatus = async (userId, isOnline) => {
-    try {
-      await User.findByIdAndUpdate(userId, {
-        isOnline: isOnline,
-        lastActivityDate: new Date()
-      });
-      // Báo Admin
-      io.to('admin_room').emit('user_status_change', { userId, isOnline });
-    } catch (error) {
-      console.error(`Error updating status for ${userId}:`, error);
-    }
-  };
 
   io.on('connection', (socket) => {
     console.log(`⚡ Client connected: ${socket.id}`);
 
-    // 1. User Login
     socket.on('user_login', async (userId) => {
       console.log(`👤 User Login: ${userId} (Socket: ${socket.id})`);
-      socket.userId = userId; // Gắn thẻ
-      socket.join(userId);
-      await updateUserStatus(userId, true); // Set Online
+      socket.userId = String(userId);
+      socket.join(String(userId));
+      await addUserSocket(userId, socket.id);
     });
 
-    // 2. User Logout (Chủ động báo thoát) -> QUAN TRỌNG
-    socket.on('user_logout', async () => {
-      console.log(`👋 User Logout Explicitly: ${socket.userId}`);
-      if (socket.userId) {
-        await updateUserStatus(socket.userId, false); // Set Offline ngay
-        socket.userId = null; // Xóa thẻ để tránh sự kiện disconnect xử lý lại (nếu muốn)
+    socket.on('user_logout', async (payload) => {
+      const userId = payload ? String(payload) : socket.userId;
+      console.log(`👋 User Logout: ${userId} (Socket: ${socket.id})`);
+      if (userId) {
+        await removeUserSocket(userId, socket.id);
+        socket.userId = null;
       }
     });
 
-    // 3. Admin Join
     socket.on('admin_join', () => {
       console.log(`🛡️ Admin joined: ${socket.id}`);
       socket.join('admin_room');
@@ -111,7 +155,9 @@ export const initSocket = (httpServer) => {
       const sid = sessionId.toString();
       const uid = userId.toString();
       const { examSessionService } = await import('../services/examSessionService.js');
-      await examSessionService.removeParticipantFromSession(sid, uid);
+      await examSessionService.removeParticipantFromSession(sid, uid, {
+        exitReason: 'disconnected',
+      });
       await examSessionService.emitSessionStateBroadcast(sid);
     };
 
@@ -183,18 +229,15 @@ export const initSocket = (httpServer) => {
       if (!socket.examUserId) return;
       await cleanupExamLeave(sid, socket.examUserId);
     });
-    // 4. Disconnect (Mất mạng / Kill App)
+
     socket.on('disconnect', async (reason) => {
       console.log(`❌ Disconnected: ${socket.id} | Reason: ${reason}`);
 
-      // Nếu socket này có userId (và chưa logout chủ động)
       if (socket.userId) {
-        console.log(`📉 Setting Offline (Connection lost): ${socket.userId}`);
-        await updateUserStatus(socket.userId, false);
+        console.log(`📉 Removing socket from online set: ${socket.userId}`);
+        await removeUserSocket(socket.userId, socket.id);
       }
 
-      // If a student left the realtime exam tab without explicitly calling `leave_exam_session`,
-      // remove them from roster and void their attempt.
       if (socket.examUserId) {
         const rooms = [...socket.rooms].filter((r) => String(r).startsWith('examSession_'));
         const sessionIds = rooms.map((r) => String(r).replace('examSession_', ''));
@@ -209,6 +252,6 @@ export const initSocket = (httpServer) => {
 };
 
 export const getIO = () => {
-  if (!io) throw new Error("Socket.io not initialized!");
+  if (!io) throw new Error('Socket.io not initialized!');
   return io;
 };

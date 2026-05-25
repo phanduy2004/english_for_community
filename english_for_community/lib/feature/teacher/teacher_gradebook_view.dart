@@ -337,7 +337,8 @@ class _Toolbar extends StatelessWidget {
               const SizedBox(width: AppSpacing.s3),
               Expanded(
                 child: DropdownButtonFormField<String?>(
-                  value: modeFilter,
+                  key: ValueKey(modeFilter),
+                  initialValue: modeFilter,
                   isExpanded: true,
                   decoration: TeacherWebUi.formInputDecoration(context, hintText: l10n.teacherGradebookFilterMode),
                   items: [

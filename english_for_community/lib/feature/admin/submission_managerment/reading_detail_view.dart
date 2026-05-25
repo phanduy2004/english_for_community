@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../../../core/entity/reading/reading_attempt_entity.dart';
 import '../../../../../../core/entity/reading/reading_entity.dart'; // Import để dùng QuestionEntity
 
@@ -98,8 +98,8 @@ class ReadingDetailView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isCorrect ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: isCorrect ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -133,12 +133,12 @@ class ReadingDetailView extends StatelessWidget {
             Color iconColor = Colors.transparent;
 
             if (isAnswerKey) {
-              bgColor = Colors.green.withOpacity(0.1);
+              bgColor = Colors.green.withValues(alpha: 0.1);
               borderColor = Colors.green;
               icon = Icons.check_circle;
               iconColor = Colors.green;
             } else if (isSelected && !isAnswerKey) {
-              bgColor = Colors.red.withOpacity(0.1);
+              bgColor = Colors.red.withValues(alpha: 0.1);
               borderColor = Colors.red;
               icon = Icons.cancel;
               iconColor = Colors.red;
@@ -204,14 +204,14 @@ class ReadingDetailView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         children: [
           Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: color.withOpacity(0.8), fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(fontSize: 11, color: color.withValues(alpha: 0.8), fontWeight: FontWeight.w600)),
         ],
       ),
     );

@@ -1,5 +1,4 @@
 // lib/feature/speaking/bloc/speaking_bloc.dart
-import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
 import 'package:english_for_community/core/repository/speaking_repository.dart';
 import 'package:english_for_community/feature/speaking/bloc/speaking_event.dart';
 import 'package:english_for_community/feature/speaking/bloc/speaking_state.dart';

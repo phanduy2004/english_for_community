@@ -19,7 +19,6 @@ class _WritingEditorPageState extends State<WritingEditorPage> {
   final _slugCtrl = TextEditingController();
   final _iconCtrl = TextEditingController();
   final _colorCtrl = TextEditingController();
-  final _descCtrl = TextEditingController();
 
   @override
   void initState() {

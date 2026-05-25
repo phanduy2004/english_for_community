@@ -7,6 +7,9 @@ import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/api/api_config.dart';
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/theme/app_color.dart';
+import '../../../core/theme/app_skill_colors.dart';
+import '../../../core/ui/student_mobile_ui.dart';
 import '../../../core/entity/comment_entity.dart';
 import '../../../core/entity/cue_entity.dart';
 import '../../../core/socket/socket_service.dart';
@@ -170,8 +173,10 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
   Future<void> _applyCueClip(CueEntity cue, {bool forcePause = false}) async {
     if (!_audioReady) return;
     try {
-      final start = Duration(milliseconds: cue.startMs ?? 0);
-      final end = cue.endMs != null ? Duration(milliseconds: cue.endMs!) : null;
+      final start = Duration(milliseconds: cue.startMs);
+      final end = cue.endMs > cue.startMs
+          ? Duration(milliseconds: cue.endMs)
+          : null;
       await _player.setClip(start: start, end: end);
       await _player.seek(Duration.zero);
       if (forcePause || !_autoPlayAfterClip) {
@@ -359,7 +364,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFE4E4E7)),
+                      border: Border.all(color: AppColors.outline),
                     ),
                     child: Column(
                       children: [
@@ -373,7 +378,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                             Tab(icon: const Icon(Icons.forum_outlined), text: t.listeningSkillsTabDiscuss),
                           ],
                         ),
-                        const Divider(height: 1, color: Color(0xFFE4E4E7)),
+                        const Divider(height: 1, color: AppColors.outline),
                         SizedBox(
                           height: 450,
                           child: TabBarView(
@@ -423,14 +428,11 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
-      appBar: AppBar(
-        title: Text(widget.title ?? t.listeningSkillsPracticeTitle, style: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF09090B)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: const Color(0xFFE4E4E7), height: 1)),
+      backgroundColor: AppColors.surface,
+      appBar: StudentMobileUi.skillAppBar(
+        context,
+        title: widget.title ?? t.listeningSkillsPracticeTitle,
+        skill: SkillType.listening,
       ),
       body: SafeArea(child: content),
     );

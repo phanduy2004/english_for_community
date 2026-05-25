@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../core/get_it/get_it.dart';
 import '../../../../core/repository/admin_repository.dart';
@@ -127,7 +127,7 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: hasUser ? kPrimary.withOpacity(0.05) : kWhite,
+              color: hasUser ? kPrimary.withValues(alpha: 0.05) : kWhite,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: hasUser ? kPrimary : kBorder),
             ),
@@ -219,7 +219,7 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: kTextMain)),
-                          Text(user.email ?? '', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: kTextMuted)),
+                          Text(user.email, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: kTextMuted)),
                         ],
                       ),
                     ),

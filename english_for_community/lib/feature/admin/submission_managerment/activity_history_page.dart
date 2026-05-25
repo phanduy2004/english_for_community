@@ -1,4 +1,6 @@
-import 'package:english_for_community/core/locale/l10n_context.dart';
+﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -6,7 +8,6 @@ import 'package:english_for_community/feature/admin/submission_managerment/widge
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:go_router/go_router.dart';
 
 // --- CORE & BLOC ---
 import '../../../../core/get_it/get_it.dart';
@@ -136,7 +137,7 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
               surface: Colors.white,
               onSurface: kTextMain,
             ),
-            dialogBackgroundColor: Colors.white,
+            dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
           ),
           child: child!,
         );
@@ -158,14 +159,17 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
     final l10n = context.l10n;
     return AdminPageScaffold(
       title: l10n.adminActivityHistoryTitle,
+      subtitle: l10n.adminNavSubmissions,
       scrollable: false,
       maxWidth: AdminWebUi.contentMaxTable,
+      breadcrumbs: [
+        AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+        AdminBreadcrumb(label: l10n.adminActivityHistoryTitle),
+      ],
       body: BlocConsumer<HistoryBloc, HistoryState>(
         listener: (context, state) {
           if (state.status == HistoryStatus.error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage ?? 'Error'), backgroundColor: Colors.red),
-            );
+            AdminCornerToast.show(context, state.errorMessage ?? 'Error', error: true);
           }
         },
         builder: (context, state) {
@@ -291,27 +295,6 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: kWhite, shape: BoxShape.circle, border: Border.all(color: kBorder)),
-            child: const Icon(Icons.inbox_outlined, size: 40, color: kTextMuted),
-          ),
-          const SizedBox(height: 16),
-          const Text('No activities found', style: TextStyle(fontWeight: FontWeight.w600, color: kTextMain)),
-        ],
-      ),
-    );
-  }
-
-  String _formatDuration(int sec) {
-    if (sec < 60) return '${sec}s';
-    return '${sec ~/ 60}m';
-  }
 }
 
 // --- CARD & META TAGS (Giữ nguyên phần UI Card đã đẹp từ trước) ---
@@ -343,7 +326,7 @@ class _AdminHistoryCard extends StatelessWidget {
         color: kWhite,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kBorder),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Material(
         color: Colors.transparent,
@@ -478,25 +461,6 @@ class _AdminHistoryCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
       child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
-    );
-  }
-}
-
-class _MetaTag extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const _MetaTag({required this.icon, required this.text});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: kTextMuted),
-          const SizedBox(width: 4),
-          Text(text, style: const TextStyle(fontSize: 11, color: kTextMuted, fontWeight: FontWeight.w500)),
-        ],
-      ),
     );
   }
 }

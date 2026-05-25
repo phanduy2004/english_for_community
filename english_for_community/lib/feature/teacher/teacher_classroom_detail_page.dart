@@ -1125,13 +1125,11 @@ class _SettingsField extends StatelessWidget {
   const _SettingsField({
     required this.label,
     required this.value,
-    this.muted = false,
     this.mono = false,
   });
 
   final String label;
   final String value;
-  final bool muted;
   final bool mono;
 
   @override
@@ -1146,7 +1144,7 @@ class _SettingsField extends StatelessWidget {
           Text(
             value,
             style: TeacherWebUi.webBody(context).copyWith(
-              color: muted ? AppColors.textMuted : AppColors.textPrimary,
+              color: AppColors.textPrimary,
               fontFamily: mono ? 'monospace' : null,
               letterSpacing: mono ? 2 : null,
               fontWeight: mono ? FontWeight.w600 : FontWeight.w400,

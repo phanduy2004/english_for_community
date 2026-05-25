@@ -1,13 +1,18 @@
-// reset_password_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/locale/l10n_context.dart';
-import '../../feature/auth/bloc/user_bloc.dart';
-import '../../feature/auth/bloc/user_event.dart';
-import '../../feature/auth/bloc/user_state.dart';
-import 'login_page.dart'; // Để sử dụng _showShadcnDialog nếu không share
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import 'bloc/user_bloc.dart';
+import 'bloc/user_event.dart';
+import 'bloc/user_state.dart';
+import 'login_page.dart';
+import 'widgets/auth_form_widgets.dart';
 
 class ResetPasswordPage extends StatefulWidget {
   final String email;
@@ -29,14 +34,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _obscurePass = true;
   bool _obscureConfirm = true;
 
-  // --- SHADCN COLORS ---
-  static const Color bgPage = Color(0xFFF9FAFB);
-  static const Color textMain = Color(0xFF09090B);
-  static const Color textMuted = Color(0xFF71717A);
-  static const Color borderCol = Color(0xFFE4E4E7);
-  static const Color primaryCol = Color(0xFF18181B);
-  static const Color accentCol = Color(0xFF16A34A);
-
   @override
   void dispose() {
     _passController.dispose();
@@ -52,23 +49,38 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
     final t = context.l10n;
     if (pass.isEmpty || confirm.isEmpty) {
-      _showShadcnDialog(context, title: t.errorTitle, message: t.enterBothPasswords, isError: true);
+      showAuthFeedbackDialog(
+        context,
+        title: t.errorTitle,
+        message: t.enterBothPasswords,
+        isError: true,
+      );
       return;
     }
     if (pass != confirm) {
-      _showShadcnDialog(context, title: t.passwordErrorTitle, message: t.passwordsDoNotMatchShort, isError: true);
+      showAuthFeedbackDialog(
+        context,
+        title: t.passwordErrorTitle,
+        message: t.passwordsDoNotMatchShort,
+        isError: true,
+      );
       return;
     }
     if (pass.length < 6) {
-      _showShadcnDialog(context, title: t.passwordErrorTitle, message: t.passwordMinSixChars, isError: true);
+      showAuthFeedbackDialog(
+        context,
+        title: t.passwordErrorTitle,
+        message: t.passwordMinSixChars,
+        isError: true,
+      );
       return;
     }
 
     context.read<UserBloc>().add(ResetPasswordEvent(
-      email: widget.email,
-      otp: widget.otp,
-      newPassword: pass,
-    ));
+          email: widget.email,
+          otp: widget.otp,
+          newPassword: pass,
+        ));
   }
 
   @override
@@ -76,10 +88,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          _showShadcnDialog(context, title: context.l10n.resetFailedTitle, message: state.errorMessage!, isError: true);
+          showAuthFeedbackDialog(
+            context,
+            title: context.l10n.resetFailedTitle,
+            message: state.errorMessage!,
+            isError: true,
+          );
         }
 
-        if (state.status == UserStatus.unauthenticated && state.errorMessage != null) {
+        if (state.status == UserStatus.unauthenticated &&
+            state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.errorMessage!)),
           );
@@ -91,106 +109,108 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         final t = context.l10n;
 
         return Scaffold(
-          backgroundColor: bgPage,
+          backgroundColor: AppColors.surface,
           appBar: AppBar(
-            backgroundColor: bgPage,
+            toolbarHeight: StudentMobileUi.appBarHeight,
             elevation: 0,
+            scrolledUnderElevation: 0,
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: textMain),
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
               onPressed: () => context.pop(),
             ),
           ),
-          body: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 400),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 1. Icon & Title
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: borderCol),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10)],
-                      ),
-                      child: const Icon(Icons.key_outlined, size: 32, color: accentCol),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      t.setNewPasswordTitle,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t.setNewPasswordSubtitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: textMuted),
-                    ),
-                    const SizedBox(height: 32),
-
-                    // 2. Password Input
-                    _Label(t.labelNewPassword),
-                    const SizedBox(height: 8),
-                    _ShadcnInput(
-                      controller: _passController,
-                      hintText: t.hintEnterNewPassword,
-                      icon: Icons.lock_outline,
-                      obscureText: _obscurePass,
-                      enabled: !isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePass ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 18,
-                          color: textMuted,
-                        ),
-                        onPressed: () => setState(() => _obscurePass = !_obscurePass),
+          body: SingleChildScrollView(
+            padding: StudentMobileUi.pagePadding,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: StudentMobileUi.skillIconBox(
+                      Icons.key_outlined,
+                      size: 64,
+                      colors: SkillColorSet(
+                        color: AppColors.accent,
+                        tint: AppColors.accentTint,
+                        dark: AppColors.accentDark,
                       ),
                     ),
-                    const SizedBox(height: 16),
-
-                    // Confirm Password Input
-                    _Label(t.labelConfirmNewPassword),
-                    const SizedBox(height: 8),
-                    _ShadcnInput(
-                      controller: _confirmPassController,
-                      hintText: t.hintConfirmNewPassword,
-                      icon: Icons.verified_user_outlined,
-                      obscureText: _obscureConfirm,
-                      enabled: !isLoading,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                          size: 18,
-                          color: textMuted,
-                        ),
-                        onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
-                      ),
+                  ),
+                  const SizedBox(height: AppSpacing.s7),
+                  Text(
+                    t.setNewPasswordTitle,
+                    textAlign: TextAlign.center,
+                    style: context.h1Style,
+                  ),
+                  const SizedBox(height: AppSpacing.s3),
+                  Text(
+                    t.setNewPasswordSubtitle,
+                    textAlign: TextAlign.center,
+                    style: StudentMobileUi.body(context).copyWith(
+                      color: AppColors.textSecondary,
                     ),
-                    const SizedBox(height: 32),
-
-                    // 3. Reset Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () => _onReset(isLoading: isLoading),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryCol,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: isLoading
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text(t.resetPasswordButton, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  ),
+                  const SizedBox(height: StudentMobileUi.sectionGap),
+                  AuthFieldLabel(t.labelNewPassword),
+                  const SizedBox(height: AppSpacing.s3),
+                  AuthTextField(
+                    controller: _passController,
+                    hintText: t.hintEnterNewPassword,
+                    prefixIcon: Icons.lock_outline,
+                    obscureText: _obscurePass,
+                    enabled: !isLoading,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePass
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: AppColors.textSecondary,
                       ),
+                      onPressed: () =>
+                          setState(() => _obscurePass = !_obscurePass),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpacing.s5),
+                  AuthFieldLabel(t.labelConfirmNewPassword),
+                  const SizedBox(height: AppSpacing.s3),
+                  AuthTextField(
+                    controller: _confirmPassController,
+                    hintText: t.hintConfirmNewPassword,
+                    prefixIcon: Icons.verified_user_outlined,
+                    obscureText: _obscureConfirm,
+                    enabled: !isLoading,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.s8),
+                  FilledButton(
+                    onPressed: () => _onReset(isLoading: isLoading),
+                    style: AuthFormUi.primaryButtonStyle(),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.onPrimary,
+                            ),
+                          )
+                        : Text(t.resetPasswordButton),
+                  ),
+                ],
               ),
             ),
           ),
@@ -198,100 +218,4 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       },
     );
   }
-}
-
-// _Label and _ShadcnInput: Copied
-class _Label extends StatelessWidget {
-  final String text;
-  const _Label(this.text);
-  @override
-  Widget build(BuildContext context) {
-    return Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B)));
-  }
-}
-
-class _ShadcnInput extends StatelessWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final IconData icon;
-  final bool obscureText;
-  final Widget? suffixIcon;
-  final bool enabled;
-  final Function(String)? onSubmitted;
-
-  const _ShadcnInput({
-    required this.controller,
-    required this.hintText,
-    required this.icon,
-    this.obscureText = false,
-    this.suffixIcon,
-    this.enabled = true,
-    this.onSubmitted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1))],
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        enabled: enabled,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
-        onSubmitted: onSubmitted,
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14),
-          prefixIcon: Icon(icon, size: 18, color: const Color(0xFF71717A)),
-          suffixIcon: suffixIcon,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.2)),
-          filled: true,
-          fillColor: Colors.white,
-        ),
-      ),
-    );
-  }
-}
-
-// Helper Dialog: Copied
-void _showShadcnDialog(BuildContext context, {required String title, required String message, bool isError = false}) {
-  final t = context.l10n;
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: const EdgeInsets.all(24),
-      title: Row(
-        children: [
-          Icon(isError ? Icons.error_outline_rounded : Icons.check_circle_outline_rounded,
-              color: isError ? Colors.red : Colors.green, size: 24),
-          const SizedBox(width: 12),
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ],
-      ),
-      content: Text(message, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B))),
-      actions: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              side: const BorderSide(color: Color(0xFFE4E4E7)),
-              foregroundColor: const Color(0xFF09090B),
-            ),
-            child: Text(t.close),
-          ),
-        )
-      ],
-    ),
-  );
 }

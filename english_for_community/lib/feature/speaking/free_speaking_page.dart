@@ -16,7 +16,10 @@ import '../../core/config/vapi_env_config.dart';
 import '../../core/datasource/vapi_config_remote_datasource.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/theme/app_color.dart' as T;
+import '../../core/theme/app_skill_colors.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 // --- 2. MODELS ---
@@ -428,24 +431,15 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     final t = context.l10n;
     if (_vapiBootstrap == _VapiBootstrap.loading) {
       return Scaffold(
-        backgroundColor: T.AppColors.surfaceCard,
-        appBar: AppBar(
-          backgroundColor: T.AppColors.surfaceCard,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
-            onPressed: () => context.pop(),
-          ),
-          title: Text(t.freeSpeakingTitle, style: Theme.of(context).textTheme.titleMedium),
-        ),
+        backgroundColor: T.AppColors.surface,
+        appBar: StudentMobileUi.skillAppBar(context, title: t.freeSpeakingTitle, skill: SkillType.speaking),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const CircularProgressIndicator(),
               const SizedBox(height: 16),
-              Text(t.freeSpeakingLoadingConfig, style: const TextStyle(color: T.AppColors.textMuted, fontSize: 14)),
+              Text(t.freeSpeakingLoadingConfig, style: StudentMobileUi.body(context).copyWith(color: T.AppColors.textMuted)),
             ],
           ),
         ),
@@ -454,20 +448,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     if (_vapiBootstrap == _VapiBootstrap.error) {
       return Scaffold(
-        backgroundColor: T.AppColors.surfaceCard,
-        appBar: AppBar(
-          backgroundColor: T.AppColors.surfaceCard,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
-            onPressed: () => context.pop(),
-          ),
-          title: Text(t.freeSpeakingTitle, style: Theme.of(context).textTheme.titleMedium),
-        ),
+        backgroundColor: T.AppColors.surface,
+        appBar: StudentMobileUi.skillAppBar(context, title: t.freeSpeakingTitle, skill: SkillType.speaking),
         body: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: StudentMobileUi.pagePadding,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -499,27 +484,28 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     final chatEntries = _chatEntriesForList();
 
     return Scaffold(
-      backgroundColor: T.AppColors.surfaceCard,
+      backgroundColor: T.AppColors.surface,
       appBar: AppBar(
-        backgroundColor: T.AppColors.surfaceCard,
+        toolbarHeight: StudentMobileUi.appBarHeight,
+        backgroundColor: T.AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: T.AppColors.textPrimary, size: 20),
+          icon: const Icon(Icons.arrow_back_rounded, color: T.AppColors.textPrimary, size: 20),
           onPressed: () => context.pop(),
         ),
         centerTitle: true,
-
-        // --- 1. STATUS BAR ONLINE/OFFLINE ---
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isConnected ? const Color(0xFFDCFCE7) : T.AppColors.surface,
+            color: isConnected ? T.AppColors.successBg : T.AppColors.surface,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: isConnected ? T.AppColors.success.withValues(alpha: 0.2) : Colors.transparent),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isConnecting)
                 SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 1.5, color: T.AppColors.textMuted))
@@ -550,26 +536,37 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
         // --- 2. NÚT CHỌN GIỌNG ---
         actions: [
-          InkWell(
-            onTap: _showVoiceSelector,
-            borderRadius: BorderRadius.circular(20),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              margin: const EdgeInsets.only(right: 16),
-              decoration: BoxDecoration(
-                color: T.AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: T.AppColors.outline),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.record_voice_over_rounded, size: 16, color: T.AppColors.textPrimary),
-                  const SizedBox(width: 6),
-                  Text(_selectedVoice.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                ],
+          Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.s4),
+            child: InkWell(
+              onTap: _showVoiceSelector,
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 112),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: T.AppColors.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: T.AppColors.outline),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.record_voice_over_rounded, size: 16, color: T.AppColors.textPrimary),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        _selectedVoice.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          )
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
@@ -839,15 +836,8 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  T.AppColors.primary.withValues(alpha: 0.15),
-                  T.AppColors.secondary.withValues(alpha: 0.12),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: T.AppColors.primaryTint,
+              borderRadius: BorderRadius.circular(AppRadius.input),
               border: Border.all(color: T.AppColors.outline),
             ),
             child: Icon(Icons.auto_awesome_rounded, color: T.AppColors.primary, size: 18),

@@ -227,7 +227,8 @@ class _TeacherExamEditorPageState extends State<TeacherExamEditorPage> {
                     ),
                     const SizedBox(height: ExamSystemUi.blockGap),
                     DropdownButtonFormField<String>(
-                      value: _showResultsPolicy,
+                      key: ValueKey(_showResultsPolicy),
+                      initialValue: _showResultsPolicy,
                       decoration: InputDecoration(labelText: l10n.teacherExamResultsPolicy),
                       items: [
                         DropdownMenuItem(value: 'after_submit', child: Text(l10n.teacherExamPolicyAfterSubmit)),
