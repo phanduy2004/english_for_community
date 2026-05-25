@@ -103,7 +103,8 @@ abstract class TeacherExamRepository {
 
   /// Generates AI writing prompt options for a topic (teacher picks one for exam).
   Future<Either<Failure, List<Map<String, dynamic>>>> generateWritingPromptOptions({
-    required String topicId,
+    String? topicId,
+    String? topicName,
     String? taskType,
   });
 }

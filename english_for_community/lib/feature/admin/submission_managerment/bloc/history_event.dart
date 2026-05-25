@@ -34,6 +34,5 @@ class FetchActivityDetailEvent extends HistoryEvent { // (Hoặc extends Activit
     this.subType, // 🔥 THÊM DÒNG NÀY
   });
 
-  @override
   List<Object?> get props => [id, type, subType];
 }

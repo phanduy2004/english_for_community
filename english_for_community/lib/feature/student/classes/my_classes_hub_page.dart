@@ -4,8 +4,10 @@ import 'package:english_for_community/feature/student/bloc/classes_hub/student_c
 import 'package:english_for_community/feature/student/bloc/classes_hub/student_classes_hub_event.dart';
 import 'package:english_for_community/feature/student/bloc/classes_hub/student_classes_hub_state.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/classes/student_classroom_detail_page.dart';
 import 'package:english_for_community/feature/student/exams/exam_assignments_page.dart';
 import 'package:english_for_community/feature/student/exams/public_exam_join_page.dart';
@@ -82,32 +84,22 @@ class _MyClassesHubPageState extends State<MyClassesHubPage> {
 
           return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        title: Text(l10n.studentClassesTitle, style: context.h2Style),
-        centerTitle: true,
-        backgroundColor: AppColors.surface,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.transparent,
+      appBar: StudentMobileUi.skillAppBar(
+        context,
+        title: l10n.studentClassesTitle,
+        skill: SkillType.speaking,
         actions: [
           TextButton(
             onPressed: () => context.push(ExamAssignmentsPage.routePath),
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              textStyle: context.appTextTheme.labelLarge,
-            ),
             child: Text(l10n.studentExamsMenu),
           ),
-          const SizedBox(width: AppSpacing.s2),
         ],
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
         onRefresh: () async => _reload(),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s2, AppSpacing.s5, AppSpacing.s7),
+          padding: StudentMobileUi.pagePadding,
           children: [
             _JoinCard(
               controller: _codeCtrl,
@@ -126,7 +118,7 @@ class _MyClassesHubPageState extends State<MyClassesHubPage> {
               },
               onOpenPublicJoin: () => context.push(PublicExamJoinPage.routePath),
             ),
-            const SizedBox(height: AppSpacing.s7),
+            const SizedBox(height: StudentMobileUi.sectionGap),
             _SectionHeader(
               title: l10n.studentMyClassesTitle,
               count: loading ? null : classes.length,
@@ -135,9 +127,14 @@ class _MyClassesHubPageState extends State<MyClassesHubPage> {
             if (loading)
               const _LoadingList()
             else if (error != null)
-              _ErrorState(message: error, onRetry: _reload)
+              StudentMobileUi.errorBanner(message: error, onRetry: _reload, retryLabel: l10n.retry)
             else if (classes.isEmpty)
-              const _EmptyClassesCard()
+              StudentMobileUi.emptyState(
+                context,
+                icon: Icons.school_outlined,
+                title: l10n.studentNoClasses,
+                body: '',
+              )
             else
               ...classes.map((raw) {
                 final m = Map<String, dynamic>.from(raw as Map);
@@ -189,42 +186,21 @@ class _JoinCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.outline),
-      ),
+    return AppCard(
+      variant: AppCardVariant.outline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryTint,
-                  borderRadius: BorderRadius.circular(AppRadius.input),
-                ),
-                child: const Icon(Icons.qr_code_2_rounded, size: 20, color: AppColors.textPrimary),
-              ),
+              StudentMobileUi.skillIconBox(Icons.qr_code_2_rounded, size: 36, skill: SkillType.speaking),
               const SizedBox(width: AppSpacing.s4),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.studentJoinClassTitle,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        height: 1.3,
-                      ),
-                    ),
+                    Text(l10n.studentJoinClassTitle, style: StudentMobileUi.cardTitle(context)),
                   ],
                 ),
               ),
@@ -375,16 +351,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-            letterSpacing: 0.2,
-            height: 1.2,
-          ),
-        ),
+        Text(title, style: StudentMobileUi.sectionTitle(context)),
         if (count != null) ...[
           const SizedBox(width: AppSpacing.s3),
           Container(
@@ -426,89 +393,49 @@ class _ClassroomTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surfaceCard,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
-        onTap: onOpen,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.outline),
-            borderRadius: BorderRadius.circular(AppRadius.card),
+    return StudentMobileUi.skillAccentCard(
+      skill: SkillType.speaking,
+      onTap: onOpen,
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          StudentMobileUi.skillIconBox(Icons.menu_book_rounded, size: 44, skill: SkillType.speaking),
+          const SizedBox(width: AppSpacing.s4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: StudentMobileUi.cardTitle(context),
+                ),
+                if (teacher != null) ...[
+                  const SizedBox(height: AppSpacing.s2),
+                  Text(
+                    teacher!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: StudentMobileUi.body(context),
+                  ),
+                ],
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.s2),
+                  Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: StudentMobileUi.caption(context),
+                  ),
+                ],
+              ],
+            ),
           ),
-          padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryTint,
-                  borderRadius: BorderRadius.circular(AppRadius.input),
-                ),
-                child: const Icon(
-                  Icons.menu_book_rounded,
-                  size: 22,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s4),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                        letterSpacing: -0.1,
-                        height: 1.3,
-                      ),
-                    ),
-                    if (teacher != null) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        teacher!,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          height: 1.3,
-                        ),
-                      ),
-                    ],
-                    if (description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        description,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.s2),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 22,
-                color: AppColors.textMuted,
-              ),
-            ],
-          ),
-        ),
+          const SizedBox(width: AppSpacing.s2),
+          Icon(Icons.chevron_right_rounded, size: 18, color: AppSkillColors.speaking.color),
+        ],
       ),
     );
   }
@@ -565,102 +492,3 @@ class _LoadingList extends StatelessWidget {
   }
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
-
-class _EmptyClassesCard extends StatelessWidget {
-  const _EmptyClassesCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s8),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceSubtle,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: const Icon(Icons.school_outlined, size: 26, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            l10n.studentNoClasses,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Error state ──────────────────────────────────────────────────────────────
-
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: BoxDecoration(
-        color: AppColors.dangerBg,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.danger.withValues(alpha: 0.30)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.error_outline_rounded, size: 18, color: AppColors.danger),
-              const SizedBox(width: AppSpacing.s2),
-              Expanded(
-                child: Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: onRetry,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              child: Text(l10n.retry),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

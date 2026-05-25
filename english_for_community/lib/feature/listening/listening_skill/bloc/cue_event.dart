@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import '../../../../core/entity/comment_entity.dart';
+import '../../../../core/entity/dictation_attempt_entity.dart';
 
 abstract class CueEvent extends Equatable {
   const CueEvent();
@@ -121,4 +122,20 @@ class IncomingSocketReaction extends CueEvent {
 
   @override
   List<Object?> get props => [cueId, commentId, reactions];
+}
+
+/// Internal: apply dictation submit result without calling [Bloc.emit] outside handlers.
+class ApplySubmitCueStateEvent extends CueEvent {
+  final Map<int, DictationAttemptEntity> latestAttempts;
+  final Set<int> completedIdx;
+  final bool justCompletedAll;
+
+  const ApplySubmitCueStateEvent({
+    required this.latestAttempts,
+    required this.completedIdx,
+    required this.justCompletedAll,
+  });
+
+  @override
+  List<Object?> get props => [latestAttempts, completedIdx, justCompletedAll];
 }

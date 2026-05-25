@@ -1,5 +1,6 @@
 import Groq from 'groq-sdk';
 import ExamAttempt from '../models/ExamAttempt.js';
+import ExamAssignment from '../models/ExamAssignment.js';
 import { teacherExamService } from './teacherExamService.js';
 import { teacherExamAssignmentService } from './teacherExamAssignmentService.js';
 import { GROQ_MODEL_NAME } from './aiService.js';
@@ -272,21 +273,28 @@ ${text || '(empty)'}`;
 
   async releaseResults(teacherId, attemptId) {
     const attempt = await assertTeacherOwnsAttempt(teacherId, attemptId);
+    const wasReleased = !!attempt.resultsReleased;
     attempt.resultsReleased = true;
     attempt.gradingState = 'finalized';
     await attempt.save();
-    try {
-      const { notifyStudentResultsReleased } = await import('./teacherNotificationHelper.js');
-      const title = attempt.examSnapshot?.title || 'Exam';
-      await notifyStudentResultsReleased({
-        studentId: attempt.userId,
-        teacherId,
-        examTitle: title,
-        attemptId: attempt._id,
-        assignmentId: attempt.assignmentId,
-      });
-    } catch {
-      /* optional notification */
+    if (!wasReleased) {
+      try {
+        const assignment = await ExamAssignment.findById(attempt.assignmentId)
+          .select('classroomId')
+          .lean();
+        const { notifyStudentResultsReleased } = await import('./teacherNotificationHelper.js');
+        const title = attempt.examSnapshot?.title || 'Exam';
+        await notifyStudentResultsReleased({
+          studentId: attempt.userId,
+          teacherId,
+          examTitle: title,
+          attemptId: attempt._id,
+          assignmentId: attempt.assignmentId,
+          classroomId: assignment?.classroomId || null,
+        });
+      } catch {
+        /* optional notification */
+      }
     }
     return attempt;
   },

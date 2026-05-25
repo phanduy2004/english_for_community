@@ -116,7 +116,7 @@ npm start      # production
 npm run seed   # seeder mẫu (user)
 ```
 
-Cần file **`.env`** (không commit). Tham chiếu biến: `MONGO_URI` hoặc `MONGODB_URI`, `PORT`, JWT, Cloudinary, Firebase, SMTP, và các key AI. File mẫu tối thiểu cho Vapi: [`.env.example`](english_for_community_backend/.env.example) (`VAPI_PUBLIC_KEY`, `VAPI_ASSISTANT_ID` cho Free Speaking).
+Cần file **`.env`** (không commit). Database: chỉ **`MONGO_URI`** (một URI — server/seed/repair dùng chung). Cùng file còn `PORT`, JWT, Cloudinary, Firebase, SMTP, và các key AI. File mẫu tối thiểu cho Vapi: [`.env.example`](english_for_community_backend/.env.example) (`VAPI_PUBLIC_KEY`, `VAPI_ASSISTANT_ID` cho Free Speaking).
 
 ---
 

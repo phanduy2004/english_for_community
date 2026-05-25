@@ -326,10 +326,11 @@ class UserBloc extends Bloc<UserEvent, UserState> {
 
   Future<void> onSignOutEvent(
       SignOutEvent event, Emitter<UserState> emit) async {
-    await TokenStorage.clearAllTokens();
     try {
       await authRepository.logout();
-    } catch (_) {}
+    } catch (_) {
+      await TokenStorage.clearAllTokens();
+    }
     try {
       await FirebaseAuth.instance.signOut();
       await GoogleSignIn().signOut();

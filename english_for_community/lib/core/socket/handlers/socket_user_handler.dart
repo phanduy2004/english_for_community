@@ -34,25 +34,23 @@ extension SocketUserHandler on SocketService {
   }
 
   void disconnect() {
-    if (_isInitialized) {
-      try {
-        print('👋 [Socket] Sending Logout Signal...');
-        _socket.emit('user_logout');
+    if (!_isInitialized) return;
 
-        Future.delayed(const Duration(milliseconds: 50), () {
-          if (isConnected) {
-            print('🔌 [Socket] Disconnecting...');
-            _socket.disconnect();
-          }
-        });
-      } catch (e) {
-        print('⚠️ Error during disconnect: $e');
-      } finally {
-        _isInitialized = false;
-        _currentUserId = null; // Reset user khi logout chủ động
-        _examAccessToken = null;
-        _currentExamSessionId = null;
+    final userId = _currentUserId;
+    try {
+      if (isConnected) {
+        print('👋 [Socket] Sending Logout Signal for ${userId ?? 'unknown'}...');
+        _socket.emit('user_logout', userId);
+        _socket.disconnect();
       }
+    } catch (e) {
+      print('⚠️ Error during disconnect: $e');
+    } finally {
+      _isInitialized = false;
+      _currentUserId = null;
+      _pendingUserId = null;
+      _examAccessToken = null;
+      _currentExamSessionId = null;
     }
   }
 }

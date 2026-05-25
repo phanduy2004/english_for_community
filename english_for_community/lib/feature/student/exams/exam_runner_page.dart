@@ -3,7 +3,9 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_runner_page.dart';
@@ -349,20 +351,21 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item['stem'] as String? ?? '', style: ExamSystemUi.questionStem(context)),
-            const SizedBox(height: ExamSystemUi.cardGap),
+            Text(item['stem'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
             ...List.generate(opts.length, (i) {
               final opt = opts[i] as String;
-              return RadioListTile<int>(
-                value: i,
-                groupValue: _mcqSingle,
-                onChanged: locked
+              return StudentMobileUi.mcqOption(
+                context: context,
+                index: i,
+                text: opt,
+                selected: _mcqSingle == i,
+                onTap: locked
                     ? null
-                    : (v) {
-                        setState(() => _mcqSingle = v);
+                    : () {
+                        setState(() => _mcqSingle = i);
                         _persistCurrentAnswer();
                       },
-                title: Text(opt, style: const TextStyle(fontWeight: FontWeight.w400)),
               );
             }),
           ],
@@ -377,27 +380,28 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item['stem'] as String? ?? '', style: ExamSystemUi.questionStem(context)),
-            const SizedBox(height: ExamSystemUi.cardGap),
+            Text(item['stem'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
             ...List.generate(opts.length, (i) {
               final opt = opts[i] as String;
-              final checked = _mcqMulti.contains(i);
-              return CheckboxListTile(
-                value: checked,
-                onChanged: locked
+              return StudentMobileUi.mcqOption(
+                context: context,
+                index: i,
+                text: opt,
+                multiSelect: true,
+                checked: _mcqMulti.contains(i),
+                onTap: locked
                     ? null
-                    : (v) {
+                    : () {
                         setState(() {
-                          if (v == true) {
-                            _mcqMulti.add(i);
-                          } else {
+                          if (_mcqMulti.contains(i)) {
                             _mcqMulti.remove(i);
+                          } else {
+                            _mcqMulti.add(i);
                           }
                         });
                         _persistCurrentAnswer();
                       },
-                title: Text(opt, style: const TextStyle(fontWeight: FontWeight.w400)),
-                controlAffinity: ListTileControlAffinity.leading,
               );
             }),
           ],
@@ -414,8 +418,8 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
           children: [
             if ((item['template'] as String?)?.trim().isNotEmpty == true)
               Padding(
-                padding: const EdgeInsets.only(bottom: ExamSystemUi.blockGap),
-                child: Text(item['template'] as String, style: ExamSystemUi.captionSecondary),
+                padding: const EdgeInsets.only(bottom: StudentMobileUi.sectionGap),
+                child: Text(item['template'] as String, style: StudentMobileUi.caption(context)),
               ),
             for (final b in defs)
               if (b is Map) ...[
@@ -439,8 +443,8 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(item['prompt'] as String? ?? '', style: ExamSystemUi.questionStem(context)),
-            const SizedBox(height: ExamSystemUi.cardGap),
+            Text(item['prompt'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
             TextField(
               controller: _essayCtrl,
               enabled: !locked,
@@ -459,7 +463,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
 
     return AppCard(
       variant: AppCardVariant.outline,
-      child: Text(l10n.studentExamItemUnsupported, style: ExamSystemUi.captionSecondary),
+      child: Text(l10n.studentExamItemUnsupported, style: StudentMobileUi.body(context)),
     );
   }
 
@@ -496,18 +500,18 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
       },
       child: Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: ExamSystemUi.appBar(
+        appBar: StudentMobileUi.appBar(
           context,
           title: l10n.studentExamRunnerTitle,
           actions: [
             if (remaining != null && status == 'in_progress')
               Center(
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 12),
+                  padding: const EdgeInsets.only(right: AppSpacing.s4),
                   child: Text(
                     '${l10n.teacherExamTimeRemaining}: $remaining',
                     key: ValueKey(_tick),
-                    style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w500),
+                    style: StudentMobileUi.caption(context),
                   ),
                 ),
               ),
@@ -518,17 +522,17 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
             : _error != null
                 ? Center(
                     child: Padding(
-                      padding: ExamSystemUi.pagePadding,
+                      padding: StudentMobileUi.pagePadding,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             l10n.studentExamRunnerLoadFailed,
-                            style: ExamSystemUi.listTitle(context),
+                            style: StudentMobileUi.sectionTitle(context),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 8),
-                          Text(_error!, style: ExamSystemUi.captionSecondary, textAlign: TextAlign.center),
+                          Text(_error!, style: StudentMobileUi.body(context), textAlign: TextAlign.center),
                           const SizedBox(height: 16),
                           FilledButton(onPressed: () => _load(), child: Text(l10n.commonRetry)),
                         ],
@@ -545,26 +549,26 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                             children: [
                               Text(
                                 l10n.studentExamQuestionProgress(_itemIndex + 1, flat.length),
-                                style: ExamSystemUi.captionSecondary,
+                                style: StudentMobileUi.caption(context),
                               ),
                               const SizedBox(height: 8),
                               LinearProgressIndicator(
                                 value: (_itemIndex + 1) / flat.length,
                                 borderRadius: BorderRadius.circular(4),
                                 backgroundColor: AppColors.outlineMuted,
-                                color: AppColors.primary,
+                                color: AppSkillColors.listening.color,
                               ),
                             ],
                           ),
                         ),
                       Expanded(
                         child: ListView(
-                          padding: ExamSystemUi.pagePadding,
+                          padding: StudentMobileUi.pagePadding,
                           children: [
                             if (expired)
                               AppCard(
                                 variant: AppCardVariant.outline,
-                                child: Text(l10n.studentExamExpired, style: ExamSystemUi.captionSecondary),
+                                child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
                               ),
                             if (item != null) ...[
                               const SizedBox(height: 8),
@@ -572,41 +576,59 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                             ] else if (!locked)
                               AppCard(
                                 variant: AppCardVariant.outline,
-                                child: Text(l10n.studentExamNoQuestions, style: ExamSystemUi.captionSecondary),
+                                child: Text(l10n.studentExamNoQuestions, style: StudentMobileUi.body(context)),
                               ),
                             if (submitted && _attempt?['scores'] != null) ...[
-                              const SizedBox(height: ExamSystemUi.blockGap),
+                              const SizedBox(height: StudentMobileUi.sectionGap),
                               AppCard(
                                 variant: AppCardVariant.outline,
-                                child: Text(_scoreSummaryText(), style: ExamSystemUi.captionSecondary),
+                                child: Text(_scoreSummaryText(), style: StudentMobileUi.body(context)),
                               ),
                             ],
                           ],
                         ),
                       ),
                       if (!locked && flat.isNotEmpty)
-                        SafeArea(
-                          minimum: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.surfaceCard,
+                            border: Border(top: BorderSide(color: AppColors.outlineMuted)),
+                          ),
+                          padding: EdgeInsets.fromLTRB(
+                            AppSpacing.s5,
+                            AppSpacing.s4,
+                            AppSpacing.s5,
+                            AppSpacing.s4 + MediaQuery.paddingOf(context).bottom,
+                          ),
                           child: Row(
                             children: [
-                              if (_itemIndex > 0)
+                              Text(
+                                l10n.studentExamQuestionProgress(_itemIndex + 1, flat.length),
+                                style: StudentMobileUi.cardTitle(context),
+                              ),
+                              const Spacer(),
+                              if (_itemIndex > 0) ...[
                                 OutlinedButton(
                                   onPressed: () => _goToIndex(_itemIndex - 1),
                                   child: Text(l10n.studentExamPrevious),
-                                )
-                              else
-                                const SizedBox(width: 8),
-                              const Spacer(),
-                              if (_itemIndex < lastIndex)
-                                FilledButton(
-                                  onPressed: () => _goToIndex(_itemIndex + 1),
-                                  child: Text(l10n.studentExamNext),
-                                )
-                              else
-                                FilledButton(
-                                  onPressed: _submit,
-                                  child: Text(l10n.studentExamSubmit),
                                 ),
+                                const SizedBox(width: AppSpacing.s3),
+                              ],
+                              FilledButton(
+                                onPressed: _itemIndex < lastIndex
+                                    ? () => _goToIndex(_itemIndex + 1)
+                                    : _submit,
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size(88, 44),
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: AppColors.onPrimary,
+                                ),
+                                child: Text(
+                                  _itemIndex < lastIndex
+                                      ? l10n.studentExamNext
+                                      : l10n.studentExamSubmit,
+                                ),
+                              ),
                             ],
                           ),
                         ),

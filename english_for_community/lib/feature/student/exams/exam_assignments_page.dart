@@ -1,7 +1,8 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/feature/student/classes/my_classes_hub_page.dart';
 import 'package:english_for_community/feature/student/exams/public_exam_join_page.dart';
 import 'package:flutter/material.dart';
@@ -19,79 +20,78 @@ class ExamAssignmentsPage extends StatelessWidget {
     final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: ExamSystemUi.appBar(
+      appBar: StudentMobileUi.appBar(
         context,
         title: l10n.studentExamsHubTitle,
         actions: [
           IconButton(
-            icon: const Icon(Icons.link_outlined),
-            iconSize: ExamSystemUi.iconSm,
-            color: AppColors.textSecondary,
+            icon: const Icon(Icons.link_outlined, size: 20),
             tooltip: l10n.examJoinByLinkTitle,
             onPressed: () => context.push(PublicExamJoinPage.routePath),
           ),
         ],
       ),
       body: ListView(
-        padding: ExamSystemUi.pagePadding,
+        padding: StudentMobileUi.pagePadding,
         children: [
-          AppCard(
-            variant: AppCardVariant.outline,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.school_outlined, color: AppColors.primary.withValues(alpha: 0.85)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.studentExamsGoToClasses,
-                          style: ExamSystemUi.listTitle(context),
-                        ),
+          StudentMobileUi.skillAccentCard(
+            skill: SkillType.speaking,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    StudentMobileUi.skillIconBox(Icons.school_outlined, size: 40, skill: SkillType.speaking),
+                    const SizedBox(width: AppSpacing.s4),
+                    Expanded(
+                      child: Text(
+                        l10n.studentExamsGoToClasses,
+                        style: StudentMobileUi.cardTitle(context),
                       ),
-                    ],
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: AppSkillColors.speaking.color),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                FilledButton.icon(
+                  onPressed: () => context.push(MyClassesHubPage.routePath),
+                  icon: const Icon(Icons.class_outlined, size: 20),
+                  label: Text(l10n.studentExamsGoToClasses),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
                   ),
-                  const SizedBox(height: 16),
-                  FilledButton.icon(
-                    onPressed: () => context.push(MyClassesHubPage.routePath),
-                    icon: const Icon(Icons.class_outlined, size: 22),
-                    label: Text(l10n.studentExamsGoToClasses),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: ExamSystemUi.sectionGap),
-          AppCard(
-            variant: AppCardVariant.outline,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.public, color: AppColors.secondary.withValues(alpha: 0.9)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.examJoinByLinkTitle,
-                          style: ExamSystemUi.listTitle(context),
-                        ),
+          const SizedBox(height: StudentMobileUi.sectionGap),
+          StudentMobileUi.skillAccentCard(
+            skill: SkillType.reading,
+            onTap: () => context.push(PublicExamJoinPage.routePath),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    StudentMobileUi.skillIconBox(Icons.public, size: 40, skill: SkillType.reading),
+                    const SizedBox(width: AppSpacing.s4),
+                    Expanded(
+                      child: Text(
+                        l10n.examJoinByLinkTitle,
+                        style: StudentMobileUi.cardTitle(context),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () => context.push(PublicExamJoinPage.routePath),
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 20),
-                    label: Text(l10n.studentClassPublicJoin),
-                  ),
-                ],
-              ),
+                    ),
+                    Icon(Icons.chevron_right_rounded, size: 18, color: AppSkillColors.reading.color),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                OutlinedButton.icon(
+                  onPressed: () => context.push(PublicExamJoinPage.routePath),
+                  icon: Icon(Icons.arrow_forward_rounded, size: 18, color: AppSkillColors.reading.color),
+                  label: Text(l10n.studentClassPublicJoin),
+                ),
+              ],
             ),
           ),
         ],

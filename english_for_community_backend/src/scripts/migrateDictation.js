@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { getMongoUri } from '../lib/mongoUri.js';
 
-dotenv.config(); // Load biến môi trường
+dotenv.config();
 
 // 1. Định nghĩa Schema (Copy từ file model của bạn)
 const DictationAttemptSchema = new mongoose.Schema({
@@ -15,7 +16,9 @@ const NewModel = mongoose.model('NewDictation', DictationAttemptSchema, 'dictati
 
 const migrate = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/english_community');
+    const uri = getMongoUri();
+    if (!uri) throw new Error('Missing MONGO_URI in .env');
+    await mongoose.connect(uri);
     console.log("🔌 Connected to MongoDB");
 
     // Lấy toàn bộ dữ liệu cũ

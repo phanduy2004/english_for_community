@@ -148,6 +148,8 @@ class UserEntity extends Equatable {
     int? currentStreak,
     int? totalPoints,
     int? level,
+    bool? isOnline,
+    DateTime? lastActivityDate,
   }) {
     return UserEntity(
       id: this.id, // ID usually doesn't change
@@ -185,8 +187,8 @@ class UserEntity extends Equatable {
       level: level ?? this.level,
       currentStreak: currentStreak ?? this.currentStreak,
 
-      isOnline: this.isOnline,
-      lastActivityDate: this.lastActivityDate,
+      isOnline: isOnline ?? this.isOnline,
+      lastActivityDate: lastActivityDate ?? this.lastActivityDate,
 
     );
   }

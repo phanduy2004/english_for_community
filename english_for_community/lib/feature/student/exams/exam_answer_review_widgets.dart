@@ -1,6 +1,9 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:flutter/material.dart';
 
 /// Parses [correctOptionIndexes] from an exam item map.
@@ -17,9 +20,7 @@ Set<int> mcqSelectedIndexesFromAnswer(Map<String, dynamic>? answer) {
   return raw.map((e) => int.tryParse('$e') ?? -1).where((i) => i >= 0).toSet();
 }
 
-String _optionLetter(int index) => String.fromCharCode(65 + index);
-
-/// Teacher / review MCQ list — green = correct, red = wrong selection (matches reading review).
+/// Teacher / review MCQ list — green = correct, red = wrong selection (`04` §11).
 class McqGradingReviewList extends StatelessWidget {
   const McqGradingReviewList({
     super.key,
@@ -52,11 +53,8 @@ class McqGradingReviewList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (options.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.all(12),
-        child: Text(
-          '—',
-          style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.textPrimary),
-        ),
+        padding: const EdgeInsets.all(AppSpacing.s4),
+        child: Text('—', style: StudentMobileUi.body(context)),
       );
     }
 
@@ -65,118 +63,38 @@ class McqGradingReviewList extends StatelessWidget {
       children: [
         if (showHeader) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+            padding: const EdgeInsets.fromLTRB(
+              StudentMobileUi.pageHPadding,
+              AppSpacing.s2,
+              StudentMobileUi.pageHPadding,
+              AppSpacing.s3,
+            ),
             child: Text(
               context.l10n.teacherAttemptGradeChoicesLabel,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
+              style: StudentMobileUi.cardTitle(context),
             ),
           ),
         ],
-        for (var i = 0; i < options.length; i++)
-          _McqReviewOptionTile(
-            letter: _optionLetter(i),
-            text: options[i],
-            isCorrect: correctIndexes.contains(i),
-            isSelected: selectedIndexes.contains(i),
-            isLast: i == options.length - 1,
-          ),
-      ],
-    );
-  }
-}
-
-class _McqReviewOptionTile extends StatelessWidget {
-  const _McqReviewOptionTile({
-    required this.letter,
-    required this.text,
-    required this.isCorrect,
-    required this.isSelected,
-    required this.isLast,
-  });
-
-  final String letter;
-  final String text;
-  final bool isCorrect;
-  final bool isSelected;
-  final bool isLast;
-
-  @override
-  Widget build(BuildContext context) {
-    const correctGreen = Color(0xFF16A34A);
-    const wrongRed = Color(0xFFDC2626);
-
-    Color bg = AppColors.surfaceCard;
-    Color border = AppColors.outline;
-    Color textColor = AppColors.textPrimary;
-    IconData? icon;
-    Color? iconColor;
-
-    if (isCorrect) {
-      bg = const Color(0xFFECFDF5);
-      border = correctGreen;
-      textColor = const Color(0xFF14532D);
-      icon = Icons.check_circle_rounded;
-      iconColor = correctGreen;
-    } else if (isSelected) {
-      bg = const Color(0xFFFEF2F2);
-      border = wrongRed;
-      textColor = const Color(0xFF7F1D1D);
-      icon = Icons.cancel_rounded;
-      iconColor = wrongRed;
-    }
-
-    return Container(
-      margin: EdgeInsets.fromLTRB(12, 0, 12, isLast ? 12 : 8),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: border, width: 1.25),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: border.withValues(alpha: 0.12),
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
-            ),
-            child: Text(
-              letter,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                color: textColor,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
-              child: Text(
-                text,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.45,
-                  color: textColor,
-                  fontWeight: FontWeight.w500,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: StudentMobileUi.pageHPadding),
+          child: Column(
+            children: [
+              for (var i = 0; i < options.length; i++)
+                StudentMobileUi.mcqOption(
+                  context: context,
+                  index: i,
+                  text: options[i],
+                  showReviewCorrect: correctIndexes.contains(i),
+                  showReviewWrong:
+                      selectedIndexes.contains(i) && !correctIndexes.contains(i),
+                  margin: EdgeInsets.only(
+                    bottom: i == options.length - 1 ? 0 : AppSpacing.s3,
+                  ),
                 ),
-              ),
-            ),
+            ],
           ),
-          if (icon != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 12, right: 12),
-              child: Icon(icon, color: iconColor, size: 22),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -204,19 +122,11 @@ class TeacherAttemptGradingFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final frac = max > 0 ? (awarded / max).clamp(0.0, 1.0).toDouble() : 0.0;
-    const labelStyle = TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: AppColors.textPrimary,
-    );
-    const fieldStyle = TextStyle(fontSize: 14, color: AppColors.textPrimary);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-      ),
+    return AppCard(
+      variant: AppCardVariant.filled,
+      padding: const EdgeInsets.all(StudentMobileUi.pageHPadding),
+      radius: AppRadius.card,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -225,71 +135,71 @@ class TeacherAttemptGradingFooter extends StatelessWidget {
             children: [
               Text(
                 l10n.teacherAttemptGradePointsShort('$awarded', '$max'),
-                style: ExamSystemUi.listTitle(context).copyWith(
-                  fontSize: 16,
-                  color: AppColors.textPrimary,
-                ),
+                style: StudentMobileUi.sectionTitle(context),
               ),
               const Spacer(),
               if (max > 0)
                 Text(
                   '${(frac * 100).round()}%',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
+                  style: StudentMobileUi.cardTitle(context),
                 ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.s4),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
             child: LinearProgressIndicator(
               value: max > 0 ? frac : 0,
-              minHeight: 8,
+              minHeight: 6,
               backgroundColor: AppColors.outlineMuted,
               color: AppColors.primary,
             ),
           ),
           if (rationale != null && rationale!.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(l10n.teacherGradingAiRationale, style: labelStyle),
-            const SizedBox(height: 6),
-            Text(
-              rationale!,
-              style: const TextStyle(fontSize: 14, height: 1.45, color: AppColors.textPrimary),
-            ),
+            const SizedBox(height: AppSpacing.s4),
+            Text(l10n.teacherGradingAiRationale, style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: AppSpacing.s3),
+            Text(rationale!, style: StudentMobileUi.body(context)),
           ],
           if (canEdit) ...[
-            const SizedBox(height: 14),
-            Text(l10n.teacherGradingAwardedPoints, style: labelStyle),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.s4),
+            Text(l10n.teacherGradingAwardedPoints, style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: AppSpacing.s3),
             TextField(
               controller: pointsController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: fieldStyle,
+              style: AppTypography.body(),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppColors.surfaceCard,
                 isDense: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input + 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: StudentMobileUi.pageHPadding,
+                  vertical: StudentMobileUi.pageHPadding,
+                ),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(l10n.teacherGradingNotesHint, style: labelStyle),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.s4),
+            Text(l10n.teacherGradingNotesHint, style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: AppSpacing.s3),
             TextField(
               controller: noteController,
               maxLines: 3,
-              style: fieldStyle,
+              style: AppTypography.body(),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: AppColors.surfaceCard,
                 alignLabelWithHint: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.input + 2),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: StudentMobileUi.pageHPadding,
+                  vertical: StudentMobileUi.pageHPadding,
+                ),
               ),
             ),
           ],

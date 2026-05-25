@@ -1,8 +1,11 @@
+﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/entity/user_entity.dart';
 import 'admin_user_details_dialog.dart';
 import 'user_action_menu.dart';
+import 'user_role_badge.dart';
 
 class UserCard extends StatelessWidget {
   final UserEntity user;
@@ -10,6 +13,7 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.l10n;
     final bool isOnline = user.isOnline;
     final bool isBanned = user.isBanned;
 
@@ -19,7 +23,7 @@ class UserCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: isBanned ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF0F172A).withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))
         ],
       ),
       child: Material(
@@ -77,10 +81,12 @@ class UserCard extends StatelessWidget {
                             const _StatusChip(label: 'BANNED', color: Colors.red, icon: Icons.block)
                           else
                             _StatusChip(
-                                label: isOnline ? 'Online' : 'Offline',
-                                color: isOnline ? const Color(0xFF22C55E) : const Color(0xFF94A3B8),
+                                label: isOnline ? t.adminUserStatusOnline : t.adminUserStatusOffline,
+                                color: isOnline ? AppColors.success : AppColors.textMuted,
                                 isDot: true
                             ),
+                          const SizedBox(width: 6),
+                          UserRoleBadge(role: user.role),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -96,10 +102,10 @@ class UserCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Text(
                             isOnline
-                                ? 'Active now'
+                                ? t.adminUserActiveNow
                                 : (user.lastActivityDate != null
-                                ? 'Last active: ${DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal())}'
-                                : 'Never active'),
+                                ? t.adminUserLastActive(DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal()))
+                                : t.adminUserNeverActive),
                             style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                           ),
                         ],
@@ -132,9 +138,9 @@ class _StatusChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

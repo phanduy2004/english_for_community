@@ -71,6 +71,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
   final Map<String, bool> _skillIncluded = {};
   final Map<String, Map<String, dynamic>> _skillSection = {};
   List<Map<String, dynamic>> _grammarItems = [];
+  bool _grammarIncluded = false;
 
   bool _writingPromptGenerating = false;
 
@@ -208,6 +209,8 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
         } else {
           _grammarItems = [];
         }
+        final grammarEnabled = settings['grammarEnabled'];
+        _grammarIncluded = grammarEnabled == true || (grammarEnabled != false && _grammarItems.isNotEmpty);
         setState(() => _loading = false);
       },
     );
@@ -219,6 +222,24 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
     for (final sk in TeacherIntegratedExamEditorPage.skillOrder) {
       if (_skillIncluded[sk] != true) continue;
       final base = Map<String, dynamic>.from(_skillSection[sk] ?? _emptySkillSection(sk, order));
+      final resources = _getResources(base);
+      if (resources.isNotEmpty) {
+        base['resources'] = resources;
+        base['resourceId'] = resources.first['id']?.toString() ?? '';
+        base['resourceTitle'] = resources.first['title']?.toString() ?? '';
+      } else if (sk != 'writing') {
+        base.remove('resourceId');
+        base.remove('resourceTitle');
+        base['resources'] = <Map<String, dynamic>>[];
+      }
+      if (sk == 'writing') {
+        final prompt = _getWritingFixedPrompt();
+        if (prompt != null) {
+          base['fixedWritingPrompt'] = prompt;
+        } else {
+          base.remove('fixedWritingPrompt');
+        }
+      }
       base['order'] = order;
       out.add(base);
       order++;
@@ -231,12 +252,23 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
       'examFormat': 'skills_exam',
       'showResultsPolicy': 'after_submit',
       'allowMultipleSubmissions': false,
-      'grammarItems': _grammarItems,
+      'grammarEnabled': _grammarIncluded,
+      'grammarItems': _grammarIncluded ? _grammarItems : <Map<String, dynamic>>[],
     };
   }
 
+  bool get _canEditSkillContent => _status == 'draft' || _status == 'published';
+
+  bool _writingSkillReady() => _getWritingFixedPrompt() != null;
+
+  bool _skillMeetsPublishRequirement(String sk) {
+    if (_skillIncluded[sk] != true) return true;
+    if (sk == 'writing') return _writingSkillReady();
+    return _getResources(_skillSection[sk] ?? {}).isNotEmpty;
+  }
+
   Future<bool> _saveDraft() async {
-    if (_status != 'draft') return false;
+    if (!_canEditSkillContent) return false;
     final r = await getIt<TeacherExamRepository>().updateExamDraft(widget.examId, {
       'title': _title.text.trim(),
       'description': '',
@@ -261,20 +293,31 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
     var anySkill = false;
     for (final sk in TeacherIntegratedExamEditorPage.skillOrder) {
       if (_skillIncluded[sk] != true) continue;
-      final resources = _getResources(_skillSection[sk] ?? {});
-      if (resources.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishPickEachIncludedSkill)));
-        return false;
-      }
-      if (sk == 'writing' && _getWritingFixedPrompt() == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.teacherExamWritingPromptRequired)),
-        );
+      if (!_skillMeetsPublishRequirement(sk)) {
+        if (sk == 'writing') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.teacherExamWritingPublishNeedPrompt)),
+          );
+        } else if (sk == 'speaking') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.teacherExamSpeakingExerciseRequired)),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.teacherExamPublishPickEachIncludedSkill)),
+          );
+        }
         return false;
       }
       anySkill = true;
     }
-    final anyGrammar = _grammarItems.isNotEmpty;
+    if (_grammarIncluded && _grammarItems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.teacherExamGrammarEnabledNoItems)),
+      );
+      return false;
+    }
+    final anyGrammar = _grammarIncluded && _grammarItems.isNotEmpty;
     if (!anySkill && !anyGrammar) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishNeedSelection)));
       return false;
@@ -580,7 +623,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
   }
 
   Widget? _webStickyActions(BuildContext context) {
-    if (!_useWebLayout() || _status != 'draft' || _loading || _error != null) return null;
+    if (!_useWebLayout() || !_canEditSkillContent || _loading || _error != null) return null;
     final l10n = context.l10n;
     return Material(
       elevation: 6,
@@ -606,14 +649,16 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
                   child: Text(l10n.teacherExamSaveDraft),
                 ),
               ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: _publish,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Text(l10n.teacherExamPublish),
+              if (_status == 'draft') ...[
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: _publish,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(l10n.teacherExamPublish),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -652,18 +697,95 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
     });
   }
 
+  static const _writingAiTaskTypes = [
+    'Essay',
+    'Agree or Disagree',
+    'Discuss both views',
+    'Problem and Solution',
+    'Advantages and Disadvantages',
+    'Report',
+  ];
+
+  static const _writingAiTaskTypeAny = '__any__';
+
+  Future<String?> _pickWritingAiTaskType() async {
+    final l10n = context.l10n;
+    var selected = _writingAiTaskTypeAny;
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setLocal) => AlertDialog(
+          title: Text(l10n.teacherExamWritingAiPickTaskTypeTitle),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(l10n.teacherExamWritingAiPickTaskTypeHint, style: ExamSystemUi.captionSecondary),
+                const SizedBox(height: 12),
+                InputDecorator(
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      value: selected,
+                      items: [
+                        DropdownMenuItem(
+                          value: _writingAiTaskTypeAny,
+                          child: Text(l10n.teacherExamWritingAiTaskTypeAny),
+                        ),
+                        ..._writingAiTaskTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setLocal(() => selected = v);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.cancel)),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx, selected == _writingAiTaskTypeAny ? null : selected);
+              },
+              child: Text(l10n.teacherExamWritingGenerateWithAI),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _generateWritingPromptOptions() async {
     final l10n = context.l10n;
     final resources = _getResources(_skillSection['writing'] ?? {});
-    if (resources.isEmpty) {
+    final topicId = resources.isNotEmpty ? resources.first['id'] as String? : null;
+    final topicName = (topicId == null || topicId.isEmpty)
+        ? (_title.text.trim().isNotEmpty ? _title.text.trim() : null)
+        : null;
+    if ((topicId == null || topicId.isEmpty) && (topicName == null || topicName.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.teacherExamWritingPromptNeedTopic)),
+        SnackBar(content: Text(l10n.teacherExamWritingAiNeedTopicOrTitle)),
       );
       return;
     }
+    final taskType = await _pickWritingAiTaskType();
+    if (!mounted) return;
+
     setState(() => _writingPromptGenerating = true);
-    final topicId = resources.first['id'] as String? ?? '';
-    final r = await getIt<TeacherExamRepository>().generateWritingPromptOptions(topicId: topicId);
+    final r = await getIt<TeacherExamRepository>().generateWritingPromptOptions(
+      topicId: topicId,
+      topicName: topicName,
+      taskType: taskType,
+    );
     if (!mounted) return;
     setState(() => _writingPromptGenerating = false);
     r.fold(
@@ -1113,7 +1235,9 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
                       ),
                     )
                   : OutlinedButton.icon(
-                      onPressed: hasResources ? _generateWritingPromptOptions : null,
+                      onPressed: (hasResources || _title.text.trim().isNotEmpty)
+                          ? _generateWritingPromptOptions
+                          : null,
                       icon: const Icon(Icons.auto_awesome_outlined, size: 16),
                       label: Text(l10n.teacherExamWritingGenerateWithAI),
                     ),
@@ -1128,11 +1252,11 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
             ),
           ],
         ),
-        if (!hasResources)
+        if (!hasResources && _title.text.trim().isEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              l10n.teacherExamWritingPromptNeedTopic,
+              l10n.teacherExamWritingAiNeedTopicOrTitle,
               style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
               textAlign: TextAlign.center,
             ),
@@ -1168,7 +1292,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
     final on = _skillIncluded[skill] == true;
     final sec = _skillSection[skill] ?? _emptySkillSection(skill, 0);
     final resources = _getResources(sec);
-    final draft = _status == 'draft';
+    final canEdit = _canEditSkillContent;
     final l10n = context.l10n;
 
     return Material(
@@ -1205,7 +1329,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
                 ),
                 Switch.adaptive(
                   value: on,
-                  onChanged: draft ? (v) => setState(() => _skillIncluded[skill] = v) : null,
+                  onChanged: _status == 'draft' ? (v) => setState(() => _skillIncluded[skill] = v) : null,
                 ),
               ],
             ),
@@ -1213,12 +1337,24 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
               const SizedBox(height: 12),
               const Divider(height: 1),
               const SizedBox(height: 8),
+              if (!_skillMeetsPublishRequirement(skill))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    skill == 'writing'
+                        ? l10n.teacherExamWritingPublishNeedPrompt
+                        : skill == 'speaking'
+                            ? l10n.teacherExamSpeakingExerciseRequired
+                            : l10n.teacherExamPublishPickEachIncludedSkill,
+                    style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.chartTrend),
+                  ),
+                ),
               // Exercise list
               for (var i = 0; i < resources.length; i++) ...[
                 if (i > 0) const SizedBox(height: 4),
-                _buildResourceRow(skill: skill, idx: i, res: resources[i], draft: draft),
+                _buildResourceRow(skill: skill, idx: i, res: resources[i], draft: canEdit),
               ],
-              if (draft) ...[
+              if (canEdit) ...[
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => _pickAt(skill),
@@ -1226,7 +1362,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
                   label: Text(l10n.teacherExamSkillsAddExercise),
                 ),
               ],
-              if (skill == 'writing') _buildWritingPromptSubSection(draft),
+              if (skill == 'writing') _buildWritingPromptSubSection(canEdit),
             ],
           ],
         ),
@@ -1513,49 +1649,83 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
 
   Widget _grammarPanel() {
     final l10n = context.l10n;
+    final on = _grammarIncluded;
     return Material(
       color: AppColors.surfaceCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.outline),
+        side: BorderSide(color: on ? AppColors.outline : AppColors.outlineMuted),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+        padding: const EdgeInsets.fromLTRB(20, 18, 14, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.spellcheck_outlined, size: 22, color: AppColors.textSecondary),
-                const SizedBox(width: 10),
+                Icon(Icons.spellcheck_outlined, size: 26, color: AppColors.textSecondary),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l10n.teacherExamGrammarTitle, style: ExamSystemUi.listTitle(context)),
+                      const SizedBox(height: 2),
+                      Text(
+                        on && _grammarItems.isNotEmpty
+                            ? l10n.teacherExamGrammarQuestionCount(_grammarItems.length)
+                            : l10n.teacherExamGrammarIncludeSubtitle,
+                        style: ExamSystemUi.captionMuted,
+                      ),
                     ],
                   ),
                 ),
-                if (_status == 'draft') ...[
-                  IconButton(
-                    onPressed: _showImportFormatDialog,
-                    icon: const Icon(Icons.upload_file_outlined, size: 20),
-                    tooltip: l10n.teacherExamGrammarImport,
-                    color: AppColors.textSecondary,
-                  ),
-                  FilledButton.tonalIcon(
-                    onPressed: () => _openGrammarEditor(),
-                    icon: const Icon(Icons.add_outlined, size: 20),
-                    label: Text(l10n.teacherExamGrammarAdd),
-                  ),
-                ],
+                Switch.adaptive(
+                  value: on,
+                  onChanged: _canEditSkillContent
+                      ? (v) => setState(() {
+                            _grammarIncluded = v;
+                            if (!v) _grammarEditorIndex = null;
+                          })
+                      : null,
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            if (_grammarItems.isEmpty)
+            if (on) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(l10n.teacherExamGrammarHint, style: ExamSystemUi.captionSecondary),
+                  ),
+                  if (_canEditSkillContent) ...[
+                    IconButton(
+                      onPressed: _showImportFormatDialog,
+                      icon: const Icon(Icons.upload_file_outlined, size: 20),
+                      tooltip: l10n.teacherExamGrammarImport,
+                      color: AppColors.textSecondary,
+                    ),
+                    FilledButton.tonalIcon(
+                      onPressed: () => _openGrammarEditor(),
+                      icon: const Icon(Icons.add_outlined, size: 20),
+                      label: Text(l10n.teacherExamGrammarAdd),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (!on)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 4, 6, 16),
+                child: Text(l10n.teacherExamGrammarIncludeSubtitle, style: ExamSystemUi.captionMuted),
+              )
+            else if (_grammarItems.isEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
                 child: Row(
@@ -1566,7 +1736,7 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
                   ],
                 ),
               )
-            else
+            else if (on)
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1659,13 +1829,14 @@ class _TeacherIntegratedExamEditorPageState extends State<TeacherIntegratedExamE
         TeacherBreadcrumb(label: pageTitle),
       ],
       actions: [
-        if (!_useWebLayout() && _status == 'draft') ...[
+        if (!_useWebLayout() && _canEditSkillContent) ...[
           TextButton(
             onPressed: _saveDraft,
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
             child: Text(l10n.teacherExamSaveDraft),
           ),
-          TeacherFilledButton(label: l10n.teacherExamPublish, onPressed: _publish),
+          if (_status == 'draft')
+            TeacherFilledButton(label: l10n.teacherExamPublish, onPressed: _publish),
         ],
         IconButton(
           onPressed: _load,
@@ -1838,13 +2009,15 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
         final levels = ['Beginner', 'Intermediate', 'Advanced'];
         final seen = <String>{};
         final out = <({String id, String title})>[];
-        for (final lv in levels) {
-          final r = await repo.getSpeakingSets(mode: SpeakingMode.readAloud, level: lv, page: 1, limit: 40);
-          r.fold((_) {}, (page) {
-            for (final s in page.data) {
-              if (seen.add(s.id)) out.add((id: s.id, title: s.title));
-            }
-          });
+        for (final mode in SpeakingMode.values) {
+          for (final lv in levels) {
+            final r = await repo.getSpeakingSets(mode: mode, level: lv, page: 1, limit: 40);
+            r.fold((_) {}, (page) {
+              for (final s in page.data) {
+                if (seen.add(s.id)) out.add((id: s.id, title: s.title));
+              }
+            });
+          }
         }
         return out;
       case 'reading':

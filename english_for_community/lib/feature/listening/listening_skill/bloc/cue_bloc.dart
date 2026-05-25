@@ -28,6 +28,18 @@ class CueBloc extends Bloc<CueEvent, CueState> {
     on<IncomingSocketComment>(_onIncomingSocketComment);
     on<ReactToCommentEvent>(_onReactToComment);
     on<IncomingSocketReaction>(_onIncomingSocketReaction);
+    on<ApplySubmitCueStateEvent>(_onApplySubmitCueState);
+  }
+
+  void _onApplySubmitCueState(
+    ApplySubmitCueStateEvent event,
+    Emitter<CueState> emit,
+  ) {
+    emit(state.copyWith(
+      latestAttempts: event.latestAttempts,
+      completedIdx: event.completedIdx,
+      justCompletedAll: event.justCompletedAll,
+    ));
   }
 
   Future<void> _onReactToComment(ReactToCommentEvent event, Emitter<CueState> emit) async {
@@ -108,7 +120,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
         return;
       }
 
-      cues.sort((a, b) => (a.startMs ?? 0).compareTo(b.startMs ?? 0));
+      cues.sort((a, b) => a.startMs.compareTo(b.startMs));
 
       final latest = <int, DictationAttemptEntity>{};
       final completedSet = <int>{};
@@ -120,7 +132,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
         final attempts = attemptsResult.fold(
               (l) => <DictationAttemptEntity>[],
-              (r) => r as List<DictationAttemptEntity>,
+              (r) => r,
         );
 
         for (final a in attempts) {
@@ -277,7 +289,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
         userText: userText,
       );
       final newCompleted = Set<int>.from(state.completedIdx)..add(cueIdx);
-      emit(state.copyWith(
+      add(ApplySubmitCueStateEvent(
         latestAttempts: newLatest,
         completedIdx: newCompleted,
         justCompletedAll: newCompleted.length >= state.cues.length,
@@ -318,7 +330,7 @@ class CueBloc extends Bloc<CueEvent, CueState> {
 
         final isAllDone = state.cues.isNotEmpty && newCompleted.length == state.cues.length;
 
-        emit(state.copyWith(
+        add(ApplySubmitCueStateEvent(
           latestAttempts: newLatest,
           completedIdx: newCompleted,
           justCompletedAll: isAllDone,

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
 import User from '../models/User.js';
+import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
 
 dotenv.config();
 
@@ -14,14 +15,14 @@ const TEACHER_USERNAME = process.env.TEACHER_SEED_USERNAME || 'teacher_e4c_seed'
  * Cần MONGO_URI trong .env (giống seedAdmin.js).
  */
 async function run() {
-  const uri = process.env.MONGO_URI;
+  const uri = getMongoUri();
   if (!uri) {
-    console.error('❌ Missing MONGO_URI in environment (.env)');
+    console.error('❌ Missing MONGO_URI in .env');
     process.exit(1);
   }
 
   await mongoose.connect(uri);
-  console.log('🔌 Connected');
+  console.log(`🔌 Connected (${getMongoUriForLog(uri)})`);
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(TEACHER_PASSWORD, salt);

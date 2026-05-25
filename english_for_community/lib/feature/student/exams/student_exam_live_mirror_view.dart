@@ -5,6 +5,7 @@ import 'package:english_for_community/core/repository/reading_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/feature/student/exams/exam_section_resources.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_grammar_widgets.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_question_strip.dart';
 import 'package:flutter/material.dart';
@@ -284,18 +285,8 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     );
   }
 
-  List<Map<String, dynamic>> _sectionResources(Map<String, dynamic> section) {
-    final resources = <Map<String, dynamic>>[];
-    final rawRes = section['resources'];
-    if (rawRes is List && rawRes.isNotEmpty) {
-      resources.addAll(rawRes.map((e) => Map<String, dynamic>.from(e as Map)));
-    } else {
-      final id = (section['resourceId'] as String?)?.trim() ?? '';
-      final title = (section['resourceTitle'] as String?)?.trim() ?? '';
-      if (id.isNotEmpty) resources.add({'id': id, 'title': title});
-    }
-    return resources;
-  }
+  List<Map<String, dynamic>> _sectionResources(Map<String, dynamic> section) =>
+      sectionResourcesFrom(section);
 
   Widget _buildSkillMirror(
     BuildContext context,

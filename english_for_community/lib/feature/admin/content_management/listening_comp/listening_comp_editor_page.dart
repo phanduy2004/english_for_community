@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -389,22 +388,32 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
 
                 const Text("Các lựa chọn (Tick vào đáp án đúng)", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMuted)),
                 const SizedBox(height: 8),
-                ...List.generate(4, (optIdx) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Radio<int>(
-                          value: optIdx,
-                          groupValue: q['correctAnswerIndex'],
-                          activeColor: const Color(0xFF16A34A),
-                          onChanged: (val) => setState(() => q['correctAnswerIndex'] = val),
+                RadioGroup<int>(
+                  groupValue: q['correctAnswerIndex'] as int?,
+                  onChanged: (val) => setState(() => q['correctAnswerIndex'] = val),
+                  child: Column(
+                    children: List.generate(4, (optIdx) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          children: [
+                            Radio<int>(
+                              value: optIdx,
+                              fillColor: const WidgetStatePropertyAll(Color(0xFF16A34A)),
+                            ),
+                            Expanded(
+                              child: _CompactInput(
+                                hint: "Lựa chọn ${String.fromCharCode(65 + optIdx)}",
+                                value: q['options'][optIdx],
+                                onChanged: (v) => q['options'][optIdx] = v,
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(child: _CompactInput(hint: "Lựa chọn ${String.fromCharCode(65 + optIdx)}", value: q['options'][optIdx], onChanged: (v) => q['options'][optIdx] = v)),
-                      ],
-                    ),
-                  );
-                }),
+                      );
+                    }),
+                  ),
+                ),
                 const Divider(height: 24, color: kBorder),
 
                 const Text("Giải thích & Gợi ý Audio", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextMuted)),

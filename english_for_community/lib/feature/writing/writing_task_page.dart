@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,21 +12,14 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/ui/exam_system_ui.dart';
+import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../student/exams/exam_embedded_skill_scope.dart';
 import '../auth/bloc/user_bloc.dart';
-
-// --- 1. ĐỊNH NGHĨA MÀU SẮC (Theme Local) ---
-class _Colors {
-  static const bgSubtle = Color(0xFFFAFAFA); // Nền xám rất nhạt
-  static const border = Color(0xFFE4E4E7);   // Viền xám
-  static const textMain = Color(0xFF09090B); // Chữ đen đậm
-  static const textMuted = Color(0xFF71717A);// Chữ xám ghi
-  static const primary = Color(0xFF18181B);  // Đen (Primary Button)
-  static const accent = Color(0xFFF4F4F5);   // Nền icon
-  static const error = Color(0xFFEF4444);    // Đỏ
-}
 
 class WritingTaskPage extends StatelessWidget {
   final WritingTopicEntity topic;
@@ -64,7 +57,8 @@ class WritingTaskPage extends StatelessWidget {
     final resolvedUserId = userId ?? _tryResolveUserIdFromBloc(context);
     if (resolvedUserId == null || resolvedUserId.isEmpty) {
       return Scaffold(
-        appBar: AppBar(),
+        backgroundColor: AppColors.surface,
+        appBar: StudentMobileUi.appBar(context, title: context.l10n.commonError),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -236,7 +230,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   }
 
   // --- DIALOG THOÁT (Chuẩn Android) ---
-  Future<void> _onWillPop(bool didPop) async {
+  Future<void> _onWillPop(bool didPop, Object? result) async {
     if (didPop) return;
     final state = context.read<WritingTaskBloc>().state;
     if (state.submission == null || !_isDirty) {
@@ -255,20 +249,20 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         title: Text(t.writingSaveDraftTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         content: Text(
           t.writingSaveDraftMessage,
-          style: const TextStyle(color: _Colors.textMuted),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, null),
-            child: Text(t.cancel, style: const TextStyle(color: _Colors.textMuted)),
+            child: Text(t.cancel, style: const TextStyle(color: AppColors.textSecondary)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t.writingDiscardButton, style: const TextStyle(color: _Colors.error)),
+            child: Text(t.writingDiscardButton, style: const TextStyle(color: AppColors.danger)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.saveChanges, style: const TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
+            child: Text(t.saveChanges, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
           ),
         ],
       );
@@ -406,7 +400,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         title: Text(t.writingResumeTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         content: Text(
           t.writingResumeMessage,
-          style: const TextStyle(color: _Colors.textMuted),
+          style: const TextStyle(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
@@ -426,7 +420,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                 _isDirty = false;
               }
             },
-            child: Text(t.writingStartNewButton, style: const TextStyle(color: _Colors.error)),
+            child: Text(t.writingStartNewButton, style: const TextStyle(color: AppColors.danger)),
           ),
           TextButton(
             onPressed: () {
@@ -437,7 +431,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                 _isDirty = false;
               });
             },
-            child: Text(t.writingResumeButton, style: const TextStyle(fontWeight: FontWeight.bold, color: _Colors.primary)),
+            child: Text(t.writingResumeButton, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
           ),
         ],
       );
@@ -451,36 +445,18 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     }
     return PopScope(
       canPop: false,
-      onPopInvoked: _onWillPop,
+      onPopInvokedWithResult: _onWillPop,
       child: Scaffold(
-        backgroundColor: _Colors.bgSubtle,
+        backgroundColor: AppColors.surface,
         resizeToAvoidBottomInset: true,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          shape: const Border(bottom: BorderSide(color: _Colors.border)),
-          leading: IconButton(
-            icon: const Icon(Icons.close_rounded, color: _Colors.textMain),
-            onPressed: () => _onWillPop(false),
-          ),
-          title: Column(
-            children: [
-              Text(
-                context.watch<WritingTaskBloc>().state.topic?.name ?? t.writingTaskDefaultTitle,
-                style: const TextStyle(color: _Colors.textMain, fontWeight: FontWeight.w600, fontSize: 16),
-              ),
-              if (_taskType != null)
-                Text(
-                  _taskType!,
-                  style: const TextStyle(color: _Colors.textMuted, fontSize: 11, fontWeight: FontWeight.w400),
-                ),
-            ],
-          ),
-          centerTitle: true,
+        appBar: StudentMobileUi.skillAppBar(
+          context,
+          title: context.watch<WritingTaskBloc>().state.topic?.name ?? t.writingTaskDefaultTitle,
+          skill: SkillType.writing,
           actions: [
             IconButton(
-              icon: const Icon(Icons.lightbulb_outline, color: _Colors.textMain),
+              icon: const Icon(Icons.lightbulb_outline, size: 20),
+              color: AppColors.textPrimary,
               tooltip: t.writingInstructionsTooltip,
               onPressed: _showInstructionDialog,
             ),
@@ -560,10 +536,10 @@ class _WritingTaskViewState extends State<WritingTaskView> {
           },
           builder: (context, state) {
             if (state.status == WritingTaskStatus.loading) {
-              return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: _Colors.primary));
+              return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary));
             }
             if (state.submission == null) {
-              return Center(child: Text(context.l10n.writingPreparingTask, style: const TextStyle(color: _Colors.textMuted)));
+              return Center(child: Text(context.l10n.writingPreparingTask, style: const TextStyle(color: AppColors.textSecondary)));
             }
             if (_taskType == null) {
               _taskType = state.submission!.generatedPrompt?.taskType ?? widget.initialTaskType;
@@ -676,8 +652,8 @@ class _PromptCardState extends State<_PromptCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _Colors.border),
-        boxShadow: compact ? null : [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+        border: Border.all(color: AppColors.outline),
+        boxShadow: compact ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
       child: Column(
         children: [
@@ -690,8 +666,8 @@ class _PromptCardState extends State<_PromptCard> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: _Colors.accent, borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.article_outlined, size: 20, color: _Colors.textMain),
+                    decoration: BoxDecoration(color: AppColors.outlineMuted, borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.article_outlined, size: 20, color: AppColors.textPrimary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -702,19 +678,19 @@ class _PromptCardState extends State<_PromptCard> {
                           widget.title,
                           style: compact
                               ? ExamSystemUi.embeddedListTitle(context)
-                              : const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: _Colors.textMain),
+                              : const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           _isExpanded ? t.writingPromptTapCollapse : t.writingPromptTapExpand,
-                          style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 12, color: _Colors.textMuted),
+                          style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
                   ),
-                  Icon(_isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: _Colors.textMuted),
+                  Icon(_isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded, color: AppColors.textSecondary),
                 ],
               ),
             ),
@@ -725,10 +701,10 @@ class _PromptCardState extends State<_PromptCard> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: _Colors.bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: _Colors.border.withOpacity(0.5))),
+                decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.outline.withValues(alpha: 0.5))),
                 child: Text(
                   widget.text,
-                  style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: 14, height: 1.5, color: _Colors.textMain),
+                  style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textPrimary),
                 ),
               ),
             ),
@@ -762,13 +738,13 @@ class _Editor extends StatelessWidget {
         keyboardType: TextInputType.multiline,
         textCapitalization: TextCapitalization.sentences,
         style: compact
-            ? ExamSystemUi.embeddedBodyStyle.copyWith(color: _Colors.textMain)
-            : const TextStyle(fontSize: 16, height: 1.6, color: _Colors.textMain),
-        cursorColor: _Colors.primary,
+            ? ExamSystemUi.embeddedBodyStyle.copyWith(color: AppColors.textPrimary)
+            : const TextStyle(fontSize: 16, height: 1.6, color: AppColors.textPrimary),
+        cursorColor: AppColors.primary,
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: t.writingEditorHint,
-          hintStyle: const TextStyle(color: Color(0xFFD4D4D8)),
+          hintStyle: const TextStyle(color: AppColors.textMuted),
         ),
       ),
     );
@@ -799,66 +775,41 @@ class _ClassicBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final progress = (wordCount / minWords).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: _Colors.border)),
-      ),
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              children: [
-                Text(
-                  '${t.wordCountN(wordCount)}  ($minWords+)',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: canSubmit ? _Colors.textMuted : Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (isAutoSaving)
-                  const Text(
-                    'Saving...',
-                    style: TextStyle(fontSize: 12, color: _Colors.textMuted),
-                  )
-                else if (savedLabel != null)
-                  Text(
-                    savedLabel!,
-                    style: const TextStyle(fontSize: 12, color: _Colors.textMuted),
-                  ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: busy || !canSubmit ? null : onSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _Colors.primary,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: busy
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(t.writingSubmitEssay, style: const TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              ],
+    final progressLabel = isAutoSaving
+        ? 'Saving…'
+        : savedLabel != null
+            ? '${t.wordCountN(wordCount)} · $savedLabel'
+            : '${t.wordCountN(wordCount)} ($minWords+)';
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            StudentMobileUi.pageHPadding,
+            AppSpacing.s3,
+            StudentMobileUi.pageHPadding,
+            0,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: AppColors.outlineMuted,
+              color: canSubmit ? AppColors.success : AppColors.warning,
             ),
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: LinearProgressIndicator(
-                value: progress,
-                minHeight: 6,
-                backgroundColor: const Color(0xFFF4F4F5),
-                color: canSubmit ? const Color(0xFF16A34A) : const Color(0xFFF59E0B),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        StudentMobileUi.bottomActionBar(
+          context: context,
+          progressLabel: progressLabel,
+          ctaLabel: t.writingSubmitEssay,
+          onCta: onSubmit,
+          ctaEnabled: canSubmit,
+          loading: busy,
+        ),
+      ],
     );
   }
 }
@@ -912,8 +863,8 @@ class _QuickToolButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        side: BorderSide(color: enabled ? const Color(0xFFE4E4E7) : const Color(0xFFF4F4F5)),
-        foregroundColor: enabled ? const Color(0xFF09090B) : const Color(0xFFA1A1AA),
+        side: BorderSide(color: enabled ? AppColors.outline : AppColors.outlineMuted),
+        foregroundColor: enabled ? AppColors.textPrimary : AppColors.textMuted,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       ),
       icon: Icon(icon, size: 16),
@@ -933,8 +884,8 @@ class _QuickTextButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFE4E4E7)),
-        foregroundColor: const Color(0xFF09090B),
+        side: const BorderSide(color: AppColors.outline),
+        foregroundColor: AppColors.textPrimary,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       ),
       child: Text(text, style: const TextStyle(fontSize: 12)),

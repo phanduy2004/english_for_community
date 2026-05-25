@@ -3,7 +3,10 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/admin_teacher_application_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:flutter/material.dart';
 
@@ -47,9 +50,9 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
   Future<void> _approve(String id) async {
     final r = await getIt<AdminTeacherApplicationRepository>().approve(id);
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AdminCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.adminTeacherApprove)));
+        AdminCornerToast.show(context, context.l10n.adminTeacherApprove);
         _load();
       },
     );
@@ -76,9 +79,9 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
     if (reason.isEmpty) return;
     final r = await getIt<AdminTeacherApplicationRepository>().reject(id, reason);
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AdminCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.adminTeacherReject)));
+        AdminCornerToast.show(context, context.l10n.adminTeacherReject);
         _load();
       },
     );
@@ -91,8 +94,16 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
     return AdminPageScaffold(
       title: l10n.adminTeacherApplicationsTitle,
       subtitle: l10n.adminTeacherApplicationsSubtitle,
+      breadcrumbs: [
+        AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+        AdminBreadcrumb(label: l10n.adminTeacherApplicationsTitle),
+      ],
       actions: [
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_outlined, size: 20)),
+        IconButton(
+          style: AdminWebUi.compactHeaderIconStyle(),
+          onPressed: _load,
+          icon: const Icon(Icons.refresh_outlined, size: 18),
+        ),
       ],
       body: _loading
           ? const Center(child: CircularProgressIndicator())

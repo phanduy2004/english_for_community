@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../../../core/entity/listening_comp_entity.dart';
 
 class ListeningCompDetailView extends StatelessWidget {
@@ -94,7 +94,7 @@ class ListeningCompDetailView extends StatelessWidget {
       children: [
         Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color)),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color.withOpacity(0.7))),
+        Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color.withValues(alpha: 0.7))),
       ],
     );
   }
@@ -116,10 +116,10 @@ class ListeningCompDetailView extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         // Viền tổng thể của Box: Xanh nếu đúng, Đỏ nếu sai/bỏ qua
         border: Border.all(
-            color: isCorrectOverall ? Colors.green.withOpacity(0.3) : Colors.red.withOpacity(0.3)
+            color: isCorrectOverall ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))
         ],
       ),
       child: Column(
@@ -161,13 +161,13 @@ class ListeningCompDetailView extends StatelessWidget {
             // 🔥 LOGIC ĐỔ MÀU LỰA CHỌN
             if (isSelected && isAnswerKey) {
               // User chọn ĐÚNG
-              bgColor = Colors.green.withOpacity(0.15);
+              bgColor = Colors.green.withValues(alpha: 0.15);
               borderColor = Colors.green;
               icon = Icons.check_circle;
               iconColor = Colors.green;
             } else if (isSelected && !isAnswerKey) {
               // User chọn SAI (Hiển thị màu đỏ ở câu user đã đánh dấu)
-              bgColor = Colors.red.withOpacity(0.1);
+              bgColor = Colors.red.withValues(alpha: 0.1);
               borderColor = Colors.red;
               icon = Icons.cancel;
               iconColor = Colors.red;

@@ -22,18 +22,20 @@
 
 ### 2.1 Cấu trúc dọc
 1. **Greeting header** — `h1 18/600` `Chào, Hùng` + subtitle `body 14/400 textPrimary` `Hôm nay học gì?` + avatar 40 phải.
-2. **Streak + quick stats** — card `outline` 1 dòng: ring 56 + 3 chỉ số nhỏ (streak / point / time today). Số 18/700, label 11/500.
-3. **Daily goal** — section `Mục tiêu hôm nay` + 1 card progress linear + CTA TextButton `Xem chi tiết`.
-4. **Skill grid** — 4 card kỹ năng (Listening / Speaking / Reading / Writing), grid 2×2 trên `xs–md`, 4×1 trên `tablet`.
-   - Card 110dp cao, icon 24 + title h3 + 1 dòng micro 11.
-5. **Continue practice** — section list bài đang làm dở (max 3), card list 2-line.
-6. **Discover** — section list nội dung mới (CMS), card 1-line + thumbnail 48.
+2. **Streak + quick stats** — card `outline` 1 dòng: 3 stat card; streak dùng **accent amber**, points **Reading orange**, level **Writing violet** (Skill Palette §1.8).
+3. **Daily goal** — section `Mục tiêu hôm nay` + progress bar **accent** (100% → success green) + icon trophy amber.
+4. **Skill grid / lesson list** — mỗi card có **viền trái 3px** + icon box màu kỹ năng (`skillAccentCard`):
+   - Listening **blue** · Speaking **emerald** · Reading **orange** · Writing **violet** · Vocabulary **rose**
+5. **Continue practice** — section list bài đang làm dở (max 3), card list 2-line + skill accent.
+6. **Quick access** — hàng nút tròn 48dp, mỗi nút 1 màu kỹ năng (hoặc accent cho Lớp học).
 
 ### 2.2 Quy tắc
 - Pull-to-refresh refresh tất cả section song song (hiển thị skeleton từng section, không spinner toàn màn).
 - AppBar **không** có title; thay bằng greeting trong body. Icon notification + AI assistant ở phải, 22dp.
 
 ## 3. Skill hubs
+
+> **Student Vibrancy:** mỗi hub dùng `skillAppBar` (accent line 2px) + `skillHubBanner(tint)` + filter chip selected theo màu kỹ năng. List item dùng `skillAccentCard`.
 
 ### 3.1 Listening hub
 - Tab `Theo chủ đề` / `Đã làm` / `Đề xuất`.

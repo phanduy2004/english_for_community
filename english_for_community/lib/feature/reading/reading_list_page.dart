@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../core/entity/reading/reading_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
@@ -46,303 +51,157 @@ class _ReadingListPageState extends State<ReadingListPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    const bgPage = Color(0xFFF9FAFB);
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final filterLabels = [
+      t.difficultyBeginner,
+      t.difficultyIntermediate,
+      t.difficultyAdvanced,
+    ];
+    const filterIds = ['easy', 'medium', 'hard'];
 
     return BlocProvider(
       create: (context) => ReadingBloc(
         readingRepository: getIt<ReadingRepository>(),
       )..add(FetchReadingListEvent(
-        difficulty: _selectedDifficulty,
-        page: 1,
-        limit: 10,
-      )),
+          difficulty: _selectedDifficulty,
+          page: 1,
+          limit: 10,
+        )),
       child: Builder(
-          builder: (blocContext) {
-            return Scaffold(
-              backgroundColor: bgPage,
-              appBar: AppBar(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                scrolledUnderElevation: 0,
-                centerTitle: true,
-                bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(1),
-                  child: Container(color: borderCol, height: 1),
-                ),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: textMain),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-                title: Text(
-                  t.readingPracticeTitle,
-                  style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17),
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.bar_chart_outlined, color: textMain),
-                    onPressed: () {},
+        builder: (blocContext) {
+          return Scaffold(
+            backgroundColor: AppColors.surface,
+            appBar: StudentMobileUi.skillAppBar(
+              context,
+              title: t.readingPracticeTitle,
+              skill: SkillType.reading,
+            ),
+            body: SafeArea(
+              child: ListView(
+                padding: StudentMobileUi.pagePadding,
+                children: [
+                  StudentMobileUi.skillHubBanner(
+                    context: context,
+                    title: t.readingSkillsHeaderTitle,
+                    subtitle: t.readingSkillsHeaderSubtitle,
+                    badge: t.readingDailyArticlesBadge,
+                    icon: Icons.menu_book_rounded,
+                    skill: SkillType.reading,
+                  ),
+                  const SizedBox(height: StudentMobileUi.sectionGap),
+                  StudentMobileUi.filterRow(
+                    labels: filterLabels,
+                    selectedIndex: filterIds.indexOf(_selectedDifficulty),
+                    skill: SkillType.reading,
+                    onSelected: (i) {
+                      setState(() => _selectedDifficulty = filterIds[i]);
+                      blocContext.read<ReadingBloc>().add(
+                            FetchReadingListEvent(
+                              difficulty: _selectedDifficulty,
+                              page: 1,
+                              limit: 10,
+                            ),
+                          );
+                    },
+                  ),
+                  const SizedBox(height: StudentMobileUi.cardGap),
+                  StudentMobileUi.searchField(
+                    controller: _searchController,
+                    hintText: t.searchTopicHint,
+                    showClear: _searchQuery.trim().isNotEmpty,
+                    onClear: () {
+                      _searchController.clear();
+                      FocusScope.of(context).unfocus();
+                    },
+                  ),
+                  const SizedBox(height: StudentMobileUi.sectionGap),
+                  BlocBuilder<ReadingBloc, ReadingState>(
+                    builder: (context, state) {
+                      if (state.status == ReadingStatus.loading) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        );
+                      }
+                      if (state.status == ReadingStatus.error) {
+                        return StudentMobileUi.errorBanner(
+                          message: state.errorMessage ?? t.loadDataFailed,
+                          onRetry: () => _retry(blocContext),
+                          retryLabel: t.commonRetry,
+                        );
+                      }
+
+                      final readings = state.readings
+                          .where((item) => _matchesPrefix(item.title, _searchQuery))
+                          .toList();
+
+                      if (readings.isEmpty) {
+                        return StudentMobileUi.emptyState(
+                          context,
+                          icon: Icons.article_outlined,
+                          title: t.noReadingArticlesFound,
+                          body: t.searchTopicHint,
+                          skill: SkillType.reading,
+                        );
+                      }
+
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: readings.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: StudentMobileUi.cardGap),
+                        itemBuilder: (context, index) => _ReadingCard(
+                          t: t,
+                          reading: readings[index],
+                          onAction: (isRetake) => _handleAction(
+                            context,
+                            blocContext,
+                            readings[index],
+                            isRetake: isRetake,
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
-              body: SafeArea(
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        children: [
-                          const SizedBox(height: 20),
-                          _buildHeader(context, t),
-                          const SizedBox(height: 24),
-                          _buildFilterRow(blocContext, primaryColor, t),
-                          const SizedBox(height: 16),
-                          _buildSearchBox(primaryColor, t),
-                          const SizedBox(height: 20),
-                          BlocBuilder<ReadingBloc, ReadingState>(
-                            builder: (context, state) {
-                              if (state.status == ReadingStatus.loading) {
-                                return const Padding(
-                                  padding: EdgeInsets.symmetric(vertical: 48.0),
-                                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                                );
-                              }
-                              if (state.status == ReadingStatus.error) {
-                                return _ErrorView(
-                                  message: state.errorMessage ?? t.loadDataFailed,
-                                  onRetry: () => _retry(blocContext),
-                                );
-                              }
-
-                              final readings = state.readings.where((item) => _matchesPrefix(item.title, _searchQuery)).toList();
-
-                              if (readings.isEmpty) {
-                                return const _EmptyView();
-                              }
-
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: readings.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                                itemBuilder: (context, index) => _ReadingCard(
-                                  t: t,
-                                  reading: readings[index],
-                                  primaryColor: primaryColor,
-                                  // 🔥 ĐÃ SỬA: onAction giờ nhận tham số bool isRetake
-                                  onAction: (isRetake) => _handleAction(context, blocContext, readings[index], isRetake: isRetake),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 40),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+            ),
+          );
+        },
       ),
     );
   }
 
   void _retry(BuildContext context) {
     context.read<ReadingBloc>().add(FetchReadingListEvent(
-      difficulty: _selectedDifficulty,
-      page: 1,
-      limit: 10,
-    ));
+          difficulty: _selectedDifficulty,
+          page: 1,
+          limit: 10,
+        ));
   }
 
-  // 🔥 ĐÃ SỬA: Thêm tham số isRetake vào hàm này
-  void _handleAction(BuildContext context, BuildContext blocContext, ReadingEntity reading, {bool isRetake = false}) {
+  void _handleAction(
+    BuildContext context,
+    BuildContext blocContext,
+    ReadingEntity reading, {
+    bool isRetake = false,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        // 🔥 Truyền isRetake sang trang Detail
         builder: (_) => ReadingDetailPage(reading: reading, isRetake: isRetake),
       ),
     ).then((_) {
       if (context.mounted) {
         blocContext.read<ReadingBloc>().add(FetchReadingListEvent(
-          difficulty: _selectedDifficulty,
-          page: 1,
-          limit: 10,
-        ));
+              difficulty: _selectedDifficulty,
+              page: 1,
+              limit: 10,
+            ));
       }
     });
-  }
-
-  Widget _buildHeader(BuildContext context, AppLocalizations t) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF18181B), Color(0xFF27272A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  t.readingSkillsHeaderTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  t.readingSkillsHeaderSubtitle,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Text(
-                    t.readingDailyArticlesBadge,
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 32),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterRow(BuildContext blocContext, Color primaryColor, AppLocalizations t) {
-    final filters = [
-      {'id': 'easy', 'label': t.difficultyBeginner},
-      {'id': 'medium', 'label': t.difficultyIntermediate},
-      {'id': 'hard', 'label': t.difficultyAdvanced},
-    ];
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      clipBehavior: Clip.none,
-      child: Row(
-        children: filters.map((filter) {
-          final isSelected = _selectedDifficulty == filter['id'];
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _selectedDifficulty = filter['id']!);
-                blocContext.read<ReadingBloc>().add(FetchReadingListEvent(
-                  difficulty: _selectedDifficulty,
-                  page: 1,
-                  limit: 10,
-                ));
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? primaryColor : Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: isSelected ? primaryColor : const Color(0xFFE4E4E7),
-                  ),
-                  boxShadow: isSelected ? [
-                    BoxShadow(color: primaryColor.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
-                  ] : [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 2, offset: const Offset(0, 1))
-                  ],
-                ),
-                child: Text(
-                  filter['label']!,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isSelected ? Colors.white : const Color(0xFF52525B),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSearchBox(Color primaryColor, AppLocalizations t) {
-    const borderColor = Color(0xFFE4E4E7);
-    const textMuted = Color(0xFF71717A);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        style: const TextStyle(fontSize: 14),
-        decoration: InputDecoration(
-          hintText: t.searchTopicHint,
-          hintStyle: const TextStyle(fontSize: 14, color: textMuted),
-          prefixIcon: const Icon(Icons.search, size: 20, color: textMuted),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          isDense: true,
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: primaryColor, width: 1.5),
-          ),
-          suffixIcon: _searchQuery.trim().isNotEmpty
-              ? IconButton(
-                  icon: const Icon(Icons.close, size: 16, color: textMuted),
-                  onPressed: () {
-                    _searchController.clear();
-                    FocusScope.of(context).unfocus();
-                  },
-                )
-              : null,
-        ),
-      ),
-    );
   }
 
   bool _matchesPrefix(String source, String query) {
@@ -357,242 +216,202 @@ class _ReadingCard extends StatelessWidget {
     required this.t,
     required this.reading,
     required this.onAction,
-    required this.primaryColor,
   });
 
   final AppLocalizations t;
   final ReadingEntity reading;
-  // 🔥 ĐÃ SỬA: callback giờ nhận tham số bool
   final void Function(bool isRetake) onAction;
-  final Color primaryColor;
 
   String _getLevelText(ReadingDifficulty? difficulty) {
     switch (difficulty) {
-      case ReadingDifficulty.easy: return t.difficultyBeginner;
-      case ReadingDifficulty.medium: return t.difficultyIntermediate;
-      case ReadingDifficulty.hard: return t.difficultyAdvanced;
-      default: return t.unknownLevel;
+      case ReadingDifficulty.easy:
+        return t.difficultyBeginner;
+      case ReadingDifficulty.medium:
+        return t.difficultyIntermediate;
+      case ReadingDifficulty.hard:
+        return t.difficultyAdvanced;
+      default:
+        return t.unknownLevel;
     }
   }
 
-  Color _getLevelColor(ReadingDifficulty? difficulty) {
-    switch (difficulty) {
-      case ReadingDifficulty.easy: return const Color(0xFF16A34A);
-      case ReadingDifficulty.medium: return const Color(0xFFEA580C);
-      case ReadingDifficulty.hard: return const Color(0xFFDC2626);
-      default: return const Color(0xFF71717A);
+  String? _difficultyKey(ReadingDifficulty? d) {
+    switch (d) {
+      case ReadingDifficulty.easy:
+        return 'easy';
+      case ReadingDifficulty.medium:
+        return 'medium';
+      case ReadingDifficulty.hard:
+        return 'hard';
+      default:
+        return null;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    const borderCol = Color(0xFFE4E4E7);
-
     final progress = reading.progress;
-    final bool isCompleted = progress?.status == ProgressStatus.completed;
-    final String? scoreText = (progress != null && progress.highScore > 0)
+    final isCompleted = progress?.status == ProgressStatus.completed;
+    final scoreText = (progress != null && progress.highScore > 0)
         ? t.readingScorePercent(progress.highScore.toStringAsFixed(0))
         : null;
+    final levelColor = StudentMobileUi.difficultyColor(_difficultyKey(reading.difficulty));
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderCol),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => onAction(false), // Nhấn vào thẻ bài mặc định là Start/Review
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+    return StudentMobileUi.skillAccentCard(
+      skill: SkillType.reading,
+      onTap: () => onAction(false),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              _Badge(
-                                label: _getLevelText(reading.difficulty),
-                                color: _getLevelColor(reading.difficulty),
-                                filled: false,
-                              ),
-                              if (isCompleted) ...[
-                                const SizedBox(width: 8),
-                                _Badge(
-                                  label: t.completedBadge,
-                                  color: Color(0xFF059669),
-                                  filled: true,
-                                  bgColor: Color(0xFFECFDF5),
-                                ),
-                              ]
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            reading.title,
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain, height: 1.3),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            reading.summary,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 13, color: textMuted, height: 1.4),
+                    Row(
+                      children: [
+                        _Badge(
+                          label: _getLevelText(reading.difficulty),
+                          color: levelColor,
+                        ),
+                        if (isCompleted) ...[
+                          const SizedBox(width: AppSpacing.s3),
+                          _Badge(
+                            label: t.completedBadge,
+                            color: AppColors.success,
+                            filled: true,
                           ),
                         ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: primaryColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.article_outlined, color: primaryColor, size: 24),
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(
+                      reading.title,
+                      style: StudentMobileUi.cardTitle(context),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: AppSpacing.s2),
+                    Text(
+                      reading.summary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: StudentMobileUi.body(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5)),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              ),
+              const SizedBox(width: AppSpacing.s5),
+              StudentMobileUi.skillIconBox(
+                Icons.article_outlined,
+                skill: SkillType.reading,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s5),
+          const Divider(height: 1, color: AppColors.outlineMuted),
+          const SizedBox(height: AppSpacing.s4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Wrap(
+                  spacing: AppSpacing.s4,
+                  runSpacing: AppSpacing.s2,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    Expanded(
-                      child: Wrap(
-                        spacing: 12,
-                        runSpacing: 4,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          _IconText(icon: Icons.schedule, text: t.readingMinutesShort(reading.minutesToRead)),
-                          if (reading.questions.isNotEmpty)
-                            _IconText(icon: Icons.quiz_outlined, text: t.readingQuizCount(reading.questions.length)),
-                          if (scoreText != null)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.check_circle, size: 14, color: Color(0xFF16A34A)),
-                                const SizedBox(width: 4),
-                                Text(scoreText, style: const TextStyle(fontSize: 12, color: Color(0xFF16A34A), fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                        ],
-                      ),
+                    _IconText(
+                      icon: Icons.schedule,
+                      text: t.readingMinutesShort(reading.minutesToRead),
                     ),
-                    const SizedBox(width: 8),
-
-                    // 🔥 NÚT BẤM REVIEW & RETAKE
-                    if (isCompleted)
+                    if (reading.questions.isNotEmpty)
+                      _IconText(
+                        icon: Icons.quiz_outlined,
+                        text: t.readingQuizCount(reading.questions.length),
+                      ),
+                    if (scoreText != null)
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SizedBox(
-                            height: 32,
-                            child: OutlinedButton.icon(
-                              onPressed: () => onAction(false), // Review
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: textMuted,
-                                side: const BorderSide(color: borderCol),
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              ),
-                              icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-                              label: Text(t.reviewAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            ),
+                          const Icon(
+                            Icons.check_circle,
+                            size: 14,
+                            color: AppColors.success,
                           ),
-                          const SizedBox(width: 8),
-                          SizedBox(
-                            height: 32,
-                            child: ElevatedButton.icon(
-                              onPressed: () => onAction(true), // Retake
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor.withOpacity(0.1),
-                                foregroundColor: primaryColor,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                              ),
-                              icon: const Icon(Icons.replay, size: 16),
-                              label: Text(t.retakeAction, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                            ),
+                          const SizedBox(width: AppSpacing.s2),
+                          Text(
+                            scoreText,
+                            style: AppTypography.label(color: AppColors.success),
                           ),
                         ],
-                      )
-                    else
-                      SizedBox(
-                        height: 32,
-                        child: ElevatedButton(
-                          onPressed: () => onAction(false), // Start
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                            textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                          child: Text(t.startAction),
-                        ),
                       ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              if (isCompleted)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    StudentMobileUi.skillCardReviewButton(
+                      onPressed: () => onAction(false),
+                      label: t.reviewAction,
+                    ),
+                    const SizedBox(width: AppSpacing.s3),
+                    StudentMobileUi.skillCardRetakeButton(
+                      onPressed: () => onAction(true),
+                      label: t.retakeAction,
+                    ),
+                  ],
+                )
+              else
+                SizedBox(
+                  height: 32,
+                  child: FilledButton(
+                    onPressed: () => onAction(false),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5),
+                    ),
+                    child: Text(t.startAction, style: AppTypography.label(color: AppColors.onPrimary)),
+                  ),
+                ),
+            ],
           ),
-        ),
+        ],
       ),
     );
   }
 }
 
 class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.color, this.filled = false, this.bgColor});
+  const _Badge({
+    required this.label,
+    required this.color,
+    this.filled = false,
+  });
 
   final String label;
   final Color color;
   final bool filled;
-  final Color? bgColor;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 3),
       decoration: BoxDecoration(
-        color: filled ? bgColor : Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        color: filled ? AppColors.successBg : AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         border: Border.all(
-          color: filled ? Colors.transparent : color.withOpacity(0.3),
-          width: 1,
+          color: filled ? Colors.transparent : color.withValues(alpha: 0.35),
         ),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
+        style: AppTypography.label(color: color),
       ),
     );
   }
@@ -608,73 +427,10 @@ class _IconText extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF71717A)),
-        const SizedBox(width: 4),
-        Text(text, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A))),
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.s2),
+        Text(text, style: StudentMobileUi.caption(context)),
       ],
-    );
-  }
-}
-
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    const textMuted = Color(0xFF71717A);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 60),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFE4E4E7)),
-            ),
-            child: const Icon(Icons.article_outlined, size: 40, color: textMuted),
-          ),
-          const SizedBox(height: 16),
-          Text(context.l10n.noReadingArticlesFound, style: const TextStyle(color: textMuted, fontSize: 14, fontWeight: FontWeight.w500)),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 32, color: Color(0xFFEF4444)),
-            const SizedBox(height: 12),
-            Text(message, style: const TextStyle(color: Color(0xFF71717A))),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: onRetry,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF09090B),
-                side: const BorderSide(color: Color(0xFFE4E4E7)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text(t.commonRetry),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

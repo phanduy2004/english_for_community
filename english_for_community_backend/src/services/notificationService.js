@@ -3,6 +3,33 @@ import { getIO } from '../socket/socketManager.js';
 import User from "../models/User.js";
 import { messaging } from '../config/firebase.js';
 
+/** Plain JSON for Socket.IO clients (Flutter/web). */
+export function toNotificationSocketPayload(doc) {
+  const o = doc?.toObject ? doc.toObject({ virtuals: true }) : { ...doc };
+  const id = o._id?.toString?.() ?? String(o._id ?? o.id ?? '');
+  const payload = {
+    _id: id,
+    id,
+    recipientId: o.recipientId?.toString?.() ?? o.recipientId,
+    type: o.type,
+    title: o.title,
+    message: o.message,
+    data: o.data && typeof o.data === 'object' ? o.data : {},
+    isRead: !!o.isRead,
+    createdAt: o.createdAt instanceof Date ? o.createdAt.toISOString() : o.createdAt,
+  };
+  if (o.senderId && typeof o.senderId === 'object') {
+    payload.senderId = {
+      _id: o.senderId._id?.toString?.() ?? o.senderId._id,
+      fullName: o.senderId.fullName ?? '',
+      avatarUrl: o.senderId.avatarUrl ?? '',
+    };
+  } else if (o.senderId) {
+    payload.senderId = o.senderId.toString();
+  }
+  return payload;
+}
+
 const createNotification = async ({
                                     recipientId,
                                     senderId,
@@ -52,8 +79,9 @@ const createNotification = async ({
     if (!skipSocket) {
       try {
         const io = getIO();
-        io.to(rId).emit('new_notification', notification);
-        // console.log('⚡ Socket event emitted');
+        const socketPayload = toNotificationSocketPayload(notification);
+        io.to(rId).emit('new_notification', socketPayload);
+        console.log(`⚡ [Socket] new_notification → room ${rId} (${type})`);
       } catch (e) {
         console.error('Socket error:', e.message);
       }
@@ -144,6 +172,8 @@ const markAllAsReadForUser = async (userId) => {
     { isRead: true },
   );
 };
+
+export { createNotification };
 
 export const notificationService = {
   createNotification,

@@ -1,17 +1,21 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // For Clipboard
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../core/entity/user_entity.dart';      
+import '../../core/entity/user_entity.dart';
+import '../../core/locale/l10n_context.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
-import '../../core/locale/l10n_context.dart';
 
 class EditProfilePage extends StatefulWidget {
   static String routeName = 'EditProfilePage';
@@ -28,7 +32,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   XFile? _pickedAvatar;
   Uint8List? _pickedAvatarBytes;
 
-  // Controllers
   final TextEditingController _dobController = TextEditingController();
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
@@ -37,6 +40,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   String? _selectedGender;
   bool _isDirty = false;
+
+  static final _accentIconColors = SkillColorSet(
+    color: AppColors.accent,
+    tint: AppColors.accentTint,
+    dark: AppColors.accentDark,
+  );
 
   @override
   void initState() {
@@ -92,7 +101,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
       lastDate: DateTime.now(),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(primary: Theme.of(context).primaryColor),
+          colorScheme: ColorScheme.light(
+            primary: AppColors.primary,
+            onPrimary: AppColors.onPrimary,
+            surface: AppColors.surfaceCard,
+          ),
         ),
         child: child!,
       ),
@@ -106,360 +119,383 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  void _showGenderPicker(BuildContext context) {
+    final t = context.l10n;
+    final items = [
+      ('Male', t.genderMale),
+      ('Female', t.genderFemale),
+      ('Other', t.genderOther),
+    ];
+    StudentBottomSheet.show(
+      context,
+      StudentBottomSheet(
+        title: t.labelGender,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: items
+              .map(
+                (e) => StudentMobileUi.listTile(
+                  context: context,
+                  title: e.$2,
+                  leading: StudentMobileUi.skillIconBox(
+                    Icons.wc_rounded,
+                    size: 40,
+                    colors: _accentIconColors,
+                  ),
+                  trailing: _selectedGender == e.$1
+                      ? Icon(Icons.check_circle_rounded, size: 20, color: AppColors.accent)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _selectedGender = e.$1;
+                      _isDirty = true;
+                    });
+                    Navigator.pop(context);
+                  },
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  String? _genderLabel(BuildContext context) {
+    final t = context.l10n;
+    return switch (_selectedGender) {
+      'Male' => t.genderMale,
+      'Female' => t.genderFemale,
+      'Other' => t.genderOther,
+      _ => null,
+    };
+  }
+
   void _save() {
     if (!_formKey.currentState!.validate() || _profile == null) return;
     final old = context.read<UserBloc>().state.userEntity!;
 
     context.read<UserBloc>().add(UpdateProfileEvent(
-      fullName: _fullNameController.text.trim(),
-      username: _usernameController.text.trim(),
-      phone: _phoneController.text.trim(),
-      bio: _bioController.text.trim(),
-      dateOfBirth: _profile!.dateOfBirth,
-      avatarFile: _pickedAvatar,
-      gender: _selectedGender,
+          fullName: _fullNameController.text.trim(),
+          username: _usernameController.text.trim(),
+          phone: _phoneController.text.trim(),
+          bio: _bioController.text.trim(),
+          dateOfBirth: _profile!.dateOfBirth,
+          avatarFile: _pickedAvatar,
+          gender: _selectedGender,
+          goal: old.goal,
+          cefr: old.cefr,
+          dailyMinutes: old.dailyMinutes,
+          reminder: old.reminder == null
+              ? null
+              : {"hour": old.reminder!.hour, "minute": old.reminder!.minute},
+          strictCorrection: old.strictCorrection,
+          language: old.language,
+          timezone: old.timezone,
+        ));
+  }
 
-      // Giữ nguyên các settings cũ
-      goal: old.goal,
-      cefr: old.cefr,
-      dailyMinutes: old.dailyMinutes,
-      reminder: old.reminder == null ? null : {"hour": old.reminder!.hour, "minute": old.reminder!.minute},
-      strictCorrection: old.strictCorrection,
-      language: old.language,
-      timezone: old.timezone,
-    ));
+  PreferredSizeWidget _buildAppBar(BuildContext context, AppLocalizations t, bool canSave, bool isLoading) {
+    return AppBar(
+      toolbarHeight: StudentMobileUi.appBarHeight,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: AppColors.surface,
+      foregroundColor: AppColors.textPrimary,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded, size: 20),
+        onPressed: () => Navigator.maybePop(context),
+      ),
+      title: Text(t.editProfileTitle, style: StudentMobileUi.sectionTitle(context)),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.s4),
+          child: FilledButton(
+            onPressed: canSave ? _save : null,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size(72, 36),
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
+              disabledBackgroundColor: AppColors.surfaceSubtle,
+              disabledForegroundColor: AppColors.textMuted,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
+            ),
+            child: isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onPrimary),
+                  )
+                : Text(t.saveChanges, style: AppTypography.label()),
+          ),
+        ),
+      ],
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(2),
+        child: Container(height: 2, color: AppColors.accent.withValues(alpha: 0.55)),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // Shadcn Zinc Colors
-    const bgPage = Color(0xFFF9FAFB); // Zinc 50
-    const textMain = Color(0xFF09090B); // Zinc 950
-    final primaryColor = Theme.of(context).primaryColor;
-
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
           context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.profileUpdatedSuccess)));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.l10n.profileUpdatedSuccess)),
+          );
         }
       },
       builder: (context, state) {
         final isLoading = state.status == UserStatus.loading;
         final t = context.l10n;
+        final canSave = _isDirty && !isLoading;
 
         return Scaffold(
-          backgroundColor: bgPage,
-          appBar: AppBar(
-            backgroundColor: bgPage,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: textMain),
-              onPressed: () => context.pop(),
-            ),
-            title: Text(
-                t.editProfileTitle,
-                style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 17)
-            ),
-            centerTitle: true,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: TextButton(
-                  onPressed: (_isDirty && !isLoading) ? _save : null,
-                  style: TextButton.styleFrom(
-                    backgroundColor: (_isDirty && !isLoading) ? primaryColor : Colors.transparent,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: isLoading
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(
-                    t.saveChanges,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: (_isDirty && !isLoading) ? Colors.white : const Color(0xFF71717A),
-                    ),
-                  ),
-                ),
-              )
-            ],
-          ),
+          backgroundColor: AppColors.surface,
+          appBar: _buildAppBar(context, t, canSave, isLoading),
           body: _profile == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
               : Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              children: [
-                // --- 1. AVATAR SECTION ---
-                Center(
-                  child: Column(
+                  key: _formKey,
+                  child: ListView(
+                    padding: StudentMobileUi.pagePadding,
                     children: [
-                      Stack(
+                      _AvatarHeader(
+                        avatarBytes: _pickedAvatarBytes,
+                        avatarUrl: _profile!.avatarUrl,
+                        onPick: _pickImage,
+                        hint: t.changePhotoHint,
+                      ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+
+                      StudentMobileUi.sectionHeader(context, title: t.sectionPublicInfo),
+                      const SizedBox(height: AppSpacing.s3),
+                      _ProfileSectionCard(
+                        skill: SkillType.speaking,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.white, // Nền trắng đơn giản
-                            ),
-                            child: Container(
-                              width: 100, height: 100,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: const Color(0xFFE4E4E7), width: 1), // Zinc 200 Border
-                                image: DecorationImage(
-                                  fit: BoxFit.cover,
-                                  image: _pickedAvatarBytes != null
-                                      ? MemoryImage(_pickedAvatarBytes!)
-                                      : (_profile!.avatarUrl != null && _profile!.avatarUrl!.isNotEmpty)
-                                      ? NetworkImage(_profile!.avatarUrl!) as ImageProvider
-                                      : const AssetImage('assets/avatar.png'),
-                                ),
-                              ),
-                            ),
+                          _ProfileFormField(
+                            icon: Icons.person_rounded,
+                            skill: SkillType.speaking,
+                            label: t.labelFullName,
+                            controller: _fullNameController,
+                            onChanged: (_) => _markDirty(),
+                            validator: (v) => v!.isEmpty ? t.fieldRequired : null,
                           ),
-                          Positioned(
-                            bottom: 0, right: 0,
-                            child: GestureDetector(
-                              onTap: _pickImage,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: textMain,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                                child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
-                              ),
-                            ),
-                          )
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.alternate_email_rounded,
+                            skill: SkillType.speaking,
+                            label: t.labelUsername,
+                            controller: _usernameController,
+                            prefixText: '@',
+                            onChanged: (_) => _markDirty(),
+                            validator: (v) => v!.isEmpty ? t.fieldRequired : null,
+                          ),
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.edit_note_rounded,
+                            skill: SkillType.speaking,
+                            label: t.labelBio,
+                            controller: _bioController,
+                            hint: t.hintBio,
+                            maxLines: 4,
+                            onChanged: (_) => _markDirty(),
+                          ),
                         ],
                       ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+
+                      StudentMobileUi.sectionHeader(context, title: t.sectionPrivateDetails),
+                      const SizedBox(height: AppSpacing.s3),
+                      _ProfileSectionCard(
+                        skill: SkillType.reading,
+                        children: [
+                          _ProfilePickerField(
+                            icon: Icons.wc_rounded,
+                            skill: SkillType.reading,
+                            label: t.labelGender,
+                            value: _genderLabel(context) ?? t.selectPlaceholder,
+                            isPlaceholder: _genderLabel(context) == null,
+                            onTap: () => _showGenderPicker(context),
+                          ),
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.cake_rounded,
+                            skill: SkillType.reading,
+                            label: t.labelBirthday,
+                            controller: _dobController,
+                            readOnly: true,
+                            hint: t.hintSelectDate,
+                            onTap: _pickDate,
+                            suffixIcon: Icons.calendar_today_rounded,
+                          ),
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.phone_rounded,
+                            skill: SkillType.reading,
+                            label: t.labelPhone,
+                            controller: _phoneController,
+                            keyboardType: TextInputType.phone,
+                            hint: t.hintPhoneShort,
+                            onChanged: (_) => _markDirty(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+
+                      StudentMobileUi.sectionHeader(context, title: t.sectionSystemInfo),
+                      const SizedBox(height: AppSpacing.s3),
+                      _ProfileSectionCard(
+                        muted: true,
+                        children: [
+                          _ProfileFormField(
+                            icon: Icons.email_rounded,
+                            label: t.labelEmail,
+                            initialValue: _profile!.email,
+                            readOnly: true,
+                            enabled: false,
+                            suffixIcon: _profile!.isVerified ? Icons.verified_rounded : Icons.info_outline,
+                            suffixColor: _profile!.isVerified ? AppColors.success : AppColors.textMuted,
+                          ),
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.security_rounded,
+                            label: t.labelRole,
+                            initialValue: _profile!.role.toUpperCase(),
+                            readOnly: true,
+                            enabled: false,
+                          ),
+                          const _FieldDivider(),
+                          _ProfileFormField(
+                            icon: Icons.fingerprint_rounded,
+                            label: t.labelUserId,
+                            initialValue: _profile!.id,
+                            readOnly: true,
+                            enabled: false,
+                            isCopyable: true,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.s9),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
-
-                // --- 2. PUBLIC INFO (Blue Accents) ---
-                _SectionHeader(t.sectionPublicInfo),
-                _ColorfulGroup(
-                  children: [
-                    _ColorfulInput(
-                      icon: Icons.person_rounded,
-                      iconColor: Colors.blue,
-                       label: t.labelFullName,
-                      controller: _fullNameController,
-                      onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? t.fieldRequired : null,
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.alternate_email_rounded,
-                      iconColor: Colors.indigo,
-                      label: t.labelUsername,
-                      controller: _usernameController,
-                      prefixText: '@',
-                      onChanged: (_) => _markDirty(),
-                      validator: (v) => v!.isEmpty ? t.fieldRequired : null,
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.edit_note_rounded,
-                      iconColor: Colors.cyan,
-                      label: t.labelBio,
-                      controller: _bioController,
-                      hint: t.hintBio,
-                      maxLines: 3,
-                      onChanged: (_) => _markDirty(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // --- 3. PRIVATE DETAILS (Warm Accents) ---
-                _SectionHeader(t.sectionPrivateDetails),
-                _ColorfulGroup(
-                  children: [
-                    _ColorfulDropdown(
-                      icon: Icons.wc_rounded,
-                      iconColor: Colors.pink,
-                      label: t.labelGender,
-                      value: _selectedGender,
-                      items: [
-                        ('Male', t.genderMale),
-                        ('Female', t.genderFemale),
-                        ('Other', t.genderOther),
-                      ],
-                      onChanged: (val) {
-                        setState(() {
-                          _selectedGender = val;
-                          _isDirty = true;
-                        });
-                      },
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.cake_rounded,
-                      iconColor: Colors.orange,
-                      label: t.labelBirthday,
-                      controller: _dobController,
-                      readOnly: true,
-                      hint: t.hintSelectDate,
-                      onTap: _pickDate,
-                      suffixIcon: Icons.calendar_today_rounded,
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.phone_rounded,
-                      iconColor: Colors.green,
-                      label: t.labelPhone,
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      hint: t.hintPhoneShort,
-                      onChanged: (_) => _markDirty(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // --- 4. SYSTEM INFO (Neutral Accents) ---
-                _SectionHeader(t.sectionSystemInfo),
-                _ColorfulGroup(
-                  children: [
-                    _ColorfulInput(
-                      icon: Icons.email_rounded,
-                      iconColor: Colors.teal,
-                      label: t.labelEmail,
-                      initialValue: _profile!.email,
-                      readOnly: true,
-                      enabled: false,
-                      suffixIcon: _profile!.isVerified ? Icons.verified_rounded : Icons.info_outline,
-                      suffixColor: _profile!.isVerified ? Colors.blue : Colors.orange,
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.security_rounded,
-                      iconColor: Colors.blueGrey,
-                      label: t.labelRole,
-                      initialValue: _profile!.role.toUpperCase(),
-                      readOnly: true,
-                      enabled: false,
-                    ),
-                    const _Divider(),
-                    _ColorfulInput(
-                      icon: Icons.fingerprint_rounded,
-                      iconColor: Colors.grey,
-                      label: t.labelUserId,
-                      initialValue: _profile!.id,
-                      readOnly: true,
-                      enabled: false,
-                      isCopyable: true,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
         );
       },
     );
   }
 }
 
-// -----------------------------------------------------------------------------
-// 🎨 COLORFUL & CLEAN COMPONENTS (SHADCN COLORS)
-// -----------------------------------------------------------------------------
+// ─── Avatar ───────────────────────────────────────────────────────────────────
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader(this.title);
+class _AvatarHeader extends StatelessWidget {
+  const _AvatarHeader({
+    required this.avatarBytes,
+    required this.avatarUrl,
+    required this.onPick,
+    required this.hint,
+  });
+
+  final Uint8List? avatarBytes;
+  final String? avatarUrl;
+  final VoidCallback onPick;
+  final String hint;
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF71717A), // Zinc 500
-          letterSpacing: 0.5,
+    ImageProvider image;
+    if (avatarBytes != null) {
+      image = MemoryImage(avatarBytes!);
+    } else if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      image = NetworkImage(avatarUrl!);
+    } else {
+      image = const AssetImage('assets/avatar.png');
+    }
+
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: onPick,
+          child: Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.accent, width: 3),
+            ),
+            child: CircleAvatar(
+              radius: 52,
+              backgroundColor: AppColors.surfaceSubtle,
+              backgroundImage: image,
+            ),
+          ),
         ),
-      ),
+        const SizedBox(height: AppSpacing.s3),
+        Text(
+          hint,
+          style: StudentMobileUi.caption(context).copyWith(color: AppColors.accentDark),
+        ),
+      ],
     );
   }
 }
 
-class _ColorfulGroup extends StatelessWidget {
+// ─── Section card ─────────────────────────────────────────────────────────────
+
+class _ProfileSectionCard extends StatelessWidget {
+  const _ProfileSectionCard({
+    required this.children,
+    this.skill,
+    this.muted = false,
+  });
+
   final List<Widget> children;
-  const _ColorfulGroup({required this.children});
+  final SkillType? skill;
+  final bool muted;
+
   @override
   Widget build(BuildContext context) {
+    if (skill != null && !muted) {
+      return StudentMobileUi.skillAccentCard(
+        skill: skill!,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
+        child: Column(children: children),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)), // Zinc 200 Border
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 2, offset: const Offset(0, 1)),
-        ],
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline),
       ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
       child: Column(children: children),
     );
   }
 }
 
-class _Divider extends StatelessWidget {
-  const _Divider();
-  @override
-  Widget build(BuildContext context) => const Divider(height: 1, thickness: 1, color: Color(0xFFF4F4F5), indent: 52); // Zinc 100
-}
-
-// ✨ Icon với nền màu Pastel (Điểm nhấn màu sắc)
-class _ColorIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  const _ColorIcon(this.icon, this.color);
+class _FieldDivider extends StatelessWidget {
+  const _FieldDivider();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 32, height: 32,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1), // Nền màu rất nhạt
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, size: 18, color: color),
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.s4),
+      child: Divider(height: 1, thickness: 1, color: AppColors.outlineMuted),
     );
   }
 }
 
-class _ColorfulInput extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final TextEditingController? controller;
-  final String? initialValue;
-  final String? hint;
-  final String? prefixText;
-  final bool readOnly;
-  final bool enabled;
-  final int maxLines;
-  final TextInputType? keyboardType;
-  final IconData? suffixIcon;
-  final Color? suffixColor;
-  final VoidCallback? onTap;
-  final ValueChanged<String>? onChanged;
-  final String? Function(String?)? validator;
-  final bool isCopyable;
+// ─── Form fields ──────────────────────────────────────────────────────────────
 
-  const _ColorfulInput({
+class _ProfileFormField extends StatelessWidget {
+  const _ProfileFormField({
     required this.icon,
-    required this.iconColor,
     required this.label,
+    this.skill,
     this.controller,
     this.initialValue,
     this.hint,
@@ -476,149 +512,169 @@ class _ColorfulInput extends StatelessWidget {
     this.isCopyable = false,
   });
 
+  final IconData icon;
+  final String label;
+  final SkillType? skill;
+  final TextEditingController? controller;
+  final String? initialValue;
+  final String? hint;
+  final String? prefixText;
+  final bool readOnly;
+  final bool enabled;
+  final int maxLines;
+  final TextInputType? keyboardType;
+  final IconData? suffixIcon;
+  final Color? suffixColor;
+  final VoidCallback? onTap;
+  final ValueChanged<String>? onChanged;
+  final String? Function(String?)? validator;
+  final bool isCopyable;
+
+  InputDecoration _decoration({required bool disabled}) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.input),
+      borderSide: BorderSide(color: disabled ? AppColors.outlineMuted : AppColors.outlineStrong),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppTypography.body(color: AppColors.textMuted),
+      prefixText: prefixText,
+      prefixStyle: AppTypography.body(color: AppColors.textMuted),
+      suffixIcon: suffixIcon != null
+          ? Icon(suffixIcon, size: 18, color: suffixColor ?? AppColors.textSecondary)
+          : null,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.s4,
+        vertical: maxLines > 1 ? AppSpacing.s4 : AppSpacing.s3,
+      ),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+      ),
+      disabledBorder: border,
+      filled: true,
+      fillColor: disabled ? AppColors.surfaceSubtle : AppColors.surfaceCard,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Màu chữ chuẩn Shadcn
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    const textPlaceholder = Color(0xFFA1A1AA);
+    final disabled = !enabled;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          crossAxisAlignment: maxLines > 1 ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            // Icon
-            Padding(
-              padding: EdgeInsets.only(top: maxLines > 1 ? 4 : 0),
-              child: _ColorIcon(icon, iconColor),
-            ),
-            const SizedBox(width: 16),
-
-            // Content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Layout: Label bên trái, Input bên phải (Right Aligned)
-                  if (maxLines == 1)
-                    Row(
-                      children: [
-                        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: controller,
-                            initialValue: initialValue,
-                            readOnly: readOnly,
-                            enabled: enabled,
-                            textAlign: TextAlign.right, // Đẩy input sang phải cho gọn
-                            style: TextStyle(fontSize: 14, color: enabled ? const Color(0xFF52525B) : textMuted),
-                            decoration: InputDecoration.collapsed(
-                              hintText: hint,
-                              hintStyle: const TextStyle(color: textPlaceholder, fontWeight: FontWeight.normal),
-                            ),
-                            onChanged: onChanged,
-                            validator: validator,
-                          ),
-                        ),
-                      ],
-                    )
-                  else ...[
-                    // Layout: Label trên, Input dưới (cho Bio nhiều dòng)
-                    Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: controller,
-                      initialValue: initialValue,
-                      readOnly: readOnly,
-                      enabled: enabled,
-                      maxLines: maxLines,
-                      style: TextStyle(fontSize: 14, color: enabled ? const Color(0xFF52525B) : textMuted),
-                      decoration: InputDecoration.collapsed(
-                        hintText: hint,
-                        hintStyle: const TextStyle(color: textPlaceholder),
-                      ),
-                      onChanged: onChanged,
-                      validator: validator,
-                    ),
-                  ]
-                ],
-              ),
-            ),
-
-            // Suffix
+            StudentMobileUi.skillIconBox(icon, size: 36, skill: skill),
+            const SizedBox(width: AppSpacing.s3),
+            Expanded(child: Text(label, style: AppTypography.label())),
             if (isCopyable)
-              GestureDetector(
-                onTap: () {
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.textSecondary),
+                onPressed: () {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.copiedToClipboard), duration: const Duration(seconds: 1)));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(context.l10n.copiedToClipboard),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
                   }
                 },
-                child: const Padding(padding: EdgeInsets.only(left: 12), child: Icon(Icons.copy_rounded, size: 16, color: textPlaceholder)),
-              )
-            else if (suffixIcon != null)
-              Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Icon(suffixIcon, size: 18, color: suffixColor ?? textPlaceholder),
-              )
+              ),
           ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.s3),
+        TextFormField(
+          controller: controller,
+          initialValue: initialValue,
+          readOnly: readOnly || onTap != null,
+          enabled: enabled,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          style: AppTypography.body(
+            color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+          ),
+          decoration: _decoration(disabled: disabled),
+          onChanged: onChanged,
+          validator: validator,
+          onTap: onTap,
+        ),
+      ],
     );
   }
 }
 
-class _ColorfulDropdown extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String label;
-  final String? value;
-  /// API values (e.g. Male/Female/Other) with localized labels.
-  final List<(String, String)> items;
-  final ValueChanged<String?> onChanged;
-
-  const _ColorfulDropdown({
+class _ProfilePickerField extends StatelessWidget {
+  const _ProfilePickerField({
     required this.icon,
-    required this.iconColor,
     required this.label,
     required this.value,
-    required this.items,
-    required this.onChanged,
+    required this.onTap,
+    this.skill,
+    this.isPlaceholder = false,
   });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+  final SkillType? skill;
+  final bool isPlaceholder;
 
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textPlaceholder = Color(0xFFA1A1AA);
-    final selectHint = context.l10n.selectPlaceholder;
-    final values = items.map((e) => e.$1).toList();
+    final skillColor = skill != null ? AppSkillColors.of(skill!).color : AppColors.textSecondary;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Row(
-        children: [
-          _ColorIcon(icon, iconColor),
-          const SizedBox(width: 16),
-          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain)),
-          const Spacer(),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: (value != null && values.contains(value)) ? value : null,
-              icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: textPlaceholder),
-              style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), fontWeight: FontWeight.w500),
-              hint: Text(selectHint, style: const TextStyle(color: textPlaceholder, fontSize: 14)),
-              items: items.map((e) => DropdownMenuItem<String>(value: e.$1, child: Text(e.$2))).toList(),
-              onChanged: onChanged,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            StudentMobileUi.skillIconBox(icon, size: 36, skill: skill),
+            const SizedBox(width: AppSpacing.s3),
+            Text(label, style: AppTypography.label()),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s3),
+        Material(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppRadius.input),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadius.input),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                border: Border.all(color: AppColors.outlineStrong),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: AppTypography.body(
+                        color: isPlaceholder ? AppColors.textMuted : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: skillColor),
+                ],
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

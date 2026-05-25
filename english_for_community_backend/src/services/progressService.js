@@ -30,7 +30,10 @@ const _calculateDateRange = (range, timezone) => {
 
   let startDate = userTodayStart;
 
-  if (range === 'week') {
+  // "day" tab chart = 7 ngày — detail log phải khớp (trước đây chỉ hôm nay → list trống dù stats có %).
+  if (range === 'day') {
+    startDate = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+  } else if (range === 'week') {
     const dayOfWeek = userTodayStart.getDay();
     const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
@@ -263,7 +266,12 @@ const getStatDetailData = async (userId, statKey, range) => {
 
     switch (statKey) {
       case 'reading':
-        model = ReadingProgress; dateFilterField = 'lastAttemptedAt'; sortField = 'lastAttemptedAt'; populateOpts = { path: 'readingId', select: 'title' }; selectOpts = 'highScore attemptsCount lastAttemptedAt readingId'; break;
+        model = ReadingProgress;
+        dateFilterField = 'lastAttemptedAt';
+        sortField = 'lastAttemptedAt';
+        populateOpts = { path: 'readingId', select: 'title' };
+        selectOpts = 'highScore attemptsCount lastAttemptedAt readingId status';
+        break;
       case 'speaking':
         model = SpeakingEnrollment; dateFilterField = 'lastAccessedAt'; sortField = 'lastAccessedAt'; populateOpts = { path: 'speakingSetId', select: 'title' }; selectOpts = 'averageWer speakingSetId isCompleted lastAccessedAt progress'; break;
       case 'writing':
@@ -276,7 +284,18 @@ const getStatDetailData = async (userId, statKey, range) => {
         throw err;
     }
 
-    let q = model.find({ userId, [dateFilterField]: { $gte: startDate, $lte: endDate } });
+    const baseFilter = { userId, [dateFilterField]: { $gte: startDate, $lte: endDate } };
+    if (statKey === 'reading') {
+      baseFilter.status = 'completed';
+    }
+    if (statKey === 'speaking') {
+      baseFilter.isCompleted = true;
+    }
+    if (statKey === 'writing') {
+      baseFilter.status = { $in: ['submitted', 'reviewed'] };
+    }
+
+    let q = model.find(baseFilter);
     if (populateOpts) q = q.populate(populateOpts);
     queryResult = await q.select(selectOpts).sort({ [sortField]: -1 }).lean();
   }

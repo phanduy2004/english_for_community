@@ -1,6 +1,9 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -95,6 +98,10 @@ class ExamAssignmentCard extends StatelessWidget {
         return l10n.examCardStatusLive;
       case 'session_ended':
         return l10n.examCardLiveSessionEnded;
+      case 'already_submitted':
+        return l10n.examCardAlreadySubmitted;
+      case 'resume':
+        return l10n.studentExamResumeHint;
       default:
         return null;
     }
@@ -105,6 +112,7 @@ class ExamAssignmentCard extends StatelessWidget {
       case 'session_ended':
       case 'closed':
       case 'past_due':
+      case 'already_submitted':
         return AppColors.textMuted;
       case 'live':
         return AppColors.success;
@@ -250,7 +258,6 @@ class ExamAssignmentCard extends StatelessWidget {
     final title = _title();
     final displayTitle = title.isNotEmpty ? title : l10n.studentExamUnknownTitle;
     final mode = assignment['mode'] as String? ?? '';
-    final isRealtime = mode == 'realtime';
     final hintKey = assignment['studentStatusHint'] as String?;
     final statusHint = _statusHintLabel(l10n);
     final hintColor = _statusHintColor(hintKey);
@@ -263,35 +270,24 @@ class ExamAssignmentCard extends StatelessWidget {
     final desc = _description();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: ExamSystemUi.cardGap),
+      padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
       child: AppCard(
         variant: AppCardVariant.outline,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 14, AppSpacing.s5, 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      isRealtime ? Icons.groups_outlined : Icons.assignment_outlined,
-                      size: 22,
-                      color: AppColors.primaryDark,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  _modeIconBox(mode, size: 44),
+                  const SizedBox(width: AppSpacing.s4),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(displayTitle, style: ExamSystemUi.listTitle(context)),
+                        Text(displayTitle, style: StudentMobileUi.cardTitle(context)),
                         const SizedBox(height: 6),
                         Wrap(
                           spacing: 6,
@@ -309,7 +305,7 @@ class ExamAssignmentCard extends StatelessWidget {
               ),
               if (desc.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                Text(desc, style: ExamSystemUi.captionSecondary.copyWith(height: 1.4)),
+                Text(desc, style: StudentMobileUi.body(context).copyWith(height: 1.4)),
               ],
               if (statusHint != null && statusHint.isNotEmpty) ...[
                 const SizedBox(height: 10),
@@ -320,7 +316,7 @@ class ExamAssignmentCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         statusHint,
-                        style: ExamSystemUi.captionSecondary.copyWith(
+                        style: StudentMobileUi.caption(context).copyWith(
                           color: hintColor,
                           fontWeight: FontWeight.w500,
                         ),
@@ -331,7 +327,7 @@ class ExamAssignmentCard extends StatelessWidget {
               ],
               if (scheduleLines.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(l10n.examCardScheduleTitle, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600)),
+                Text(l10n.examCardScheduleTitle, style: StudentMobileUi.caption(context).copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 ...scheduleLines.map(
                   (line) => Padding(
@@ -341,7 +337,7 @@ class ExamAssignmentCard extends StatelessWidget {
                       children: [
                         Icon(Icons.schedule_outlined, size: 15, color: AppColors.textMuted),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(line, style: ExamSystemUi.captionSecondary)),
+                        Expanded(child: Text(line, style: StudentMobileUi.body(context))),
                       ],
                     ),
                   ),
@@ -349,7 +345,7 @@ class ExamAssignmentCard extends StatelessWidget {
               ],
               if (statsLines.isNotEmpty) ...[
                 const SizedBox(height: 12),
-                Text(l10n.examCardExamInfoTitle, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600)),
+                Text(l10n.examCardExamInfoTitle, style: StudentMobileUi.caption(context).copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 6),
                 Wrap(
                   spacing: 8,
@@ -363,7 +359,7 @@ class ExamAssignmentCard extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: AppColors.outlineMuted),
                           ),
-                          child: Text(s, style: ExamSystemUi.captionSecondary.copyWith(fontSize: 12)),
+                          child: Text(s, style: StudentMobileUi.caption(context)),
                         ),
                       )
                       .toList(),
@@ -376,7 +372,7 @@ class ExamAssignmentCard extends StatelessWidget {
                     Icon(Icons.person_outline, size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(attemptLine, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+                      child: Text(attemptLine, style: StudentMobileUi.cardTitle(context)),
                     ),
                   ],
                 ),
@@ -387,7 +383,7 @@ class ExamAssignmentCard extends StatelessWidget {
                   children: [
                     Icon(Icons.history_rounded, size: 16, color: AppColors.textMuted),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(teacherClosedLine, style: ExamSystemUi.captionMuted)),
+                    Expanded(child: Text(teacherClosedLine, style: StudentMobileUi.caption(context))),
                   ],
                 ),
               ],
@@ -397,7 +393,7 @@ class ExamAssignmentCard extends StatelessWidget {
                   children: [
                     Icon(Icons.bar_chart_outlined, size: 16, color: AppColors.primary),
                     const SizedBox(width: 6),
-                    Expanded(child: Text(teacherLine, style: ExamSystemUi.captionSecondary)),
+                    Expanded(child: Text(teacherLine, style: StudentMobileUi.body(context))),
                   ],
                 ),
               ],
@@ -418,6 +414,51 @@ class ExamAssignmentCard extends StatelessWidget {
     );
   }
 
+  Widget _modeIconBox(String mode, {double size = 44}) {
+    switch (mode) {
+      case 'realtime':
+        return StudentMobileUi.skillIconBox(
+          Icons.groups_rounded,
+          size: size,
+          colors: SkillColorSet(
+            color: AppColors.info,
+            tint: AppColors.infoBg,
+            dark: AppColors.info,
+          ),
+        );
+      case 'scheduled':
+        return StudentMobileUi.skillIconBox(
+          Icons.event_rounded,
+          size: size,
+          colors: SkillColorSet(
+            color: AppColors.warning,
+            tint: AppColors.warningBg,
+            dark: AppColors.warning,
+          ),
+        );
+      case 'practice':
+        return StudentMobileUi.skillIconBox(
+          Icons.fitness_center_rounded,
+          size: size,
+          colors: SkillColorSet(
+            color: AppSkillColors.speaking.color,
+            tint: AppSkillColors.speaking.tint,
+            dark: AppSkillColors.speaking.dark,
+          ),
+        );
+      default: // self_paced
+        return StudentMobileUi.skillIconBox(
+          Icons.self_improvement_rounded,
+          size: size,
+          colors: SkillColorSet(
+            color: AppSkillColors.reading.color,
+            tint: AppSkillColors.reading.tint,
+            dark: AppSkillColors.reading.dark,
+          ),
+        );
+    }
+  }
+
   Widget _chip(BuildContext context, String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -425,13 +466,7 @@ class ExamAssignmentCard extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(6),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
+      child: Text(label, style: AppTypography.label(color: color)),
     );
   }
 }

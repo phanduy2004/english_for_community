@@ -1,4 +1,4 @@
-import 'package:english_for_community/core/theme/app_color.dart';
+﻿import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:flutter/material.dart';
@@ -68,14 +68,10 @@ class ListeningHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF18181B), Color(0xFF27272A)],
-        ),
+        color: AppColors.primary,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           )
@@ -90,7 +86,7 @@ class ListeningHeader extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppColors.onPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -102,14 +98,14 @@ class ListeningHeader extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.2),
+                        color: AppColors.onPrimary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                        border: Border.all(color: AppColors.onPrimary.withValues(alpha: 0.25)),
                       ),
                       child: Text(
                         levelText!.toUpperCase(),
                         style: const TextStyle(
-                          color: Colors.blueAccent,
+                          color: AppColors.onPrimary,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                         ),
@@ -119,7 +115,7 @@ class ListeningHeader extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.listeningCueProgress(doneCount, totalCount),
-                  style: const TextStyle(color: Colors.white70, fontSize: 13),
+                  style: TextStyle(color: AppColors.onPrimary.withValues(alpha: 0.7), fontSize: 13),
                 ),
               ],
             ),
@@ -134,8 +130,8 @@ class ListeningHeader extends StatelessWidget {
                 height: 50,
                 child: CircularProgressIndicator(
                   value: progress,
-                  backgroundColor: Colors.white10,
-                  color: Colors.greenAccent,
+                  backgroundColor: AppColors.onPrimary.withValues(alpha: 0.15),
+                  color: AppColors.success,
                   strokeWidth: 5,
                   strokeCap: StrokeCap.round,
                 ),
@@ -143,7 +139,7 @@ class ListeningHeader extends StatelessWidget {
               Text(
                 '${(progress * 100).toInt()}%',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   fontSize: 11,
                 ),
               ),
@@ -184,9 +180,9 @@ class ListeningPlayer extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
+        border: Border.all(color: AppColors.outline),
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
       ),
       child: StreamBuilder<PlayerState>(
@@ -208,7 +204,7 @@ class ListeningPlayer extends StatelessWidget {
                     alignment: Alignment.center,
                     child: Icon(
                       isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       size: 30,
                     ),
                   ),
@@ -232,7 +228,7 @@ class ListeningPlayer extends StatelessWidget {
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
                             overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
                             activeTrackColor: primary,
-                            inactiveTrackColor: primary.withOpacity(0.1),
+                            inactiveTrackColor: primary.withValues(alpha: 0.1),
                             thumbColor: primary,
                           ),
                           child: Slider(
@@ -306,17 +302,17 @@ class CueSelector extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSel
                     ? Theme.of(context).primaryColor
-                    : (isDone ? const Color(0xFFDCFCE7) : Colors.white),
+                    : (isDone ? AppColors.successBg : AppColors.surfaceCard),
                 border: Border.all(
                   color: isSel
                       ? Theme.of(context).primaryColor
-                      : (isDone ? const Color(0xFF22C55E).withOpacity(0.5) : const Color(0xFFE4E4E7)),
+                      : (isDone ? AppColors.success.withValues(alpha: 0.5) : AppColors.outline),
                   width: isSel ? 2 : 1,
                 ),
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: isSel ? [
                   BoxShadow(
-                      color: Theme.of(context).primaryColor.withOpacity(0.3),
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 2)
                   )
@@ -327,8 +323,8 @@ class CueSelector extends StatelessWidget {
                   '${i + 1}',
                   style: TextStyle(
                     color: isSel
-                        ? Colors.white
-                        : (isDone ? const Color(0xFF15803D) : Colors.black87),
+                        ? AppColors.onPrimary
+                        : (isDone ? AppColors.success : AppColors.textPrimary),
                     fontWeight: isSel || isDone ? FontWeight.bold : FontWeight.normal,
                     fontSize: 14,
                   ),

@@ -8,6 +8,7 @@ import ClassroomMember from '../models/ClassroomMember.js';
 import { classroomService } from './classroomService.js';
 import { teacherExamService } from './teacherExamService.js';
 import {
+  applyStudentAttemptGate,
   buildAssignmentCardFields,
   latestAttemptsByAssignmentForUser,
   attemptStatsByAssignment,
@@ -222,6 +223,29 @@ export const teacherExamAssignmentService = {
     }
 
     const assignment = await ExamAssignment.create(doc);
+    if (parsed.audience === 'classroom' && parsed.classroomId) {
+      try {
+        const populated = await ExamAssignment.findById(assignment._id)
+          .populate('examId', 'title')
+          .populate('classroomId', 'name');
+        const { notifyStudentsExamAssigned, assignmentNotificationContext } = await import(
+          './teacherNotificationHelper.js'
+        );
+        const { examTitle, classroomName } = await assignmentNotificationContext(populated);
+        const sent = await notifyStudentsExamAssigned({
+          teacherId,
+          classroomId: parsed.classroomId,
+          assignmentId: assignment._id,
+          examTitle,
+          classroomName,
+        });
+        console.log(
+          `📢 [Notify] EXAM_ASSIGNED → ${sent.length} student(s) (classroom ${parsed.classroomId})`
+        );
+      } catch (err) {
+        console.error('[Notify] EXAM_ASSIGNED failed:', err?.message || err);
+      }
+    }
     return assignment;
   },
 
@@ -373,7 +397,7 @@ export const teacherExamAssignmentService = {
           myAttempt: att,
         })
       );
-      return plain;
+      return applyStudentAttemptGate(plain, a, att);
     });
   },
 
@@ -439,6 +463,24 @@ export const teacherExamAssignmentService = {
       a.config = normalizeAssignmentConfig(cfg);
     }
     await a.save();
+    if (a.audience === 'classroom' && a.classroomId) {
+      try {
+        await a.populate([{ path: 'examId', select: 'title' }, { path: 'classroomId', select: 'name' }]);
+        const { notifyStudentsExamAssignmentUpdated, assignmentNotificationContext } = await import(
+          './teacherNotificationHelper.js'
+        );
+        const { examTitle, classroomName } = await assignmentNotificationContext(a);
+        await notifyStudentsExamAssignmentUpdated({
+          teacherId,
+          classroomId: a.classroomId._id || a.classroomId,
+          assignmentId: a._id,
+          examTitle,
+          classroomName,
+        });
+      } catch {
+        /* optional */
+      }
+    }
     return a;
   },
 
@@ -447,6 +489,24 @@ export const teacherExamAssignmentService = {
     if (a.status !== 'active') throw httpError(400, 'Assignment is already closed');
     a.status = 'closed';
     await a.save();
+    if (a.audience === 'classroom' && a.classroomId) {
+      try {
+        await a.populate([{ path: 'examId', select: 'title' }, { path: 'classroomId', select: 'name' }]);
+        const { notifyStudentsExamAssignmentClosed, assignmentNotificationContext } = await import(
+          './teacherNotificationHelper.js'
+        );
+        const { examTitle, classroomName } = await assignmentNotificationContext(a);
+        await notifyStudentsExamAssignmentClosed({
+          teacherId,
+          classroomId: a.classroomId._id || a.classroomId,
+          assignmentId: a._id,
+          examTitle,
+          classroomName,
+        });
+      } catch {
+        /* optional */
+      }
+    }
     return a;
   },
 

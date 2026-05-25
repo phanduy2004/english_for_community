@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/report_management/widget/report_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../core/entity/report_entity.dart';
 import '../../../core/get_it/get_it.dart';
 import '../../admin/dashboard_home/bloc/admin_bloc.dart';
 import '../../admin/dashboard_home/bloc/admin_event.dart';
@@ -122,14 +122,10 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
             child: BlocConsumer<AdminBloc, AdminState>(
               listener: (context, state) {
                 if (state.status == AdminStatus.actionSuccess) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Status updated successfully'), backgroundColor: AppColors.success),
-                  );
+                  AdminCornerToast.show(context, l10n.adminReportStatusUpdated);
                 }
                 if (state.status == AdminStatus.error && state.errorMessage != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(state.errorMessage!), backgroundColor: AppColors.danger),
-                  );
+                  AdminCornerToast.show(context, state.errorMessage!, error: true);
                 }
               },
               builder: (context, state) {

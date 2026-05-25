@@ -1,8 +1,6 @@
-import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/repository/speaking_repository.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
-import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SpeakingLessonBloc

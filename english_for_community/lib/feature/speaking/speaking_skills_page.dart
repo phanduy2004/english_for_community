@@ -9,7 +9,9 @@ import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/spea
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/feature/speaking/widget/word_details_dialog.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -498,7 +500,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                           value: (_currentPageIndex + 1) / _set!.sentences.length,
                           minHeight: 6,
                           backgroundColor: AppColors.outlineMuted,
-                          color: AppColors.primary,
+                          color: AppSkillColors.speaking.color,
                         ),
                       ),
                     ],
@@ -624,27 +626,10 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     }
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: AppBar(
-        backgroundColor: AppColors.surfaceCard,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: AppColors.outline, height: 1),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          _set?.title ?? t.practiceFallbackTitle,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
+      appBar: StudentMobileUi.skillAppBar(
+        context,
+        title: _set?.title ?? t.practiceFallbackTitle,
+        skill: SkillType.speaking,
       ),
       body: SafeArea(child: body),
     );
@@ -872,8 +857,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                         ),
                         _ScorePill(
                           scoreText: '$score%',
-                          bg: (score) >= 80 ? const Color(0xFFDCFCE7) : const Color(0xFFFFEDD5),
-                          fg: (score) >= 80 ? AppColors.success : const Color(0xFFEA580C),
+                          bg: (score) >= 80 ? AppColors.successBg : AppColors.warningBg,
+                          fg: (score) >= 80 ? AppColors.success : AppColors.warning,
                         )
                       ],
                     )

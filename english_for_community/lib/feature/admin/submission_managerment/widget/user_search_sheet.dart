@@ -181,7 +181,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: kTextMain)),
-                  Text(user.email ?? '', style: const TextStyle(fontSize: 12, color: kTextMuted)),
+                  Text(user.email, style: const TextStyle(fontSize: 12, color: kTextMuted)),
                 ],
               ),
             ),

@@ -5,7 +5,6 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Side / full-screen form: builds one `grammarItems[]` entry for skills exam.
@@ -390,7 +389,8 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                 children: [
                   DropdownButtonFormField<String>(
-                    value: _kind,
+                    key: ValueKey(_kind),
+                    initialValue: _kind,
                     decoration: InputDecoration(
                       labelText: l10n.teacherExamGrammarQuestionType,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
@@ -462,13 +462,13 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
           label: Text(l10n.teacherExamGrammarAddOption),
         ),
       ),
-      for (var i = 0; i < _mcqOptions.length; i++)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_kind == 'mcq_multi')
+      if (_kind == 'mcq_multi')
+        for (var i = 0; i < _mcqOptions.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Checkbox(
                   value: _mcqCorrect.contains(i),
                   onChanged: (v) => setState(() {
@@ -478,26 +478,48 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
                       _mcqCorrect.remove(i);
                     }
                   }),
-                )
-              else
-                Radio<int>(
-                  value: i,
-                  groupValue: _mcqCorrect.isEmpty ? null : _mcqCorrect.first,
-                  onChanged: (v) => setState(() {
-                    _mcqCorrect
-                      ..clear()
-                      ..add(v ?? 0);
-                  }),
                 ),
-              Expanded(
-                child: TextField(
-                  controller: _mcqOptions[i],
-                  decoration: InputDecoration(
-                    labelText: '${l10n.teacherExamOptionsHint} $i',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                Expanded(
+                  child: TextField(
+                    controller: _mcqOptions[i],
+                    decoration: InputDecoration(
+                      labelText: '${l10n.teacherExamOptionsHint} $i',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
-              ),
+              ],
+            ),
+          )
+      else
+        RadioGroup<int>(
+          groupValue: _mcqCorrect.isEmpty ? null : _mcqCorrect.first,
+          onChanged: (v) => setState(() {
+            _mcqCorrect
+              ..clear()
+              ..add(v ?? 0);
+          }),
+          child: Column(
+            children: [
+              for (var i = 0; i < _mcqOptions.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Radio<int>(value: i),
+                      Expanded(
+                        child: TextField(
+                          controller: _mcqOptions[i],
+                          decoration: InputDecoration(
+                            labelText: '${l10n.teacherExamOptionsHint} $i',
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -596,7 +618,8 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<int>(
-                value: _matchPick[i].clamp(0, _matchLeft.length - 1),
+                key: ValueKey('match_$i${_matchPick[i]}'),
+                initialValue: _matchPick[i].clamp(0, _matchLeft.length - 1),
                 decoration: InputDecoration(
                   labelText: l10n.integratedExamMatchPick,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),

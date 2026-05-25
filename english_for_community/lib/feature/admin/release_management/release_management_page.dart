@@ -1,4 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -238,9 +240,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
     );
     if (second != true || !context.mounted) return;
     if (codeCtrl.text.trim().toUpperCase() != 'FORCE') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Mã xác nhận không đúng'),
-          backgroundColor: Colors.red));
+      AdminCornerToast.show(context, context.l10n.adminReleaseConfirmCodeInvalid, error: true);
       return;
     }
     context.read<ReleaseManagementBloc>().add(
@@ -266,12 +266,9 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
         listener: (context, state) {
           if (state.status == ReleaseManagementStatus.error &&
               state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(state.errorMessage!),
-                backgroundColor: Colors.red));
+            AdminCornerToast.show(context, state.errorMessage!, error: true);
           } else if (state.status == ReleaseManagementStatus.actionSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Thao tác thành công')));
+            AdminCornerToast.show(context, context.l10n.adminActionSuccess);
           }
         },
         builder: (context, state) {
@@ -279,10 +276,16 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
           final isLoading = state.status == ReleaseManagementStatus.loading ||
               state.status == ReleaseManagementStatus.initial;
 
+          final l10n = context.l10n;
           return AdminPageScaffold(
-            title: context.l10n.adminNavReleases,
+            title: l10n.adminNavReleases,
+            subtitle: l10n.adminNavReleasesSub,
             scrollable: false,
             maxWidth: AdminWebUi.contentMaxTable,
+            breadcrumbs: [
+              AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+              AdminBreadcrumb(label: l10n.adminNavReleases),
+            ],
             actions: [
               IconButton(
                 tooltip: 'Chạy publish theo lịch ngay',

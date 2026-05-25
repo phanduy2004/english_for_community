@@ -138,13 +138,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get labelEmail => 'Email';
 
   @override
+  String get loginEmailOrUsername => 'Email or username';
+
+  @override
+  String get hintLoginEmailOrUsername => 'Enter your email or username';
+
+  @override
   String get labelPassword => 'Password';
 
   @override
   String get hintEmail => 'name@example.com';
 
   @override
-  String get hintPassword => 'Enter password...';
+  String get hintPassword => 'Enter your password';
 
   @override
   String get rememberMe => 'Remember me';
@@ -474,7 +480,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminNavOps => 'Ops center';
 
   @override
+  String get adminNavOpsSub => 'Moderation, export, permissions';
+
+  @override
   String get adminNavReleases => 'Releases';
+
+  @override
+  String get adminNavReleasesSub => 'Approve, schedule, publish';
+
+  @override
+  String get adminContentItemCount => 'topics';
+
+  @override
+  String get adminListeningDictation => 'Dictation';
+
+  @override
+  String get adminListeningDictationSub => 'Listen and type (cues)';
+
+  @override
+  String get adminListeningComprehension => 'Comprehension';
+
+  @override
+  String get adminListeningComprehensionSub => 'Multiple-choice listening quiz';
 
   @override
   String get adminOverviewTitle => 'Overview';
@@ -499,6 +526,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminNoReportsFound => 'No reports in this status';
+
+  @override
+  String get adminUsersTrash => 'Trash';
+
+  @override
+  String adminUserRestored(String name) {
+    return 'Restored $name';
+  }
+
+  @override
+  String get adminReportStatusUpdated => 'Status updated successfully';
+
+  @override
+  String get adminActionSuccess => 'Action completed successfully';
+
+  @override
+  String get adminReleaseConfirmCodeInvalid => 'Confirmation code is incorrect';
 
   @override
   String get superAdminRole => 'Super Admin';
@@ -1321,6 +1365,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileUpdatedSuccess => 'Profile updated successfully';
 
   @override
+  String get changePhotoHint => 'Tap to change photo';
+
+  @override
   String get sectionPublicInfo => 'Public info';
 
   @override
@@ -2105,6 +2152,38 @@ class AppLocalizationsEn extends AppLocalizations {
       'Update your name, avatar, and contact details.';
 
   @override
+  String get adminAccountRoleAdmin => 'Administrator';
+
+  @override
+  String get adminAccountOpenMenu => 'Account menu';
+
+  @override
+  String get adminUserRoleStudent => 'Student';
+
+  @override
+  String get adminUserRoleTeacher => 'Teacher';
+
+  @override
+  String get adminUserRoleAdmin => 'Administrator';
+
+  @override
+  String get adminUserStatusOnline => 'Online';
+
+  @override
+  String get adminUserStatusOffline => 'Offline';
+
+  @override
+  String get adminUserActiveNow => 'Active now';
+
+  @override
+  String get adminUserNeverActive => 'Never active';
+
+  @override
+  String adminUserLastActive(String when) {
+    return 'Last active: $when';
+  }
+
+  @override
   String teacherDashboardGreeting(String name) {
     return 'Hello, $name';
   }
@@ -2747,6 +2826,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studentExamStart => 'Start';
 
   @override
+  String get studentExamResume => 'Continue';
+
+  @override
+  String get studentExamResumeHint => 'In progress — tap to continue';
+
+  @override
+  String get examCardAlreadySubmitted => 'Submitted';
+
+  @override
   String get studentExamUnknownTitle => 'Exam';
 
   @override
@@ -3039,8 +3127,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherExamSessionLiveRosterTitle => 'Students in lobby';
 
   @override
+  String get teacherExamSessionLiveRosterTitleLive => 'Students in exam';
+
+  @override
   String get teacherExamSessionLiveRosterHint =>
       'Count and list update in real time when students join the waiting room.';
+
+  @override
+  String get teacherExamParticipantNotReady => 'Not ready';
+
+  @override
+  String get teacherExamParticipantReady => 'Ready';
+
+  @override
+  String get teacherExamParticipantInProgress => 'In progress';
+
+  @override
+  String get teacherExamParticipantSubmitted => 'Submitted';
+
+  @override
+  String get teacherExamParticipantExpired => 'Time expired';
+
+  @override
+  String get teacherExamParticipantVoided => 'Removed';
 
   @override
   String teacherExamSessionJoinedCount(int count) {
@@ -4354,8 +4463,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherExamGrammarTitle => 'Grammar';
 
   @override
+  String get teacherExamGrammarIncludeSubtitle => 'Include Grammar section';
+
+  @override
+  String teacherExamGrammarQuestionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count questions',
+      one: '1 question',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get teacherExamGrammarEnabledNoItems =>
+      'Grammar is on but has no questions. Add at least one question or turn Grammar off.';
+
+  @override
   String get teacherExamGrammarHint =>
       'Optional. Add cloze, gap fill, matching, sentence order, or multiple choice. All are auto-scored. If the exam includes skills, total Grammar points cannot exceed 100.';
+
+  @override
+  String get teacherExamWritingPublishNeedPrompt =>
+      'Writing is on: set a writing prompt (AI or manual). A library topic alone is not enough.';
+
+  @override
+  String get teacherExamWritingAiPickTaskTypeTitle =>
+      'Task type for AI prompts';
+
+  @override
+  String get teacherExamWritingAiPickTaskTypeHint =>
+      'Optional. Leave as “Any” to get up to 3 different task types.';
+
+  @override
+  String get teacherExamWritingAiTaskTypeAny => 'Any (mixed types)';
+
+  @override
+  String get teacherExamWritingAiNeedTopicOrTitle =>
+      'Select a writing topic, or enter an exam title above, before generating AI prompts.';
 
   @override
   String get teacherExamGrammarAdd => 'Add question';
@@ -4370,6 +4516,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teacherExamPublishPickEachIncludedSkill =>
       'Add at least one exercise for every skill that is turned on.';
+
+  @override
+  String get teacherExamSpeakingExerciseRequired =>
+      'Speaking is on but no exercise is linked. Tap \"Add exercise\" and pick a Speaking set.';
 
   @override
   String get teacherExamWritingPromptSectionTitle => 'Writing Prompt';
@@ -4620,11 +4770,32 @@ class AppLocalizationsEn extends AppLocalizations {
       'No exercise linked for this part.';
 
   @override
+  String get integratedExamEmbeddedNoSpeakingResource =>
+      'No speaking exercise linked. Ask your teacher to add a Speaking set in the exam editor, then start a new session.';
+
+  @override
   String get integratedExamGrammarUnsupported =>
       'This question type is not supported in the app yet.';
 
   @override
   String get integratedExamMatchPick => 'Match';
+
+  @override
+  String get integratedExamMatchHint =>
+      'Tap an item on the left, then tap on the right to connect — or long-press and drag to the matching answer. Lines show your pairs.';
+
+  @override
+  String get integratedExamMatchHintCompact =>
+      'Tap a phrase on the left, then tap an answer chip below — or drag a chip into the dashed slot. Each pair has its own color.';
+
+  @override
+  String get integratedExamMatchAnswersPool => 'Answers';
+
+  @override
+  String get integratedExamMatchTapAnswer => 'Tap an answer below';
+
+  @override
+  String get integratedExamMatchDropHere => 'Drop answer here';
 
   @override
   String get integratedExamReorderHint =>

@@ -1,14 +1,19 @@
-import 'package:english_for_community/feature/progress/report_dialog.dart';
-import 'package:english_for_community/feature/progress/widgets/weekly_activity_bars_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/repository/user_repository.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
+import 'package:english_for_community/feature/progress/report_dialog.dart';
 import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
 import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
-import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/repository/user_repository.dart';
+import 'package:english_for_community/feature/progress/widgets/weekly_activity_bars_chart.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -43,46 +48,54 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
   String _rangeToString(_Range range) {
     switch (range) {
-      case _Range.day: return 'day';
-      case _Range.week: return 'week';
-      case _Range.month: return 'month';
+      case _Range.day:
+        return 'day';
+      case _Range.week:
+        return 'week';
+      case _Range.month:
+        return 'month';
     }
   }
 
   String _rangeToLabel(_Range range, AppLocalizations t) {
     switch (range) {
-      case _Range.day: return t.progressFilterDay;
-      case _Range.week: return t.progressFilterWeek;
-      case _Range.month: return t.progressFilterMonth;
+      case _Range.day:
+        return t.progressFilterDay;
+      case _Range.week:
+        return t.progressFilterWeek;
+      case _Range.month:
+        return t.progressFilterMonth;
     }
   }
 
   String _periodHeading(_Range range, AppLocalizations t) {
     switch (range) {
-      case _Range.day: return t.progressPeriodToday;
-      case _Range.week: return t.progressPeriodThisWeek;
-      case _Range.month: return t.progressPeriodThisMonth;
+      case _Range.day:
+        return t.progressPeriodToday;
+      case _Range.week:
+        return t.progressPeriodThisWeek;
+      case _Range.month:
+        return t.progressPeriodThisMonth;
     }
   }
 
   StatDetailRange _rangeToDialogEnum(_Range range) {
     switch (range) {
-      case _Range.day: return StatDetailRange.day;
-      case _Range.week: return StatDetailRange.week;
-      case _Range.month: return StatDetailRange.month;
+      case _Range.day:
+        return StatDetailRange.day;
+      case _Range.week:
+        return StatDetailRange.week;
+      case _Range.month:
+        return StatDetailRange.month;
     }
   }
 
-  // 🔥 Hàm mới: Tính số ngày chính xác trong tháng hiện tại
   int _daysInMonth(DateTime date) {
-    // Lấy ngày đầu tiên của tháng tiếp theo (tháng hiện tại + 1)
     final nextMonth = DateTime(date.year, date.month + 1, 1);
-    // Trừ đi 1 ngày sẽ ra ngày cuối cùng của tháng hiện tại
     final lastDay = nextMonth.subtract(const Duration(days: 1));
     return lastDay.day;
   }
 
-  // 🔥 Sửa đổi hàm tính toán mục tiêu tổng
   int _calculateTotalGoalMinutes(_Range range, int dailyGoal) {
     switch (range) {
       case _Range.day:
@@ -90,34 +103,33 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       case _Range.week:
         return dailyGoal * 7;
       case _Range.month:
-      // ✅ Lấy số ngày chính xác của tháng hiện tại
         final today = DateTime.now();
         final days = _daysInMonth(today);
         return dailyGoal * days;
     }
   }
 
-
-  void _onRangeSelected(BuildContext blocContext, _Range newRange) {
+  void _onRangeSelected(BuildContext blocContext, int index) {
+    final newRange = _Range.values[index];
     if (_range == newRange) return;
-    setState(() { _range = newRange; });
+    setState(() => _range = newRange);
     blocContext.read<ProgressBloc>().add(FetchProgressData(range: _rangeToString(newRange)));
   }
 
   void _showStatDetailDialog(ProgressBloc bloc, String statKey, _Range range) {
     final t = context.l10n;
     showDialog(
-        context: context,
-        builder: (ctx) {
-          return BlocProvider.value(
-            value: bloc,
-            child: StatDetailDialog(
-              statKey: statKey,
-              range: _rangeToDialogEnum(range),
-              rangeLabel: _rangeToLabel(range, t),
-            ),
-          );
-        }
+      context: context,
+      builder: (ctx) {
+        return BlocProvider.value(
+          value: bloc,
+          child: StatDetailDialog(
+            statKey: statKey,
+            range: _rangeToDialogEnum(range),
+            rangeLabel: _rangeToLabel(range, t),
+          ),
+        );
+      },
     );
   }
 
@@ -130,37 +142,45 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           future: getIt<UserRepository>().getPublicProfile(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
+              return Dialog(
+                backgroundColor: AppColors.surfaceCard,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.s7),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                ),
               );
             }
 
             if (snapshot.hasError) {
-              return AlertDialog(
-                title: Text(t.errorTitle),
-                content: Text(t.failedToLoadProfile),
+              return StudentDialogShell(
+                title: t.errorTitle,
+                subtitle: t.failedToLoadProfile,
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
                     child: Text(t.close),
                   ),
                 ],
+                child: const SizedBox.shrink(),
               );
             }
 
             if (snapshot.hasData) {
               return snapshot.data!.fold(
-                    (failure) => AlertDialog(
-                  title: Text(t.errorTitle),
-                  content: Text(failure.message),
+                (failure) => StudentDialogShell(
+                  title: t.errorTitle,
+                  subtitle: failure.message,
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context),
                       child: Text(t.close),
-                    )
+                    ),
                   ],
+                  child: const SizedBox.shrink(),
                 ),
-                    (user) => UserProfileDialog(
+                (user) => UserProfileDialog(
                   fullName: user.fullName,
                   username: user.username,
                   avatarUrl: user.avatarUrl,
@@ -192,33 +212,20 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    const bgPage = Color(0xFFF9FAFB);
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
 
     return BlocProvider(
       create: (context) => getIt<ProgressBloc>()
         ..add(FetchProgressData(range: _rangeToString(_range)))
         ..add(FetchLeaderboard()),
       child: Scaffold(
-        backgroundColor: bgPage,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          centerTitle: true,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(1),
-            child: Container(color: borderCol, height: 1),
-          ),
-          title: Text(
-            t.learningProgressTitle,
-            style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
-          ),
+        backgroundColor: AppColors.surface,
+        appBar: StudentMobileUi.appBar(
+          context,
+          title: t.learningProgressTitle,
           actions: [
             IconButton(
               tooltip: t.reportIssueTooltip,
-              icon: const Icon(Icons.flag_outlined, color: textMain),
+              icon: const Icon(Icons.flag_outlined, size: 20),
               onPressed: _openReportDialog,
             ),
           ],
@@ -227,7 +234,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
               if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
-                return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                return const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                );
               }
               if (state.status == ProgressStatus.error) {
                 return _buildErrorUI(context, state.errorMessage, t);
@@ -245,21 +254,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
   Widget _buildErrorUI(BuildContext context, String? message, AppLocalizations t) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          Text(t.failedToLoadData, style: TextStyle(color: Colors.grey[900], fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Text(message ?? t.pleaseTryAgainLater, style: TextStyle(color: Colors.grey[600])),
-          const SizedBox(height: 24),
-          OutlinedButton(
-            onPressed: () => _onRefresh(context),
-            style: OutlinedButton.styleFrom(foregroundColor: Colors.black, side: const BorderSide(color: Colors.grey)),
-            child: Text(t.retry),
-          )
-        ],
+      child: Padding(
+        padding: StudentMobileUi.pagePadding,
+        child: StudentMobileUi.errorBanner(
+          message: message ?? t.pleaseTryAgainLater,
+          onRetry: () => _onRefresh(context),
+          retryLabel: t.retry,
+        ),
       ),
     );
   }
@@ -273,252 +274,245 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final chart = summary.weeklyChart;
     final callout = summary.callout;
 
-    // 1. Tính tổng số phút đã học trong phạm vi hiện tại
     final totalMinutesInActualRange = _range == _Range.day
         ? studyTime.todayMinutes
         : studyTime.totalMinutesInRange;
 
-    // 2. Tính tổng Mục tiêu cho phạm vi hiện tại (Sử dụng số ngày chính xác)
     final totalGoalMinutes = _calculateTotalGoalMinutes(_range, studyTime.goalMinutes);
 
-    // 3. Tính lại progress (tiến trình) chính xác
     final progress = (totalGoalMinutes > 0 ? (totalMinutesInActualRange / totalGoalMinutes) : 0.0).clamp(0.0, 1.0);
 
-
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    const borderColor = Color(0xFFE4E4E7);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final rangeLabels = [
+      t.progressFilterDay,
+      t.progressFilterWeek,
+      t.progressFilterMonth,
+    ];
 
     return RefreshIndicator(
       onRefresh: () => _onRefresh(context),
-      color: primaryColor,
-      backgroundColor: Colors.white,
+      color: AppColors.primary,
+      backgroundColor: AppColors.surfaceCard,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        padding: StudentMobileUi.pagePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(t.progressOverview, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textMain, letterSpacing: -0.5)),
-                    const SizedBox(height: 4),
-                    Text(t.progressPerformanceMetrics, style: const TextStyle(fontSize: 14, color: textMuted)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF4F4F5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      _FilterTab(label: t.progressFilterDay, selected: _range == _Range.day, onTap: () => _onRangeSelected(context, _Range.day)),
-                      _FilterTab(label: t.progressFilterWeek, selected: _range == _Range.week, onTap: () => _onRangeSelected(context, _Range.week)),
-                      _FilterTab(label: t.progressFilterMonth, selected: _range == _Range.month, onTap: () => _onRangeSelected(context, _Range.month)),
-                    ],
-                  ),
-                ),
-              ],
+            StudentMobileUi.sectionHeader(context, title: t.progressOverview),
+            const SizedBox(height: AppSpacing.s2),
+            Text(t.progressPerformanceMetrics, style: StudentMobileUi.body(context)),
+            const SizedBox(height: AppSpacing.s4),
+            StudentMobileUi.filterRow(
+              labels: rangeLabels,
+              selectedIndex: _range.index,
+              onSelected: (i) => _onRangeSelected(context, i),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: StudentMobileUi.sectionGap),
 
-            _ShadcnCard(
+            AppCard(
+              variant: AppCardVariant.outline,
+              padding: const EdgeInsets.all(AppSpacing.s5),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _periodHeading(_range, t),
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: textMain),
-                          ),
-                          const SizedBox(height: 4),
-                          // Hiển thị tổng số phút đã học
-                          Text(
-                            _fmtHhMm(totalMinutesInActualRange, t),
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _periodHeading(_range, t),
+                              style: StudentMobileUi.cardTitle(context),
+                            ),
+                            const SizedBox(height: AppSpacing.s2),
+                            Text(
+                              _fmtHhMm(totalMinutesInActualRange, t),
+                              style: StudentMobileUi.kpi(context),
+                            ),
+                          ],
+                        ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(color: primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                        child: Icon(Icons.timer_outlined, color: Theme.of(context).colorScheme.primary, size: 24),
-                      )
+                      StudentMobileUi.skillIconBox(Icons.timer_outlined),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.s5),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      minHeight: 8,
-                      value: progress, // Sử dụng progress đã tính lại
-                      color: primaryColor,
-                      backgroundColor: const Color(0xFFF4F4F5),
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
+                    child: StudentMobileUi.skillProgressBar(
+                      value: progress,
+                      color: AppColors.accent,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.s4),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Hiển thị mục tiêu tổng đã tính lại
-                      Text(t.progressGoalLine(_fmtHhMm(totalGoalMinutes, t)), style: const TextStyle(fontSize: 12, color: textMuted)),
-                      Text(t.progressPercentCompleted((progress * 100).round()), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textMain)),
+                      Text(
+                        t.progressGoalLine(_fmtHhMm(totalGoalMinutes, t)),
+                        style: StudentMobileUi.caption(context),
+                      ),
+                      Text(
+                        t.progressPercentCompleted((progress * 100).round()),
+                        style: StudentMobileUi.caption(context).copyWith(fontWeight: FontWeight.w600),
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: StudentMobileUi.sectionGap),
 
-            Text(t.progressDetailedStats, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-            const SizedBox(height: 12),
+            Text(t.progressDetailedStats, style: StudentMobileUi.sectionTitle(context)),
+            const SizedBox(height: AppSpacing.s4),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 3,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: StudentMobileUi.cardGap,
+              mainAxisSpacing: StudentMobileUi.cardGap,
               childAspectRatio: 0.85,
               children: [
                 _StatBox(
-                  icon: Icons.psychology, iconColor: const Color(0xFF8B5CF6),
-                  value: '${stats.vocabLearned}', label: t.progressStatVocabulary,
+                  icon: Icons.style_rounded,
+                  value: '${stats.vocabLearned}',
+                  label: t.progressStatVocabulary,
+                  skill: SkillType.vocabulary,
                   onTap: () => _showStatDetailDialog(progressBloc, 'vocab', _range),
                 ),
                 _StatBox(
-                  icon: Icons.menu_book, iconColor: const Color(0xFF3B82F6),
-                  value: '${stats.readingAccuracy}%', label: t.progressStatReading,
+                  icon: Icons.menu_book_rounded,
+                  value: '${stats.readingAccuracy}%',
+                  label: t.progressStatReading,
+                  skill: SkillType.reading,
                   onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
                 ),
                 _StatBox(
-                  icon: Icons.headphones, iconColor: const Color(0xFF22C55E),
-                  value: '${stats.dictationAccuracy}%', label: t.progressStatListening,
+                  icon: Icons.headphones_rounded,
+                  value: '${stats.dictationAccuracy}%',
+                  label: t.progressStatListening,
+                  skill: SkillType.listening,
                   onTap: () => _showStatDetailDialog(progressBloc, 'dictation', _range),
                 ),
                 _StatBox(
-                  icon: Icons.task_alt, iconColor: const Color(0xFFF97316),
-                  value: '${stats.lessonsCompleted}', label: t.progressStatLessons,
+                  icon: Icons.task_alt_rounded,
+                  value: '${stats.lessonsCompleted}',
+                  label: t.progressStatLessons,
                   onTap: () => _showStatDetailDialog(progressBloc, 'lessons', _range),
                 ),
                 _StatBox(
-                  icon: Icons.edit, iconColor: const Color(0xFFEC4899),
-                  value: stats.avgWritingScore.toStringAsFixed(1), label: t.progressStatWriting,
+                  icon: Icons.edit_note_rounded,
+                  value: stats.avgWritingScore.toStringAsFixed(1),
+                  label: t.progressStatWriting,
+                  skill: SkillType.writing,
                   onTap: () => _showStatDetailDialog(progressBloc, 'writing', _range),
                 ),
                 _StatBox(
-                  icon: Icons.mic, iconColor: const Color(0xFF14B8A6),
-                  value: '${stats.speakingAccuracy}%', label: t.progressStatSpeaking,
+                  icon: Icons.record_voice_over_rounded,
+                  value: '${stats.speakingAccuracy}%',
+                  label: t.progressStatSpeaking,
+                  skill: SkillType.speaking,
                   onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: StudentMobileUi.sectionGap),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(t.progressLeaderboard, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            _ShadcnCard(
+            StudentMobileUi.sectionHeader(context, title: t.progressLeaderboard),
+            const SizedBox(height: AppSpacing.s4),
+            AppCard(
+              variant: AppCardVariant.outline,
               padding: EdgeInsets.zero,
-              child: _buildLeaderboardContent(state, borderColor, t),
+              child: _buildLeaderboardContent(state, t),
             ),
+            const SizedBox(height: StudentMobileUi.sectionGap),
 
-            const SizedBox(height: 24),
-
-            _ShadcnCard(
+            AppCard(
+              variant: AppCardVariant.outline,
+              padding: const EdgeInsets.all(AppSpacing.s5),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(t.progressActivity, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textMain)),
-                      const Icon(Icons.bar_chart, color: Color(0xFF71717A), size: 20),
+                      Text(t.progressActivity, style: StudentMobileUi.sectionTitle(context)),
+                      const Icon(Icons.bar_chart, color: AppColors.textSecondary, size: 20),
                     ],
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.s6),
                   SizedBox(
                     height: 160,
                     child: WeeklyActivityBarsChart(
                       values: chart.minutes,
                       labels: chart.labels,
-                      barColor: primaryColor,
+                      barColor: AppColors.chartBar,
                       highlightIndex: chart.labels.length - 1,
-                      highlightColor: const Color(0xFFF59E0B),
+                      highlightColor: AppColors.chartHighlight,
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 24),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4),
-                border: Border.all(color: const Color(0xFFBBF7D0)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.all(16),
+            const SizedBox(height: StudentMobileUi.sectionGap),
+            AppCard(
+              variant: AppCardVariant.outline,
+              padding: const EdgeInsets.all(AppSpacing.s5),
               child: Row(
                 children: [
-                  const Icon(Icons.celebration_rounded, color: Color(0xFF16A34A), size: 32),
-                  const SizedBox(width: 16),
+                  const Icon(Icons.celebration_rounded, color: AppColors.success, size: 32),
+                  const SizedBox(width: AppSpacing.s5),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(callout.title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF15803D))),
-                        const SizedBox(height: 4),
-                        Text(callout.message, style: const TextStyle(fontSize: 13, color: Color(0xFF166534))),
+                        Text(
+                          callout.title,
+                          style: StudentMobileUi.cardTitle(context).copyWith(color: AppColors.success),
+                        ),
+                        const SizedBox(height: AppSpacing.s2),
+                        Text(callout.message, style: StudentMobileUi.body(context)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: Color(0xFF15803D)),
+                  const Icon(Icons.chevron_right, color: AppColors.success),
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: AppSpacing.s9),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildLeaderboardContent(ProgressState state, Color dividerColor, AppLocalizations t) {
+  Widget _buildLeaderboardContent(ProgressState state, AppLocalizations t) {
     if (state.leaderboardStatus == LeaderboardStatus.loading) {
       return const Padding(
-        padding: EdgeInsets.all(24.0),
-        child: Center(child: CircularProgressIndicator()),
+        padding: EdgeInsets.all(AppSpacing.s6),
+        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
       );
     }
 
     if (state.leaderboardStatus == LeaderboardStatus.error) {
       return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(child: Text(state.errorMessage ?? t.leaderboardLoadFailed, style: const TextStyle(fontSize: 12))),
+        padding: const EdgeInsets.all(AppSpacing.s5),
+        child: Center(
+          child: Text(
+            state.errorMessage ?? t.leaderboardLoadFailed,
+            style: StudentMobileUi.caption(context),
+            textAlign: TextAlign.center,
+          ),
+        ),
       );
     }
 
     final users = state.leaderboardUsers;
     if (users.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(child: Text(t.leaderboardEmpty, style: const TextStyle(color: Colors.grey))),
+      return StudentMobileUi.emptyState(
+        context,
+        icon: Icons.leaderboard_outlined,
+        title: t.leaderboardEmpty,
+        body: '',
       );
     }
 
@@ -529,10 +523,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         if (user.isSeparator) {
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            color: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
+            color: AppColors.surfaceCard,
             child: const Center(
-              child: Text('...', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey)),
+              child: Text(
+                '...',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+              ),
             ),
           );
         }
@@ -547,38 +544,10 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               avatarUrl: user.avatarUrl,
               onTap: () => _showUserProfile(context, user.id),
             ),
-            if (index < users.length - 1)
-              Divider(height: 1, color: dividerColor),
+            if (index < users.length - 1) const Divider(height: 1, color: AppColors.outline),
           ],
         );
       }),
-    );
-  }
-}
-
-// ==============================================================================
-// 🏞️ WIDGET COMPONENTS (Giữ nguyên)
-// ==============================================================================
-
-class _ShadcnCard extends StatelessWidget {
-  final Widget child;
-  final EdgeInsetsGeometry? padding;
-
-  const _ShadcnCard({required this.child, this.padding});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding ?? const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: child,
     );
   }
 }
@@ -600,104 +569,63 @@ class _LeaderRow extends StatelessWidget {
     this.onTap,
   });
 
+  Color get _rankColor {
+    if (rank == 1) return AppColors.accent;
+    if (rank == 2) return AppColors.textSecondary;
+    if (rank == 3) return AppColors.warning;
+    return AppColors.textMuted;
+  }
+
   @override
   Widget build(BuildContext context) {
-    Color rankColor;
-    if (rank == 1) rankColor = const Color(0xFFEAB308);
-    else if (rank == 2) rankColor = const Color(0xFF94A3B8);
-    else if (rank == 3) rankColor = const Color(0xFFB45309);
-    else rankColor = const Color(0xFF71717A);
-
     return Material(
-      color: Colors.transparent,
+      color: isMe ? AppColors.primaryTint : Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Container(
-          color: isMe ? const Color(0xFFF0F9FF) : Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
           child: Row(
             children: [
               SizedBox(
                 width: 32,
                 child: Text(
                   '#$rank',
-                  style: TextStyle(
+                  style: StudentMobileUi.caption(context).copyWith(
                     fontWeight: FontWeight.w700,
-                    color: rankColor,
-                    fontSize: 14,
+                    color: _rankColor,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.s3),
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFE4E4E7)),
+                  border: Border.all(color: AppColors.outline),
                   image: (avatarUrl != null && avatarUrl!.isNotEmpty)
                       ? DecorationImage(image: NetworkImage(avatarUrl!), fit: BoxFit.cover)
                       : null,
-                  color: const Color(0xFFF4F4F5),
+                  color: AppColors.surfaceSubtle,
                 ),
                 child: (avatarUrl == null || avatarUrl!.isEmpty)
-                    ? const Icon(Icons.person, size: 20, color: Color(0xFF71717A))
+                    ? const Icon(Icons.person, size: 20, color: AppColors.textSecondary)
                     : null,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.s4),
               Expanded(
                 child: Text(
                   name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: StudentMobileUi.cardTitle(context).copyWith(
                     fontWeight: isMe ? FontWeight.w700 : FontWeight.w500,
-                    color: const Color(0xFF09090B),
-                    fontSize: 14,
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                xp,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF09090B),
-                  fontSize: 13,
-                ),
-              ),
+              const SizedBox(width: AppSpacing.s3),
+              Text(xp, style: StudentMobileUi.cardTitle(context)),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterTab extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _FilterTab({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: selected ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))] : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? const Color(0xFF09090B) : const Color(0xFF71717A),
           ),
         ),
       ),
@@ -707,39 +635,40 @@ class _FilterTab extends StatelessWidget {
 
 class _StatBox extends StatelessWidget {
   final IconData icon;
-  final Color iconColor;
   final String value;
   final String label;
   final VoidCallback? onTap;
+  final SkillType? skill;
 
   const _StatBox({
     required this.icon,
-    required this.iconColor,
     required this.value,
     required this.label,
     this.onTap,
+    this.skill,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return AppCard(
+      variant: AppCardVariant.outline,
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE4E4E7)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: iconColor, size: 24),
-            const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF09090B))),
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A)), textAlign: TextAlign.center),
-          ],
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s4),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          StudentMobileUi.skillIconBox(icon, size: 40, skill: skill),
+          const SizedBox(height: AppSpacing.s3),
+          Text(value, style: StudentMobileUi.kpi(context)),
+          const SizedBox(height: AppSpacing.s2),
+          Text(
+            label,
+            style: StudentMobileUi.caption(context),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

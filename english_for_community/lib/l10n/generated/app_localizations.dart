@@ -338,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Email'**
   String get labelEmail;
 
+  /// No description provided for @loginEmailOrUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or username'**
+  String get loginEmailOrUsername;
+
+  /// No description provided for @hintLoginEmailOrUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email or username'**
+  String get hintLoginEmailOrUsername;
+
   /// No description provided for @labelPassword.
   ///
   /// In en, this message translates to:
@@ -353,7 +365,7 @@ abstract class AppLocalizations {
   /// No description provided for @hintPassword.
   ///
   /// In en, this message translates to:
-  /// **'Enter password...'**
+  /// **'Enter your password'**
   String get hintPassword;
 
   /// No description provided for @rememberMe.
@@ -986,11 +998,53 @@ abstract class AppLocalizations {
   /// **'Ops center'**
   String get adminNavOps;
 
+  /// No description provided for @adminNavOpsSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderation, export, permissions'**
+  String get adminNavOpsSub;
+
   /// No description provided for @adminNavReleases.
   ///
   /// In en, this message translates to:
   /// **'Releases'**
   String get adminNavReleases;
+
+  /// No description provided for @adminNavReleasesSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve, schedule, publish'**
+  String get adminNavReleasesSub;
+
+  /// No description provided for @adminContentItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'topics'**
+  String get adminContentItemCount;
+
+  /// No description provided for @adminListeningDictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictation'**
+  String get adminListeningDictation;
+
+  /// No description provided for @adminListeningDictationSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen and type (cues)'**
+  String get adminListeningDictationSub;
+
+  /// No description provided for @adminListeningComprehension.
+  ///
+  /// In en, this message translates to:
+  /// **'Comprehension'**
+  String get adminListeningComprehension;
+
+  /// No description provided for @adminListeningComprehensionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Multiple-choice listening quiz'**
+  String get adminListeningComprehensionSub;
 
   /// No description provided for @adminOverviewTitle.
   ///
@@ -1039,6 +1093,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No reports in this status'**
   String get adminNoReportsFound;
+
+  /// No description provided for @adminUsersTrash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trash'**
+  String get adminUsersTrash;
+
+  /// No description provided for @adminUserRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'Restored {name}'**
+  String adminUserRestored(String name);
+
+  /// No description provided for @adminReportStatusUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Status updated successfully'**
+  String get adminReportStatusUpdated;
+
+  /// No description provided for @adminActionSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Action completed successfully'**
+  String get adminActionSuccess;
+
+  /// No description provided for @adminReleaseConfirmCodeInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmation code is incorrect'**
+  String get adminReleaseConfirmCodeInvalid;
 
   /// No description provided for @superAdminRole.
   ///
@@ -2540,6 +2624,12 @@ abstract class AppLocalizations {
   /// **'Profile updated successfully'**
   String get profileUpdatedSuccess;
 
+  /// No description provided for @changePhotoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change photo'**
+  String get changePhotoHint;
+
   /// No description provided for @sectionPublicInfo.
   ///
   /// In en, this message translates to:
@@ -3986,6 +4076,66 @@ abstract class AppLocalizations {
   /// **'Update your name, avatar, and contact details.'**
   String get teacherAccountEditProfileSubtitle;
 
+  /// No description provided for @adminAccountRoleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get adminAccountRoleAdmin;
+
+  /// No description provided for @adminAccountOpenMenu.
+  ///
+  /// In en, this message translates to:
+  /// **'Account menu'**
+  String get adminAccountOpenMenu;
+
+  /// No description provided for @adminUserRoleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get adminUserRoleStudent;
+
+  /// No description provided for @adminUserRoleTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get adminUserRoleTeacher;
+
+  /// No description provided for @adminUserRoleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Administrator'**
+  String get adminUserRoleAdmin;
+
+  /// No description provided for @adminUserStatusOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get adminUserStatusOnline;
+
+  /// No description provided for @adminUserStatusOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get adminUserStatusOffline;
+
+  /// No description provided for @adminUserActiveNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Active now'**
+  String get adminUserActiveNow;
+
+  /// No description provided for @adminUserNeverActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Never active'**
+  String get adminUserNeverActive;
+
+  /// No description provided for @adminUserLastActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Last active: {when}'**
+  String adminUserLastActive(String when);
+
   /// No description provided for @teacherDashboardGreeting.
   ///
   /// In en, this message translates to:
@@ -5055,6 +5205,24 @@ abstract class AppLocalizations {
   /// **'Start'**
   String get studentExamStart;
 
+  /// No description provided for @studentExamResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get studentExamResume;
+
+  /// No description provided for @studentExamResumeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress — tap to continue'**
+  String get studentExamResumeHint;
+
+  /// No description provided for @examCardAlreadySubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get examCardAlreadySubmitted;
+
   /// No description provided for @studentExamUnknownTitle.
   ///
   /// In en, this message translates to:
@@ -5565,11 +5733,53 @@ abstract class AppLocalizations {
   /// **'Students in lobby'**
   String get teacherExamSessionLiveRosterTitle;
 
+  /// No description provided for @teacherExamSessionLiveRosterTitleLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Students in exam'**
+  String get teacherExamSessionLiveRosterTitleLive;
+
   /// No description provided for @teacherExamSessionLiveRosterHint.
   ///
   /// In en, this message translates to:
   /// **'Count and list update in real time when students join the waiting room.'**
   String get teacherExamSessionLiveRosterHint;
+
+  /// No description provided for @teacherExamParticipantNotReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Not ready'**
+  String get teacherExamParticipantNotReady;
+
+  /// No description provided for @teacherExamParticipantReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get teacherExamParticipantReady;
+
+  /// No description provided for @teacherExamParticipantInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get teacherExamParticipantInProgress;
+
+  /// No description provided for @teacherExamParticipantSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherExamParticipantSubmitted;
+
+  /// No description provided for @teacherExamParticipantExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Time expired'**
+  String get teacherExamParticipantExpired;
+
+  /// No description provided for @teacherExamParticipantVoided.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed'**
+  String get teacherExamParticipantVoided;
 
   /// No description provided for @teacherExamSessionJoinedCount.
   ///
@@ -7883,11 +8093,59 @@ abstract class AppLocalizations {
   /// **'Grammar'**
   String get teacherExamGrammarTitle;
 
+  /// No description provided for @teacherExamGrammarIncludeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Include Grammar section'**
+  String get teacherExamGrammarIncludeSubtitle;
+
+  /// No description provided for @teacherExamGrammarQuestionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 question} other{{count} questions}}'**
+  String teacherExamGrammarQuestionCount(int count);
+
+  /// No description provided for @teacherExamGrammarEnabledNoItems.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar is on but has no questions. Add at least one question or turn Grammar off.'**
+  String get teacherExamGrammarEnabledNoItems;
+
   /// No description provided for @teacherExamGrammarHint.
   ///
   /// In en, this message translates to:
   /// **'Optional. Add cloze, gap fill, matching, sentence order, or multiple choice. All are auto-scored. If the exam includes skills, total Grammar points cannot exceed 100.'**
   String get teacherExamGrammarHint;
+
+  /// No description provided for @teacherExamWritingPublishNeedPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Writing is on: set a writing prompt (AI or manual). A library topic alone is not enough.'**
+  String get teacherExamWritingPublishNeedPrompt;
+
+  /// No description provided for @teacherExamWritingAiPickTaskTypeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Task type for AI prompts'**
+  String get teacherExamWritingAiPickTaskTypeTitle;
+
+  /// No description provided for @teacherExamWritingAiPickTaskTypeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. Leave as “Any” to get up to 3 different task types.'**
+  String get teacherExamWritingAiPickTaskTypeHint;
+
+  /// No description provided for @teacherExamWritingAiTaskTypeAny.
+  ///
+  /// In en, this message translates to:
+  /// **'Any (mixed types)'**
+  String get teacherExamWritingAiTaskTypeAny;
+
+  /// No description provided for @teacherExamWritingAiNeedTopicOrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a writing topic, or enter an exam title above, before generating AI prompts.'**
+  String get teacherExamWritingAiNeedTopicOrTitle;
 
   /// No description provided for @teacherExamGrammarAdd.
   ///
@@ -7912,6 +8170,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add at least one exercise for every skill that is turned on.'**
   String get teacherExamPublishPickEachIncludedSkill;
+
+  /// No description provided for @teacherExamSpeakingExerciseRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking is on but no exercise is linked. Tap \"Add exercise\" and pick a Speaking set.'**
+  String get teacherExamSpeakingExerciseRequired;
 
   /// No description provided for @teacherExamWritingPromptSectionTitle.
   ///
@@ -8351,6 +8615,12 @@ abstract class AppLocalizations {
   /// **'No exercise linked for this part.'**
   String get integratedExamEmbeddedNoResource;
 
+  /// No description provided for @integratedExamEmbeddedNoSpeakingResource.
+  ///
+  /// In en, this message translates to:
+  /// **'No speaking exercise linked. Ask your teacher to add a Speaking set in the exam editor, then start a new session.'**
+  String get integratedExamEmbeddedNoSpeakingResource;
+
   /// No description provided for @integratedExamGrammarUnsupported.
   ///
   /// In en, this message translates to:
@@ -8362,6 +8632,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Match'**
   String get integratedExamMatchPick;
+
+  /// No description provided for @integratedExamMatchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an item on the left, then tap on the right to connect — or long-press and drag to the matching answer. Lines show your pairs.'**
+  String get integratedExamMatchHint;
+
+  /// No description provided for @integratedExamMatchHintCompact.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a phrase on the left, then tap an answer chip below — or drag a chip into the dashed slot. Each pair has its own color.'**
+  String get integratedExamMatchHintCompact;
+
+  /// No description provided for @integratedExamMatchAnswersPool.
+  ///
+  /// In en, this message translates to:
+  /// **'Answers'**
+  String get integratedExamMatchAnswersPool;
+
+  /// No description provided for @integratedExamMatchTapAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap an answer below'**
+  String get integratedExamMatchTapAnswer;
+
+  /// No description provided for @integratedExamMatchDropHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Drop answer here'**
+  String get integratedExamMatchDropHere;
 
   /// No description provided for @integratedExamReorderHint.
   ///

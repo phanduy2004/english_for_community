@@ -55,7 +55,7 @@ class AdminPageScaffold extends StatelessWidget {
     final Widget expandedChild;
     if (scrollable) {
       expandedChild = SingleChildScrollView(
-        padding: pad.copyWith(top: 0),
+        padding: pad,
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -66,7 +66,7 @@ class AdminPageScaffold extends StatelessWidget {
       );
     } else {
       expandedChild = Padding(
-        padding: pad.copyWith(top: 0),
+        padding: pad,
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -107,10 +107,11 @@ class _AdminPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.s8, AppSpacing.s5, AppSpacing.s8, AppSpacing.s5),
+      padding: AdminWebUi.pageHeaderPadding,
+      constraints: const BoxConstraints(minHeight: AdminWebUi.pageHeaderMinHeight),
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
-        border: Border(bottom: BorderSide(color: AppColors.outlineMuted, width: 1)),
+        border: Border(bottom: BorderSide(color: AppColors.outline, width: 1)),
       ),
       child: LayoutBuilder(
         builder: (context, c) {
@@ -142,7 +143,7 @@ class _AdminPageHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (crumbRow != null) crumbRow,
-                    Text(title, style: AdminWebUi.webH1(context)),
+                    Text(title, style: AdminWebUi.webPageTitle(context)),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(subtitle!, style: AdminWebUi.webCaption(context)),

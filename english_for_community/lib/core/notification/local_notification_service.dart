@@ -10,6 +10,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../utils/global_keys.dart';
+import 'notification_navigation.dart';
 
 class LocalNotificationService {
   // Singleton Pattern
@@ -100,52 +101,13 @@ class LocalNotificationService {
   // 🟢 3. XỬ LÝ ĐIỀU HƯỚNG THÔNG MINH (LOGIC MỚI)
   void _handleNotificationTap(String payload) {
     final context = rootNavigatorKey.currentContext;
-    if (context == null) {
-      print("❌ Context is null, cannot navigate");
-      return;
-    }
+    if (context == null) return;
 
     try {
-      // A. Cố gắng giải mã JSON
-      final Map<String, dynamic> data = jsonDecode(payload);
-
-      // --- TRƯỜNG HỢP 1: THÔNG BÁO LISTENING (Reply/Reaction) ---
-      if (data.containsKey('listeningId')) {
-        final String listeningId = data['listeningId'];
-        final String? commentId = data['commentId'];
-        final String audioUrl = data['audioUrl'] ?? '';
-        final String? cueId = data['cueId'];
-        print("🚀 Navigating to Listening: $listeningId, Target Comment: $commentId");
-
-        GoRouter.of(context).pushNamed(
-          'ListeningSkillsPage',
-          pathParameters: {'listeningId': listeningId},
-          extra: {
-            'listeningId': listeningId,
-            'audioUrl': audioUrl,
-            'targetCommentId': commentId, // 🔥 ID comment cần highlight
-            'openDiscussion': true,       // 🔥 Cờ mở tab Discussion
-            'cueId': cueId,
-          },
-        );
-      }
-
-      // --- TRƯỜNG HỢP 2: THÔNG BÁO TỪ VỰNG (Daily Word) ---
-      else if (data.containsKey('wordId')) {
-        print("🚀 Navigating to Vocabulary...");
-        // Điều hướng đến trang từ vựng (Bạn có thể sửa route này theo ý muốn)
-        GoRouter.of(context).pushNamed('VocabularyPage');
-
-        // Nếu muốn mở chi tiết từ vựng:
-        // GoRouter.of(context).pushNamed(kDictDetailRouteName, extra: Entry(...));
-        // (Lưu ý: Cần fetch dữ liệu Entry từ DB dựa trên wordId trước khi push)
-      }
-
+      final data = Map<String, dynamic>.from(jsonDecode(payload) as Map);
+      navigateFromNotification(GoRouter.of(context), data: data);
     } catch (e) {
-      print("⚠️ Payload is not JSON or Error parsing: $e");
-      // Fallback: Nếu payload là chuỗi thường (logic cũ), xử lý tại đây
-      // Ví dụ: Mở trang chủ
-      // GoRouter.of(context).go('/homePage');
+      print('⚠️ Notification payload parse error: $e');
     }
   }
 

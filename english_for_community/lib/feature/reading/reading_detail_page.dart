@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'dart:ui';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,7 +14,11 @@ import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/repository/reading_repository.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/ui/exam_system_ui.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import '../../core/ui/widget/app_card.dart';
 import '../student/exams/exam_embedded_skill_scope.dart';
 
 // =============================================================================
@@ -201,10 +204,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB);
-    const textMain = Color(0xFF09090B);
-    const borderCol = Color(0xFFE4E4E7);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final primaryColor = AppColors.primary;
 
     return BlocConsumer<ReadingAttemptBloc, ReadingAttemptState>(
       listener: (context, state) {
@@ -259,7 +259,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                   ),
                   actions: [
                     TextButton(
-                      child: Text(d.commonRetry, style: const TextStyle(color: Color(0xFF71717A))),
+                      child: Text(d.commonRetry, style: const TextStyle(color: AppColors.textSecondary)),
                       onPressed: () {
                         Navigator.of(ctx).pop();
                         context.read<ReadingAttemptBloc>().add(ResetAttemptEvent());
@@ -311,7 +311,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         final tabBar = TabBar(
           controller: _tabController,
           labelColor: primaryColor,
-          unselectedLabelColor: const Color(0xFF71717A),
+          unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: primaryColor,
           indicatorSize: TabBarIndicatorSize.tab,
           labelStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -351,24 +351,39 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         }
 
         return Scaffold(
-          backgroundColor: bgPage,
+          backgroundColor: AppColors.surface,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            toolbarHeight: StudentMobileUi.appBarHeight,
             elevation: 0,
             scrolledUnderElevation: 0,
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: textMain),
+              icon: const Icon(Icons.close_rounded, size: 20),
               onPressed: () => Navigator.of(context).pop(),
             ),
-            title: Text(widget.reading.title, style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
-            centerTitle: true,
+            title: Text(
+              widget.reading.title,
+              style: StudentMobileUi.sectionTitle(context),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(48),
-              child: Container(
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: borderCol, width: 1)),
-                ),
-                child: tabBar,
+              preferredSize: const Size.fromHeight(50),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    height: 2,
+                    color: primaryColor.withValues(alpha: 0.55),
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      border: Border(bottom: BorderSide(color: AppColors.outline)),
+                    ),
+                    child: tabBar,
+                  ),
+                ],
               ),
             ),
           ),
@@ -387,7 +402,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE4E4E7))),
+        border: Border(bottom: BorderSide(color: AppColors.outline)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -403,7 +418,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             style: TextStyle(
               fontWeight: FontWeight.w600,
               fontSize: 15,
-              color: isTimeRunningOut ? Colors.red : const Color(0xFF09090B),
+              color: isTimeRunningOut ? Colors.red : AppColors.textPrimary,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
@@ -416,15 +431,15 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     final t = context.l10n;
     String textToShow = t.readingReviewMode;
     IconData icon = Icons.remove_red_eye_outlined;
-    Color color = const Color(0xFF09090B);
+    Color color = AppColors.textPrimary;
     Color bgColor = Colors.white;
     final score = state.attemptResult?.score ?? widget.reading.progress?.highScore;
 
     if (score != null) {
       textToShow = t.readingReviewingWithScore(score.round());
       icon = Icons.check_circle_outline;
-      color = const Color(0xFF15803D);
-      bgColor = const Color(0xFFF0FDF4);
+      color = AppColors.success;
+      bgColor = AppColors.successBg;
     }
 
     return Container(
@@ -432,7 +447,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
         color: bgColor,
-        border: const Border(bottom: BorderSide(color: Color(0xFFE4E4E7))),
+        border: const Border(bottom: BorderSide(color: AppColors.outline)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -450,33 +465,15 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   Widget _buildBottomActionBar(BuildContext context, bool isSubmitting) {
     final t = context.l10n;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE4E4E7))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: isSubmitting ? null : () => _submitQuiz(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            child: isSubmitting
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(t.readingSubmitAnswers),
-          ),
-        ),
-      ),
+    final answered = _selectedAnswers.length;
+    final total = widget.reading.questions.length;
+    return StudentMobileUi.bottomActionBar(
+      context: context,
+      progressLabel: '$answered/$total',
+      ctaLabel: t.readingSubmitAnswers,
+      onCta: () => _submitQuiz(context),
+      loading: isSubmitting,
+      ctaEnabled: !isSubmitting,
     );
   }
 
@@ -486,7 +483,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     final translation = widget.reading.translation;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
+      padding: StudentMobileUi.pagePadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -499,7 +496,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 icon: Icon(_showReadingTranslation ? Icons.visibility_off_outlined : Icons.translate, size: 18, color: primaryColor),
                 label: Text(_showReadingTranslation ? t.readingHideTranslation : t.readingShowTranslation, style: TextStyle(color: primaryColor)),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: primaryColor.withOpacity(0.5)),
+                  side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
@@ -511,12 +508,12 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 ? ExamSystemUi.embeddedBodyStyle.copyWith(
                     fontSize: 14,
                     height: 1.55,
-                    color: const Color(0xFF3F3F46),
+                    color: AppColors.textSecondary,
                   )
                 : const TextStyle(
                     fontSize: 17,
                     height: 1.6,
-                    color: Color(0xFF09090B),
+                    color: AppColors.textPrimary,
                     fontFamily: 'Serif',
                   ),
           ),
@@ -524,11 +521,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           if (isSubmitted && _showReadingTranslation && translation != null) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
-              child: Divider(color: Color(0xFFE4E4E7)),
+              child: Divider(color: AppColors.outline),
             ),
             Text(
               translation.title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF09090B)),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 12),
             SelectableText(
@@ -536,7 +533,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               style: const TextStyle(
                 fontSize: 16,
                 height: 1.6,
-                color: Color(0xFF52525B),
+                color: AppColors.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -552,13 +549,13 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     }
     final questions = widget.reading.questions;
     if (questions.isEmpty) {
-      return Center(child: Text(context.l10n.readingNoQuestionsAvailable, style: const TextStyle(color: Color(0xFF71717A))));
+      return Center(child: Text(context.l10n.readingNoQuestionsAvailable, style: const TextStyle(color: AppColors.textSecondary)));
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20.0),
+      padding: StudentMobileUi.pagePadding,
       itemCount: questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 24),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.sectionGap),
       itemBuilder: (context, index) {
         return _buildQuestionCard(questions[index], index, isSubmitted);
       },
@@ -566,163 +563,118 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   }
 
   Widget _buildQuestionCard(ReadingQuestionEntity question, int questionIndex, bool isSubmitted) {
-    final theme = Theme.of(context);
     final compact = ExamEmbeddedSkillScope.compactOf(context);
     final bool isExpanded = _expandedFeedback.contains(question.id);
     final translation = question.translation;
-    final primaryColor = theme.colorScheme.primary;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-      ),
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: EdgeInsets.zero,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppSpacing.s5),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Question ${questionIndex + 1}',
                   style: compact
-                      ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.3)
-                      : const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF71717A), letterSpacing: 0.5),
+                      ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500)
+                      : StudentMobileUi.caption(context),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.s3),
                 Text(
                   question.questionText,
                   style: compact
                       ? ExamSystemUi.embeddedListTitle(context).copyWith(height: 1.4)
-                      : const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B), height: 1.4),
+                      : StudentMobileUi.cardTitle(context),
                 ),
                 if (isSubmitted && translation != null)
                   Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
+                    padding: const EdgeInsets.only(top: AppSpacing.s3),
                     child: Text(
                       translation.questionText,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF71717A), fontStyle: FontStyle.italic),
+                      style: StudentMobileUi.body(context).copyWith(
+                        fontStyle: FontStyle.italic,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ),
               ],
             ),
           ),
-          const Divider(height: 1, color: Color(0xFFF4F4F5)),
-          Column(
-            children: List.generate(question.options.length, (optionIndex) {
-              final optionText = question.options[optionIndex];
-              final isSelected = _selectedAnswers[question.id] == optionIndex;
-
-              Color bgColor = Colors.transparent;
-              Color textColor = const Color(0xFF09090B);
-              IconData? icon;
-              Color iconColor = Colors.transparent;
-
-              if (isSubmitted) {
-                final bool isCorrectAnswer = optionIndex == question.correctAnswerIndex;
-                if (isCorrectAnswer) {
-                  bgColor = const Color(0xFFECFDF5);
-                  textColor = const Color(0xFF14532D);
-                  icon = Icons.check_circle;
-                  iconColor = const Color(0xFF16A34A);
-                } else if (isSelected) {
-                  bgColor = const Color(0xFFFEF2F2);
-                  textColor = const Color(0xFF7F1D1D);
-                  icon = Icons.cancel;
-                  iconColor = const Color(0xFFDC2626);
+          Padding(
+            padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 0, AppSpacing.s5, AppSpacing.s5),
+            child: Column(
+              children: List.generate(question.options.length, (optionIndex) {
+                final optionText = question.options[optionIndex];
+                final isSelected = _selectedAnswers[question.id] == optionIndex;
+                final isCorrect = optionIndex == question.correctAnswerIndex;
+                String? sub;
+                if (isSubmitted &&
+                    translation != null &&
+                    translation.options.length > optionIndex) {
+                  sub = translation.options[optionIndex];
                 }
-              } else {
-                if (isSelected) {
-                  bgColor = primaryColor.withOpacity(0.05);
-                }
-              }
-
-              return InkWell(
-                onTap: isSubmitted ? null : () {
-                  setState(() {
-                    _selectedAnswers[question.id] = optionIndex;
-                  });
-                  if (widget.onExamAnswersChanged != null) {
-                    widget.onExamAnswersChanged!(
-                      Map<String, int>.from(_selectedAnswers),
-                      widget.reading.questions.length,
-                    );
-                  }
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: bgColor,
-                    border: Border(
-                      left: BorderSide(
-                          color: isSelected || (isSubmitted && optionIndex == question.correctAnswerIndex) ? (isSubmitted && optionIndex == question.correctAnswerIndex ? const Color(0xFF16A34A) : (isSelected && isSubmitted ? const Color(0xFFDC2626) : primaryColor)) : Colors.transparent,
-                          width: 4
-                      ),
-                      bottom: const BorderSide(color: Color(0xFFF4F4F5)),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(optionText, style: TextStyle(fontSize: 15, color: textColor, height: 1.4)),
-                            if (isSubmitted && translation != null && translation.options.length > optionIndex)
-                              Text(translation.options[optionIndex], style: TextStyle(fontSize: 13, color: textColor.withOpacity(0.7), fontStyle: FontStyle.italic)),
-                          ],
-                        ),
-                      ),
-                      if (icon != null) Icon(icon, color: iconColor, size: 20),
-                      if (!isSubmitted)
-                        Container(
-                          width: 20, height: 20,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: isSelected ? primaryColor : const Color(0xFFA1A1AA), width: 2),
-                            color: isSelected ? primaryColor : Colors.transparent,
-                          ),
-                          child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
-                        )
-                    ],
-                  ),
-                ),
-              );
-            }),
+                return StudentMobileUi.mcqOption(
+                  context: context,
+                  index: optionIndex,
+                  text: optionText,
+                  subtitle: sub,
+                  selected: !isSubmitted && isSelected,
+                  showReviewCorrect: isSubmitted && isCorrect,
+                  showReviewWrong: isSubmitted && isSelected && !isCorrect,
+                  onTap: isSubmitted
+                      ? null
+                      : () {
+                          setState(() => _selectedAnswers[question.id] = optionIndex);
+                          widget.onExamAnswersChanged?.call(
+                            Map<String, int>.from(_selectedAnswers),
+                            widget.reading.questions.length,
+                          );
+                        },
+                );
+              }),
+            ),
           ),
-
           if (isSubmitted && question.feedback != null)
             InkWell(
               onTap: () => setState(() {
-                if (isExpanded) _expandedFeedback.remove(question.id);
-                else _expandedFeedback.add(question.id);
+                if (isExpanded) {
+                  _expandedFeedback.remove(question.id);
+                } else {
+                  _expandedFeedback.add(question.id);
+                }
               }),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFAFAFA),
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                ),
+              child: AppCard(
+                variant: AppCardVariant.filled,
+                margin: const EdgeInsets.fromLTRB(AppSpacing.s5, 0, AppSpacing.s5, AppSpacing.s5),
+                padding: const EdgeInsets.all(AppSpacing.s4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFFF59E0B)),
-                        const SizedBox(width: 6),
-                        Text(context.l10n.readingFeedbackExplanation, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: theme.primaryColor)),
+                        const Icon(Icons.lightbulb_outline, size: 16, color: AppColors.accent),
+                        const SizedBox(width: AppSpacing.s3),
+                        Text(
+                          context.l10n.readingFeedbackExplanation,
+                          style: StudentMobileUi.cardTitle(context),
+                        ),
                         const Spacer(),
-                        Icon(isExpanded ? Icons.expand_less : Icons.expand_more, size: 18, color: const Color(0xFFA1A1AA)),
+                        Icon(
+                          isExpanded ? Icons.expand_less : Icons.expand_more,
+                          size: 18,
+                          color: AppColors.textMuted,
+                        ),
                       ],
                     ),
                     if (isExpanded) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.s3),
                       _buildFeedbackBox(context, question.feedback!),
-                    ]
+                    ],
                   ],
                 ),
               ),
@@ -736,22 +688,26 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          feedback.reasoning,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.5),
-        ),
-        if (feedback.paragraphIndex != null || feedback.keySentence != null)
+        Text(feedback.reasoning, style: StudentMobileUi.body(context)),
+        if (feedback.paragraphIndex != null || feedback.keySentence != null) ...[
           const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Divider(height: 1, color: Color(0xFFE4E4E7)),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.s3),
+            child: Divider(height: 1, color: AppColors.outline),
           ),
-        if (feedback.paragraphIndex != null)
-          Text(context.l10n.readingFeedbackLocationParagraph(feedback.paragraphIndex! + 1), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
-        if (feedback.keySentence != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(context.l10n.readingFeedbackKeySentence(feedback.keySentence!), style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontStyle: FontStyle.italic)),
-          ),
+          if (feedback.paragraphIndex != null)
+            Text(
+              context.l10n.readingFeedbackLocationParagraph(feedback.paragraphIndex! + 1),
+              style: StudentMobileUi.caption(context).copyWith(fontStyle: FontStyle.italic),
+            ),
+          if (feedback.keySentence != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.s2),
+              child: Text(
+                context.l10n.readingFeedbackKeySentence(feedback.keySentence!),
+                style: StudentMobileUi.caption(context).copyWith(fontStyle: FontStyle.italic),
+              ),
+            ),
+        ],
       ],
     );
   }

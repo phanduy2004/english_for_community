@@ -62,26 +62,24 @@ class _UserBanDialogState extends State<UserBanDialog> {
                   border: Border.all(color: borderCol),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Column(
-                  children: [
-                    RadioListTile<String>(
-                      title: const Text('Temporary', style: TextStyle(fontSize: 14)),
-                      subtitle: const Text('Automatically unbanned after duration', style: TextStyle(fontSize: 12)),
-                      value: 'temporary',
-                      groupValue: _selectedType,
-                      activeColor: textMain,
-                      onChanged: (v) => setState(() => _selectedType = v!),
-                    ),
-                    Divider(height: 1, color: borderCol),
-                    RadioListTile<String>(
-                      title: const Text('Permanent', style: TextStyle(fontSize: 14)),
-                      subtitle: const Text('Cannot access again', style: TextStyle(fontSize: 12)),
-                      value: 'permanent',
-                      groupValue: _selectedType,
-                      activeColor: Colors.red,
-                      onChanged: (v) => setState(() => _selectedType = v!),
-                    ),
-                  ],
+                child: RadioGroup<String>(
+                  groupValue: _selectedType,
+                  onChanged: (v) => setState(() => _selectedType = v ?? _selectedType),
+                  child: Column(
+                    children: [
+                      RadioListTile<String>(
+                        title: const Text('Temporary', style: TextStyle(fontSize: 14)),
+                        subtitle: const Text('Automatically unbanned after duration', style: TextStyle(fontSize: 12)),
+                        value: 'temporary',
+                      ),
+                      Divider(height: 1, color: borderCol),
+                      RadioListTile<String>(
+                        title: const Text('Permanent', style: TextStyle(fontSize: 14)),
+                        subtitle: const Text('Cannot access again', style: TextStyle(fontSize: 12)),
+                        value: 'permanent',
+                      ),
+                    ],
+                  ),
                 ),
               ),
 

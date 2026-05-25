@@ -1,4 +1,5 @@
-import 'package:english_for_community/core/locale/l10n_context.dart';
+﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -568,11 +569,16 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
     final permissionRows = _permissionRows;
     final allPerms = _allPermissions;
 
+    final l10n = context.l10n;
     return AdminPageScaffold(
-      title: context.l10n.adminNavOps,
-      subtitle: 'Monitor moderation, roles, and export system data.',
+      title: l10n.adminNavOps,
+      subtitle: l10n.adminNavOpsSub,
       scrollable: false,
       maxWidth: AdminWebUi.contentMaxTable,
+      breadcrumbs: [
+        AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+        AdminBreadcrumb(label: l10n.adminNavOps),
+      ],
       body: RefreshIndicator(
         onRefresh: _loadAll,
         child: ListView(
@@ -885,7 +891,8 @@ class _CompactDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      key: ValueKey(value),
+      initialValue: value,
       isExpanded: true,
       style: const TextStyle(fontSize: 13, color: Colors.black87),
       icon: const Icon(Icons.arrow_drop_down, size: 20),
@@ -920,7 +927,7 @@ class _MetricChip extends StatelessWidget {
         children: [
           Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
           const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: textColor.withOpacity(0.8), fontWeight: FontWeight.w500)),
+          Text(label, style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -1059,7 +1066,7 @@ class _SectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(

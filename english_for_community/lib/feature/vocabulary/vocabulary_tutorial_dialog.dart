@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
 import '../../l10n/generated/app_localizations.dart';
 
 class _TutorialStep {
@@ -29,10 +30,10 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   int _currentIndex = 0;
 
   List<_TutorialStep> _steps(AppLocalizations t) {
-    const textMuted = Color(0xFF71717A);
-    const green = Color(0xFF10B981);
-    const amber700 = Color(0xFFB45309);
-    const reviewRed = Color(0xFFEF4444);
+    const textMuted = AppColors.textSecondary;
+    const green = AppColors.success;
+    const amber700 = AppColors.warning;
+    const reviewRed = AppColors.danger;
 
     final bodyStyle = const TextStyle(fontSize: 15, color: textMuted, height: 1.6);
 
@@ -40,7 +41,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
       _TutorialStep(
         title: t.vocabTutorialSlide1Title,
         icon: Icons.auto_stories_rounded,
-        color: const Color(0xFF3B82F6),
+        color: AppColors.info,
         spans: [
           TextSpan(style: bodyStyle, children: [
             TextSpan(text: t.vocabTutorialSlide1a),
@@ -52,7 +53,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
       _TutorialStep(
         title: t.vocabTutorialSlide2Title,
         icon: Icons.search_rounded,
-        color: const Color(0xFFF59E0B),
+        color: AppColors.accent,
         spans: [
           TextSpan(style: bodyStyle, children: [
             TextSpan(text: t.vocabTutorialSlide2a),
@@ -97,7 +98,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
       _TutorialStep(
         title: t.vocabTutorialSlide4Title,
         icon: Icons.history_edu_rounded,
-        color: const Color(0xFFA855F7),
+        color: AppColors.tertiary,
         spans: [
           TextSpan(style: bodyStyle, children: [
             TextSpan(text: t.vocabTutorialSlide4a),
@@ -127,8 +128,8 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final steps = _steps(t);
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
+    const textMain = AppColors.textPrimary;
+    const textMuted = AppColors.textSecondary;
 
     final currentColor = steps[_currentIndex].color;
 
@@ -154,8 +155,8 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          currentColor.withOpacity(0.15),
-                          currentColor.withOpacity(0.02),
+                          currentColor.withValues(alpha: 0.15),
+                          currentColor.withValues(alpha: 0.02),
                         ],
                       ),
                     ),
@@ -171,7 +172,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: currentColor.withOpacity(0.3),
+                            color: currentColor.withValues(alpha: 0.3),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -243,7 +244,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                         height: 6,
                         width: _currentIndex == index ? 24 : 6,
                         decoration: BoxDecoration(
-                          color: _currentIndex == index ? currentColor : const Color(0xFFE4E4E7),
+                          color: _currentIndex == index ? currentColor : AppColors.outline,
                           borderRadius: BorderRadius.circular(3),
                         ),
                       );

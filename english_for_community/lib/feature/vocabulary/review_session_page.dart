@@ -4,7 +4,11 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/repository/user_vocab_repository.dart';
-
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'bloc_review/review_bloc.dart';
 import 'bloc_review/review_event.dart';
 import 'bloc_review/review_state.dart';
@@ -15,7 +19,8 @@ class ReviewSessionPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ReviewBloc(userVocabRepository: getIt<UserVocabRepository>())..add(FetchReviewWords()),
+      create: (context) =>
+          ReviewBloc(userVocabRepository: getIt<UserVocabRepository>())..add(FetchReviewWords()),
       child: const _ReviewSessionView(),
     );
   }
@@ -47,92 +52,110 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    const bgPage = Color(0xFFF9FAFB);
-    const textMain = Color(0xFF09090B);
+    final vocab = AppSkillColors.vocabulary;
 
     return Scaffold(
-      backgroundColor: bgPage,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        surfaceTintColor: Colors.transparent,
-        leading: IconButton(
-          icon: const Icon(Icons.close, color: textMain),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(t.vocabReviewSessionTitle, style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE4E4E7), height: 1),
-        ),
+      backgroundColor: AppColors.surface,
+      appBar: StudentMobileUi.skillAppBar(
+        context,
+        title: t.vocabReviewSessionTitle,
+        skill: SkillType.vocabulary,
       ),
       body: BlocConsumer<ReviewBloc, ReviewState>(
         listener: (context, state) {},
         builder: (context, state) {
-          if (state.status == ReviewStatus.loading) return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          if (state.status == ReviewStatus.loading) {
+            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          }
           if (state.status == ReviewStatus.error) {
             final msg = state.errorMessage;
             return Center(
-              child: Text(msg.isEmpty ? t.genericLoadError : msg),
+              child: Padding(
+                padding: StudentMobileUi.pagePadding,
+                child: StudentMobileUi.errorBanner(
+                  message: msg.isEmpty ? t.genericLoadError : msg,
+                  onRetry: () => context.read<ReviewBloc>().add(FetchReviewWords()),
+                  retryLabel: t.commonRetry,
+                ),
+              ),
             );
           }
-          if (state.status == ReviewStatus.complete || state.currentWord == null) return const _CompleteView();
+          if (state.status == ReviewStatus.complete || state.currentWord == null) {
+            return const _CompleteView();
+          }
 
           final word = state.currentWord!;
-          final progress = (state.currentIndex + 1) / state.wordsToReview.length;
+          final total = state.wordsToReview.length;
+          final current = state.currentIndex + 1;
+          final progress = current / total;
 
           return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Progress
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: progress, minHeight: 6,
-                    backgroundColor: const Color(0xFFE4E4E7),
-                    color: textMain, // Black progress
-                  ),
+                padding: const EdgeInsets.fromLTRB(
+                  StudentMobileUi.pageHPadding,
+                  AppSpacing.s4,
+                  StudentMobileUi.pageHPadding,
+                  AppSpacing.s4,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '$current / $total',
+                          style: AppTypography.label(color: AppColors.textSecondary),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${(progress * 100).round()}%',
+                          style: AppTypography.label(color: vocab.color),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.s3),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor: AppColors.outlineMuted,
+                        color: vocab.color,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: GestureDetector(
-                    onTap: () => context.read<ReviewBloc>().add(FlipCard()),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: const Color(0xFFE4E4E7)),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(word.headword, textAlign: TextAlign.center, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: textMain)),
-                          if (state.isFlipped) ...[
-                            const SizedBox(height: 16),
-                            Text('/${word.ipa ?? "..."}/', style: const TextStyle(fontSize: 18, color: Color(0xFF71717A), fontFamily: 'NotoSans')),
-                            const SizedBox(height: 24),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 32),
-                              child: Text(word.shortDefinition ?? '', textAlign: TextAlign.center, style: const TextStyle(fontSize: 18, color: Color(0xFF52525B))),
-                            ),
-                          ] else ...[
-                            const SizedBox(height: 48),
-                            Text(t.tapToSeeMeaning, style: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 14)),
-                          ]
-                        ],
-                      ),
-                    ),
+                  padding: const EdgeInsets.fromLTRB(
+                    StudentMobileUi.pageHPadding,
+                    AppSpacing.s3,
+                    StudentMobileUi.pageHPadding,
+                    AppSpacing.s4,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final minH = (constraints.maxHeight * 0.72).clamp(280.0, 420.0);
+                      return GestureDetector(
+                        onTap: () => context.read<ReviewBloc>().add(FlipCard()),
+                        child: _ReviewFlashcard(
+                          word: word.headword,
+                          ipa: word.ipa,
+                          definition: word.shortDefinition ?? '',
+                          isFlipped: state.isFlipped,
+                          tapHint: t.tapToSeeMeaning,
+                          minHeight: minH,
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
               _buildButtons(context, state, t),
-              const SizedBox(height: 24),
+              SizedBox(height: AppSpacing.s5 + MediaQuery.paddingOf(context).bottom),
             ],
           );
         },
@@ -143,16 +166,20 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
   Widget _buildButtons(BuildContext context, ReviewState state, AppLocalizations t) {
     if (!state.isFlipped) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: StudentMobileUi.pageHPadding),
         child: SizedBox(
-          width: double.infinity, height: 56,
-          child: ElevatedButton(
+          width: double.infinity,
+          child: FilledButton(
             onPressed: () => context.read<ReviewBloc>().add(FlipCard()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF09090B), foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.onPrimary,
             ),
-            child: Text(t.showAnswerButton, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(
+              t.showAnswerButton,
+              style: AppTypography.label(color: AppColors.onPrimary),
+            ),
           ),
         ),
       );
@@ -160,39 +187,274 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
 
     final word = state.currentWord!;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: StudentMobileUi.pageHPadding),
       child: Row(
         children: [
-          Expanded(child: _FeedbackBtn(label: t.srsHard, color: Colors.red, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'hard', word: word, duration: _getElapsedSeconds())))),
-          const SizedBox(width: 12),
-          Expanded(child: _FeedbackBtn(label: t.srsGood, color: Colors.orange, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'good', word: word, duration: _getElapsedSeconds())))),
-          const SizedBox(width: 12),
-          Expanded(child: _FeedbackBtn(label: t.srsEasy, color: Colors.green, onPressed: () => context.read<ReviewBloc>().add(SubmitFeedback(feedback: 'easy', word: word, duration: _getElapsedSeconds())))),
-        ],
+              Expanded(
+                child: _FeedbackBtn(
+                  label: t.srsHard,
+                  accent: AppColors.danger,
+                  onPressed: () => context.read<ReviewBloc>().add(
+                        SubmitFeedback(
+                          feedback: 'hard',
+                          word: word,
+                          duration: _getElapsedSeconds(),
+                        ),
+                      ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              Expanded(
+                child: _FeedbackBtn(
+                  label: t.srsGood,
+                  accent: AppColors.primary,
+                  onPressed: () => context.read<ReviewBloc>().add(
+                        SubmitFeedback(
+                          feedback: 'good',
+                          word: word,
+                          duration: _getElapsedSeconds(),
+                        ),
+                      ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              Expanded(
+                child: _FeedbackBtn(
+                  label: t.srsEasy,
+                  accent: AppColors.success,
+                  onPressed: () => context.read<ReviewBloc>().add(
+                        SubmitFeedback(
+                          feedback: 'easy',
+                          word: word,
+                          duration: _getElapsedSeconds(),
+                        ),
+                      ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+}
+
+/// Flashcard full-width — `05-mobile-screens` §6.3 (tỷ lệ ~ 280×360, căn giữa nội dung).
+class _ReviewFlashcard extends StatelessWidget {
+  const _ReviewFlashcard({
+    required this.word,
+    required this.ipa,
+    required this.definition,
+    required this.isFlipped,
+    required this.tapHint,
+    required this.minHeight,
+  });
+
+  final String word;
+  final String? ipa;
+  final String definition;
+  final bool isFlipped;
+  final String tapHint;
+  final double minHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final vocab = AppSkillColors.vocabulary;
+
+    return SizedBox(
+      width: double.infinity,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: minHeight),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surfaceCard,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.outline),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0A000000),
+                blurRadius: 8,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: 4,
+                  color: vocab.color,
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s6,
+                      vertical: AppSpacing.s7,
+                    ),
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      switchInCurve: Curves.easeOut,
+                      switchOutCurve: Curves.easeIn,
+                      child: isFlipped
+                          ? _BackFace(
+                              key: const ValueKey('back'),
+                              ipa: ipa,
+                              definition: definition,
+                            )
+                          : _FrontFace(
+                              key: const ValueKey('front'),
+                              word: word,
+                              tapHint: tapHint,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
+    );
+  }
+}
+
+class _FrontFace extends StatelessWidget {
+  const _FrontFace({
+    super.key,
+    required this.word,
+    required this.tapHint,
+  });
+
+  final String word;
+  final String tapHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: key,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          word,
+          textAlign: TextAlign.center,
+          style: AppTypography.kpiValue(web: false).copyWith(
+            fontSize: 32,
+            height: 1.15,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: StudentMobileUi.sectionGap),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.s4,
+              vertical: AppSpacing.s2,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSubtle,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(color: AppColors.outlineMuted),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.touch_app_outlined,
+                  size: 16,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: AppSpacing.s2),
+                Text(
+                  tapHint,
+                  style: StudentMobileUi.caption(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BackFace extends StatelessWidget {
+  const _BackFace({
+    super.key,
+    required this.ipa,
+    required this.definition,
+  });
+
+  final String? ipa;
+  final String definition;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: key,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (ipa != null && ipa!.isNotEmpty) ...[
+          Text(
+            '/$ipa/',
+            textAlign: TextAlign.center,
+            style: StudentMobileUi.body(context).copyWith(
+              fontFamily: 'NotoSans',
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s5),
+        ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.s5),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceSubtle,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.outlineMuted),
+          ),
+          child: Text(
+            definition.isEmpty ? '—' : definition,
+            textAlign: TextAlign.center,
+            style: StudentMobileUi.bodyLg(context),
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _FeedbackBtn extends StatelessWidget {
   final String label;
-  final MaterialColor color;
+  final Color accent;
   final VoidCallback onPressed;
-  const _FeedbackBtn({required this.label, required this.color, required this.onPressed});
+
+  const _FeedbackBtn({
+    required this.label,
+    required this.accent,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 56,
+      height: 44,
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          foregroundColor: color[700],
-          backgroundColor: color[50],
-          side: BorderSide(color: color[200]!),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          foregroundColor: accent,
+          side: BorderSide(color: accent.withValues(alpha: 0.45)),
+          backgroundColor: accent.withValues(alpha: 0.06),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
         ),
         onPressed: onPressed,
-        child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        child: Text(
+          label,
+          style: AppTypography.label(color: accent),
+        ),
       ),
     );
   }
@@ -200,26 +462,18 @@ class _FeedbackBtn extends StatelessWidget {
 
 class _CompleteView extends StatelessWidget {
   const _CompleteView();
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.check_circle_rounded, size: 64, color: Colors.green),
-          const SizedBox(height: 24),
-          Text(t.vocabSessionCompleteTitle, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(t.vocabSessionCompleteBody, style: const TextStyle(color: Colors.grey)),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.black, foregroundColor: Colors.white),
-            child: Text(t.backToHome),
-          )
-        ],
-      ),
+    return StudentMobileUi.emptyState(
+      context,
+      icon: Icons.check_circle_outline_rounded,
+      title: t.vocabSessionCompleteTitle,
+      body: t.vocabSessionCompleteBody,
+      ctaLabel: t.backToHome,
+      onCta: () => Navigator.of(context).pop(),
+      skill: SkillType.vocabulary,
     );
   }
 }

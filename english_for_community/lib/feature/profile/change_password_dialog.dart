@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -23,10 +24,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   bool _obscureConfirm = true;
 
   // Colors based on Shadcn theme
-  static const Color textMain = Color(0xFF09090B);
-  static const Color textMuted = Color(0xFF71717A);
-  static const Color borderCol = Color(0xFFE4E4E7);
-  static const Color primaryCol = Color(0xFF18181B);
+  static const Color textMain = AppColors.textPrimary;
+  static const Color textMuted = AppColors.textSecondary;
+  static const Color borderCol = AppColors.outline;
+  static const Color primaryCol = AppColors.primary;
 
   @override
   void dispose() {
@@ -209,7 +210,7 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(text,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF09090B)));
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary));
   }
 }
 
@@ -233,7 +234,7 @@ class _ShadcnInput extends StatelessWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 2,
               offset: const Offset(0, 1))
         ],
@@ -241,28 +242,28 @@ class _ShadcnInput extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
-        style: const TextStyle(fontSize: 14, color: Color(0xFF09090B)),
+        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(color: Color(0xFFA1A1AA), fontSize: 13),
+          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
+              borderSide: const BorderSide(color: AppColors.outline)),
           enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFE4E4E7))),
+              borderSide: const BorderSide(color: AppColors.outline)),
           focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF18181B), width: 1.2)),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.2)),
           filled: true,
           fillColor: Colors.white,
           suffixIcon: IconButton(
             icon: Icon(
               obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
               size: 18,
-              color: const Color(0xFF71717A),
+              color: AppColors.textSecondary,
             ),
             onPressed: onToggleObscure,
           ),

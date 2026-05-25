@@ -1,8 +1,11 @@
 import 'package:english_for_community/feature/writing/widgets/interactive_diff_text.dart';
 import 'package:flutter/material.dart';
-import 'package:pretty_diff_text/pretty_diff_text.dart';
 import '../../core/entity/writing_submission_entity.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import '../../core/ui/widget/app_card.dart';
 
 class WritingFeedbackPage extends StatelessWidget {
   final WritingSubmissionEntity submission;
@@ -11,10 +14,6 @@ class WritingFeedbackPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB);
-    const borderCol = Color(0xFFE4E4E7);
-    const textMain = Color(0xFF09090B);
-    final primaryColor = Theme.of(context).colorScheme.primary;
     final t = context.l10n;
 
     final fb = submission.feedback;
@@ -23,18 +22,10 @@ class WritingFeedbackPage extends StatelessWidget {
 
     if (fb == null) {
       return Scaffold(
-        backgroundColor: bgPage,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: const BackButton(color: textMain),
-          title: Text(t.writingFbErrorTitle, style: const TextStyle(color: textMain)),
-        ),
+        backgroundColor: AppColors.surface,
+        appBar: StudentMobileUi.appBar(context, title: t.writingFbErrorTitle),
         body: Center(
-          child: Text(
-            t.writingFbNoData,
-            style: const TextStyle(color: Color(0xFF71717A)),
-          ),
+          child: Text(t.writingFbNoData, style: StudentMobileUi.body(context)),
         ),
       );
     }
@@ -42,32 +33,30 @@ class WritingFeedbackPage extends StatelessWidget {
     return DefaultTabController(
       length: 4,
       child: Scaffold(
-        backgroundColor: bgPage,
+        backgroundColor: AppColors.surface,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          toolbarHeight: StudentMobileUi.appBarHeight,
           elevation: 0,
           scrolledUnderElevation: 0,
+          backgroundColor: AppColors.surface,
+          foregroundColor: AppColors.textPrimary,
           leading: IconButton(
-            icon: const Icon(Icons.close, color: textMain),
+            icon: const Icon(Icons.close_rounded, size: 20),
             onPressed: () => Navigator.of(context).pop(),
           ),
-          title: Text(
-            t.writingFbResultTitle,
-            style: const TextStyle(color: textMain, fontWeight: FontWeight.w600, fontSize: 16),
-          ),
-          centerTitle: true,
+          title: Text(t.writingFbResultTitle, style: StudentMobileUi.sectionTitle(context)),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(48),
             child: Container(
               decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: borderCol)),
+                border: Border(bottom: BorderSide(color: AppColors.outline)),
               ),
               child: TabBar(
-                labelColor: primaryColor,
-                unselectedLabelColor: const Color(0xFF71717A),
-                indicatorColor: primaryColor,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.primary,
                 indicatorSize: TabBarIndicatorSize.tab,
-                labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                labelStyle: StudentMobileUi.cardTitle(context),
                 tabs: [
                   Tab(text: t.writingFbTabOverview),
                   Tab(text: t.writingFbTabDetails),
@@ -82,7 +71,7 @@ class WritingFeedbackPage extends StatelessWidget {
           children: [
             // 1. OVERVIEW TAB
             SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: StudentMobileUi.pagePadding,
               child: Column(
                 children: [
                   // 👇 [MỚI] HIỂN THỊ ĐỀ BÀI & TASK TYPE
@@ -96,22 +85,22 @@ class WritingFeedbackPage extends StatelessWidget {
                             children: [
                               Text(
                                 t.writingFbTopicRequirement,
-                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain),
+                                style: StudentMobileUi.cardTitle(context),
                               ),
                               // Badge hiển thị Task Type
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF4F4F5),
+                                  color: AppColors.outlineMuted,
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: borderCol),
+                                  border: Border.all(color: AppColors.outline),
                                 ),
                                 child: Text(
                                   prompt.taskType?.toUpperCase() ?? 'WRITING',
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF71717A),
+                                    color: AppColors.textSecondary,
                                   ),
                                 ),
                               ),
@@ -124,13 +113,13 @@ class WritingFeedbackPage extends StatelessWidget {
                               padding: const EdgeInsets.only(bottom: 8.0),
                               child: Text(
                                 prompt.title!,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textMain),
+                                style: StudentMobileUi.sectionTitle(context),
                               ),
                             ),
                           // Nội dung câu hỏi
                           Text(
                             prompt.text ?? t.writingFbNoPromptContent,
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.5),
+                            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
                           ),
                         ],
                       ),
@@ -142,11 +131,11 @@ class WritingFeedbackPage extends StatelessWidget {
                   _ShadcnCard(
                     child: Column(
                       children: [
-                        Text(t.writingFbOverallBand, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A), fontWeight: FontWeight.w500)),
+                        Text(t.writingFbOverallBand, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         Text(
                           (fb.overall ?? 0).toStringAsFixed(1),
-                          style: TextStyle(fontSize: 48, fontWeight: FontWeight.w800, color: primaryColor, height: 1),
+                          style: StudentMobileUi.greeting(context).copyWith(fontSize: 48, height: 1),
                         ),
                       ],
                     ),
@@ -156,14 +145,14 @@ class WritingFeedbackPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(t.writingFbSubscores, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
+                        Text(t.writingFbSubscores, style: StudentMobileUi.cardTitle(context)),
                         const SizedBox(height: 16),
                         _ScoreRow(label: t.writingFbCriterionTR, score: fb.tr),
-                        const Divider(height: 24, color: Color(0xFFF4F4F5)),
+                        const Divider(height: 24, color: AppColors.outlineMuted),
                         _ScoreRow(label: t.writingFbCriterionCC, score: fb.cc),
-                        const Divider(height: 24, color: Color(0xFFF4F4F5)),
+                        const Divider(height: 24, color: AppColors.outlineMuted),
                         _ScoreRow(label: t.writingFbCriterionLR, score: fb.lr),
-                        const Divider(height: 24, color: Color(0xFFF4F4F5)),
+                        const Divider(height: 24, color: AppColors.outlineMuted),
                         _ScoreRow(label: t.writingFbCriterionGRA, score: fb.gra),
                       ],
                     ),
@@ -176,9 +165,9 @@ class WritingFeedbackPage extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.lightbulb_outline, size: 18, color: Color(0xFFF59E0B)),
+                              const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.accent),
                               const SizedBox(width: 8),
-                              Text(t.writingFbKeyTips, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: textMain)),
+                              Text(t.writingFbKeyTips, style: StudentMobileUi.cardTitle(context)),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -193,7 +182,7 @@ class WritingFeedbackPage extends StatelessWidget {
 
             // 2. DETAILS TAB
             ListView(
-              padding: const EdgeInsets.all(20),
+              padding: StudentMobileUi.pagePadding,
               children: [
                 _CriteriaCard(label: t.writingFbCriterionTR, score: fb.tr, bullets: fb.trBullets, note: fb.trNote),
                 const SizedBox(height: 16),
@@ -207,18 +196,18 @@ class WritingFeedbackPage extends StatelessWidget {
 
             // 3. REWRITES TAB (Đã sửa fix xuống dòng)
             SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: StudentMobileUi.pagePadding,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     t.writingFbDetailedCorrection,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF09090B)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     t.writingFbTapHighlighted,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   if (fb.paragraphs != null && fb.paragraphs!.isNotEmpty)
@@ -247,7 +236,7 @@ class WritingFeedbackPage extends StatelessWidget {
 
             // 4. SAMPLES TAB
             ListView(
-              padding: const EdgeInsets.all(20),
+              padding: StudentMobileUi.pagePadding,
               children: [
                 if (fb.sampleMid != null)
                   _SampleCard(title: t.writingFbSampleMidTitle, content: fb.sampleMid!),
@@ -265,56 +254,15 @@ class WritingFeedbackPage extends StatelessWidget {
 }
 
 // ... (Các widget phụ _ShadcnCard, _ScoreRow, _CriteriaCard, _BulletedList, _SampleCard giữ nguyên) ...
-
-// Widget _DiffViewer đã được sửa ở câu trước để fix lỗi xuống dòng
-class _DiffViewer extends StatelessWidget {
-  final String oldText;
-  final String newText;
-
-  const _DiffViewer({required this.oldText, required this.newText});
-
-  String _norm(String s) {
-    // Chỉ thay thế nhiều dấu cách/tab liên tiếp thành 1 dấu cách, KHÔNG thay thế \n
-    return s.replaceAll(RegExp(r'[ \t]+'), ' ').trim();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final oldN = _norm(oldText);
-    final newN = _norm(newText);
-
-    if (oldN == newN) {
-      return Text(oldText, style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF52525B)));
-    }
-
-    return PrettyDiffText(
-      oldText: oldN,
-      newText: newN,
-      defaultTextStyle: const TextStyle(fontSize: 14, height: 1.6, color: Color(0xFF09090B)),
-      addedTextStyle: const TextStyle(backgroundColor: Color(0xFFDCFCE7), color: Color(0xFF14532D), fontWeight: FontWeight.w500),
-      deletedTextStyle: const TextStyle(backgroundColor: Color(0xFFFEE2E2), color: Color(0xFF991B1B), decoration: TextDecoration.lineThrough),
-    );
-  }
-}
-
-// ... (Các widget phụ khác copy lại từ code cũ của bạn nếu cần: _ShadcnCard, _ScoreRow, etc.) ...
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
   const _ShadcnCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE4E4E7)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: const EdgeInsets.all(AppSpacing.s5),
       child: child,
     );
   }
@@ -331,16 +279,16 @@ class _ScoreRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: Color(0xFF09090B))),
+        Text(label, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F4F5),
+            color: AppColors.outlineMuted,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             score?.toStringAsFixed(1) ?? '-',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF09090B)),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
         ),
       ],
@@ -365,8 +313,8 @@ class _CriteriaCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF09090B))),
-              Text(score?.toStringAsFixed(1) ?? 'N/A', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF71717A))),
+              Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              Text(score?.toStringAsFixed(1) ?? 'N/A', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
             ],
           ),
           const SizedBox(height: 12),
@@ -376,11 +324,11 @@ class _CriteriaCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: AppColors.surface,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFE4E4E7)),
+                border: Border.all(color: AppColors.outline),
               ),
-              child: Text(note!, style: const TextStyle(fontSize: 13, color: Color(0xFF52525B), fontStyle: FontStyle.italic)),
+              child: Text(note!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
             ),
           ],
         ],
@@ -402,9 +350,9 @@ class _BulletedList extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('•', style: TextStyle(color: Color(0xFF71717A), height: 1.4)),
+            const Text('•', style: TextStyle(color: AppColors.textSecondary, height: 1.4)),
             const SizedBox(width: 8),
-            Expanded(child: Text(item, style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.4))),
+            Expanded(child: Text(item, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4))),
           ],
         ),
       )).toList(),
@@ -416,7 +364,7 @@ class _SampleCard extends StatelessWidget {
   final String title;
   final String content;
 
-  const _SampleCard({super.key, required this.title, required this.content});
+  const _SampleCard({required this.title, required this.content});
 
   @override
   Widget build(BuildContext context) {
@@ -435,7 +383,7 @@ class _SampleCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600, // Shadcn thường dùng w600 cho tiêu đề
-              color: Color(0xFF09090B),
+              color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -453,7 +401,7 @@ class _SampleCard extends StatelessWidget {
                   fontSize: 15,
                   height: 1.6,
                   fontWeight: FontWeight.w400,
-                  color: Color(0xFF09090B), // Màu đen chuẩn
+                  color: AppColors.textPrimary, // Màu đen chuẩn
                 ),
               ),
             );
@@ -540,16 +488,16 @@ class _RewriteParagraphCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF71717A)),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                   ),
                 ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: hasToken ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
+                  color: hasToken ? AppColors.successBg : AppColors.infoBg,
                   borderRadius: BorderRadius.circular(999),
                   border: Border.all(
-                    color: hasToken ? const Color(0xFFBBF7D0) : const Color(0xFFBFDBFE),
+                    color: hasToken ? AppColors.success : AppColors.info,
                   ),
                 ),
                 child: Text(
@@ -557,7 +505,7 @@ class _RewriteParagraphCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
-                    color: hasToken ? const Color(0xFF166534) : const Color(0xFF1D4ED8),
+                    color: hasToken ? AppColors.success : AppColors.info,
                   ),
                 ),
               ),
@@ -567,7 +515,7 @@ class _RewriteParagraphCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               comment,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF52525B), height: 1.4),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
           const SizedBox(height: 12),
@@ -575,9 +523,9 @@ class _RewriteParagraphCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: AppColors.surfaceSubtle,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE4E4E7)),
+              border: Border.all(color: AppColors.outline),
             ),
             child: InteractiveDiffText(
               text: rewrite,

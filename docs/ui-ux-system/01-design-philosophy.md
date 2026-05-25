@@ -20,6 +20,8 @@
 - Mobile body chuẩn **14sp**, không phải 15–16. Web body chuẩn **13px**.
 - Letter-spacing âm nhẹ (`-0.1` đến `-0.3`) cho heading, **0** cho body.
 
+> **Exception — Student Vibrancy:** Màn hình **học sinh (mobile)** được phép dùng **Skill Palette** (xem §1.8) cho icon box, progress bar, chip accent — nhằm tăng nhận dạng kỹ năng và hứng thú học tập (Duolingo principle). **Heading và body text vẫn đen.** Teacher/Admin không dùng skill palette.
+
 ### P2. Khoảng trắng tử tế hơn nhiều màu sắc
 - Ưu tiên padding/spacing chính xác > viền/màu trang trí.
 - Card thường: **viền 1px** thay vì shadow dày. Shadow chỉ dành cho dialog/sheet/floating button.

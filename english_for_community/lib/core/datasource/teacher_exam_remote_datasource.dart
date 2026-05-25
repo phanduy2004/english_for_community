@@ -438,11 +438,14 @@ class TeacherExamRemoteDatasource {
   }
 
   Future<List<Map<String, dynamic>>> generateWritingPromptOptions({
-    required String topicId,
+    String? topicId,
+    String? topicName,
     String? taskType,
   }) async {
-    final body = <String, dynamic>{'topicId': topicId};
-    if (taskType != null) body['taskType'] = taskType;
+    final body = <String, dynamic>{};
+    if (topicId != null && topicId.isNotEmpty) body['topicId'] = topicId;
+    if (topicName != null && topicName.isNotEmpty) body['topicName'] = topicName;
+    if (taskType != null && taskType.isNotEmpty) body['taskType'] = taskType;
     final r = await dio.post('teacher/exams/writing/generate-prompt-options', data: body);
     final data = r.data as Map<String, dynamic>;
     final options = data['options'] as List<dynamic>;

@@ -62,3 +62,10 @@ class DeleteUserEvent extends AdminEvent {
   final String userId;
   DeleteUserEvent({required this.userId});
 }
+
+class PatchUserOnlineStatusEvent extends AdminEvent {
+  final String userId;
+  final bool isOnline;
+
+  PatchUserOnlineStatusEvent({required this.userId, required this.isOnline});
+}

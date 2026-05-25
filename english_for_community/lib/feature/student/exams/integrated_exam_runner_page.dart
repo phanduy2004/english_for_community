@@ -5,9 +5,12 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_panel.dart';
+import 'package:english_for_community/feature/student/exams/exam_section_resources.dart';
 import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_grammar_widgets.dart';
@@ -579,7 +582,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
               value: doneCount / total,
               minHeight: 8,
               backgroundColor: AppColors.outlineMuted,
-              color: AppColors.primary,
+              color: AppSkillColors.listening.color,
             ),
           ),
           const SizedBox(height: 6),
@@ -842,6 +845,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
             onWritingDraftChanged: skill == 'writing'
                 ? (text) => _onWritingDraftChanged(sectionId, text)
                 : null,
+            examPracticeMode: true,
           ),
         ),
       ],
@@ -1069,7 +1073,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
       },
       child: Scaffold(
         backgroundColor: AppColors.surface,
-        appBar: ExamSystemUi.appBar(
+        appBar: StudentMobileUi.appBar(
           context,
           title: appTitle,
           actions: (!submitted && !expired && !_loading && _error == null)
@@ -1198,16 +1202,8 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     );
   }
 
-  List<Map<String, dynamic>> _getSectionResources(Map<String, dynamic> s) {
-    final raw = s['resources'];
-    if (raw is List && raw.isNotEmpty) {
-      return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    }
-    final id = (s['resourceId'] as String?)?.trim() ?? '';
-    final title = (s['resourceTitle'] as String?)?.trim() ?? '';
-    if (id.isNotEmpty) return [{'id': id, 'title': title}];
-    return [];
-  }
+  List<Map<String, dynamic>> _getSectionResources(Map<String, dynamic> s) =>
+      sectionResourcesFrom(s);
 
   Widget _buildSectionTile(Map<String, dynamic> s, bool locked, {bool expanded = false}) {
     final skill = s['skill'] as String? ?? '';
@@ -1277,7 +1273,9 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
                   skill: skill,
                   resources: resources,
                   locked: locked,
+                  fixedWritingPrompt: skill == 'writing' ? _fixedWritingPrompt(s) : null,
                   onPartComplete: locked ? () {} : () => _onSkillPartComplete(sectionId),
+                  examPracticeMode: true,
                 ),
               ),
             ],

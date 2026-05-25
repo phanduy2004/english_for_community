@@ -1,7 +1,9 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skill_palette.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -54,11 +56,6 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
   _AdminRange _selectedRange = _AdminRange.week;
   final ScrollController _scrollController = ScrollController();
 
-  static const _colWriting = Color(0xFFEF4444);
-  static const _colSpeaking = Color(0xFF3B82F6);
-  static const _colReading = AppColors.chartHighlight;
-  static const _colDictation = Color(0xFF8B5CF6);
-
   void _onRangeChanged(_AdminRange newRange) {
     if (_selectedRange == newRange) return;
     setState(() {
@@ -101,11 +98,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       body: BlocConsumer<AdminBloc, AdminState>(
         listener: (context, state) {
           if (state.status == AdminStatus.error && state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(state.errorMessage!),
-                  backgroundColor: Colors.red),
-            );
+            AdminCornerToast.show(context, state.errorMessage!, error: true);
           }
           if (state.status == AdminStatus.success) {
             _scrollToEnd();
@@ -118,12 +111,11 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
 
           if (state.stats == null) {
             return Center(
-              child: OutlinedButton.icon(
+              child: AdminRetryButton(
+                label: l10n.adminRetry,
                 onPressed: () => context
                     .read<AdminBloc>()
                     .add(GetDashboardStatsEvent(range: _selectedRange.name)),
-                icon: const Icon(Icons.refresh),
-                label: Text(l10n.adminRetry),
               ),
             );
           }
@@ -148,7 +140,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           value: '${metrics.submissions.value}',
                           meta: metrics.submissions.trendLabel ?? metrics.submissions.trend ?? '',
                           icon: Icons.layers_outlined,
-                          accent: _colSpeaking,
+                          accent: AdminSkillPalette.speaking,
                           onTap: () => context.pushNamed(ActivityHistoryPage.routeName),
                         ),
                         AdminKpiCard(
@@ -156,14 +148,14 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           value: '${metrics.aiCost.value}',
                           meta: metrics.aiCost.subLabel ?? '',
                           icon: Icons.token_outlined,
-                          accent: _colDictation,
+                          accent: AdminSkillPalette.listening,
                         ),
                         AdminKpiCard(
                           label: l10n.reportsMetric,
                           value: '${metrics.reports.value}',
                           meta: metrics.reports.status ?? 'Pending',
                           icon: Icons.flag_outlined,
-                          accent: AppColors.danger,
+                          accent: AdminSkillPalette.reports,
                           onTap: () => context.pushNamed(ReportManagementPage.routeName),
                         ),
                         AdminKpiCard(
@@ -171,7 +163,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                           value: '${metrics.activeUsers.value}',
                           meta: 'Today',
                           icon: Icons.group_outlined,
-                          accent: AppColors.success,
+                          accent: AdminSkillPalette.users,
                           onTap: () => context.pushNamed(
                             UserManagementPage.routeName,
                             queryParameters: {'filter': 'today'},
@@ -182,7 +174,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                     const SizedBox(height: AppSpacing.s7),
                     _buildChartSection(chartData, constraints.maxWidth),
                     const SizedBox(height: AppSpacing.s7),
-                    Text(l10n.managementSection, style: AdminWebUi.webH2(context)),
+                    Text(l10n.managementSection, style: AdminWebUi.sectionTitle(context)),
                     const SizedBox(height: AppSpacing.s4),
                     _buildManagementSection(),
                   ],
@@ -230,13 +222,13 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _LegendItem(color: _colWriting, label: l10n.writingTitle),
+                _LegendItem(color: AdminSkillPalette.writing, label: l10n.writingTitle),
                 const SizedBox(width: AppSpacing.s5),
-                _LegendItem(color: _colSpeaking, label: l10n.speakingPracticeTitle),
+                _LegendItem(color: AdminSkillPalette.speaking, label: l10n.speakingPracticeTitle),
                 const SizedBox(width: AppSpacing.s5),
-                _LegendItem(color: _colReading, label: l10n.readingPracticeTitle),
+                _LegendItem(color: AdminSkillPalette.reading, label: l10n.readingPracticeTitle),
                 const SizedBox(width: AppSpacing.s5),
-                _LegendItem(color: _colDictation, label: l10n.listeningTitle),
+                _LegendItem(color: AdminSkillPalette.listening, label: l10n.listeningTitle),
               ],
             ),
           ),
@@ -359,10 +351,10 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           x: i,
           barsSpace: 4,
           barRods: [
-            _makeRod(w, _colWriting, maxY),
-            _makeRod(s, _colSpeaking, maxY),
-            _makeRod(r, _colReading, maxY),
-            _makeRod(d, _colDictation, maxY),
+            _makeRod(w, AdminSkillPalette.writing, maxY),
+            _makeRod(s, AdminSkillPalette.speaking, maxY),
+            _makeRod(r, AdminSkillPalette.reading, maxY),
+            _makeRod(d, AdminSkillPalette.listening, maxY),
           ],
         ),
       );

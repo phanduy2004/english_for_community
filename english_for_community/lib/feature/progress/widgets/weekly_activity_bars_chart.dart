@@ -1,5 +1,6 @@
 import 'dart:ui' show PathMetric, Tangent;
 
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 
 /// Biểu đồ cột hoạt động theo ngày — **cùng implementation** với tab Progress (`Activity`).
@@ -57,9 +58,6 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
 
   @override
   Widget build(BuildContext context) {
-    const axisColor = Color(0xFFA1A1AA);
-    const gridColor = Color(0xFFF4F4F5);
-
     final maxVal = (widget.values.isEmpty ? 0 : widget.values.reduce((a, b) => a > b ? a : b)).toDouble();
     double chartTopVal;
     if (maxVal <= 10) {
@@ -102,9 +100,9 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Divider(height: 1, color: gridColor),
-                            const Divider(height: 1, color: gridColor),
-                            const Divider(height: 1, color: gridColor),
+                            const Divider(height: 1, color: AppColors.chartGrid),
+                            const Divider(height: 1, color: AppColors.chartGrid),
+                            const Divider(height: 1, color: AppColors.chartGrid),
                           ],
                         ),
                       ),
@@ -126,7 +124,9 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                               final ratio = (value / chartTopVal).clamp(0.0, 1.0);
                               final double barHeight = (value == 0) ? 0.0 : (ratio * barAreaHeight).clamp(4.0, barAreaHeight);
                               final isHi = widget.highlightIndex != null && i == widget.highlightIndex;
-                              final c = isHi ? (widget.highlightColor ?? Colors.orange) : (widget.barColor ?? Colors.blue);
+                              final c = isHi
+                                  ? (widget.highlightColor ?? AppColors.chartHighlight)
+                                  : (widget.barColor ?? AppColors.chartBar);
 
                               return SizedBox(
                                 width: itemSlotWidth,
@@ -150,7 +150,7 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: isHi ? FontWeight.bold : FontWeight.normal,
-                                            color: isHi ? const Color(0xFF09090B) : axisColor,
+                                            color: isHi ? AppColors.textPrimary : AppColors.textMuted,
                                           ),
                                         ),
                                       ),
@@ -167,7 +167,7 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                                 values: widget.values,
                                 itemWidth: itemSlotWidth,
                                 maxValue: chartTopVal,
-                                lineColor: const Color(0xFFEF4444),
+                                lineColor: AppColors.chartTrend,
                                 lineWidth: 1.5,
                               ),
                             ),
@@ -190,9 +190,9 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text("${chartTopVal.round()}", style: const TextStyle(fontSize: 10, color: axisColor)),
-                        Text("${(chartTopVal / 2).round()}", style: const TextStyle(fontSize: 10, color: axisColor)),
-                        const Text("0", style: TextStyle(fontSize: 10, color: axisColor)),
+                        Text('${chartTopVal.round()}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        Text('${(chartTopVal / 2).round()}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        const Text('0', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
                       ],
                     ),
                   ),
@@ -274,7 +274,7 @@ class _WeeklyActivityTrendPainter extends CustomPainter {
     canvas.drawPath(dashedPath, paint);
 
     final Paint dotPaint = Paint()
-      ..color = Colors.white
+      ..color = AppColors.surfaceCard
       ..style = PaintingStyle.fill;
     final Paint dotBorderPaint = Paint()
       ..color = lineColor

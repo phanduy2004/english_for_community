@@ -10,6 +10,9 @@ Map<String, dynamic> mergeTeacherLivePayload(
   Map<String, dynamic> patch,
 ) {
   final merged = Map<String, dynamic>.from({...prev, ...patch});
+  if (patch.containsKey('status') && patch['status'] != null) {
+    merged['status'] = patch['status'];
+  }
   final hasLiveView = patch['liveView'] is Map;
   if (hasLiveView) {
     final pLv = Map<String, dynamic>.from(patch['liveView'] as Map);

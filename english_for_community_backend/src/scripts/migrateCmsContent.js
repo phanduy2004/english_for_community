@@ -11,18 +11,17 @@
  */
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
 
 dotenv.config();
 
+/** Nguồn CMS (thường local) — chỉ dùng khi migrate, không thay MONGO_URI. */
 const SOURCE_URI =
-  process.env.MONGO_URI_SOURCE ||
-  process.env.MONGODB_URI_SOURCE ||
+  process.env.MONGO_URI_SOURCE?.trim() ||
   'mongodb://127.0.0.1:27017/english_community';
 
-const TARGET_URI =
-  process.env.MONGO_URI_TARGET ||
-  process.env.MONGO_URI ||
-  process.env.MONGODB_URI;
+/** Đích = MONGO_URI trong .env (Atlas hoặc DB bạn đang dev). */
+const TARGET_URI = process.env.MONGO_URI_TARGET?.trim() || getMongoUri();
 
 /** Mongoose collection names (lowercase plural unless overridden in model). */
 const CMS_COLLECTIONS = [
@@ -81,7 +80,7 @@ async function flushBatch(targetCol, docs) {
 
 async function run() {
   if (!TARGET_URI) {
-    console.error('❌ Set MONGO_URI_TARGET (or MONGO_URI) = Atlas DB in .env');
+    console.error('❌ Set MONGO_URI in .env (hoặc MONGO_URI_TARGET cho lần migrate này)');
     process.exit(1);
   }
 
@@ -90,8 +89,8 @@ async function run() {
     process.exit(1);
   }
 
-  console.log('📤 Source:', SOURCE_URI.replace(/:[^:@/]+@/, ':****@'));
-  console.log('📥 Target:', TARGET_URI.replace(/:[^:@/]+@/, ':****@'));
+  console.log('📤 Source:', getMongoUriForLog(SOURCE_URI));
+  console.log('📥 Target:', getMongoUriForLog(TARGET_URI), '(MONGO_URI)');
   console.log('📦 Collections:', CMS_COLLECTIONS.join(', '), '\n');
 
   const sourceConn = mongoose.createConnection(SOURCE_URI);

@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -10,6 +10,10 @@ import 'package:translator/translator.dart';
 import '../../../../core/api/api_config.dart';
 import '../../../../core/locale/l10n_context.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
+import '../../../../core/theme/app_color.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/ui/student_mobile_ui.dart';
+import '../../../../core/ui/widget/app_card.dart';
 import '../../core/get_it/get_it.dart';
 import '../listening/widget/listening_common_widgets.dart';
 
@@ -242,10 +246,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   // =========================================================================
   @override
   Widget build(BuildContext context) {
-    const bgPage = Color(0xFFF9FAFB);
-    const textMain = Color(0xFF09090B);
-    const borderCol = Color(0xFFE4E4E7);
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    final primaryColor = AppColors.primary;
 
     return BlocConsumer<ListeningCompBloc, ListeningCompState>(
       listener: (context, state) {
@@ -342,14 +343,14 @@ class _ListeningCompViewState extends State<_ListeningCompView>
 
         if (isLoading) {
           return const Scaffold(
-            backgroundColor: bgPage,
+            backgroundColor: AppColors.surface,
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
         if (state.data == null) {
           return Scaffold(
-            backgroundColor: bgPage,
+            backgroundColor: AppColors.surface,
             body: Center(child: Text(context.l10n.listeningCompLoadError)),
           );
         }
@@ -358,23 +359,18 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         final t = context.l10n;
 
         return Scaffold(
-          backgroundColor: bgPage,
+          backgroundColor: AppColors.surface,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            toolbarHeight: StudentMobileUi.appBarHeight,
             elevation: 0,
             scrolledUnderElevation: 0,
+            backgroundColor: AppColors.surface,
+            foregroundColor: AppColors.textPrimary,
             leading: IconButton(
-              icon: const Icon(Icons.close, color: textMain),
+              icon: const Icon(Icons.close_rounded, size: 20),
               onPressed: () => context.pop(),
             ),
-            title: Text(
-              t.listeningCompTitle,
-              style: const TextStyle(
-                  color: textMain,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16),
-            ),
-            centerTitle: true,
+            title: Text(t.listeningCompTitle, style: StudentMobileUi.sectionTitle(context)),
           ),
           body: Column(
             children: [
@@ -384,7 +380,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
-                  border: Border(bottom: BorderSide(color: borderCol)),
+                  border: Border(bottom: BorderSide(color: AppColors.outline)),
                 ),
                 child: Column(
                   children: [
@@ -495,7 +491,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
     required Color primaryColor,
   }) {
     return Material(
-      color: primaryColor.withOpacity(0.08),
+      color: primaryColor.withValues(alpha: 0.08),
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -594,7 +590,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               const SizedBox(width: 4),
               Switch.adaptive(
                 value: _showTranslation,
-                activeColor: primaryColor,
+                activeThumbColor: primaryColor,
                 onChanged: (value) {
                   setState(() => _showTranslation = value);
                   if (value) {
@@ -611,38 +607,15 @@ class _ListeningCompViewState extends State<_ListeningCompView>
 
   Widget _buildBottomActionBar(BuildContext context, bool isSubmitting) {
     final t = context.l10n;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE4E4E7))),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: ElevatedButton(
-            onPressed: isSubmitting ? null : () => _submitQuiz(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-              textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
-            ),
-            child: isSubmitting
-                ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-            )
-                : Text(t.readingSubmitAnswers),
-          ),
-        ),
-      ),
+    final answered = _selectedAnswers.length;
+    final total = context.read<ListeningCompBloc>().state.data?.questions.length ?? 0;
+    return StudentMobileUi.bottomActionBar(
+      context: context,
+      progressLabel: '$answered/$total',
+      ctaLabel: t.readingSubmitAnswers,
+      onCta: () => _submitQuiz(context),
+      loading: isSubmitting,
+      ctaEnabled: !isSubmitting,
     );
   }
 
@@ -653,161 +626,65 @@ class _ListeningCompViewState extends State<_ListeningCompView>
       ListeningCompEntity entity, bool isSubmitted, Color primaryColor) {
     return ListView.separated(
       controller: _questionsScrollController,
-      padding: const EdgeInsets.all(20.0),
+      padding: StudentMobileUi.pagePadding,
       itemCount: entity.questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 24),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.sectionGap),
       itemBuilder: (context, index) {
         final q = entity.questions[index];
         final isExpanded = _expandedFeedback.contains(q.id);
         final t = context.l10n;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE4E4E7)),
-          ),
+        return AppCard(
+          variant: AppCardVariant.outline,
+          padding: EdgeInsets.zero,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(AppSpacing.s5),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       t.listeningCompQuestionNumber(index + 1),
-                      style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF71717A),
-                          letterSpacing: 0.5),
+                      style: StudentMobileUi.caption(context),
                     ),
-                    const SizedBox(height: 8),
-                    // Câu hỏi gốc
-                    Text(
-                      q.questionText,
-                      style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF09090B),
-                          height: 1.4),
-                    ),
-                    // Hiển thị câu hỏi dịch bên dưới
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(q.questionText, style: StudentMobileUi.cardTitle(context)),
                     if (_showTranslation && _translatedQuestions.containsKey(q.id)) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.s2),
                       Text(
                         _translatedQuestions[q.id]!,
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF166534), // Màu xanh phân biệt
-                            height: 1.4),
+                        style: StudentMobileUi.body(context).copyWith(color: AppColors.success),
                       ),
-                    ]
+                    ],
                   ],
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFF4F4F5)),
-              Column(
-                children: List.generate(q.options.length, (optIdx) {
-                  final isSelected = _selectedAnswers[q.id.toString()] == optIdx;
-                  Color bgColor = Colors.transparent;
-                  Color textColor = const Color(0xFF09090B);
-                  IconData? icon;
-                  Color iconColor = Colors.transparent;
-                  Color leftBorderColor = Colors.transparent;
-
-                  if (isSubmitted) {
-                    final bool isCorrectAnswer = optIdx == q.correctAnswerIndex;
-                    if (isCorrectAnswer) {
-                      bgColor = const Color(0xFFECFDF5);
-                      textColor = const Color(0xFF14532D);
-                      icon = Icons.check_circle;
-                      iconColor = leftBorderColor = const Color(0xFF16A34A);
-                    } else if (isSelected) {
-                      bgColor = const Color(0xFFFEF2F2);
-                      textColor = const Color(0xFF7F1D1D);
-                      icon = Icons.cancel;
-                      iconColor = leftBorderColor = const Color(0xFFDC2626);
+              Padding(
+                padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 0, AppSpacing.s5, AppSpacing.s5),
+                child: Column(
+                  children: List.generate(q.options.length, (optIdx) {
+                    final isSelected = _selectedAnswers[q.id.toString()] == optIdx;
+                    final isCorrect = optIdx == q.correctAnswerIndex;
+                    String? sub;
+                    if (_showTranslation && _translatedOptions.containsKey(q.id)) {
+                      sub = _translatedOptions[q.id]![optIdx];
                     }
-                  } else if (isSelected) {
-                    bgColor = primaryColor.withOpacity(0.05);
-                    leftBorderColor = primaryColor;
-                  }
-
-                  return InkWell(
-                    onTap: isSubmitted
-                        ? null
-                        : () => setState(() => _selectedAnswers[q.id] = optIdx),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        border: Border(
-                          left: BorderSide(color: leftBorderColor, width: 4),
-                          bottom: const BorderSide(color: Color(0xFFF4F4F5)),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${String.fromCharCode(65 + optIdx)}. ',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: isSelected || isSubmitted ? textColor : const Color(0xFF71717A)),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Option gốc
-                                Text(
-                                  q.options[optIdx],
-                                  style: TextStyle(fontSize: 15, color: textColor, height: 1.4),
-                                ),
-                                // Hiển thị Option dịch bên dưới
-                                if (_showTranslation && _translatedOptions.containsKey(q.id)) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _translatedOptions[q.id]![optIdx],
-                                    style: TextStyle(
-                                        fontSize: 14,
-                                        color: isSubmitted && (isSelected || optIdx == q.correctAnswerIndex)
-                                            ? textColor.withOpacity(0.8)
-                                            : const Color(0xFF166534),
-                                        height: 1.4),
-                                  ),
-                                ]
-                              ],
-                            ),
-                          ),
-                          if (icon != null)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 8.0),
-                              child: Icon(icon, color: iconColor, size: 20),
-                            ),
-                          if (!isSubmitted)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8.0),
-                              width: 20,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected ? primaryColor : const Color(0xFFA1A1AA),
-                                  width: 2,
-                                ),
-                                color: isSelected ? primaryColor : Colors.transparent,
-                              ),
-                              child: isSelected ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
+                    return StudentMobileUi.mcqOption(
+                      context: context,
+                      index: optIdx,
+                      text: q.options[optIdx],
+                      subtitle: sub,
+                      selected: !isSubmitted && isSelected,
+                      showReviewCorrect: isSubmitted && isCorrect,
+                      showReviewWrong: isSubmitted && isSelected && !isCorrect,
+                      onTap: isSubmitted
+                          ? null
+                          : () => setState(() => _selectedAnswers[q.id] = optIdx),
+                    );
+                  }),
+                ),
               ),
               if (isSubmitted && q.feedback != null)
                 InkWell(
@@ -868,7 +745,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                               label: Text(
                                 t.listeningCompHintSeekSeconds(q.feedback!.hintTimestampSeconds!),
                               ),
-                              backgroundColor: primaryColor.withOpacity(0.8),
+                              backgroundColor: primaryColor.withValues(alpha: 0.8),
                               labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               onPressed: () => _seekAndPlay(q.feedback!.hintTimestampSeconds!),
                             ),

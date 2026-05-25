@@ -1,4 +1,5 @@
   import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
@@ -15,6 +16,7 @@ import 'core/theme/app_theme.dart';
 import 'core/ui/e4c_scroll_behavior.dart';
 
 // 1. Import Widget quản lý vòng đời Socket
+import 'core/notification/app_notification_listener.dart';
 import 'core/socket/socket_lifecycle_manager.dart';
 
 import 'feature/auth/bloc/user_bloc.dart';
@@ -29,6 +31,9 @@ Future<void> main() async {
   await NotificationService.I.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await ApiConfig.init();
+  if (kDebugMode) {
+    debugPrint('[ApiConfig] API base: ${ApiConfig.Base_URL}');
+  }
   setup(); // Khởi tạo Dependency Injection (GetIt)
   //await DictDb.I.db;
   //NotificationService.I.scheduleDaily9AMNotification();
@@ -82,9 +87,11 @@ class MyApp extends StatelessWidget {
               // Và lắng nghe sự kiện "Force Logout" toàn cục
               return AppUpdateGuard(
                 child: SocketLifecycleManager(
-                  child: FAnimatedTheme(
-                    data: fTheme,
-                    child: child ?? const SizedBox.shrink(),
+                  child: AppNotificationListener(
+                    child: FAnimatedTheme(
+                      data: fTheme,
+                      child: child ?? const SizedBox.shrink(),
+                    ),
                   ),
                 ),
               );

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import Exam from '../models/Exam.js';
 import ExamSession from '../models/ExamSession.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import User from '../models/User.js';
@@ -7,6 +8,7 @@ import { computeAttemptDeadline, examAttemptService } from './examAttemptService
 import { emitExamSessionEvent } from '../socket/examSocketEmit.js';
 import { buildAssignmentCardFields } from './assignmentCardEnrichment.js';
 import { broadcastAllSessionAttempts, examLiveMonitorService } from './examLiveMonitorService.js';
+import { normalizeExamSnapshot } from './examSkillSectionResources.js';
 
 function mapJoinedUsersToParticipants(joinedUserIds, readyUserIds = []) {
   const readySet = new Set((readyUserIds || []).map((id) => id.toString()));
@@ -131,17 +133,49 @@ export const examSessionService = {
     return payload;
   },
 
-  async removeParticipantFromSession(sessionId, userId) {
+  async removeParticipantFromSession(sessionId, userId, options = {}) {
     const sid = sessionId?.toString?.() ?? String(sessionId);
     const uid = userId?.toString?.() ?? String(userId);
+    const exitReason =
+      options.exitReason && typeof options.exitReason === 'string'
+        ? options.exitReason
+        : null;
+
     await ExamSession.updateOne(
       { _id: sid },
       { $pull: { joinedUserIds: uid, readyUserIds: uid } }
     );
-    await ExamAttempt.updateMany(
-      { sessionId: sid, userId: uid, status: 'in_progress' },
-      { $set: { status: 'void', submittedAt: new Date() } }
-    );
+
+    const inProgress = await ExamAttempt.find({
+      sessionId: sid,
+      userId: uid,
+      status: 'in_progress',
+    });
+
+    let voidedAny = false;
+    for (const attempt of inProgress) {
+      attempt.status = 'void';
+      attempt.submittedAt = new Date();
+      const prevMeta =
+        attempt.meta && typeof attempt.meta === 'object' ? attempt.meta : {};
+      attempt.meta = {
+        ...prevMeta,
+        canAnswer: false,
+        ...(exitReason
+          ? {
+              exitReason,
+              voluntaryExit:
+                exitReason === 'student_left' || exitReason === 'disconnected',
+            }
+          : {}),
+      };
+      await attempt.save();
+      voidedAny = true;
+    }
+
+    if (voidedAny) {
+      await broadcastAllSessionAttempts(sid);
+    }
   },
 
   async kickParticipant(teacherId, sessionId, studentUserId) {
@@ -156,7 +190,9 @@ export const examSessionService = {
     const joined = (session.joinedUserIds || []).map((x) => x.toString());
     if (!joined.includes(uid)) throw httpError(404, 'Student is not in this session');
 
-    await this.removeParticipantFromSession(session._id, uid);
+    await this.removeParticipantFromSession(session._id, uid, {
+      exitReason: 'teacher_kicked',
+    });
     emitExamSessionEvent(session._id.toString(), 'exam_session_kicked', {
       sessionId: session._id.toString(),
       userId: uid,
@@ -244,8 +280,9 @@ export const examSessionService = {
     if (assignment.mode !== 'realtime') throw httpError(400, 'Assignment must be realtime mode');
     const exam = assignment.examId;
     if (!exam) throw httpError(500, 'Exam not populated');
-    const snapshot = exam.toObject ? exam.toObject() : exam;
+    let snapshot = exam.toObject ? exam.toObject() : exam;
     delete snapshot._id;
+    snapshot = normalizeExamSnapshot(snapshot);
 
     const existing = await ExamSession.findOne({ assignmentId: assignment._id, status: 'lobby' });
     if (existing) {
@@ -346,7 +383,9 @@ export const examSessionService = {
     };
     await attempt.save();
 
-    await this.removeParticipantFromSession(session._id, userId);
+    await this.removeParticipantFromSession(session._id, userId, {
+      exitReason: 'student_left',
+    });
     await broadcastAllSessionAttempts(session._id);
     await this.emitSessionStateBroadcast(session._id);
 
@@ -360,7 +399,12 @@ export const examSessionService = {
     if (session.status !== 'lobby') throw httpError(400, 'Session already started or closed');
 
     const assignment = session.assignmentId;
-    const exam = session.examSnapshot;
+    const examDoc = await Exam.findById(assignment.examId);
+    if (!examDoc) throw httpError(500, 'Exam missing on assignment');
+    let exam = examDoc.toObject ? examDoc.toObject() : examDoc;
+    delete exam._id;
+    exam = normalizeExamSnapshot(exam);
+    session.examSnapshot = exam;
     const startedAt = new Date();
     const attemptDeadlineAt = computeAttemptDeadline(assignment, startedAt);
     session.status = 'live';
@@ -377,7 +421,11 @@ export const examSessionService = {
         sessionId: session._id,
         status: 'in_progress',
       });
-      if (existing) continue;
+      if (existing) {
+        existing.examSnapshot = exam;
+        await existing.save();
+        continue;
+      }
       await ExamAttempt.create({
         assignmentId: assignment._id,
         sessionId: session._id,
@@ -394,6 +442,28 @@ export const examSessionService = {
 
     await this.emitSessionStateBroadcast(session._id);
     await broadcastAllSessionAttempts(session._id);
+
+    try {
+      const { notifyStudentsExamSessionLive, assignmentNotificationContext } = await import(
+        './teacherNotificationHelper.js'
+      );
+      const examTitle =
+        exam?.title || session.examSnapshot?.title || (await assignmentNotificationContext(assignment)).examTitle;
+      const studentIds = (joined || [])
+        .map((uid) => uid.toString())
+        .filter((id) => id !== session.leaderTeacherId.toString());
+      await notifyStudentsExamSessionLive({
+        teacherId,
+        classroomId: assignment.classroomId || null,
+        assignmentId: assignment._id,
+        sessionId: session._id,
+        examTitle,
+        recipientIds: studentIds,
+      });
+    } catch {
+      /* optional */
+    }
+
     return session;
   },
 

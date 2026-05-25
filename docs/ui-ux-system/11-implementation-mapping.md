@@ -125,9 +125,12 @@ abstract final class AppMotion {
 | **Web form wizard (§7.4)** | `feature/teacher/layout/teacher_web_ui.dart` | `formFieldLabel`, `formInputDecoration`, `formInputContentPadding`, `segmentedControlStyle` — dùng cho màn nhiều section (giao bài, …) |
 | Button (Filled / Outlined / Text) | `app_theme.dart` | Padding/height đã ổn nhưng `padding` 14 → **12** dọc cho mobile (h 48 chuẩn) |
 | Card | `core/ui/widget/app_card.dart` | Đổi `radius` mặc định 16 → **12**; `elevated` shadow nhẹ hơn `e.1` thay vì `0x1A000000`; outline border 0.5 → **1** |
-| Navigation bar | `core/ui/widget/app_navigation_bar.dart` | Giữ; cập nhật label weight `selected w600` (đang w700) |
+| Navigation bar | `core/ui/widget/app_navigation_bar.dart` | Height 60dp, `primaryTint` indicator, `surfaceCard` bg |
+| **Student mobile UI** | `core/ui/student_mobile_ui.dart` | Section header, appBar, skillAppBar, skillAccentCard, skillIconBox, skillProgressBar, skillHubBanner, quickActionButton, statCard, bottomActionBar, mcqOption, filterChip/filterRow, streakChip, StudentBottomSheet, StudentDialogShell |
+| **Skill palette** | `core/theme/app_skill_colors.dart` | `SkillType`, `SkillColorSet`, `AppSkillColors.of(skill)` — Listening/Speaking/Reading/Writing/Vocabulary |
 | Skeleton | `core/ui/widget/app_skeleton.dart` | Đảm bảo dùng gradient `outlineMuted ↔ outline` |
 | Chip / status pill | chưa có file riêng | Tạo `core/ui/widget/app_chip.dart` với 3 variant: `filter`, `tag`, `status` |
+| **Live participant status** | `teacher_exam_session_console_page` (ready only lobby) | `TeacherExamParticipantStatusChip` — [`16`](16-teacher-live-participant-status.md); dùng cả Session control + Live monitor |
 | MCQ review tile | `feature/student/exams/exam_answer_review_widgets.dart` | Đổi border 1.25 → **1**, padding 12 → **14**, text 14/500 → **14/400 textPrimary** (giữ semantic fg) |
 | Grading footer | cùng file | Label 13/600 textPrimary; ô input height **48 mobile / 36 web** (truyền qua param) |
 

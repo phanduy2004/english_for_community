@@ -11,9 +11,11 @@ import ExamSession from '../models/ExamSession.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import Exam from '../models/Exam.js';
 
-const MONGO_URI = process.env.MONGO_URI ?? process.env.MONGODB_URI;
+import { getMongoUri } from '../lib/mongoUri.js';
+
+const MONGO_URI = getMongoUri();
 if (!MONGO_URI) {
-  console.error('Missing MONGO_URI / MONGODB_URI');
+  console.error('Missing MONGO_URI in .env');
   process.exit(1);
 }
 

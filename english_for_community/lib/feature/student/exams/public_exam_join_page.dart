@@ -2,7 +2,8 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -79,26 +80,39 @@ class _PublicExamJoinPageState extends State<PublicExamJoinPage> {
     final l10n = context.l10n;
     return Scaffold(
       backgroundColor: AppColors.surface,
-      appBar: ExamSystemUi.appBar(context, title: l10n.examJoinByLinkTitle),
+      appBar: StudentMobileUi.appBar(context, title: l10n.examJoinByLinkTitle),
       body: ListView(
-        padding: ExamSystemUi.pagePadding,
+        padding: StudentMobileUi.pagePadding,
         children: [
           TextField(
             controller: _tokenCtrl,
-            decoration: InputDecoration(labelText: l10n.examJoinByLinkHint),
+            style: StudentMobileUi.body(context),
+            decoration: InputDecoration(
+              labelText: l10n.examJoinByLinkHint,
+              filled: true,
+              fillColor: AppColors.surfaceSubtle,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
+            ),
             maxLines: 2,
           ),
-          const SizedBox(height: ExamSystemUi.blockGap),
+          const SizedBox(height: AppSpacing.s5),
           Wrap(
-            spacing: 12,
-            runSpacing: 12,
+            spacing: AppSpacing.s4,
+            runSpacing: AppSpacing.s4,
             children: [
               OutlinedButton(onPressed: _busy ? null : _loadPreview, child: Text(l10n.examJoinPreview)),
-              FilledButton(onPressed: _busy ? null : _start, child: Text(l10n.examJoinStart)),
+              FilledButton(
+                onPressed: _busy ? null : _start,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.onPrimary,
+                ),
+                child: Text(l10n.examJoinStart),
+              ),
             ],
           ),
           if (_preview != null) ...[
-            const SizedBox(height: ExamSystemUi.sectionGap),
+            const SizedBox(height: StudentMobileUi.sectionGap),
             AppCard(
               variant: AppCardVariant.outline,
               child: Column(
@@ -106,12 +120,12 @@ class _PublicExamJoinPageState extends State<PublicExamJoinPage> {
                 children: [
                   Text(
                     _preview!['examTitle'] as String? ?? '',
-                    style: ExamSystemUi.listTitle(context),
+                    style: StudentMobileUi.cardTitle(context),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.s3),
                   Text(
                     _modeLabelFromPreview() ?? '',
-                    style: ExamSystemUi.captionSecondary,
+                    style: StudentMobileUi.body(context),
                   ),
                 ],
               ),

@@ -19,6 +19,7 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     on<UpdateReportStatusEvent>(_onUpdateReportStatus);
     on<BanUserEvent>(_onBanUser);
     on<DeleteUserEvent>(_onDeleteUser);
+    on<PatchUserOnlineStatusEvent>(_onPatchUserOnlineStatus);
   }
 
   Future<void> _onGetDashboardStats(
@@ -164,5 +165,26 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         emit(state.copyWith(status: AdminStatus.success));
       },
     );
+  }
+
+  void _onPatchUserOnlineStatus(
+      PatchUserOnlineStatusEvent event, Emitter<AdminState> emit) {
+    final currentUsers = state.users;
+    if (currentUsers == null) return;
+
+    final updatedList = currentUsers.data.map((u) {
+      if (u.id != event.userId) return u;
+      return u.copyWith(
+        isOnline: event.isOnline,
+        lastActivityDate: event.isOnline ? DateTime.now() : u.lastActivityDate,
+      );
+    }).toList();
+
+    emit(state.copyWith(
+      users: PaginatedResponse(
+        data: updatedList,
+        pagination: currentUsers.pagination,
+      ),
+    ));
   }
 }

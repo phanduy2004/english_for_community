@@ -53,7 +53,7 @@ class PracticeTab extends StatelessWidget {
     if (isDone) {
       if (!isLast) {
         btnText = t.dictationNextButton;
-        btnColor = const Color(0xFF10B981);
+        btnColor = AppColors.success;
         btnIcon = Icons.arrow_forward;
         onBtn = onNext;
       } else {
@@ -91,10 +91,10 @@ class PracticeTab extends StatelessWidget {
             decoration: InputDecoration(
               hintText: t.dictationTypeWhatYouHearHint,
               filled: true,
-              fillColor: compact ? AppColors.surface : const Color(0xFFF9FAFB),
+              fillColor: compact ? AppColors.surface : AppColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(compact ? 10 : 12),
-                borderSide: BorderSide(color: compact ? AppColors.outlineMuted : const Color(0xFFE4E4E7)),
+                borderSide: BorderSide(color: compact ? AppColors.outlineMuted : AppColors.outline),
               ),
             ),
             onChanged: onTextChange,
@@ -103,8 +103,8 @@ class PracticeTab extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(8)),
-              child: Text(lastHint!, style: const TextStyle(color: Color(0xFFB91C1C))),
+              decoration: BoxDecoration(color: AppColors.dangerBg, borderRadius: BorderRadius.circular(8)),
+              child: Text(lastHint!, style: const TextStyle(color: AppColors.danger)),
             ),
           if (!examPracticeMode && isDone && cue?.meaning != null)
             Container(
@@ -112,9 +112,9 @@ class PracticeTab extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
+                color: AppColors.infoBg,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBFDBFE)),
+                border: Border.all(color: AppColors.info),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,7 +130,7 @@ class PracticeTab extends StatelessWidget {
                     cue!.meaning!,
                     style: compact
                         ? ExamSystemUi.embeddedBodyStyle.copyWith(fontStyle: FontStyle.italic)
-                        : const TextStyle(color: Color(0xFF1E3A8A), fontStyle: FontStyle.italic),
+                        : const TextStyle(color: AppColors.info, fontStyle: FontStyle.italic),
                   ),
                 ],
               ),
@@ -165,7 +165,11 @@ class PracticeTab extends StatelessWidget {
               style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const Spacer(),
-            Switch(value: autoPlay, onChanged: onToggleAutoPlay, activeColor: Theme.of(context).primaryColor),
+            Switch(
+              value: autoPlay,
+              onChanged: onToggleAutoPlay,
+              activeThumbColor: Theme.of(context).primaryColor,
+            ),
           ]),
         ],
       ),

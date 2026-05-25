@@ -1,152 +1,137 @@
 import 'package:flutter/material.dart';
-import 'data_mock/task_type_instructions.dart';
+
 import '../../core/locale/l10n_context.dart';
+import '../../core/theme/app_color.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/ui/student_mobile_ui.dart';
+import 'data_mock/task_type_instructions.dart';
 
 class WritingTaskInstructionDialog extends StatelessWidget {
-  final String taskType;
-
   const WritingTaskInstructionDialog({super.key, required this.taskType});
 
-  // Màu sắc Shadcn
-  static const Color zinc900 = Color(0xFF09090B);
-  static const Color zinc500 = Color(0xFF71717A);
-  static const Color zinc200 = Color(0xFFE4E4E7);
-  static const Color zinc100 = Color(0xFFF4F4F5);
+  final String taskType;
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    // Lấy thông tin hướng dẫn dựa trên taskType. Nếu không tìm thấy thì dùng mặc định.
-    final instruction = taskInstructions[taskType] ??
-        taskInstructions['Opinion']!; // Fallback về Opinion nếu lỗi
+    final instruction = taskInstructions[taskType] ?? taskInstructions['Opinion']!;
 
     return Dialog(
-      backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white, // Loại bỏ tint mặc định của Material 3
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.all(20), // Padding bên ngoài dialog
+      backgroundColor: AppColors.surfaceCard,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.sheet + 2),
+      ),
+      insetPadding: const EdgeInsets.all(AppSpacing.s5),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85, // Giới hạn chiều cao
-          maxWidth: 500, // Giới hạn chiều rộng trên màn hình lớn
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+          maxWidth: 500,
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min, // Dialog tự co lại theo nội dung
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // --- HEADER ---
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.s7,
+                AppSpacing.s7,
+                AppSpacing.s7,
+                AppSpacing.s5,
+              ),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: zinc100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    // Thay bằng IconData hoặc SvgPicture nếu dùng asset
-                    child: Icon(Icons.lightbulb_outline, color: zinc900, size: 24),
-                  ),
-                  const SizedBox(width: 16),
+                  StudentMobileUi.skillIconBox(Icons.lightbulb_outline, size: 44),
+                  const SizedBox(width: AppSpacing.s5),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           t.writingInstructionHowTo(instruction.title),
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: zinc900,
-                          ),
+                          style: StudentMobileUi.sectionTitle(context),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.s2),
                         Text(
                           t.writingInstructionSubtitle,
-                          style: const TextStyle(color: zinc500, fontSize: 13),
+                          style: StudentMobileUi.caption(context),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close, color: zinc500),
+                    icon: const Icon(Icons.close_rounded, size: 20, color: AppColors.textSecondary),
                     tooltip: t.commonClose,
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: zinc200),
-
-            // --- BODY (Cuộn được) ---
+            const Divider(height: 1, color: AppColors.outlineMuted),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.s7),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Description
                     _buildSectionTitle(t.writingInstructionWhatIsIt),
                     Text(
                       instruction.description,
-                      style: const TextStyle(fontSize: 15, color: zinc900, height: 1.5),
+                      style: StudentMobileUi.bodyLg(context),
                     ),
-                    const SizedBox(height: 24),
-
-                    // 2. Structure
+                    const SizedBox(height: AppSpacing.s7),
                     _buildSectionTitle(t.writingInstructionSuggestedStructure),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.s5),
                       decoration: BoxDecoration(
-                        color: zinc100,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: zinc200),
+                        color: AppColors.surfaceSubtle,
+                        borderRadius: BorderRadius.circular(AppRadius.card + 2),
+                        border: Border.all(color: AppColors.outline),
                       ),
                       child: Text(
-                        instruction.structure.trim(), // Loại bỏ khoảng trắng thừa
-                        style: const TextStyle(fontSize: 14, color: zinc900, height: 1.6, fontFamily: 'monospace'), // Dùng font monospace cho cấu trúc nhìn rõ ràng hơn
+                        instruction.structure.trim(),
+                        style: AppTypography.body(large: true).copyWith(
+                          fontFamily: 'monospace',
+                          height: 1.6,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    // 3. Key Tips
+                    const SizedBox(height: AppSpacing.s7),
                     _buildSectionTitle(t.writingInstructionKeyTipsSection),
-                    ...instruction.keyTips.map((tip) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.check_circle_outline, color: Colors.green, size: 20),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              tip,
-                              style: const TextStyle(fontSize: 14, color: zinc900, height: 1.4),
+                    ...instruction.keyTips.map(
+                      (tip) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle_outline,
+                              color: AppColors.success,
+                              size: 20,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: AppSpacing.s4),
+                            Expanded(
+                              child: Text(tip, style: StudentMobileUi.body(context)),
+                            ),
+                          ],
+                        ),
                       ),
-                    )).toList(),
+                    ),
                   ],
                 ),
               ),
             ),
-
-            // --- FOOTER (Optional) ---
-            const Divider(height: 1, color: zinc200),
+            const Divider(height: 1, color: AppColors.outlineMuted),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.s5),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
+                child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: zinc900,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w600),
-                    elevation: 0,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
+                    minimumSize: const Size.fromHeight(48),
                   ),
                   child: Text(t.writingInstructionGotIt),
                 ),
@@ -160,13 +145,10 @@ class WritingTaskInstructionDialog extends StatelessWidget {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          color: zinc500,
+        style: AppTypography.label(color: AppColors.textSecondary).copyWith(
           letterSpacing: 1,
         ),
       ),

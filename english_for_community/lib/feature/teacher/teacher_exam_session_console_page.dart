@@ -14,6 +14,8 @@ import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffo
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_compact_strip.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_timing.dart';
+import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
+import 'package:english_for_community/feature/teacher/widgets/teacher_exam_participant_status_chip.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_live_monitor_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -103,8 +105,14 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
         } else if (_status != 'live' && _status != 'grading') {
           _liveMonitor = null;
         }
-        setState(() => _loading = false);
         final sid = _sessionId ?? '';
+        if (sid.isNotEmpty && _status == 'live' && _liveMonitor == null) {
+          final lmR = await getIt<TeacherExamRepository>().getSessionLiveMonitor(sid);
+          lmR.fold((_) {}, (data) {
+            if (data is Map) _liveMonitor = Map<String, dynamic>.from(data);
+          });
+        }
+        setState(() => _loading = false);
         if (sid.isNotEmpty && (_status == 'lobby' || _status == 'live')) {
           await _bindLiveSocket(sid);
         }
@@ -309,56 +317,121 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
     );
   }
 
-  List<Widget> _rosterSection(BuildContext context) {
+  String _liveSummaryLine(BuildContext context, Map<String, dynamic> summary) {
     final l10n = context.l10n;
-    return [
-      DecoratedBox(
-        decoration: ExamSystemUi.softCard(),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.teacherExamSessionLiveRosterTitle, style: ExamSystemUi.listTitle(context)),
-              const SizedBox(height: 12),
-              Text(
-                l10n.teacherExamSessionJoinedCount(_joinedCount),
-                style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
-              ),
-              if (_isLobby && _joinedCount > 0) ...[
-                const SizedBox(height: 4),
-                Text(
-                  l10n.examSessionReadyCount(_readyCount, _joinedCount),
-                  style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.primary),
-                ),
-              ],
-              const SizedBox(height: 12),
-              if (_participants.isEmpty)
-                Text(l10n.teacherExamSessionNoParticipantsYet, style: ExamSystemUi.captionSecondary)
-              else
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _participants.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) => _participantTile(context, _participants[i]),
-                ),
-            ],
-          ),
-        ),
-      ),
-    ];
+    final inProgress = (summary['inProgress'] as num?)?.toInt() ?? 0;
+    final submitted = (summary['submitted'] as num?)?.toInt() ?? 0;
+    final flagged = (summary['flagged'] as num?)?.toInt() ?? 0;
+    final avg = (summary['avgProgressPercent'] as num?)?.toDouble() ?? 0;
+    final avgLabel = avg == avg.roundToDouble() ? '${avg.toInt()}' : avg.toStringAsFixed(1);
+    return l10n.teacherLiveMonitorSummaryLine(inProgress, submitted, flagged, avgLabel);
   }
 
-  Widget _participantTile(BuildContext context, Map<String, dynamic> p) {
+  List<Widget> _rosterSection(BuildContext context) {
+    if (_isLive) {
+      return [
+        BlocBuilder<TeacherLiveMonitorBloc, TeacherLiveMonitorState>(
+          builder: (context, monitorState) => _rosterCard(
+            context,
+            monitorByUserId: TeacherExamParticipantStatusResolver.indexByUserId(monitorState.students),
+            summary: monitorState.summary,
+          ),
+        ),
+      ];
+    }
+    return [_rosterCard(context)];
+  }
+
+  Widget _rosterCard(
+    BuildContext context, {
+    Map<String, Map<String, dynamic>> monitorByUserId = const {},
+    Map<String, dynamic> summary = const {},
+  }) {
+    final l10n = context.l10n;
+    final rosterTitle = _isLive
+        ? l10n.teacherExamSessionLiveRosterTitleLive
+        : l10n.teacherExamSessionLiveRosterTitle;
+
+    return DecoratedBox(
+      decoration: ExamSystemUi.softCard(),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(rosterTitle, style: ExamSystemUi.listTitle(context)),
+            const SizedBox(height: 12),
+            if (_isLive && summary.isNotEmpty) ...[
+              Text(
+                _liveSummaryLine(context, summary),
+                style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+            ],
+            Text(
+              l10n.teacherExamSessionJoinedCount(_joinedCount),
+              style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
+            ),
+            if (_isLobby && _joinedCount > 0) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.examSessionReadyCount(_readyCount, _joinedCount),
+                style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.primary),
+              ),
+            ],
+            const SizedBox(height: 12),
+            if (_participants.isEmpty)
+              Text(l10n.teacherExamSessionNoParticipantsYet, style: ExamSystemUi.captionSecondary)
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _participants.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, i) {
+                  final p = _participants[i];
+                  final uid = p['userId']?.toString() ?? '';
+                  return _participantTile(
+                    context,
+                    p,
+                    monitorRow: uid.isEmpty ? null : monitorByUserId[uid],
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _participantTile(
+    BuildContext context,
+    Map<String, dynamic> p, {
+    Map<String, dynamic>? monitorRow,
+  }) {
     final l10n = context.l10n;
     final name = _participantDisplayName(p);
     final sub = _participantSubtitle(p);
-    final ready = p['ready'] == true;
     final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+    final phase = _isLobby
+        ? TeacherExamSessionPhase.lobby
+        : (_isLive ? TeacherExamSessionPhase.live : TeacherExamSessionPhase.ended);
+    final chipStatus = TeacherExamParticipantStatusResolver.resolve(
+      phase: phase,
+      participant: p,
+      monitorRow: monitorRow,
+    );
+    final attemptStatus = monitorRow?['status']?.toString() ?? '';
+    final showKick = _isLobby || (_isLive && attemptStatus == 'in_progress');
+    final inProgressLive = _isLive && chipStatus == TeacherExamParticipantStatus.inProgress;
+    final pct = ((monitorRow?['progressPercent'] as num?)?.toDouble() ?? 0) / 100;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
             radius: 18,
@@ -385,30 +458,32 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
                     color: AppColors.textPrimary,
                   ),
                 ),
-                if (sub.isNotEmpty)
+                if (inProgressLive) ...[
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: pct.clamp(0, 1),
+                      minHeight: 4,
+                      backgroundColor: AppColors.outlineMuted.withValues(alpha: 0.25),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.teacherLiveMonitorProgressLabel(
+                      (monitorRow?['answeredCount'] as num?)?.toInt() ?? 0,
+                      (monitorRow?['totalItems'] as num?)?.toInt() ?? 0,
+                      (monitorRow?['progressPercent'] as num?)?.toDouble() ?? 0,
+                    ),
+                    style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                  ),
+                ] else if (sub.isNotEmpty)
                   Text(sub, style: ExamSystemUi.captionMuted, maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
-          if (_isLobby) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: (ready ? AppColors.primary : AppColors.outlineMuted).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(
-                  color: ready ? AppColors.primary.withValues(alpha: 0.4) : AppColors.outlineMuted,
-                ),
-              ),
-              child: Text(
-                ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady,
-                style: ExamSystemUi.captionMuted.copyWith(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: ready ? AppColors.primaryDark : AppColors.textMuted,
-                ),
-              ),
-            ),
+          TeacherExamParticipantStatusChip(status: chipStatus),
+          if (showKick) ...[
             const SizedBox(width: 4),
             IconButton(
               tooltip: l10n.examSessionKickStudentAction,
@@ -419,15 +494,6 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             ),
           ],
-          if (_isLive)
-            IconButton(
-              tooltip: l10n.examSessionKickStudentAction,
-              onPressed: _busy ? null : () => _kickStudent(p),
-              icon: Icon(Icons.person_remove_outlined, size: 20, color: AppColors.chartTrend),
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-            ),
         ],
       ),
     );
@@ -507,44 +573,44 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
 
   Widget _buildLiveTabbedBody(BuildContext context, String sid, String roomCode, String createdLabel) {
     final l10n = context.l10n;
-    return DefaultTabController(
-      length: 2,
-      initialIndex: 1,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Material(
-            color: AppColors.surfaceCard,
-            child: TabBar(
-              labelColor: AppColors.primaryDark,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 2,
-              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              tabs: [
-                Tab(text: l10n.teacherExamSessionTabControl),
-                Tab(text: l10n.teacherExamSessionTabLiveMonitor),
-              ],
+    return BlocProvider(
+      create: (_) => getIt<TeacherLiveMonitorBloc>(param1: sid)
+        ..add(TeacherLiveMonitorStarted(initialSnapshot: _liveMonitor)),
+      child: DefaultTabController(
+        length: 2,
+        initialIndex: 1,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Material(
+              color: AppColors.surfaceCard,
+              child: TabBar(
+                labelColor: AppColors.primaryDark,
+                unselectedLabelColor: AppColors.textSecondary,
+                indicatorColor: AppColors.primary,
+                indicatorWeight: 2,
+                labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                tabs: [
+                  Tab(text: l10n.teacherExamSessionTabControl),
+                  Tab(text: l10n.teacherExamSessionTabLiveMonitor),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildControlTab(
-                  context,
-                  sid.isEmpty ? '' : '/student/exam-session/$sid',
-                  roomCode: roomCode,
-                  createdLabel: createdLabel,
-                ),
-                BlocProvider(
-                  create: (_) => getIt<TeacherLiveMonitorBloc>(param1: sid)
-                    ..add(TeacherLiveMonitorStarted(initialSnapshot: _liveMonitor)),
-                  child: TeacherLiveMonitorPanel(onKickStudent: _kickStudentFromMonitor),
-                ),
-              ],
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildControlTab(
+                    context,
+                    sid.isEmpty ? '' : '/student/exam-session/$sid',
+                    roomCode: roomCode,
+                    createdLabel: createdLabel,
+                  ),
+                  TeacherLiveMonitorPanel(onKickStudent: _kickStudentFromMonitor),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

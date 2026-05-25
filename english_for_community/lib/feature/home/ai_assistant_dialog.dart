@@ -1,22 +1,22 @@
-import 'dart:ui';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/feature/home/bloc_ai/ai_chat_bloc.dart';
+import 'package:english_for_community/feature/home/bloc_ai/ai_chat_event.dart';
+import 'package:english_for_community/feature/home/bloc_ai/ai_chat_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:get_it/get_it.dart';
 
-import '../../core/locale/l10n_context.dart';
-import 'bloc_ai/ai_chat_bloc.dart';
-import 'bloc_ai/ai_chat_event.dart';
-import 'bloc_ai/ai_chat_state.dart';
-
-// Widget Dialog chính
 class AiAssistantDialog extends StatelessWidget {
   const AiAssistantDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Dùng BlocProvider.value để nhận Bloc đã tạo từ HomePage (Singleton)
-    // Điều này đảm bảo lịch sử chat không bị mất khi đóng/mở dialog
     return BlocProvider.value(
       value: GetIt.I<AiChatBloc>(),
       child: const _AiAssistantView(),
@@ -34,11 +34,6 @@ class _AiAssistantView extends StatefulWidget {
 class _AiAssistantViewState extends State<_AiAssistantView> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-
-  // Màu sắc Shadcn
-  static const Color textMain = Color(0xFF09090B);
-  static const Color textMuted = Color(0xFF71717A);
-  static const Color primaryBlack = Color(0xFF09090B);
 
   void _sendMessage(BuildContext context) {
     final text = _controller.text.trim();
@@ -61,156 +56,131 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    // Hiệu ứng nền kính mờ (Glassmorphism)
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-      child: Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        elevation: 0,
-        child: Container(
-          width: double.infinity,
-          height: MediaQuery.of(context).size.height * 0.75,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.6),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // --- HEADER ---
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.black.withOpacity(0.05))),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: primaryBlack.withOpacity(0.9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(t.aiAssistantTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain)),
-                          ],
-                        ),
-                      ],
+
+    return Dialog(
+      backgroundColor: AppColors.surfaceCard,
+      insetPadding: const EdgeInsets.all(AppSpacing.s5),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.sheet + 2),
+        side: const BorderSide(color: AppColors.outline),
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        height: MediaQuery.of(context).size.height * 0.75,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s5, AppSpacing.s3, AppSpacing.s4),
+              child: Row(
+                children: [
+                  StudentMobileUi.skillIconBox(
+                    Icons.auto_awesome,
+                    size: 40,
+                    colors: SkillColorSet(
+                      color: AppColors.accent,
+                      tint: AppColors.accentTint,
+                      dark: AppColors.accentDark,
                     ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.close, color: textMuted),
-                    )
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: AppSpacing.s4),
+                  Expanded(
+                    child: Text(t.aiAssistantTitle, style: StudentMobileUi.sectionTitle(context)),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.textMuted, size: 20),
+                  ),
+                ],
               ),
+            ),
+            const Divider(height: 1, color: AppColors.outline),
+            Expanded(
+              child: BlocConsumer<AiChatBloc, AiChatState>(
+                listener: (context, state) {
+                  if (state.status == AiChatStatus.loading || state.status == AiChatStatus.success) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                  }
+                },
+                builder: (context, state) {
+                  final messages = state.messages;
+                  final isLoading = state.status == AiChatStatus.loading;
 
-              // --- CHAT LIST ---
-              Expanded(
-                child: BlocConsumer<AiChatBloc, AiChatState>(
-                  listener: (context, state) {
-                    if (state.status == AiChatStatus.loading || state.status == AiChatStatus.success) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-                    }
-                  },
-                  builder: (context, state) {
-                    final messages = state.messages;
-                    final isLoading = state.status == AiChatStatus.loading;
-
-                    if (messages.isEmpty && !isLoading) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Text(t.aiAssistantEmptyPrompt,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: Colors.black54)),
+                  if (messages.isEmpty && !isLoading) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.s8),
+                        child: Text(
+                          t.aiAssistantEmptyPrompt,
+                          textAlign: TextAlign.center,
+                          style: StudentMobileUi.body(context),
                         ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(20),
-                      itemCount: messages.length + (isLoading ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == messages.length) {
-                          return const _TypingIndicator();
-                        }
-                        final msg = messages[index];
-                        return _MessageBubble(text: msg.text, isUser: msg.isUser);
-                      },
+                      ),
                     );
-                  },
-                ),
-              ),
+                  }
 
-              // --- INPUT AREA ---
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.7),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withOpacity(0.8)),
-                        ),
-                        child: TextField(
-                          controller: _controller,
-                          style: const TextStyle(fontSize: 14, color: textMain),
-                          decoration: InputDecoration(
-                            hintText: t.aiChatPlaceholder,
-                            hintStyle: const TextStyle(color: textMuted, fontSize: 14),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          ),
-                          onSubmitted: (_) => _sendMessage(context),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: () => _sendMessage(context),
-                      child: Container(
-                        height: 48,
-                        width: 48,
-                        decoration: BoxDecoration(
-                          color: primaryBlack,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
-                          ],
-                        ),
-                        child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 20),
-                      ),
-                    ),
-                  ],
-                ),
+                  return ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(AppSpacing.s5),
+                    itemCount: messages.length + (isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == messages.length) {
+                        return const _TypingIndicator();
+                      }
+                      final msg = messages[index];
+                      return _MessageBubble(text: msg.text, isUser: msg.isUser);
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+            const Divider(height: 1, color: AppColors.outline),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.s5),
+              color: AppColors.surfaceSubtle,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _controller,
+                      style: AppTypography.body(),
+                      decoration: InputDecoration(
+                        hintText: t.aiChatPlaceholder,
+                        hintStyle: AppTypography.body(color: AppColors.textMuted),
+                        filled: true,
+                        fillColor: AppColors.surfaceCard,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input + 2),
+                          borderSide: const BorderSide(color: AppColors.outline),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input + 2),
+                          borderSide: const BorderSide(color: AppColors.outline),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.input + 2),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
+                        isDense: true,
+                      ),
+                      onSubmitted: (_) => _sendMessage(context),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s4),
+                  FilledButton(
+                    onPressed: () => _sendMessage(context),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size(48, 48),
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input + 2)),
+                    ),
+                    child: const Icon(Icons.arrow_upward_rounded, size: 20),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -218,49 +188,43 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
 }
 
 class _MessageBubble extends StatelessWidget {
+  const _MessageBubble({required this.text, required this.isUser});
+
   final String text;
   final bool isUser;
-
-  const _MessageBubble({required this.text, required this.isUser});
 
   @override
   Widget build(BuildContext context) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        margin: const EdgeInsets.only(bottom: AppSpacing.s5),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
         decoration: BoxDecoration(
-            color: isUser ? const Color(0xFF09090B) : Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
-              bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
-            ),
-            boxShadow: [
-              if (!isUser) BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 2, offset: const Offset(0, 1))
-            ]
+          color: isUser ? AppColors.primary : AppColors.surfaceSubtle,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
+            bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
+          ),
+          border: isUser ? null : Border.all(color: AppColors.outline),
         ),
         child: isUser
-            ? Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.5),
-        )
-            : MarkdownBody( // Sử dụng MarkdownBody để hiển thị bảng, in đậm...
-          data: text,
-          styleSheet: MarkdownStyleSheet(
-            p: const TextStyle(color: Color(0xFF09090B), fontSize: 14, height: 1.5),
-            strong: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.w700),
-            listBullet: const TextStyle(color: Color(0xFF09090B)),
-            // Style cho bảng (Table)
-            tableBody: const TextStyle(color: Color(0xFF09090B), fontSize: 13),
-            tableHead: const TextStyle(color: Color(0xFF09090B), fontWeight: FontWeight.bold),
-            tableBorder: TableBorder.all(color: Colors.grey.shade300, width: 1),
-            tableCellsPadding: const EdgeInsets.all(8),
-          ),
-        ),
+            ? Text(text, style: AppTypography.body(color: AppColors.onPrimary))
+            : MarkdownBody(
+                data: text,
+                styleSheet: MarkdownStyleSheet(
+                  p: AppTypography.body(),
+                  strong: AppTypography.body().copyWith(fontWeight: FontWeight.w700),
+                  listBullet: AppTypography.body(),
+                  tableBody: AppTypography.body(),
+                  tableHead: AppTypography.label(),
+                  tableBorder: TableBorder.all(color: AppColors.outline, width: 1),
+                  tableCellsPadding: const EdgeInsets.all(AppSpacing.s3),
+                ),
+              ),
       ),
     );
   }
@@ -274,11 +238,12 @@ class _TypingIndicator extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        margin: const EdgeInsets.only(bottom: AppSpacing.s5),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s5),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.surfaceSubtle,
+          borderRadius: BorderRadius.circular(AppRadius.input + 2),
+          border: Border.all(color: AppColors.outline),
         ),
         child: SizedBox(
           width: 40,
@@ -294,8 +259,8 @@ class _TypingIndicator extends StatelessWidget {
 }
 
 class _Dot extends StatefulWidget {
-  final int index;
   const _Dot({required this.index});
+  final int index;
 
   @override
   State<_Dot> createState() => _DotState();
@@ -330,7 +295,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
         width: 8,
         height: 8,
         decoration: const BoxDecoration(
-          color: Color(0xFF71717A),
+          color: AppColors.textMuted,
           shape: BoxShape.circle,
         ),
       ),

@@ -2,7 +2,7 @@ import { notificationService } from '../services/notificationService.js';
 
 const getNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id?.toString?.() ?? req.user.id?.toString?.();
     const page = parseInt(req.query.page, 10) || 1;
     const limit = 20;
 
@@ -21,7 +21,7 @@ const getNotifications = async (req, res) => {
 const markAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id?.toString?.() ?? req.user.id?.toString?.();
 
     const updated = await notificationService.markOneAsReadForUser(userId, id);
     if (!updated) {
@@ -35,7 +35,7 @@ const markAsRead = async (req, res) => {
 
 const markAllAsRead = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id?.toString?.() ?? req.user.id?.toString?.();
     await notificationService.markAllAsReadForUser(userId);
     res.status(200).json({ success: true });
   } catch (error) {

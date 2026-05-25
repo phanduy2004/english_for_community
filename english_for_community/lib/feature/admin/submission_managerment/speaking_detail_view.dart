@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../../../core/entity/speaking/speaking_set_entity.dart';
 import '../../../../../../core/entity/speaking/sentence_entity.dart';
 
@@ -55,11 +55,11 @@ class SpeakingDetailView extends StatelessWidget {
   Widget _buildStatBox(String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
-          Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+          Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         ],
       ),
     );
@@ -96,7 +96,7 @@ class SpeakingDetailView extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _getScoreColor(scoreVal).withOpacity(0.1),
+                    color: _getScoreColor(scoreVal).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text("$scoreVal%", style: TextStyle(fontWeight: FontWeight.bold, color: _getScoreColor(scoreVal))),
