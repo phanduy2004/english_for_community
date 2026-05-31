@@ -3,10 +3,12 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_section_resources.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_grammar_widgets.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_question_strip.dart';
 import 'package:flutter/material.dart';
 
@@ -72,16 +74,47 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
         isGrammar: true,
       ));
     }
-    for (final s in _sections(snap)) {
+
+    final allSections = _sections(snap);
+    final listeningSections = allSections.where((s) => s['skill'] == 'listening').toList();
+    bool listeningAdded = false;
+
+    for (final s in allSections) {
       final sid = s['sectionId'] as String? ?? '';
       final skill = s['skill'] as String? ?? '';
-      list.add(_MirrorPart(
-        key: sid,
-        title: _skillTitle(context, skill),
-        isGrammar: false,
-        section: s,
-        done: answers[sid] is Map && (answers[sid] as Map)['completed'] == true,
-      ));
+
+      if (skill == 'listening') {
+        if (listeningAdded) continue;
+        listeningAdded = true;
+        if (listeningSections.length == 1) {
+          list.add(_MirrorPart(
+            key: sid,
+            title: _skillTitle(context, 'listening'),
+            isGrammar: false,
+            section: s,
+            done: answers[sid] is Map && (answers[sid] as Map)['completed'] == true,
+          ));
+        } else {
+          list.add(_MirrorPart(
+            key: '__listening_merged__',
+            title: _skillTitle(context, 'listening'),
+            isGrammar: false,
+            mergedSections: listeningSections,
+            done: listeningSections.every((ls) {
+              final lsId = ls['sectionId'] as String? ?? '';
+              return answers[lsId] is Map && (answers[lsId] as Map)['completed'] == true;
+            }),
+          ));
+        }
+      } else {
+        list.add(_MirrorPart(
+          key: sid,
+          title: _skillTitle(context, skill),
+          isGrammar: false,
+          section: s,
+          done: answers[sid] is Map && (answers[sid] as Map)['completed'] == true,
+        ));
+      }
     }
     return list;
   }
@@ -143,92 +176,33 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
         if (widget.showLiveBadge)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),
-            child: Row(
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppColors.chartTrend,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    followingStudent
-                        ? l10n.teacherLiveMirrorLiveBadge
-                        : l10n.teacherLiveMirrorBrowsingPart(active.title),
-                    style: ExamSystemUi.captionMuted.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.chartTrend,
-                    ),
-                  ),
-                ),
-                if (!followingStudent)
-                  TextButton(
-                    onPressed: () => setState(() => _teacherPartOverride = null),
-                    child: Text(l10n.teacherLiveMirrorFollowStudent),
-                  ),
-              ],
+            child: TeacherLiveMirrorStatusBanner(
+              followingStudent: followingStudent,
+              message: followingStudent
+                  ? l10n.teacherLiveMirrorLiveBadge
+                  : l10n.teacherLiveMirrorBrowsingPart(active.title),
+              followActionLabel: l10n.teacherLiveMirrorFollowStudent,
+              onFollowStudent: followingStudent ? null : () => setState(() => _teacherPartOverride = null),
             ),
           ),
         SizedBox(
           height: 44,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: parts.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final p = parts[i];
-              final selected = i == idx;
-              final isStudentHere = i == studentIdx;
-              return Material(
-                color: Colors.transparent,
-                child: InkWell(
+          child: e4cHorizontalScroll(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: parts.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, i) {
+                final p = parts[i];
+                return TeacherExamPartTabChip(
+                  label: p.title,
+                  selected: i == idx,
+                  done: p.done,
+                  studentHere: i == studentIdx,
                   onTap: () => setState(() => _teacherPartOverride = i),
-                  borderRadius: BorderRadius.circular(22),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: selected ? AppColors.primary.withValues(alpha: 0.1) : AppColors.surfaceCard,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.primary
-                            : isStudentHere
-                                ? AppColors.chartTrend.withValues(alpha: 0.5)
-                                : AppColors.outlineMuted,
-                        width: selected ? 1.5 : 0.75,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (isStudentHere && !selected) ...[
-                          Container(
-                            width: 6,
-                            height: 6,
-                            margin: const EdgeInsets.only(right: 6),
-                            decoration: const BoxDecoration(
-                              color: AppColors.chartTrend,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ],
-                        Text(
-                          p.title,
-                          style: ExamSystemUi.captionSecondary.copyWith(
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                            color: selected ? AppColors.primaryDark : AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
         if (TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']).isNotEmpty) ...[
@@ -243,7 +217,9 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
           child: SingleChildScrollView(
             child: active.isGrammar
                 ? _buildGrammarMirror(context, grammar, grammarIdx, answers)
-                : _buildSkillMirror(context, active.section!, answers),
+                : active.isMergedListening
+                    ? _buildMergedListeningMirror(context, active.mergedSections!, answers)
+                    : _buildSkillMirror(context, active.section!, answers),
           ),
         ),
       ],
@@ -287,6 +263,127 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
 
   List<Map<String, dynamic>> _sectionResources(Map<String, dynamic> section) =>
       sectionResourcesFrom(section);
+
+  Widget _buildMergedListeningMirror(
+    BuildContext context,
+    List<Map<String, dynamic>> sections,
+    Map<String, dynamic> answers,
+  ) {
+    final l10n = context.l10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppCard(
+          variant: AppCardVariant.outline,
+          child: Row(
+            children: [
+              Icon(_skillIcon('listening'), size: 20, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(_skillTitle(context, 'listening'), style: ExamSystemUi.sectionTitle(context)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) const Divider(height: 20),
+          _buildListeningSubMirror(context, sections[i], answers),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildListeningSubMirror(
+    BuildContext context,
+    Map<String, dynamic> section,
+    Map<String, dynamic> answers,
+  ) {
+    final sid = section['sectionId'] as String? ?? '';
+    final sc = section['sectionConfig'];
+    final lt = (sc is Map ? (sc['listeningType'] as String?) : null) ?? 'dictation';
+    final label = lt == 'comprehension'
+        ? context.l10n.teacherExamListeningTypeComprehension
+        : context.l10n.teacherExamListeningTypeDictation;
+    final icon = lt == 'comprehension' ? Icons.headphones_outlined : Icons.text_fields_outlined;
+    final ans = answers[sid] is Map
+        ? Map<String, dynamic>.from(answers[sid] as Map)
+        : <String, dynamic>{};
+    final resources = _sectionResources(section);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
+            Text(label, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+            if (resources.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '• ${resources.first['title'] ?? ''}',
+                  style: ExamSystemUi.captionMuted,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (lt == 'comprehension')
+          _buildListeningCompMirror(context, ans)
+        else
+          _buildListeningMirror(context, ans),
+      ],
+    );
+  }
+
+  Widget _buildListeningCompMirror(BuildContext context, Map<String, dynamic> ans) {
+    final l10n = context.l10n;
+    final compAnswers = ans['listeningCompAnswers'];
+    final saved = (ans['listeningCompSaved'] as num?)?.toInt();
+    final total = (ans['listeningCompTotal'] as num?)?.toInt();
+
+    if (compAnswers is! Map || compAnswers.isEmpty) {
+      return Text(l10n.teacherLiveMirrorListeningEmpty, style: ExamSystemUi.captionSecondary);
+    }
+
+    final progressLabel = saved != null && total != null
+        ? '$saved / $total'
+        : '${compAnswers.length} answered';
+
+    final entries = compAnswers.entries.toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('MCQ progress: $progressLabel', style: ExamSystemUi.captionMuted),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (var i = 0; i < entries.length; i++)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  'Q${i + 1}: ${String.fromCharCode(65 + (entries[i].value as num).toInt())}',
+                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: 11),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
 
   Widget _buildSkillMirror(
     BuildContext context,
@@ -338,7 +435,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
           'writing' => _buildWritingMirror(context, section, ans),
           'reading' => _buildReadingMirror(context, resources, ans),
           'listening' => _buildListeningMirror(context, ans),
-          'speaking' => _buildSpeakingMirror(context, completed),
+          'speaking' => _buildSpeakingMirror(context, ans, completed),
           _ => _buildGenericSkillMirror(context, skill, completed),
         },
       ],
@@ -472,10 +569,24 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     );
   }
 
-  Widget _buildSpeakingMirror(BuildContext context, bool completed) {
+  Widget _buildSpeakingMirror(BuildContext context, Map<String, dynamic> ans, bool completed) {
     final l10n = context.l10n;
+    if (completed) {
+      return Text(
+        l10n.teacherLiveMirrorSkillCompleted,
+        style: ExamSystemUi.captionSecondary,
+      );
+    }
+    final idx = (ans['speakingSentenceIndex'] as num?)?.toInt();
+    final total = (ans['speakingTotal'] as num?)?.toInt();
+    if (idx != null && total != null && total > 0) {
+      return Text(
+        l10n.sentenceIndex(idx + 1, total),
+        style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
+      );
+    }
     return Text(
-      completed ? l10n.teacherLiveMirrorSkillCompleted : l10n.teacherLiveMirrorSpeakingInProgress,
+      l10n.teacherLiveMirrorSpeakingInProgress,
       style: ExamSystemUi.captionSecondary,
     );
   }
@@ -671,6 +782,7 @@ class _MirrorPart {
     required this.title,
     required this.isGrammar,
     this.section,
+    this.mergedSections,
     this.done = false,
   });
 
@@ -678,5 +790,8 @@ class _MirrorPart {
   final String title;
   final bool isGrammar;
   final Map<String, dynamic>? section;
+  final List<Map<String, dynamic>>? mergedSections;
   final bool done;
+
+  bool get isMergedListening => mergedSections != null && mergedSections!.isNotEmpty;
 }

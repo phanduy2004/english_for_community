@@ -3572,6 +3572,12 @@ abstract class AppLocalizations {
   /// **'No listening lessons found'**
   String get listeningCompEmpty;
 
+  /// No description provided for @listeningCompPlayedOnce.
+  ///
+  /// In en, this message translates to:
+  /// **'Played (1x only)'**
+  String get listeningCompPlayedOnce;
+
   /// No description provided for @discussionReply.
   ///
   /// In en, this message translates to:
@@ -4574,6 +4580,66 @@ abstract class AppLocalizations {
   /// **'Pending approval'**
   String get teacherClassMemberStatusPending;
 
+  /// No description provided for @teacherMembersSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by name or email…'**
+  String get teacherMembersSearchHint;
+
+  /// No description provided for @teacherMembersFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get teacherMembersFilterAll;
+
+  /// No description provided for @teacherMembersFilterActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get teacherMembersFilterActive;
+
+  /// No description provided for @teacherMembersFilterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get teacherMembersFilterPending;
+
+  /// No description provided for @teacherMembersStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get teacherMembersStatusPending;
+
+  /// No description provided for @teacherMembersActiveSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Active members'**
+  String get teacherMembersActiveSection;
+
+  /// No description provided for @teacherMembersNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No members match your search.'**
+  String get teacherMembersNoResults;
+
+  /// No description provided for @teacherMembersEmptyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share the invite code to add students to this class.'**
+  String get teacherMembersEmptyHint;
+
+  /// No description provided for @teacherMembersInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get teacherMembersInvite;
+
+  /// No description provided for @teacherMembersCopyInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite code'**
+  String get teacherMembersCopyInvite;
+
   /// No description provided for @teacherClassSaveSettings.
   ///
   /// In en, this message translates to:
@@ -4760,11 +4826,23 @@ abstract class AppLocalizations {
   /// **'Classroom'**
   String get teacherAssignmentAudienceClassroom;
 
+  /// No description provided for @teacherAssignmentAudienceClassroomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Assign to a specific class'**
+  String get teacherAssignmentAudienceClassroomHint;
+
   /// No description provided for @teacherAssignmentAudiencePublic.
   ///
   /// In en, this message translates to:
   /// **'Public link'**
   String get teacherAssignmentAudiencePublic;
+
+  /// No description provided for @teacherAssignmentAudiencePublicHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share a link students can join'**
+  String get teacherAssignmentAudiencePublicHint;
 
   /// No description provided for @teacherAssignmentPublicMaxUsesHint.
   ///
@@ -6500,7 +6578,7 @@ abstract class AppLocalizations {
   /// No description provided for @teacherAssignExamModeHintRealtime.
   ///
   /// In en, this message translates to:
-  /// **'You open a live room from the dashboard — not a calendar slot.'**
+  /// **'Live session: open a room in class, or set a time so students know when to join.'**
   String get teacherAssignExamModeHintRealtime;
 
   /// No description provided for @teacherAssignExamModeHintPractice.
@@ -6512,7 +6590,7 @@ abstract class AppLocalizations {
   /// No description provided for @teacherAssignExamRealtimeNote.
   ///
   /// In en, this message translates to:
-  /// **'After assigning, open Live rooms on the dashboard to start the session.'**
+  /// **'Open the live room from the dashboard when you are ready. The per-attempt timer starts when you press Start; students are auto-submitted when time runs out.'**
   String get teacherAssignExamRealtimeNote;
 
   /// No description provided for @teacherAssignExamCalendarNote.
@@ -7397,6 +7475,96 @@ abstract class AppLocalizations {
   /// **'Teacher email'**
   String get teacherCoTeacherEmailHint;
 
+  /// No description provided for @teacherCoTeacherUsernameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by username'**
+  String get teacherCoTeacherUsernameHint;
+
+  /// No description provided for @teacherCoTeacherSearchPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Type username to search…'**
+  String get teacherCoTeacherSearchPlaceholder;
+
+  /// No description provided for @teacherCoTeacherSearchEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No teachers found'**
+  String get teacherCoTeacherSearchEmpty;
+
+  /// No description provided for @teacherCoTeacherPrimaryTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary teacher'**
+  String get teacherCoTeacherPrimaryTeacher;
+
+  /// No description provided for @teacherCoTeacherListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-teachers'**
+  String get teacherCoTeacherListTitle;
+
+  /// No description provided for @teacherCoTeacherNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No co-teachers yet'**
+  String get teacherCoTeacherNone;
+
+  /// No description provided for @teacherCoTeacherRemove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get teacherCoTeacherRemove;
+
+  /// No description provided for @teacherCoTeacherRemoveConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this co-teacher from the class?'**
+  String get teacherCoTeacherRemoveConfirm;
+
+  /// No description provided for @teacherClassSettingsTeam.
+  ///
+  /// In en, this message translates to:
+  /// **'Teaching team'**
+  String get teacherClassSettingsTeam;
+
+  /// No description provided for @teacherClassSettingsInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite & join'**
+  String get teacherClassSettingsInvite;
+
+  /// No description provided for @teacherClassSettingsStats.
+  ///
+  /// In en, this message translates to:
+  /// **'Class summary'**
+  String get teacherClassSettingsStats;
+
+  /// No description provided for @teacherClassSettingsDanger.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced actions'**
+  String get teacherClassSettingsDanger;
+
+  /// No description provided for @teacherInviteToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link token'**
+  String get teacherInviteToken;
+
+  /// No description provided for @teacherInviteTokenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this token for students to join via invite link'**
+  String get teacherInviteTokenHint;
+
+  /// No description provided for @copyInviteToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy invite token'**
+  String get copyInviteToken;
+
   /// No description provided for @teacherCoTeacherAdded.
   ///
   /// In en, this message translates to:
@@ -7655,6 +7823,12 @@ abstract class AppLocalizations {
   /// **'Pending'**
   String get integratedSkillScorePending;
 
+  /// No description provided for @integratedSkillNoSubmission.
+  ///
+  /// In en, this message translates to:
+  /// **'No submission'**
+  String get integratedSkillNoSubmission;
+
   /// No description provided for @integratedSkillFinalAvg.
   ///
   /// In en, this message translates to:
@@ -7724,7 +7898,7 @@ abstract class AppLocalizations {
   /// No description provided for @integratedGradingAvgFormulaHint.
   ///
   /// In en, this message translates to:
-  /// **'Final score = arithmetic mean of all skill scores (0–10 each). Pending skills are excluded until graded.'**
+  /// **'Final score = arithmetic mean of scored skills (0–10 each). Skills with no submission are excluded from the average.'**
   String get integratedGradingAvgFormulaHint;
 
   /// No description provided for @integratedGradingColumnSkill.
@@ -7859,18 +8033,6 @@ abstract class AppLocalizations {
   /// **'Question {n}'**
   String teacherAttemptGradeQuestionN(int n);
 
-  /// No description provided for @teacherAttemptGradeMarkedComplete.
-  ///
-  /// In en, this message translates to:
-  /// **'Marked complete'**
-  String get teacherAttemptGradeMarkedComplete;
-
-  /// No description provided for @teacherAttemptGradeNotMarkedComplete.
-  ///
-  /// In en, this message translates to:
-  /// **'Not marked complete'**
-  String get teacherAttemptGradeNotMarkedComplete;
-
   /// No description provided for @teacherAttemptGradeInstructions.
   ///
   /// In en, this message translates to:
@@ -7889,11 +8051,17 @@ abstract class AppLocalizations {
   /// **'No work recorded during this exam session.'**
   String get teacherAttemptGradeNoSkillWork;
 
-  /// No description provided for @teacherAttemptGradeOnlyMarkedComplete.
+  /// No description provided for @teacherAttemptGradeNoEssayText.
   ///
   /// In en, this message translates to:
-  /// **'The student marked this part complete, but no saved answers were found for the linked exercise.'**
-  String get teacherAttemptGradeOnlyMarkedComplete;
+  /// **'No essay text saved for this attempt.'**
+  String get teacherAttemptGradeNoEssayText;
+
+  /// No description provided for @teacherAttemptGradeWritingPromptLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'WRITING PROMPT'**
+  String get teacherAttemptGradeWritingPromptLabel;
 
   /// No description provided for @teacherAttemptGradeSkillWorkExamInline.
   ///
@@ -8030,13 +8198,13 @@ abstract class AppLocalizations {
   /// No description provided for @teacherExamIntegratedSkillListening.
   ///
   /// In en, this message translates to:
-  /// **'Listening (dictation)'**
+  /// **'Listening'**
   String get teacherExamIntegratedSkillListening;
 
   /// No description provided for @teacherExamIntegratedSkillSpeaking.
   ///
   /// In en, this message translates to:
-  /// **'Speaking (read aloud)'**
+  /// **'Speaking'**
   String get teacherExamIntegratedSkillSpeaking;
 
   /// No description provided for @teacherExamIntegratedSkillReading.
@@ -8164,6 +8332,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Include at least one skill with an exercise, or add at least one Grammar question.'**
   String get teacherExamPublishNeedSelection;
+
+  /// No description provided for @teacherExamListeningTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise Type'**
+  String get teacherExamListeningTypeLabel;
+
+  /// No description provided for @teacherExamListeningTypeDictation.
+  ///
+  /// In en, this message translates to:
+  /// **'Dictation'**
+  String get teacherExamListeningTypeDictation;
+
+  /// No description provided for @teacherExamListeningTypeComprehension.
+  ///
+  /// In en, this message translates to:
+  /// **'Comprehension'**
+  String get teacherExamListeningTypeComprehension;
+
+  /// No description provided for @teacherExamListeningTypeDictationHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill-in-the-blank based on audio cues'**
+  String get teacherExamListeningTypeDictationHint;
+
+  /// No description provided for @teacherExamListeningTypeComprehensionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'MCQ questions based on a listening passage'**
+  String get teacherExamListeningTypeComprehensionHint;
 
   /// No description provided for @teacherExamPublishPickEachIncludedSkill.
   ///
@@ -8350,6 +8548,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All available exercises are already added.'**
   String get teacherExamSkillsAllAdded;
+
+  /// No description provided for @teacherExamPickerAddSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {count} selected'**
+  String teacherExamPickerAddSelected(int count);
 
   /// No description provided for @teacherExamCreateMenuLabel.
   ///
@@ -8561,6 +8765,18 @@ abstract class AppLocalizations {
   /// **'{done} of {total} parts ready'**
   String integratedExamProgress(int done, int total);
 
+  /// No description provided for @integratedExamListeningSubNavTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercises in Listening'**
+  String get integratedExamListeningSubNavTitle;
+
+  /// No description provided for @integratedExamListeningSubNavHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose dictation or comprehension below'**
+  String get integratedExamListeningSubNavHint;
+
   /// No description provided for @integratedExamScoreSummary.
   ///
   /// In en, this message translates to:
@@ -8608,6 +8824,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This part is locked after you submitted the exam.'**
   String get integratedExamEmbeddedLocked;
+
+  /// No description provided for @integratedExamResultsAwaitingRelease.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher has not released detailed results yet. You will see correct and incorrect answers here once grades are published.'**
+  String get integratedExamResultsAwaitingRelease;
+
+  /// No description provided for @integratedExamResultsNeverShown.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed answers are not shown for this assignment.'**
+  String get integratedExamResultsNeverShown;
+
+  /// No description provided for @integratedExamResultsScoreOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Your teacher published scores only. Detailed answers and feedback are not shown for this assignment. You can ask your teacher to enable full review later.'**
+  String get integratedExamResultsScoreOnly;
+
+  /// No description provided for @integratedExamReviewYourAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Your answer'**
+  String get integratedExamReviewYourAnswer;
+
+  /// No description provided for @integratedExamReviewCorrectAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct answer'**
+  String get integratedExamReviewCorrectAnswer;
+
+  /// No description provided for @integratedExamReviewNotAnswered.
+  ///
+  /// In en, this message translates to:
+  /// **'Not answered'**
+  String get integratedExamReviewNotAnswered;
+
+  /// No description provided for @integratedExamReviewTeacherFeedback.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher feedback'**
+  String get integratedExamReviewTeacherFeedback;
+
+  /// No description provided for @teacherAssignmentResultsDetailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'What students can review'**
+  String get teacherAssignmentResultsDetailLabel;
+
+  /// No description provided for @teacherResultsDetailScoreOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Scores only'**
+  String get teacherResultsDetailScoreOnly;
+
+  /// No description provided for @teacherResultsDetailScoreOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Students see total and skill scores — not answers, work, or feedback.'**
+  String get teacherResultsDetailScoreOnlyHint;
+
+  /// No description provided for @teacherResultsDetailFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Full graded review'**
+  String get teacherResultsDetailFull;
+
+  /// No description provided for @teacherResultsDetailFullHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Students see their work, correct/wrong answers, and your feedback.'**
+  String get teacherResultsDetailFullHint;
+
+  /// No description provided for @teacherReleaseResultsDialogTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Publish results'**
+  String get teacherReleaseResultsDialogTitle;
+
+  /// No description provided for @teacherReleaseResultsDialogSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what students may see after you release grades. You can change this later in assignment settings.'**
+  String get teacherReleaseResultsDialogSubtitle;
 
   /// No description provided for @integratedExamEmbeddedNoResource.
   ///
@@ -8906,20 +9206,74 @@ abstract class AppLocalizations {
   /// No description provided for @teacherAssignmentRealtimeLobbyOpens.
   ///
   /// In en, this message translates to:
-  /// **'Lobby opens at'**
+  /// **'Lobby opens (optional)'**
   String get teacherAssignmentRealtimeLobbyOpens;
+
+  /// No description provided for @teacherAssignmentRealtimeLobbyOpensHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier than start time if students may wait in the lobby. Defaults to the start time if empty.'**
+  String get teacherAssignmentRealtimeLobbyOpensHint;
 
   /// No description provided for @teacherAssignmentRealtimeScheduledStart.
   ///
   /// In en, this message translates to:
-  /// **'Scheduled start'**
+  /// **'Start time'**
   String get teacherAssignmentRealtimeScheduledStart;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduledStartRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a start time for a scheduled session.'**
+  String get teacherAssignmentRealtimeScheduledStartRequired;
 
   /// No description provided for @teacherAssignmentRealtimeHardEnd.
   ///
   /// In en, this message translates to:
   /// **'Hard end'**
   String get teacherAssignmentRealtimeHardEnd;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduleModeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'When students join'**
+  String get teacherAssignmentRealtimeScheduleModeLabel;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduleManual.
+  ///
+  /// In en, this message translates to:
+  /// **'In class'**
+  String get teacherAssignmentRealtimeScheduleManual;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduleScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get teacherAssignmentRealtimeScheduleScheduled;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduleManualHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed time — open the live room in class; students enter when you press Start.'**
+  String get teacherAssignmentRealtimeScheduleManualHint;
+
+  /// No description provided for @teacherAssignmentRealtimeScheduleScheduledHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Students see the start time on their assignment. They can enter the lobby from the open time; the exam begins when you press Start.'**
+  String get teacherAssignmentRealtimeScheduleScheduledHint;
+
+  /// No description provided for @examCardRealtimeScheduledStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Live exam starts {date}'**
+  String examCardRealtimeScheduledStart(String date);
+
+  /// No description provided for @examCardRealtimeLobbyOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Lobby opens {date}'**
+  String examCardRealtimeLobbyOpens(String date);
 
   /// No description provided for @teacherAssignmentEditPracticeNote.
   ///

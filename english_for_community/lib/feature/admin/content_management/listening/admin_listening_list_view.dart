@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+
 // Import Entity & GetIt
 import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../../core/get_it/get_it.dart';
@@ -229,9 +231,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
                                 context.read<AdminListeningBloc>().add(
                                   const GetAdminListeningListEvent(limit: 9999, page: 1),
                                 );
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Listening restored')),
-                                );
+                                AppCornerToast.show(context, 'Listening restored');
                               },
                               child: const Text('Restore'),
                             ),

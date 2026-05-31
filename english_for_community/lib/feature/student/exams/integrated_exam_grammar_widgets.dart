@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -153,6 +151,365 @@ class GrammarCorrectAnswerReviewPanel extends StatelessWidget {
   }
 }
 
+/// Student / teacher review for non-MCQ grammar — shows user vs correct with pass/fail colors.
+class GrammarObjectiveGradingReview extends StatelessWidget {
+  const GrammarObjectiveGradingReview({
+    super.key,
+    required this.item,
+    this.answer,
+  });
+
+  final Map<String, dynamic> item;
+  final Map<String, dynamic>? answer;
+
+  static GrammarObjectiveGradingReview fromMaps({
+    required Map<String, dynamic> item,
+    Map<String, dynamic>? answer,
+  }) {
+    return GrammarObjectiveGradingReview(item: item, answer: answer);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final kind = '${item['kind'] ?? ''}';
+    switch (kind) {
+      case 'grammar_cloze':
+        return _buildCloze(context);
+      case 'grammar_gap':
+        return _buildGap(context);
+      case 'grammar_matching':
+        return _buildMatching(context);
+      case 'grammar_reorder':
+        return _buildReorder(context);
+      default:
+        return GrammarCorrectAnswerReviewPanel(item: item);
+    }
+  }
+
+  Widget _buildCloze(BuildContext context) {
+    final l10n = context.l10n;
+    final passage = '${item['passage'] ?? ''}';
+    final defs = (item['blanks'] as List?)?.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() ?? [];
+    final userBlanks = (answer?['blanks'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (passage.isNotEmpty) ...[
+            Text(passage, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)),
+            const SizedBox(height: 10),
+          ],
+          for (var i = 0; i < defs.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            _blankReviewRow(
+              context,
+              blankId: '${defs[i]['blankId'] ?? i}',
+              userText: userBlanks['${defs[i]['blankId'] ?? i}'] ?? '',
+              correctText: _acceptedLabel(defs[i]),
+              ok: _grammarBlankOk(defs[i], userBlanks['${defs[i]['blankId'] ?? i}']),
+              notAnsweredLabel: l10n.integratedExamReviewNotAnswered,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGap(BuildContext context) {
+    final l10n = context.l10n;
+    final before = '${item['textBefore'] ?? ''}';
+    final after = '${item['textAfter'] ?? ''}';
+    final defs = (item['blanks'] as List?)?.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() ?? [];
+    final blankDef = defs.isNotEmpty ? defs.first : <String, dynamic>{'blankId': '0', 'acceptedAnswers': []};
+    final blankId = '${blankDef['blankId'] ?? '0'}';
+    final userBlanks = (answer?['blanks'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
+    final userText = userBlanks[blankId] ?? '';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            runSpacing: 6,
+            children: [
+              if (before.isNotEmpty) Text(before, style: ExamSystemUi.captionSecondary),
+              _inlineAnswerChip(userText.isNotEmpty ? userText : l10n.integratedExamReviewNotAnswered,
+                  ok: userText.isNotEmpty && _grammarBlankOk(blankDef, userText)),
+              if (after.isNotEmpty) Text(after, style: ExamSystemUi.captionSecondary),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _labeledAnswerBlock(
+            context,
+            label: l10n.integratedExamReviewCorrectAnswer,
+            text: _acceptedLabel(blankDef),
+            ok: true,
+            showAsCorrect: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatching(BuildContext context) {
+    final l10n = context.l10n;
+    final left = ((item['leftItems'] ?? item['leftColumn']) as List?)
+            ?.whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        [];
+    final right = ((item['rightItems'] ?? item['rightColumn']) as List?)
+            ?.whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e))
+            .toList() ??
+        [];
+    final chosen = (answer?['matching'] as Map?)?.map((k, v) => MapEntry('$k', '$v')) ?? {};
+    final corr = item['correctPairs'] as List? ?? [];
+
+    String rightLabel(String id) {
+      for (final r in right) {
+        if ('${r['id']}' == id) return '${r['text'] ?? ''}'.trim();
+      }
+      return id;
+    }
+
+    String correctRightFor(String leftId) {
+      for (final p in corr) {
+        if (p is List && p.length >= 2 && '${p[0]}' == leftId) {
+          return rightLabel('${p[1]}');
+        }
+      }
+      return '—';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < left.length; i++) ...[
+            if (i > 0) const SizedBox(height: 8),
+            Builder(builder: (context) {
+              final leftId = '${left[i]['id']}';
+              final leftText = '${left[i]['text'] ?? ''}'.trim();
+              final userRightId = chosen[leftId];
+              final userRight = userRightId != null ? rightLabel(userRightId) : '';
+              final expectedRight = correctRightFor(leftId);
+              final answered = userRight.isNotEmpty;
+              final ok = answered && userRightId == _correctRightId(leftId, corr);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(leftText, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 6),
+                  _labeledAnswerBlock(
+                    context,
+                    label: l10n.integratedExamReviewYourAnswer,
+                    text: answered ? userRight : l10n.integratedExamReviewNotAnswered,
+                    ok: ok,
+                  ),
+                  const SizedBox(height: 6),
+                  _labeledAnswerBlock(
+                    context,
+                    label: l10n.integratedExamReviewCorrectAnswer,
+                    text: expectedRight,
+                    ok: true,
+                    showAsCorrect: true,
+                  ),
+                ],
+              );
+            }),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReorder(BuildContext context) {
+    final l10n = context.l10n;
+    final fr = (item['fragments'] as List?)?.map((e) => '$e').toList() ?? <String>[];
+    final cor = (item['correctOrder'] as List?)?.map((e) => int.tryParse('$e') ?? 0).toList() ?? <int>[];
+    final userOrder = (answer?['order'] as List?)?.map((e) => int.tryParse('$e') ?? 0).toList() ?? <int>[];
+
+    String fragmentAt(int idx) => (idx >= 0 && idx < fr.length) ? fr[idx] : '';
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(l10n.integratedExamReviewYourAnswer, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          if (userOrder.isEmpty)
+            _labeledAnswerBlock(
+              context,
+              label: '',
+              text: l10n.integratedExamReviewNotAnswered,
+              ok: false,
+            )
+          else
+            ...List.generate(userOrder.length, (i) {
+              final idx = userOrder[i];
+              final text = fragmentAt(idx);
+              final ok = i < cor.length && idx == cor[i];
+              return Padding(
+                padding: EdgeInsets.only(bottom: i == userOrder.length - 1 ? 0 : 6),
+                child: _orderLine(context, number: i + 1, text: text, ok: ok),
+              );
+            }),
+          const SizedBox(height: 10),
+          Text(l10n.integratedExamReviewCorrectAnswer, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          ...List.generate(cor.length, (i) {
+            final text = fragmentAt(cor[i]);
+            return Padding(
+              padding: EdgeInsets.only(bottom: i == cor.length - 1 ? 0 : 6),
+              child: _orderLine(context, number: i + 1, text: text, ok: true, showAsCorrect: true),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String? _correctRightId(String leftId, List corr) {
+    for (final p in corr) {
+      if (p is List && p.length >= 2 && '${p[0]}' == leftId) return '${p[1]}';
+    }
+    return null;
+  }
+
+  String _acceptedLabel(Map<String, dynamic> blankDef) {
+    final accepted = (blankDef['acceptedAnswers'] as List?)?.map((e) => '$e').where((s) => s.isNotEmpty).toList() ?? [];
+    if (accepted.isEmpty) return '—';
+    return accepted.join(' / ');
+  }
+
+  Widget _blankReviewRow(
+    BuildContext context, {
+    required String blankId,
+    required String userText,
+    required String correctText,
+    required bool ok,
+    required String notAnsweredLabel,
+  }) {
+    final answered = userText.trim().isNotEmpty;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Blank $blankId', style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+        const SizedBox(height: 4),
+        _labeledAnswerBlock(
+          context,
+          label: context.l10n.integratedExamReviewYourAnswer,
+          text: answered ? userText : notAnsweredLabel,
+          ok: ok,
+        ),
+        const SizedBox(height: 6),
+        _labeledAnswerBlock(
+          context,
+          label: context.l10n.integratedExamReviewCorrectAnswer,
+          text: correctText,
+          ok: true,
+          showAsCorrect: true,
+        ),
+      ],
+    );
+  }
+
+  Widget _labeledAnswerBlock(
+    BuildContext context, {
+    required String label,
+    required String text,
+    required bool ok,
+    bool showAsCorrect = false,
+  }) {
+    final border = showAsCorrect || ok ? AppColors.success : AppColors.danger;
+    final bg = showAsCorrect || ok ? AppColors.successBg : AppColors.dangerBg;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: border.withValues(alpha: showAsCorrect ? 0.45 : 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (label.isNotEmpty)
+            Text(label, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+          if (label.isNotEmpty) const SizedBox(height: 4),
+          Text(
+            text,
+            style: ExamSystemUi.captionSecondary.copyWith(
+              height: 1.4,
+              color: text == context.l10n.integratedExamReviewNotAnswered ? AppColors.textMuted : AppColors.textPrimary,
+              fontStyle: text == context.l10n.integratedExamReviewNotAnswered ? FontStyle.italic : FontStyle.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _inlineAnswerChip(String text, {required bool ok}) {
+    final border = ok ? AppColors.success : AppColors.danger;
+    final bg = ok ? AppColors.successBg : AppColors.dangerBg;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: border),
+      ),
+      child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+    );
+  }
+
+  Widget _orderLine(BuildContext context, {required int number, required String text, required bool ok, bool showAsCorrect = false}) {
+    final color = showAsCorrect || ok ? AppColors.success : AppColors.danger;
+    final bg = showAsCorrect || ok ? AppColors.successBg : AppColors.dangerBg;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: showAsCorrect ? 0.45 : 1)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$number.', style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 13)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.4))),
+          if (!showAsCorrect)
+            Icon(ok ? Icons.check_rounded : Icons.close_rounded, size: 16, color: color),
+        ],
+      ),
+    );
+  }
+}
+
+String _grammarNorm(String s, {bool caseInsensitive = true}) {
+  var v = s.trim();
+  if (caseInsensitive) v = v.toLowerCase();
+  return v;
+}
+
+bool _grammarBlankOk(Map<String, dynamic> blankDef, String? raw) {
+  if (raw == null || raw.trim().isEmpty) return false;
+  final ci = blankDef['caseInsensitive'] != false;
+  final norm = _grammarNorm(raw, caseInsensitive: ci);
+  final accepted = (blankDef['acceptedAnswers'] as List?)?.map((e) => '$e').toList() ?? [];
+  return accepted.any((a) => _grammarNorm(a, caseInsensitive: ci) == norm);
+}
+
 /// Whether the stored answer object satisfies backend [grammarAnswerComplete].
 bool grammarAnswerLooksComplete(Map<String, dynamic> item, Map<String, dynamic>? answer) {
   if (answer == null) return false;
@@ -264,36 +621,44 @@ class IntegratedExamGrammarQuestionCard extends StatelessWidget {
               );
         break;
       case 'grammar_cloze':
-        inner = _ClozeBody(
-          item: item,
-          answer: answer,
-          locked: locked,
-          onPartialPatch: onPartialPatch,
-        );
+        inner = gradingReviewMode
+            ? GrammarObjectiveGradingReview.fromMaps(item: item, answer: answer)
+            : _ClozeBody(
+                item: item,
+                answer: answer,
+                locked: locked,
+                onPartialPatch: onPartialPatch,
+              );
         break;
       case 'grammar_gap':
-        inner = _GapBody(
-          item: item,
-          answer: answer,
-          locked: locked,
-          onPartialPatch: onPartialPatch,
-        );
+        inner = gradingReviewMode
+            ? GrammarObjectiveGradingReview.fromMaps(item: item, answer: answer)
+            : _GapBody(
+                item: item,
+                answer: answer,
+                locked: locked,
+                onPartialPatch: onPartialPatch,
+              );
         break;
       case 'grammar_matching':
-        inner = _MatchingBody(
-          item: item,
-          answer: answer,
-          locked: locked,
-          onPartialPatch: onPartialPatch,
-        );
+        inner = gradingReviewMode
+            ? GrammarObjectiveGradingReview.fromMaps(item: item, answer: answer)
+            : _MatchingBody(
+                item: item,
+                answer: answer,
+                locked: locked,
+                onPartialPatch: onPartialPatch,
+              );
         break;
       case 'grammar_reorder':
-        inner = _ReorderBody(
-          item: item,
-          answer: answer,
-          locked: locked,
-          onPartialPatch: onPartialPatch,
-        );
+        inner = gradingReviewMode
+            ? GrammarObjectiveGradingReview.fromMaps(item: item, answer: answer)
+            : _ReorderBody(
+                item: item,
+                answer: answer,
+                locked: locked,
+                onPartialPatch: onPartialPatch,
+              );
         break;
       default:
         inner = Padding(
@@ -359,7 +724,8 @@ class IntegratedExamGrammarQuestionCard extends StatelessWidget {
   }
 }
 
-class _McqBody extends StatelessWidget {
+/// Optimistic MCQ: local selection updates instantly on tap, then syncs to server.
+class _McqBody extends StatefulWidget {
   const _McqBody({
     required this.item,
     required this.answer,
@@ -373,13 +739,44 @@ class _McqBody extends StatelessWidget {
   final void Function(Map<String, dynamic> partial) onPartialPatch;
 
   @override
+  State<_McqBody> createState() => _McqBodyState();
+}
+
+class _McqBodyState extends State<_McqBody> {
+  late Set<int> _localSel;
+
+  static Set<int> _parseSelection(Map<String, dynamic>? answer) =>
+      (answer?['selectedIndexes'] as List?)
+          ?.map((e) => int.tryParse('$e') ?? 0)
+          .toSet() ??
+      <int>{};
+
+  static bool _setsEqual(Set<int> a, Set<int> b) =>
+      a.length == b.length && a.containsAll(b);
+
+  @override
+  void initState() {
+    super.initState();
+    _localSel = _parseSelection(widget.answer);
+  }
+
+  @override
+  void didUpdateWidget(covariant _McqBody old) {
+    super.didUpdateWidget(old);
+    final serverSel = _parseSelection(widget.answer);
+    // Sync from server only when it genuinely differs (avoids overwriting optimistic tap)
+    if (!_setsEqual(_localSel, serverSel)) {
+      setState(() => _localSel = serverSel);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final options = (item['options'] as List?)?.map((e) => '$e').toList() ?? <String>[];
-    final kind = '${item['kind'] ?? ''}';
-    final sel = (answer?['selectedIndexes'] as List?)?.map((e) => int.tryParse('$e') ?? 0).toSet() ?? <int>{};
+    final options = (widget.item['options'] as List?)?.map((e) => '$e').toList() ?? <String>[];
+    final kind = '${widget.item['kind'] ?? ''}';
 
     if (kind == 'mcq_single') {
-      final group = sel.isEmpty ? null : sel.first;
+      final group = _localSel.isEmpty ? null : _localSel.first;
       return Column(
         children: [
           for (var i = 0; i < options.length; i++)
@@ -388,9 +785,12 @@ class _McqBody extends StatelessWidget {
               index: i,
               text: options[i],
               selected: group == i,
-              onTap: locked
+              onTap: widget.locked
                   ? null
-                  : () => onPartialPatch({'selectedIndexes': [i]}),
+                  : () {
+                      setState(() => _localSel = {i});
+                      widget.onPartialPatch({'selectedIndexes': [i]});
+                    },
             ),
         ],
       );
@@ -404,18 +804,19 @@ class _McqBody extends StatelessWidget {
             index: i,
             text: options[i],
             multiSelect: true,
-            checked: sel.contains(i),
-            onTap: locked
+            checked: _localSel.contains(i),
+            onTap: widget.locked
                 ? null
                 : () {
-                    final next = {...sel};
+                    final next = {..._localSel};
                     if (next.contains(i)) {
                       next.remove(i);
                     } else {
                       next.add(i);
                     }
                     final list = List<int>.from(next)..sort();
-                    onPartialPatch({'selectedIndexes': list});
+                    setState(() => _localSel = next);
+                    widget.onPartialPatch({'selectedIndexes': list});
                   },
           ),
       ],
@@ -750,7 +1151,6 @@ class _MatchingBodyState extends State<_MatchingBody> {
 
   @override
   Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
     final l10n = context.l10n;
     for (final row in _leftRows) {
       final id = '${row['id']}';
@@ -776,40 +1176,38 @@ class _MatchingBodyState extends State<_MatchingBody> {
             ),
           LayoutBuilder(
             builder: (context, constraints) {
-              final h = math.max(120.0, math.max(_leftRows.length, _rightRows.length) * 52.0);
-              return SizedBox(
-                height: h,
-                child: Stack(
-                  key: _canvasKey,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: CustomPaint(
-                        painter: _MatchingLinesPainter(lines: _lines),
+              return Stack(
+                key: _canvasKey,
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _MatchingLinesPainter(lines: _lines),
+                    ),
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final row in _leftRows) _buildLeftCard(row),
+                          ],
+                        ),
                       ),
-                    ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              for (final row in _leftRows) _buildLeftCard(row),
-                            ],
-                          ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final row in _rightRows) _buildRightCard(row),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              for (final row in _rightRows) _buildRightCard(row),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               );
             },
           ),

@@ -10,6 +10,9 @@ class TeacherLiveMonitorState extends Equatable {
     this.students = const [],
     this.summary = const {},
     this.filter = TeacherLiveMonitorFilter.all,
+    this.visibleStudents = const [],
+    this.studentsByUserId = const {},
+    this.dataRevision = 0,
   });
 
   final TeacherLiveMonitorStatus status;
@@ -17,26 +20,13 @@ class TeacherLiveMonitorState extends Equatable {
   final List<Map<String, dynamic>> students;
   final Map<String, dynamic> summary;
   final TeacherLiveMonitorFilter filter;
+  /// Pre-filtered list — avoids re-filtering on every [BlocBuilder] rebuild.
+  final List<Map<String, dynamic>> visibleStudents;
+  final Map<String, Map<String, dynamic>> studentsByUserId;
+  final int dataRevision;
 
   factory TeacherLiveMonitorState.initial() =>
       const TeacherLiveMonitorState(status: TeacherLiveMonitorStatus.initial);
-
-  List<Map<String, dynamic>> get visibleStudents {
-    switch (filter) {
-      case TeacherLiveMonitorFilter.inProgress:
-        return students.where((s) => s['status'] == 'in_progress').toList();
-      case TeacherLiveMonitorFilter.submitted:
-        return students
-            .where((s) => ['submitted', 'expired', 'void'].contains(s['status']))
-            .toList();
-      case TeacherLiveMonitorFilter.flagged:
-        return students
-            .where((s) => s['integrityRiskLevel'] == 'high' || s['integrityRiskLevel'] == 'medium')
-            .toList();
-      case TeacherLiveMonitorFilter.all:
-        return students;
-    }
-  }
 
   TeacherLiveMonitorState copyWith({
     TeacherLiveMonitorStatus? status,
@@ -44,6 +34,9 @@ class TeacherLiveMonitorState extends Equatable {
     List<Map<String, dynamic>>? students,
     Map<String, dynamic>? summary,
     TeacherLiveMonitorFilter? filter,
+    List<Map<String, dynamic>>? visibleStudents,
+    Map<String, Map<String, dynamic>>? studentsByUserId,
+    int? dataRevision,
     bool clearError = false,
   }) {
     return TeacherLiveMonitorState(
@@ -52,9 +45,21 @@ class TeacherLiveMonitorState extends Equatable {
       students: students ?? this.students,
       summary: summary ?? this.summary,
       filter: filter ?? this.filter,
+      visibleStudents: visibleStudents ?? this.visibleStudents,
+      studentsByUserId: studentsByUserId ?? this.studentsByUserId,
+      dataRevision: dataRevision ?? this.dataRevision,
     );
   }
 
   @override
-  List<Object?> get props => [status, errorMessage, students, summary, filter];
+  List<Object?> get props => [
+        status,
+        errorMessage,
+        students,
+        summary,
+        filter,
+        visibleStudents,
+        studentsByUserId,
+        dataRevision,
+      ];
 }

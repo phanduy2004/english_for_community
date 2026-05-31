@@ -1873,6 +1873,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get listeningCompEmpty => 'Chưa có bài nghe';
 
   @override
+  String get listeningCompPlayedOnce => 'Đã nghe (chỉ 1 lần)';
+
+  @override
   String get discussionReply => 'Trả lời';
 
   @override
@@ -2449,6 +2452,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherClassMemberStatusPending => 'Chờ duyệt';
 
   @override
+  String get teacherMembersSearchHint => 'Tìm theo tên hoặc email…';
+
+  @override
+  String get teacherMembersFilterAll => 'Tất cả';
+
+  @override
+  String get teacherMembersFilterActive => 'Hoạt động';
+
+  @override
+  String get teacherMembersFilterPending => 'Chờ duyệt';
+
+  @override
+  String get teacherMembersStatusPending => 'Chờ duyệt';
+
+  @override
+  String get teacherMembersActiveSection => 'Thành viên hoạt động';
+
+  @override
+  String get teacherMembersNoResults => 'Không tìm thấy thành viên phù hợp.';
+
+  @override
+  String get teacherMembersEmptyHint =>
+      'Chia sẻ mã mời để thêm học sinh vào lớp.';
+
+  @override
+  String get teacherMembersInvite => 'Mời';
+
+  @override
+  String get teacherMembersCopyInvite => 'Sao chép mã mời';
+
+  @override
   String get teacherClassSaveSettings => 'Lưu thay đổi';
 
   @override
@@ -2545,10 +2579,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherAssignmentAudience => 'Đối tượng';
 
   @override
-  String get teacherAssignmentAudienceClassroom => 'Lớp';
+  String get teacherAssignmentAudienceClassroom => 'Lớp học';
+
+  @override
+  String get teacherAssignmentAudienceClassroomHint =>
+      'Giao cho một lớp cụ thể';
 
   @override
   String get teacherAssignmentAudiencePublic => 'Link công khai';
+
+  @override
+  String get teacherAssignmentAudiencePublicHint =>
+      'Chia sẻ link cho học sinh tự tham gia';
 
   @override
   String get teacherAssignmentPublicMaxUsesHint => 'Giới hạn lượt (tuỳ chọn)';
@@ -3563,7 +3605,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherAssignExamModeHintRealtime =>
-      'Bạn mở phòng trên dashboard — không phải chấm «Đang diễn ra» trên lịch.';
+      'Thi trực tiếp: mở phòng trên lớp, hoặc đặt giờ để học sinh biết khi vào làm.';
 
   @override
   String get teacherAssignExamModeHintPractice =>
@@ -3571,7 +3613,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherAssignExamRealtimeNote =>
-      'Sau khi giao, mở Phòng trực tiếp trên tổng quan để bắt đầu phiên.';
+      'Sau khi giao, mở phòng trực tiếp trên tổng quan khi sẵn sàng. Thời gian làm bài (phút) bắt đầu khi bạn bấm Bắt đầu; hết giờ hệ thống tự nộp bài.';
 
   @override
   String get teacherAssignExamCalendarNote =>
@@ -4047,6 +4089,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherCoTeacherEmailHint => 'Email giáo viên';
 
   @override
+  String get teacherCoTeacherUsernameHint => 'Tìm theo username';
+
+  @override
+  String get teacherCoTeacherSearchPlaceholder => 'Nhập username để tìm…';
+
+  @override
+  String get teacherCoTeacherSearchEmpty => 'Không tìm thấy giáo viên';
+
+  @override
+  String get teacherCoTeacherPrimaryTeacher => 'Giáo viên chính';
+
+  @override
+  String get teacherCoTeacherListTitle => 'Giáo viên phụ';
+
+  @override
+  String get teacherCoTeacherNone => 'Chưa có giáo viên phụ';
+
+  @override
+  String get teacherCoTeacherRemove => 'Gỡ';
+
+  @override
+  String get teacherCoTeacherRemoveConfirm => 'Gỡ giáo viên phụ khỏi lớp này?';
+
+  @override
+  String get teacherClassSettingsTeam => 'Đội ngũ giảng dạy';
+
+  @override
+  String get teacherClassSettingsInvite => 'Mời & tham gia';
+
+  @override
+  String get teacherClassSettingsStats => 'Tóm tắt lớp';
+
+  @override
+  String get teacherClassSettingsDanger => 'Thao tác nâng cao';
+
+  @override
+  String get teacherInviteToken => 'Token link mời';
+
+  @override
+  String get teacherInviteTokenHint =>
+      'Gửi token này để học sinh tham gia bằng invite link';
+
+  @override
+  String get copyInviteToken => 'Sao chép token';
+
+  @override
   String get teacherCoTeacherAdded => 'Đã thêm giáo viên phụ';
 
   @override
@@ -4186,6 +4274,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get integratedSkillScorePending => 'Chờ chấm';
 
   @override
+  String get integratedSkillNoSubmission => 'Không nộp';
+
+  @override
   String get integratedSkillFinalAvg => 'Điểm TB';
 
   @override
@@ -4221,7 +4312,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get integratedGradingAvgFormulaHint =>
-      'Điểm cuối = trung bình cộng các kỹ năng đã chấm (mỗi kỹ năng 0–10). Kỹ năng chờ chấm chưa tính vào TB.';
+      'Điểm cuối = trung bình cộng các kỹ năng đã chấm (mỗi kỹ năng 0–10). Kỹ năng chờ chấm và kỹ năng học sinh không nộp đều không tính vào TB.';
 
   @override
   String get integratedGradingColumnSkill => 'Kỹ năng';
@@ -4308,12 +4399,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get teacherAttemptGradeMarkedComplete => 'Đã đánh dấu hoàn thành';
-
-  @override
-  String get teacherAttemptGradeNotMarkedComplete => 'Chưa đánh dấu hoàn thành';
-
-  @override
   String get teacherAttemptGradeInstructions => 'Hướng dẫn';
 
   @override
@@ -4324,8 +4409,11 @@ class AppLocalizationsVi extends AppLocalizations {
       'Không có bài làm trong thời gian làm bài thi này.';
 
   @override
-  String get teacherAttemptGradeOnlyMarkedComplete =>
-      'Học sinh đã đánh dấu hoàn thành phần này, nhưng không tìm thấy bài làm đã lưu cho nội dung liên kết.';
+  String get teacherAttemptGradeNoEssayText =>
+      'Học sinh chưa lưu bài viết cho lần làm này.';
+
+  @override
+  String get teacherAttemptGradeWritingPromptLabel => 'ĐỀ BÀI WRITING';
 
   @override
   String get teacherAttemptGradeSkillWorkExamInline =>
@@ -4409,10 +4497,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Hãy chọn đủ 4 bài trước khi xuất bản.';
 
   @override
-  String get teacherExamIntegratedSkillListening => 'Nghe (chép chính tả)';
+  String get teacherExamIntegratedSkillListening => 'Nghe';
 
   @override
-  String get teacherExamIntegratedSkillSpeaking => 'Nói (đọc to)';
+  String get teacherExamIntegratedSkillSpeaking => 'Nói';
 
   @override
   String get teacherExamIntegratedSkillReading => 'Đọc';
@@ -4492,6 +4580,23 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get teacherExamPublishNeedSelection =>
       'Bật ít nhất một kỹ năng và chọn bài, hoặc thêm ít nhất một câu Ngữ pháp.';
+
+  @override
+  String get teacherExamListeningTypeLabel => 'Loại bài tập';
+
+  @override
+  String get teacherExamListeningTypeDictation => 'Chính tả';
+
+  @override
+  String get teacherExamListeningTypeComprehension => 'Nghe hiểu';
+
+  @override
+  String get teacherExamListeningTypeDictationHint =>
+      'Điền từ còn thiếu theo các câu âm thanh';
+
+  @override
+  String get teacherExamListeningTypeComprehensionHint =>
+      'Câu hỏi trắc nghiệm dựa trên đoạn nghe';
 
   @override
   String get teacherExamPublishPickEachIncludedSkill =>
@@ -4599,6 +4704,11 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherExamSkillsAllAdded => 'Tất cả bài tập có sẵn đã được thêm.';
+
+  @override
+  String teacherExamPickerAddSelected(int count) {
+    return 'Thêm $count bài đã chọn';
+  }
 
   @override
   String get teacherExamCreateMenuLabel => 'Tạo đề';
@@ -4716,6 +4826,13 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get integratedExamListeningSubNavTitle => 'Bài tập trong phần Nghe';
+
+  @override
+  String get integratedExamListeningSubNavHint =>
+      'Chọn Dictation hoặc Comprehension bên dưới';
+
+  @override
   String integratedExamScoreSummary(Object earned) {
     return 'Điểm TB: $earned / 10';
   }
@@ -4743,6 +4860,54 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get integratedExamEmbeddedLocked =>
       'Phần này đã khóa sau khi bạn nộp bài.';
+
+  @override
+  String get integratedExamResultsAwaitingRelease =>
+      'Giáo viên chưa công bố đáp án chi tiết. Bạn sẽ thấy câu đúng và câu sai tại đây sau khi giáo viên công bố điểm.';
+
+  @override
+  String get integratedExamResultsNeverShown =>
+      'Bài giao này không hiển thị đáp án chi tiết.';
+
+  @override
+  String get integratedExamResultsScoreOnly =>
+      'Giáo viên chỉ công bố điểm. Bài làm, đáp án chi tiết và nhận xét chưa được mở. Bạn có thể nhờ giáo viên bật xem kết quả chấm bài sau.';
+
+  @override
+  String get integratedExamReviewYourAnswer => 'Bài làm của bạn';
+
+  @override
+  String get integratedExamReviewCorrectAnswer => 'Đáp án đúng';
+
+  @override
+  String get integratedExamReviewNotAnswered => 'Chưa trả lời';
+
+  @override
+  String get integratedExamReviewTeacherFeedback => 'Nhận xét của giáo viên';
+
+  @override
+  String get teacherAssignmentResultsDetailLabel => 'Học sinh được xem gì';
+
+  @override
+  String get teacherResultsDetailScoreOnly => 'Chỉ điểm';
+
+  @override
+  String get teacherResultsDetailScoreOnlyHint =>
+      'Học sinh chỉ thấy điểm tổng và điểm kỹ năng — không thấy bài làm, đáp án hay nhận xét.';
+
+  @override
+  String get teacherResultsDetailFull => 'Kết quả chấm bài đầy đủ';
+
+  @override
+  String get teacherResultsDetailFullHint =>
+      'Học sinh thấy bài làm, câu đúng/sai và nhận xét của bạn.';
+
+  @override
+  String get teacherReleaseResultsDialogTitle => 'Công bố kết quả';
+
+  @override
+  String get teacherReleaseResultsDialogSubtitle =>
+      'Chọn phần học sinh được xem sau khi công bố. Bạn có thể đổi lại sau trong cài đặt bài giao.';
 
   @override
   String get integratedExamEmbeddedNoResource =>
@@ -4910,13 +5075,49 @@ class AppLocalizationsVi extends AppLocalizations {
       'Chế độ đã được chốt và không thể thay đổi sau khi tạo.';
 
   @override
-  String get teacherAssignmentRealtimeLobbyOpens => 'Mở phòng chờ lúc';
+  String get teacherAssignmentRealtimeLobbyOpens => 'Mở phòng chờ (tuỳ chọn)';
 
   @override
-  String get teacherAssignmentRealtimeScheduledStart => 'Bắt đầu theo lịch';
+  String get teacherAssignmentRealtimeLobbyOpensHint =>
+      'Sớm hơn giờ bắt đầu nếu cho học sinh vào chờ. Để trống = trùng giờ bắt đầu.';
+
+  @override
+  String get teacherAssignmentRealtimeScheduledStart => 'Giờ làm bài';
+
+  @override
+  String get teacherAssignmentRealtimeScheduledStartRequired =>
+      'Hãy chọn giờ làm bài khi đặt lịch.';
 
   @override
   String get teacherAssignmentRealtimeHardEnd => 'Kết thúc cứng';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleModeLabel =>
+      'Học sinh vào lúc nào';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleManual => 'Trên lớp';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleScheduled => 'Đặt lịch';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleManualHint =>
+      'Không cố định giờ — mở phòng trên lớp; cả lớp làm khi bạn bấm Bắt đầu.';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleScheduledHint =>
+      'Học sinh thấy giờ làm bài trên bài giao. Vào phòng chờ từ giờ mở; làm bài khi bạn bấm Bắt đầu.';
+
+  @override
+  String examCardRealtimeScheduledStart(String date) {
+    return 'Thi trực tiếp lúc $date';
+  }
+
+  @override
+  String examCardRealtimeLobbyOpens(String date) {
+    return 'Mở phòng chờ $date';
+  }
 
   @override
   String get teacherAssignmentEditPracticeNote =>

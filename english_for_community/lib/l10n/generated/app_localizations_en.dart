@@ -1880,6 +1880,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listeningCompEmpty => 'No listening lessons found';
 
   @override
+  String get listeningCompPlayedOnce => 'Played (1x only)';
+
+  @override
   String get discussionReply => 'Reply';
 
   @override
@@ -2463,6 +2466,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherClassMemberStatusPending => 'Pending approval';
 
   @override
+  String get teacherMembersSearchHint => 'Search by name or email…';
+
+  @override
+  String get teacherMembersFilterAll => 'All';
+
+  @override
+  String get teacherMembersFilterActive => 'Active';
+
+  @override
+  String get teacherMembersFilterPending => 'Pending';
+
+  @override
+  String get teacherMembersStatusPending => 'Pending';
+
+  @override
+  String get teacherMembersActiveSection => 'Active members';
+
+  @override
+  String get teacherMembersNoResults => 'No members match your search.';
+
+  @override
+  String get teacherMembersEmptyHint =>
+      'Share the invite code to add students to this class.';
+
+  @override
+  String get teacherMembersInvite => 'Invite';
+
+  @override
+  String get teacherMembersCopyInvite => 'Copy invite code';
+
+  @override
   String get teacherClassSaveSettings => 'Save changes';
 
   @override
@@ -2563,7 +2597,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherAssignmentAudienceClassroom => 'Classroom';
 
   @override
+  String get teacherAssignmentAudienceClassroomHint =>
+      'Assign to a specific class';
+
+  @override
   String get teacherAssignmentAudiencePublic => 'Public link';
+
+  @override
+  String get teacherAssignmentAudiencePublicHint =>
+      'Share a link students can join';
 
   @override
   String get teacherAssignmentPublicMaxUsesHint => 'Max uses (optional)';
@@ -3579,7 +3621,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherAssignExamModeHintRealtime =>
-      'You open a live room from the dashboard — not a calendar slot.';
+      'Live session: open a room in class, or set a time so students know when to join.';
 
   @override
   String get teacherAssignExamModeHintPractice =>
@@ -3587,7 +3629,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherAssignExamRealtimeNote =>
-      'After assigning, open Live rooms on the dashboard to start the session.';
+      'Open the live room from the dashboard when you are ready. The per-attempt timer starts when you press Start; students are auto-submitted when time runs out.';
 
   @override
   String get teacherAssignExamCalendarNote =>
@@ -4065,6 +4107,53 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherCoTeacherEmailHint => 'Teacher email';
 
   @override
+  String get teacherCoTeacherUsernameHint => 'Search by username';
+
+  @override
+  String get teacherCoTeacherSearchPlaceholder => 'Type username to search…';
+
+  @override
+  String get teacherCoTeacherSearchEmpty => 'No teachers found';
+
+  @override
+  String get teacherCoTeacherPrimaryTeacher => 'Primary teacher';
+
+  @override
+  String get teacherCoTeacherListTitle => 'Co-teachers';
+
+  @override
+  String get teacherCoTeacherNone => 'No co-teachers yet';
+
+  @override
+  String get teacherCoTeacherRemove => 'Remove';
+
+  @override
+  String get teacherCoTeacherRemoveConfirm =>
+      'Remove this co-teacher from the class?';
+
+  @override
+  String get teacherClassSettingsTeam => 'Teaching team';
+
+  @override
+  String get teacherClassSettingsInvite => 'Invite & join';
+
+  @override
+  String get teacherClassSettingsStats => 'Class summary';
+
+  @override
+  String get teacherClassSettingsDanger => 'Advanced actions';
+
+  @override
+  String get teacherInviteToken => 'Invite link token';
+
+  @override
+  String get teacherInviteTokenHint =>
+      'Share this token for students to join via invite link';
+
+  @override
+  String get copyInviteToken => 'Copy invite token';
+
+  @override
   String get teacherCoTeacherAdded => 'Co-teacher added';
 
   @override
@@ -4206,6 +4295,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get integratedSkillScorePending => 'Pending';
 
   @override
+  String get integratedSkillNoSubmission => 'No submission';
+
+  @override
   String get integratedSkillFinalAvg => 'Average';
 
   @override
@@ -4241,7 +4333,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get integratedGradingAvgFormulaHint =>
-      'Final score = arithmetic mean of all skill scores (0–10 each). Pending skills are excluded until graded.';
+      'Final score = arithmetic mean of scored skills (0–10 each). Skills with no submission are excluded from the average.';
 
   @override
   String get integratedGradingColumnSkill => 'Skill';
@@ -4328,12 +4420,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get teacherAttemptGradeMarkedComplete => 'Marked complete';
-
-  @override
-  String get teacherAttemptGradeNotMarkedComplete => 'Not marked complete';
-
-  @override
   String get teacherAttemptGradeInstructions => 'Instructions';
 
   @override
@@ -4344,8 +4430,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'No work recorded during this exam session.';
 
   @override
-  String get teacherAttemptGradeOnlyMarkedComplete =>
-      'The student marked this part complete, but no saved answers were found for the linked exercise.';
+  String get teacherAttemptGradeNoEssayText =>
+      'No essay text saved for this attempt.';
+
+  @override
+  String get teacherAttemptGradeWritingPromptLabel => 'WRITING PROMPT';
 
   @override
   String get teacherAttemptGradeSkillWorkExamInline =>
@@ -4428,10 +4517,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose all four exercises before publishing.';
 
   @override
-  String get teacherExamIntegratedSkillListening => 'Listening (dictation)';
+  String get teacherExamIntegratedSkillListening => 'Listening';
 
   @override
-  String get teacherExamIntegratedSkillSpeaking => 'Speaking (read aloud)';
+  String get teacherExamIntegratedSkillSpeaking => 'Speaking';
 
   @override
   String get teacherExamIntegratedSkillReading => 'Reading';
@@ -4512,6 +4601,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teacherExamPublishNeedSelection =>
       'Include at least one skill with an exercise, or add at least one Grammar question.';
+
+  @override
+  String get teacherExamListeningTypeLabel => 'Exercise Type';
+
+  @override
+  String get teacherExamListeningTypeDictation => 'Dictation';
+
+  @override
+  String get teacherExamListeningTypeComprehension => 'Comprehension';
+
+  @override
+  String get teacherExamListeningTypeDictationHint =>
+      'Fill-in-the-blank based on audio cues';
+
+  @override
+  String get teacherExamListeningTypeComprehensionHint =>
+      'MCQ questions based on a listening passage';
 
   @override
   String get teacherExamPublishPickEachIncludedSkill =>
@@ -4620,6 +4726,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teacherExamSkillsAllAdded =>
       'All available exercises are already added.';
+
+  @override
+  String teacherExamPickerAddSelected(int count) {
+    return 'Add $count selected';
+  }
 
   @override
   String get teacherExamCreateMenuLabel => 'New exam';
@@ -4737,6 +4848,13 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get integratedExamListeningSubNavTitle => 'Exercises in Listening';
+
+  @override
+  String get integratedExamListeningSubNavHint =>
+      'Choose dictation or comprehension below';
+
+  @override
   String integratedExamScoreSummary(Object earned) {
     return 'Avg. score: $earned / 10';
   }
@@ -4764,6 +4882,54 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get integratedExamEmbeddedLocked =>
       'This part is locked after you submitted the exam.';
+
+  @override
+  String get integratedExamResultsAwaitingRelease =>
+      'Your teacher has not released detailed results yet. You will see correct and incorrect answers here once grades are published.';
+
+  @override
+  String get integratedExamResultsNeverShown =>
+      'Detailed answers are not shown for this assignment.';
+
+  @override
+  String get integratedExamResultsScoreOnly =>
+      'Your teacher published scores only. Detailed answers and feedback are not shown for this assignment. You can ask your teacher to enable full review later.';
+
+  @override
+  String get integratedExamReviewYourAnswer => 'Your answer';
+
+  @override
+  String get integratedExamReviewCorrectAnswer => 'Correct answer';
+
+  @override
+  String get integratedExamReviewNotAnswered => 'Not answered';
+
+  @override
+  String get integratedExamReviewTeacherFeedback => 'Teacher feedback';
+
+  @override
+  String get teacherAssignmentResultsDetailLabel => 'What students can review';
+
+  @override
+  String get teacherResultsDetailScoreOnly => 'Scores only';
+
+  @override
+  String get teacherResultsDetailScoreOnlyHint =>
+      'Students see total and skill scores — not answers, work, or feedback.';
+
+  @override
+  String get teacherResultsDetailFull => 'Full graded review';
+
+  @override
+  String get teacherResultsDetailFullHint =>
+      'Students see their work, correct/wrong answers, and your feedback.';
+
+  @override
+  String get teacherReleaseResultsDialogTitle => 'Publish results';
+
+  @override
+  String get teacherReleaseResultsDialogSubtitle =>
+      'Choose what students may see after you release grades. You can change this later in assignment settings.';
 
   @override
   String get integratedExamEmbeddedNoResource =>
@@ -4933,13 +5099,48 @@ class AppLocalizationsEn extends AppLocalizations {
       'Mode is set and cannot be changed after creation.';
 
   @override
-  String get teacherAssignmentRealtimeLobbyOpens => 'Lobby opens at';
+  String get teacherAssignmentRealtimeLobbyOpens => 'Lobby opens (optional)';
 
   @override
-  String get teacherAssignmentRealtimeScheduledStart => 'Scheduled start';
+  String get teacherAssignmentRealtimeLobbyOpensHint =>
+      'Earlier than start time if students may wait in the lobby. Defaults to the start time if empty.';
+
+  @override
+  String get teacherAssignmentRealtimeScheduledStart => 'Start time';
+
+  @override
+  String get teacherAssignmentRealtimeScheduledStartRequired =>
+      'Pick a start time for a scheduled session.';
 
   @override
   String get teacherAssignmentRealtimeHardEnd => 'Hard end';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleModeLabel => 'When students join';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleManual => 'In class';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleScheduled => 'Scheduled';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleManualHint =>
+      'No fixed time — open the live room in class; students enter when you press Start.';
+
+  @override
+  String get teacherAssignmentRealtimeScheduleScheduledHint =>
+      'Students see the start time on their assignment. They can enter the lobby from the open time; the exam begins when you press Start.';
+
+  @override
+  String examCardRealtimeScheduledStart(String date) {
+    return 'Live exam starts $date';
+  }
+
+  @override
+  String examCardRealtimeLobbyOpens(String date) {
+    return 'Lobby opens $date';
+  }
 
   @override
   String get teacherAssignmentEditPracticeNote =>

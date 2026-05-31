@@ -12,6 +12,10 @@ class TeacherClassroomState extends Equatable {
     this.mutationInProgress = false,
     this.settingsSaving = false,
     this.archived = false,
+    this.assignmentSegment = 0,
+    this.assignmentsReloading = false,
+    this.activityRows = const [],
+    this.activityReloading = false,
   });
 
   final TeacherClassroomStatus status;
@@ -22,6 +26,10 @@ class TeacherClassroomState extends Equatable {
   final bool mutationInProgress;
   final bool settingsSaving;
   final bool archived;
+  final int assignmentSegment;
+  final bool assignmentsReloading;
+  final List<dynamic> activityRows;
+  final bool activityReloading;
 
   factory TeacherClassroomState.initial() =>
       const TeacherClassroomState(status: TeacherClassroomStatus.initial);
@@ -35,6 +43,10 @@ class TeacherClassroomState extends Equatable {
     bool? mutationInProgress,
     bool? settingsSaving,
     bool? archived,
+    int? assignmentSegment,
+    bool? assignmentsReloading,
+    List<dynamic>? activityRows,
+    bool? activityReloading,
     bool clearError = false,
   }) {
     return TeacherClassroomState(
@@ -46,6 +58,10 @@ class TeacherClassroomState extends Equatable {
       mutationInProgress: mutationInProgress ?? this.mutationInProgress,
       settingsSaving: settingsSaving ?? this.settingsSaving,
       archived: archived ?? this.archived,
+      assignmentSegment: assignmentSegment ?? this.assignmentSegment,
+      assignmentsReloading: assignmentsReloading ?? this.assignmentsReloading,
+      activityRows: activityRows ?? this.activityRows,
+      activityReloading: activityReloading ?? this.activityReloading,
     );
   }
 
@@ -59,5 +75,9 @@ class TeacherClassroomState extends Equatable {
         mutationInProgress,
         settingsSaving,
         archived,
+        assignmentSegment,
+        assignmentsReloading,
+        activityRows,
+        activityReloading,
       ];
 }

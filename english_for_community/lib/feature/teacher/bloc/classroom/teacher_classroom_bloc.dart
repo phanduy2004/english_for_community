@@ -17,6 +17,9 @@ class TeacherClassroomBloc extends Bloc<TeacherClassroomEvent, TeacherClassroomS
     on<TeacherClassroomArchiveRequested>(_onArchive);
     on<TeacherClassroomDeleteAssignmentRequested>(_onDeleteAssignment);
     on<TeacherClassroomCloseAssignmentRequested>(_onCloseAssignment);
+    on<TeacherClassroomAssignmentSegmentChanged>(_onAssignmentSegment);
+    on<TeacherClassroomAssignmentsReloadRequested>(_onAssignmentsReload);
+    on<TeacherClassroomActivityReloadRequested>(_onActivityReload);
   }
 
   final TeacherExamRepository repository;
@@ -171,6 +174,38 @@ class TeacherClassroomBloc extends Bloc<TeacherClassroomEvent, TeacherClassroomS
         emit(state.copyWith(mutationInProgress: false));
         add(const TeacherClassroomLoadRequested());
       },
+    );
+  }
+
+  void _onAssignmentSegment(
+    TeacherClassroomAssignmentSegmentChanged event,
+    Emitter<TeacherClassroomState> emit,
+  ) =>
+      emit(state.copyWith(assignmentSegment: event.segment));
+
+  Future<void> _onAssignmentsReload(
+    TeacherClassroomAssignmentsReloadRequested event,
+    Emitter<TeacherClassroomState> emit,
+  ) async {
+    emit(state.copyWith(assignmentsReloading: true));
+    final r = await repository.listClassroomAssignments(classroomId);
+    emit(state.copyWith(assignmentsReloading: false));
+    r.fold(
+      (f) => emit(state.copyWith(errorMessage: f.message)),
+      (list) => emit(state.copyWith(assignments: list)),
+    );
+  }
+
+  Future<void> _onActivityReload(
+    TeacherClassroomActivityReloadRequested event,
+    Emitter<TeacherClassroomState> emit,
+  ) async {
+    emit(state.copyWith(activityReloading: true));
+    final r = await repository.listClassroomActivity(classroomId);
+    emit(state.copyWith(activityReloading: false));
+    r.fold(
+      (_) {},
+      (list) => emit(state.copyWith(activityRows: list)),
     );
   }
 

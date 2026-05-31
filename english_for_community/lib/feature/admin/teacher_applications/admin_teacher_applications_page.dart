@@ -4,7 +4,7 @@ import 'package:english_for_community/core/repository/admin_teacher_application_
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -50,9 +50,9 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
   Future<void> _approve(String id) async {
     final r = await getIt<AdminTeacherApplicationRepository>().approve(id);
     r.fold(
-      (f) => AdminCornerToast.show(context, f.message, error: true),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        AdminCornerToast.show(context, context.l10n.adminTeacherApprove);
+        AppCornerToast.show(context, context.l10n.adminTeacherApprove);
         _load();
       },
     );
@@ -79,9 +79,9 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
     if (reason.isEmpty) return;
     final r = await getIt<AdminTeacherApplicationRepository>().reject(id, reason);
     r.fold(
-      (f) => AdminCornerToast.show(context, f.message, error: true),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        AdminCornerToast.show(context, context.l10n.adminTeacherReject);
+        AppCornerToast.show(context, context.l10n.adminTeacherReject);
         _load();
       },
     );

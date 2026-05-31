@@ -1,10 +1,12 @@
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
+import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_filter.dart';
 import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class TeacherExamsListBloc extends Bloc<TeacherExamsListEvent, TeacherExamsListState> {
   TeacherExamsListBloc({required this.repository}) : super(TeacherExamsListState.initial()) {
+    on<TeacherExamsListFilterChanged>(_onFilter);
     on<TeacherExamsListLoadRequested>(_onLoad);
     on<TeacherExamsListDuplicateRequested>(_onDuplicate);
     on<TeacherExamsListArchiveRequested>(_onArchive);
@@ -14,6 +16,17 @@ class TeacherExamsListBloc extends Bloc<TeacherExamsListEvent, TeacherExamsListS
   }
 
   final TeacherExamRepository repository;
+
+  void _onFilter(
+    TeacherExamsListFilterChanged event,
+    Emitter<TeacherExamsListState> emit,
+  ) {
+    if (event.filter == state.statusFilter) return;
+    emit(state.copyWith(
+      statusFilter: event.filter,
+      visibleExams: teacherExamsListFiltered(state.exams, event.filter),
+    ));
+  }
 
   Future<void> _onLoad(
     TeacherExamsListLoadRequested event,
@@ -29,6 +42,7 @@ class TeacherExamsListBloc extends Bloc<TeacherExamsListEvent, TeacherExamsListS
       (exams) => emit(state.copyWith(
         status: TeacherExamsListStatus.success,
         exams: exams,
+        visibleExams: teacherExamsListFiltered(exams, state.statusFilter),
       )),
     );
   }

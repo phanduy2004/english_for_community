@@ -1,5 +1,6 @@
 import { listeningService } from '../services/listeningService.js';
 import { trackUserProgress } from "../untils/progressTracker.js";
+import { updateGamificationStats } from '../services/gamificationService.js';
 import mongoose from 'mongoose';
 import {getIO} from "../socket/socketManager.js";
 import CueComment from "../models/CueComment.js";
@@ -63,6 +64,10 @@ const submitAttempt = async (req, res) => {
       duration: payload.durationInSeconds || 0,
       score: normalizedScore,
       isLessonJustFinished: result.isCompleted
+    });
+
+    updateGamificationStats(userId, 'dictation', {
+      isLessonComplete: result.isCompleted === true,
     });
 
     res.status(201).json(result);

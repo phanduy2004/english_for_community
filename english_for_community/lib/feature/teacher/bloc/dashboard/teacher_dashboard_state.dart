@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_ui.dart';
 import 'package:equatable/equatable.dart';
 
 enum TeacherDashboardStatus { initial, loading, success, error }
@@ -37,6 +38,10 @@ class TeacherDashboardState extends Equatable {
     this.actionItems,
     this.gradingLoading = false,
     this.mutationInProgress = false,
+    this.searchQuery = '',
+    this.assignmentFilter = TeacherDashboardAssignmentFilter.all,
+    this.classroomFilterId,
+    this.filteredAssignments = const [],
   });
 
   final TeacherDashboardStatus status;
@@ -48,6 +53,10 @@ class TeacherDashboardState extends Equatable {
   final Map<String, dynamic>? actionItems;
   final bool gradingLoading;
   final bool mutationInProgress;
+  final String searchQuery;
+  final TeacherDashboardAssignmentFilter assignmentFilter;
+  final String? classroomFilterId;
+  final List<Map<String, dynamic>> filteredAssignments;
 
   factory TeacherDashboardState.initial() =>
       const TeacherDashboardState(status: TeacherDashboardStatus.initial);
@@ -62,7 +71,12 @@ class TeacherDashboardState extends Equatable {
     Map<String, dynamic>? actionItems,
     bool? gradingLoading,
     bool? mutationInProgress,
+    String? searchQuery,
+    TeacherDashboardAssignmentFilter? assignmentFilter,
+    String? classroomFilterId,
+    List<Map<String, dynamic>>? filteredAssignments,
     bool clearError = false,
+    bool clearClassroomFilter = false,
   }) {
     return TeacherDashboardState(
       status: status ?? this.status,
@@ -74,6 +88,11 @@ class TeacherDashboardState extends Equatable {
       actionItems: actionItems ?? this.actionItems,
       gradingLoading: gradingLoading ?? this.gradingLoading,
       mutationInProgress: mutationInProgress ?? this.mutationInProgress,
+      searchQuery: searchQuery ?? this.searchQuery,
+      assignmentFilter: assignmentFilter ?? this.assignmentFilter,
+      classroomFilterId:
+          clearClassroomFilter ? null : (classroomFilterId ?? this.classroomFilterId),
+      filteredAssignments: filteredAssignments ?? this.filteredAssignments,
     );
   }
 
@@ -88,5 +107,9 @@ class TeacherDashboardState extends Equatable {
         actionItems,
         gradingLoading,
         mutationInProgress,
+        searchQuery,
+        assignmentFilter,
+        classroomFilterId,
+        filteredAssignments,
       ];
 }

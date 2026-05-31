@@ -1,6 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_dialog_shell.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
@@ -34,7 +34,7 @@ class _AdminChangePasswordDialogState extends State<AdminChangePasswordDialog> {
   }
 
   void _toast(String message, {bool error = false}) {
-    AdminCornerToast.show(context, message, error: error);
+    AppCornerToast.show(context, message, error: error);
   }
 
   void _submit() {

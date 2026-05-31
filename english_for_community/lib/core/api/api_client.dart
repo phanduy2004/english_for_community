@@ -1,6 +1,6 @@
 // lib/core/api/api_client.dart
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_config.dart';
 import 'app_jwt_interceptor.dart';
@@ -28,14 +28,19 @@ class ApiClient {
     final dio = Dio(baseOptions(baseUrl: '${ApiConfig.Base_URL}api/'));
     if (authorized)
       dio.interceptors.add(AppJwtInterceptor(dio: dio));
-    dio.interceptors.add(PrettyDioLogger(
-      request: true,
-      requestBody: true,
-      requestHeader: true,
-      responseBody: true,
-      responseHeader: true,
-      compact: false,
-    ));
+    if (kDebugMode) {
+      dio.interceptors.add(PrettyDioLogger(
+        request: true,
+        requestBody: true,
+        requestHeader: true,
+        responseBody: true,
+        responseHeader: true,
+        compact: false,
+        // Skip binary bodies (xlsx, images, …) — logging them as UTF-8 crashes Flutter.
+        filter: (options, args) =>
+            !args.isResponse || !args.hasUint8ListData,
+      ));
+    }
     return dio;
   }
 }

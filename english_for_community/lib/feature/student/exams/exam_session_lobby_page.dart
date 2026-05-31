@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -9,6 +10,7 @@ import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/exam_session_status_banner.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -136,9 +138,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
     if (mounted) setState(() => _loading = false);
     if (_status == 'closed' || _status == 'grading') {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.examSessionEndedByTeacher)),
-        );
+        AppCornerToast.show(context, context.l10n.examSessionEndedByTeacher, error: true);
         exitLiveExamFlow(context);
       }
       return;
@@ -246,6 +246,68 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
     super.dispose();
   }
 
+  ButtonStyle _compactFilledStyle() => FilledButton.styleFrom(
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      );
+
+  ButtonStyle _compactOutlinedStyle() => OutlinedButton.styleFrom(
+        minimumSize: const Size(0, 44),
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        side: const BorderSide(color: AppColors.outline),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      );
+
+  Widget _buildBottomActions(BuildContext context, String st, AppLocalizations l10n) {
+    final canOpen = st == 'live' && _error == null;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.s5,
+        AppSpacing.s4,
+        AppSpacing.s5,
+        AppSpacing.s4 + MediaQuery.paddingOf(context).bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(top: BorderSide(color: AppColors.outlineMuted)),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppSpacing.s3,
+        runSpacing: AppSpacing.s3,
+        children: [
+          if (st == 'lobby')
+            _myReady
+                ? OutlinedButton(
+                    style: _compactOutlinedStyle(),
+                    onPressed: () => _setReady(false),
+                    child: Text(l10n.examSessionCancelReady),
+                  )
+                : FilledButton(
+                    style: _compactFilledStyle(),
+                    onPressed: () => _setReady(true),
+                    child: Text(l10n.examSessionMarkReady),
+                  ),
+          FilledButton(
+            style: _compactFilledStyle(),
+            onPressed: canOpen ? _tryOpenAttemptIfReady : null,
+            child: Text(l10n.examSessionGo),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -260,138 +322,123 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
       appBar: StudentMobileUi.appBar(context, title: l10n.examModeRealtime),
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-          : ListView(
-              padding: StudentMobileUi.pagePadding,
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_error != null) ...[
-                  StudentMobileUi.errorBanner(
-                    message: _error!,
-                    onRetry: _bootstrap,
-                    retryLabel: l10n.retry,
-                  ),
-                  const SizedBox(height: StudentMobileUi.cardGap),
-                ],
-                AppCard(
-                  variant: AppCardVariant.outline,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Expanded(
+                  child: ListView(
+                    padding: StudentMobileUi.pagePadding,
                     children: [
-                      ExamSessionStatusBanner(status: st),
-                      if (examTitle != null && examTitle.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text(examTitle, style: StudentMobileUi.sectionTitle(context)),
-                      ],
-                      if (className != null && className.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text(l10n.teacherDashboardClassLabel(className), style: StudentMobileUi.body(context)),
-                      ],
-                      if (teacherName != null && teacherName.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(l10n.studentClassTeacher(teacherName), style: StudentMobileUi.caption(context)),
-                      ],
-                      const SizedBox(height: 10),
-                      Text(
-                        '${l10n.examSessionRoomCode}: ${_roomCode ?? '—'}',
-                        style: StudentMobileUi.cardTitle(context),
-                      ),
-                      const SizedBox(height: AppSpacing.s4),
-                      Text(l10n.examSessionLobbyParticipantsTitle, style: StudentMobileUi.sectionTitle(context)),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.teacherExamSessionJoinedCount(_joinedCount),
-                        style: StudentMobileUi.body(context).copyWith(fontWeight: FontWeight.w600),
-                      ),
-                      if (st == 'lobby' && _joinedCount > 0)
-                        Text(
-                          l10n.examSessionReadyCount(_readyCount, _joinedCount),
-                          style: StudentMobileUi.caption(context),
+                      if (_error != null) ...[
+                        StudentMobileUi.errorBanner(
+                          message: _error!,
+                          onRetry: _bootstrap,
+                          retryLabel: l10n.retry,
                         ),
-                      if (_participants.isNotEmpty) ...[
-                        const SizedBox(height: 10),
-                        ..._participants.map((p) {
-                          final name = _lobbyName(p);
-                          final sub = _lobbySubtitle(p);
-                          final ready = p['ready'] == true;
-                          final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 16,
-                                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                  child: Text(
-                                    letter,
-                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: StudentMobileUi.cardGap),
+                      ],
+                      AppCard(
+                        variant: AppCardVariant.outline,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ExamSessionStatusBanner(status: st),
+                            if (examTitle != null && examTitle.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(examTitle, style: StudentMobileUi.sectionTitle(context)),
+                            ],
+                            if (className != null && className.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(l10n.teacherDashboardClassLabel(className), style: StudentMobileUi.body(context)),
+                            ],
+                            if (teacherName != null && teacherName.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(l10n.studentClassTeacher(teacherName), style: StudentMobileUi.caption(context)),
+                            ],
+                            const SizedBox(height: 10),
+                            Text(
+                              '${l10n.examSessionRoomCode}: ${_roomCode ?? '—'}',
+                              style: StudentMobileUi.cardTitle(context),
+                            ),
+                            const SizedBox(height: AppSpacing.s4),
+                            Text(l10n.examSessionLobbyParticipantsTitle, style: StudentMobileUi.sectionTitle(context)),
+                            const SizedBox(height: 8),
+                            Text(
+                              l10n.teacherExamSessionJoinedCount(_joinedCount),
+                              style: StudentMobileUi.body(context).copyWith(fontWeight: FontWeight.w600),
+                            ),
+                            if (st == 'lobby' && _joinedCount > 0)
+                              Text(
+                                l10n.examSessionReadyCount(_readyCount, _joinedCount),
+                                style: StudentMobileUi.caption(context),
+                              ),
+                            if (_participants.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              ..._participants.map((p) {
+                                final name = _lobbyName(p);
+                                final sub = _lobbySubtitle(p);
+                                final ready = p['ready'] == true;
+                                final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
                                     children: [
-                                      Text(
-                                        name.isEmpty ? l10n.teacherDashboardStudentUnknown : name,
-                                        style: StudentMobileUi.cardTitle(context),
+                                      CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                                        child: Text(
+                                          letter,
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                                        ),
                                       ),
-                                      if (sub.isNotEmpty)
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              name.isEmpty ? l10n.teacherDashboardStudentUnknown : name,
+                                              style: StudentMobileUi.cardTitle(context),
+                                            ),
+                                            if (sub.isNotEmpty)
+                                              Text(
+                                                sub,
+                                                style: StudentMobileUi.caption(context),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      if (st == 'lobby')
                                         Text(
-                                          sub,
-                                          style: StudentMobileUi.caption(context),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                          ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady,
+                                          style: StudentMobileUi.caption(context).copyWith(
+                                            fontWeight: FontWeight.w600,
+                                            color: ready ? AppColors.primary : AppColors.textMuted,
+                                          ),
                                         ),
                                     ],
                                   ),
-                                ),
-                                if (st == 'lobby')
-                                  Text(
-                                    ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady,
-                                    style: StudentMobileUi.caption(context).copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      color: ready ? AppColors.primary : AppColors.textMuted,
-                                    ),
-                                  ),
-                              ],
+                                );
+                              }),
+                            ],
+                            const SizedBox(height: StudentMobileUi.cardGap),
+                            Text(
+                              st == 'live'
+                                  ? l10n.examSessionGo
+                                  : st == 'closed' || st == 'grading'
+                                      ? l10n.examSessionStatusClosed
+                                      : l10n.examWaitingForTeacher,
+                              style: StudentMobileUi.body(context),
                             ),
-                          );
-                        }),
-                      ],
-                      const SizedBox(height: StudentMobileUi.cardGap),
-                      Text(
-                        st == 'live'
-                            ? l10n.examSessionGo
-                            : st == 'closed' || st == 'grading'
-                                ? l10n.examSessionStatusClosed
-                                : l10n.examWaitingForTeacher,
-                        style: StudentMobileUi.body(context),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: StudentMobileUi.sectionGap),
-                if (st == 'lobby') ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: _myReady
-                        ? OutlinedButton(
-                            onPressed: () => _setReady(false),
-                            child: Text(l10n.examSessionCancelReady),
-                          )
-                        : FilledButton(
-                            onPressed: () => _setReady(true),
-                            child: Text(l10n.examSessionMarkReady),
-                          ),
-                  ),
-                  const SizedBox(height: StudentMobileUi.cardGap),
-                ],
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _tryOpenAttemptIfReady,
-                    child: Text(l10n.examSessionGo),
-                  ),
-                ),
+                _buildBottomActions(context, st, l10n),
               ],
             ),
     );

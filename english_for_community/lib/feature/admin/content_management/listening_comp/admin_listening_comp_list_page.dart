@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../../core/get_it/get_it.dart';
 import '../content_widgets.dart';
@@ -135,9 +136,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
                                 if (!mounted) return;
                                 Navigator.pop(ctx);
                                 context.read<AdminListeningCompBloc>().add(const GetAdminListeningCompListEvent(limit: 9999, page: 1));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Listening quiz restored')),
-                                );
+                                AppCornerToast.show(context, 'Listening quiz restored');
                               },
                               child: const Text('Restore'),
                             ),
@@ -199,14 +198,8 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
       ),
         body: BlocConsumer<AdminListeningCompBloc, AdminListeningCompState>(
           listener: (context, state) {
-            // Lắng nghe trạng thái lỗi để hiển thị SnackBar
             if (state.status == AdminListeningCompStatus.failure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(state.errorMessage ?? "Có lỗi xảy ra!"),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              AppCornerToast.show(context, state.errorMessage ?? "Có lỗi xảy ra!", error: true);
             }
           },
           builder: (context, state) {

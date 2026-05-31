@@ -58,62 +58,59 @@ class _ExamEmbeddedFixedWritingPanelState extends State<ExamEmbeddedFixedWriting
     final title = (widget.fixedWritingPrompt['title'] as String?)?.trim() ?? '';
     final text = (widget.fixedWritingPrompt['text'] as String?)?.trim() ?? '';
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AppCard(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final boundedHeight = constraints.hasBoundedHeight;
+        final editor = AppCard(
           variant: AppCardVariant.outline,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (title.isNotEmpty)
-                Text(title, style: ExamSystemUi.sectionTitle(context)),
-              if (title.isNotEmpty) const SizedBox(height: 8),
-              Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)),
-            ],
-          ),
-        ),
-        const SizedBox(height: ExamSystemUi.cardGap),
-        Expanded(
-          child: AppCard(
-            variant: AppCardVariant.outline,
-            child: TextField(
-              controller: _controller,
-              readOnly: widget.locked,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: InputDecoration(
-                hintText: l10n.studentExamEssayPlaceholder,
-                border: InputBorder.none,
-                filled: true,
-                fillColor: AppColors.surfaceCard,
-              ),
-              style: ExamSystemUi.captionSecondary.copyWith(fontSize: 15, height: 1.5),
+          child: TextField(
+            controller: _controller,
+            readOnly: widget.locked,
+            maxLines: boundedHeight ? null : 14,
+            expands: boundedHeight,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: InputDecoration(
+              hintText: l10n.studentExamEssayPlaceholder,
+              border: InputBorder.none,
+              filled: true,
+              fillColor: AppColors.surfaceCard,
             ),
+            style: ExamSystemUi.captionSecondary.copyWith(fontSize: 15, height: 1.5),
           ),
-        ),
-        const SizedBox(height: 8),
-        Row(
+        );
+
+        return Column(
+          mainAxisSize: boundedHeight ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            AppCard(
+              variant: AppCardVariant.outline,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (title.isNotEmpty)
+                    Text(title, style: ExamSystemUi.sectionTitle(context)),
+                  if (title.isNotEmpty) const SizedBox(height: 8),
+                  Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)),
+                ],
+              ),
+            ),
+            const SizedBox(height: ExamSystemUi.cardGap),
+            if (boundedHeight)
+              Expanded(child: editor)
+            else
+              SizedBox(
+                height: (MediaQuery.sizeOf(context).height * 0.4).clamp(240.0, 480.0),
+                child: editor,
+              ),
+            const SizedBox(height: 8),
             Text(
               l10n.wordCountN(_wordCount),
               style: ExamSystemUi.captionMuted,
             ),
-            const Spacer(),
-            if (!widget.locked && widget.onPartComplete != null)
-              TextButton(
-                onPressed: _controller.text.trim().isEmpty
-                    ? null
-                    : () {
-                        widget.onDraftChanged?.call(_controller.text);
-                        widget.onPartComplete!();
-                      },
-                child: Text(l10n.integratedExamPartDone),
-              ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }

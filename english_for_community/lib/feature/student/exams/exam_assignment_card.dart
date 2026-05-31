@@ -155,6 +155,19 @@ class ExamAssignmentCard extends StatelessWidget {
       } else if (closes != null) {
         lines.add(l10n.examCardClosesAt(closes));
       }
+    } else if (mode == 'realtime') {
+      final rsm = schedule?['realtimeScheduleMode'] as String? ??
+          (schedule?['scheduledStartAt'] != null ? 'scheduled' : 'manual');
+      if (rsm == 'scheduled') {
+        final start = formatIso(context, schedule?['scheduledStartAt']);
+        if (start != null) {
+          lines.add(l10n.examCardRealtimeScheduledStart(start));
+        }
+        final lobby = formatIso(context, schedule?['lobbyOpensAt']);
+        if (lobby != null && lobby != start) {
+          lines.add(l10n.examCardRealtimeLobbyOpens(lobby));
+        }
+      }
     }
 
     final session = _map(assignment['activeSession']);
@@ -274,15 +287,15 @@ class ExamAssignmentCard extends StatelessWidget {
       child: AppCard(
         variant: AppCardVariant.outline,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 14, AppSpacing.s5, 14),
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s4, 10, AppSpacing.s4, 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _modeIconBox(mode, size: 44),
-                  const SizedBox(width: AppSpacing.s4),
+                  _modeIconBox(mode, size: 36),
+                  const SizedBox(width: AppSpacing.s3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,11 +317,11 @@ class ExamAssignmentCard extends StatelessWidget {
                 ],
               ),
               if (desc.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Text(desc, style: StudentMobileUi.body(context).copyWith(height: 1.4)),
               ],
               if (statusHint != null && statusHint.isNotEmpty) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     Icon(hintIcon, size: 16, color: hintColor),
@@ -326,9 +339,9 @@ class ExamAssignmentCard extends StatelessWidget {
                 ),
               ],
               if (scheduleLines.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(l10n.examCardScheduleTitle, style: StudentMobileUi.caption(context).copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 ...scheduleLines.map(
                   (line) => Padding(
                     padding: const EdgeInsets.only(bottom: 4),
@@ -344,19 +357,19 @@ class ExamAssignmentCard extends StatelessWidget {
                 ),
               ],
               if (statsLines.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(l10n.examCardExamInfoTitle, style: StudentMobileUi.caption(context).copyWith(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
+                  spacing: 6,
+                  runSpacing: 4,
                   children: statsLines
                       .map(
                         (s) => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                             border: Border.all(color: AppColors.outlineMuted),
                           ),
                           child: Text(s, style: StudentMobileUi.caption(context)),
@@ -398,7 +411,7 @@ class ExamAssignmentCard extends StatelessWidget {
                 ),
               ],
               if (onPrimaryAction != null && primaryActionLabel != null) ...[
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Align(
                   alignment: Alignment.centerRight,
                   child: FilledButton.tonal(

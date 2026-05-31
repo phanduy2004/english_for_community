@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+
 // Import Entities & BloC
 import '../../../../../core/entity/reading/reading_entity.dart';
 import '../../../../../core/entity/reading/reading_feedback_entity.dart';
@@ -128,9 +130,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_titleCtrl.text.isEmpty || _contentCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter title and content"), backgroundColor: Colors.orange),
-      );
+      AppCornerToast.show(context, "Please enter title and content", error: true);
       return;
     }
 
@@ -190,7 +190,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
       context.read<AdminReadingBloc>().add(CreateReadingEvent(newReading));
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error processing data: $e"), backgroundColor: Colors.red));
+      AppCornerToast.show(context, "Error processing data: $e", error: true);
     }
   }
 
@@ -217,9 +217,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     return BlocListener<AdminReadingBloc, AdminReadingState>(
       listener: (context, state) {
         if (state.status == AdminReadingStatus.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${state.errorMessage}"), backgroundColor: Colors.red),
-          );
+          AppCornerToast.show(context, "Error: ${state.errorMessage}", error: true);
         }
 
         if (state.selectedReading != null && widget.id != null) {
@@ -230,9 +228,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         }
 
         if (state.status == AdminReadingStatus.saved) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Saved successfully!"), backgroundColor: Colors.green),
-          );
+          AppCornerToast.show(context, "Saved successfully!");
           context.pop();
         }
       },

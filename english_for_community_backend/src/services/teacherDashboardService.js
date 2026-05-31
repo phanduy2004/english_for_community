@@ -1,9 +1,145 @@
+import mongoose from 'mongoose';
 import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const toObjectId = (id) =>
+  id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(String(id));
+
+const gradingAttentionMatch = {
+  status: 'submitted',
+  $or: [
+    { gradingState: { $in: ['pending_manual', 'pending_ai'] } },
+    { gradingState: 'finalized', resultsReleased: { $ne: true } },
+  ],
+};
+
+async function getGradingQueue(teacherId, limit = 15) {
+  const tid = toObjectId(teacherId);
+  const docs = await ExamAttempt.aggregate([
+    { $match: gradingAttentionMatch },
+    {
+      $lookup: {
+        from: 'examassignments',
+        localField: 'assignmentId',
+        foreignField: '_id',
+        as: 'assignment',
+      },
+    },
+    { $unwind: '$assignment' },
+    { $match: { 'assignment.teacherId': tid } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'userId',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'exams',
+        localField: 'assignment.examId',
+        foreignField: '_id',
+        as: 'exam',
+      },
+    },
+    { $unwind: { path: '$exam', preserveNullAndEmptyArrays: true } },
+    { $sort: { submittedAt: -1 } },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 0,
+        attemptId: { $toString: '$_id' },
+        assignmentId: { $toString: '$assignmentId' },
+        assignmentTitle: { $ifNull: ['$exam.title', 'Exam'] },
+        studentLabel: {
+          $let: {
+            vars: {
+              name: { $trim: { input: { $ifNull: ['$user.fullName', ''] } } },
+              email: { $trim: { input: { $ifNull: ['$user.email', ''] } } },
+              username: { $trim: { input: { $ifNull: ['$user.username', ''] } } },
+            },
+            in: {
+              $cond: [
+                { $gt: [{ $strLenCP: '$$name' }, 0] },
+                '$$name',
+                {
+                  $cond: [
+                    { $gt: [{ $strLenCP: '$$email' }, 0] },
+                    '$$email',
+                    {
+                      $cond: [
+                        { $gt: [{ $strLenCP: '$$username' }, 0] },
+                        '$$username',
+                        'Student',
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+        gradingState: 1,
+        resultsReleased: { $ifNull: ['$resultsReleased', false] },
+        submittedAt: 1,
+      },
+    },
+  ]);
+
+  return docs.map((d) => ({
+    ...d,
+    submittedAt: d.submittedAt?.toISOString?.() ?? null,
+  }));
+}
+
+async function countNeedsGrading(teacherId) {
+  const tid = toObjectId(teacherId);
+  const agg = await ExamAttempt.aggregate([
+    { $match: gradingAttentionMatch },
+    {
+      $lookup: {
+        from: 'examassignments',
+        localField: 'assignmentId',
+        foreignField: '_id',
+        as: 'assignment',
+      },
+    },
+    { $unwind: '$assignment' },
+    { $match: { 'assignment.teacherId': tid } },
+    { $count: 'total' },
+  ]);
+  return agg[0]?.total || 0;
+}
+
+async function buildAttemptStatsByAssignment(assignmentIds) {
+  if (!assignmentIds.length) return new Map();
+
+  const rows = await ExamAttempt.aggregate([
+    { $match: { assignmentId: { $in: assignmentIds } } },
+    {
+      $group: {
+        _id: { assignmentId: '$assignmentId', status: '$status' },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const map = new Map();
+  for (const row of rows) {
+    const aid = row._id.assignmentId.toString();
+    if (!map.has(aid)) map.set(aid, { submitted: 0, inProgress: 0 });
+    const bucket = map.get(aid);
+    if (row._id.status === 'submitted') bucket.submitted = row.count;
+    if (row._id.status === 'in_progress') bucket.inProgress = row.count;
+  }
+  return map;
+}
 
 export const teacherDashboardService = {
   async getActionItems(teacherId) {
@@ -23,6 +159,9 @@ export const teacherDashboardService = {
       .sort({ updatedAt: -1 })
       .limit(100);
 
+    const assignmentIds = assignments.map((a) => a._id);
+    const attemptStatsByAssignment = await buildAttemptStatsByAssignment(assignmentIds);
+
     const now = Date.now();
     const dueSoon = [];
     for (const a of assignments) {
@@ -30,37 +169,22 @@ export const teacherDashboardService = {
       const closes = a.config?.closesAt ? new Date(a.config.closesAt).getTime() : null;
       const deadline = due ?? closes;
       if (deadline == null || deadline < now || deadline > now + 7 * DAY_MS) continue;
-      const stats = await ExamAttempt.aggregate([
-        { $match: { assignmentId: a._id } },
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-      ]);
-      const submitted = stats.find((s) => s._id === 'submitted')?.count || 0;
-      const inProgress = stats.find((s) => s._id === 'in_progress')?.count || 0;
+      const stats = attemptStatsByAssignment.get(a._id.toString()) || { submitted: 0, inProgress: 0 };
       dueSoon.push({
         assignmentId: a._id.toString(),
         examTitle: a.examId?.title || 'Exam',
         classroomName: a.classroomId?.name || null,
         deadline: new Date(deadline).toISOString(),
-        submitted,
-        inProgress,
+        submitted: stats.submitted,
+        inProgress: stats.inProgress,
       });
     }
     dueSoon.sort((x, y) => new Date(x.deadline).getTime() - new Date(y.deadline).getTime());
 
-    const needsGradingAgg = await ExamAttempt.aggregate([
-      {
-        $lookup: {
-          from: 'examassignments',
-          localField: 'assignmentId',
-          foreignField: '_id',
-          as: 'assignment',
-        },
-      },
-      { $unwind: '$assignment' },
-      { $match: { 'assignment.teacherId': teacherId, status: 'submitted', gradingState: { $ne: 'finalized' } } },
-      { $count: 'total' },
+    const [needsGradingCount, gradingQueue] = await Promise.all([
+      countNeedsGrading(teacherId),
+      getGradingQueue(teacherId, 15),
     ]);
-    const needsGradingCount = needsGradingAgg[0]?.total || 0;
 
     return {
       pendingJoins: pendingMembers.map((m) => ({
@@ -72,6 +196,7 @@ export const teacherDashboardService = {
       })),
       dueSoon: dueSoon.slice(0, 20),
       needsGradingCount,
+      gradingQueue,
     };
   },
 

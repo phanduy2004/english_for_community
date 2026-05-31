@@ -8,10 +8,10 @@ class AppCard extends StatelessWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.padding = const EdgeInsets.all(16),
+    this.padding = const EdgeInsets.all(12),
     this.margin,
     this.variant = AppCardVariant.outline,
-    this.radius = 12,
+    this.radius = 10,
   });
 
   final Widget child;

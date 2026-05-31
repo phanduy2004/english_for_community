@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/get_it/get_it.dart';
+import '../../../../../core/ui/widget/app_corner_toast.dart';
 import '../../../../core/entity/writing_topic_entity.dart';
 // FIX: Import widgets giao diện
 import '../content_widgets.dart';
@@ -94,11 +95,11 @@ class _EditorViewState extends State<_EditorView> {
 
   void _onSubmit() {
     if (_nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Tên chủ đề không được để trống")));
+      AppCornerToast.show(context, "Tên chủ đề không được để trống", error: true);
       return;
     }
     if (_selectedTaskTypes.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phải chọn ít nhất 1 loại bài (Task Type)")));
+      AppCornerToast.show(context, "Phải chọn ít nhất 1 loại bài (Task Type)", error: true);
       return;
     }
 
@@ -134,7 +135,7 @@ class _EditorViewState extends State<_EditorView> {
     return BlocListener<AdminWritingBloc, AdminWritingState>(
       listener: (context, state) {
         if (state.status == AdminWritingStatus.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red));
+          AppCornerToast.show(context, state.errorMessage ?? "Error", error: true);
         }
         if (state.status == AdminWritingStatus.success && state.selectedTopic != null && widget.id != null) {
           if (state.selectedTopic!.id == widget.id) {
@@ -143,7 +144,7 @@ class _EditorViewState extends State<_EditorView> {
           }
         }
         if (state.status == AdminWritingStatus.saved) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lưu thành công!"), backgroundColor: Colors.green));
+          AppCornerToast.show(context, "Lưu thành công!");
           context.pop();
         }
       },

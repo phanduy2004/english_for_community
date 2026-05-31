@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
@@ -63,11 +64,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   }
 
   void _showToast(BuildContext context, String message, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(message),
-      backgroundColor: isError ? Colors.red : Colors.green,
-      behavior: SnackBarBehavior.floating,
-    ));
+    AppCornerToast.show(context, message, error: isError);
   }
 
   @override

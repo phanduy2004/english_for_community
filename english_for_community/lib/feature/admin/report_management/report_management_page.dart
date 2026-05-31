@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -122,10 +122,10 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
             child: BlocConsumer<AdminBloc, AdminState>(
               listener: (context, state) {
                 if (state.status == AdminStatus.actionSuccess) {
-                  AdminCornerToast.show(context, l10n.adminReportStatusUpdated);
+                  AppCornerToast.show(context, l10n.adminReportStatusUpdated);
                 }
                 if (state.status == AdminStatus.error && state.errorMessage != null) {
-                  AdminCornerToast.show(context, state.errorMessage!, error: true);
+                  AppCornerToast.show(context, state.errorMessage!, error: true);
                 }
               },
               builder: (context, state) {

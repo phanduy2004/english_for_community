@@ -2,6 +2,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+
 // Import GetIt & Entities
 import '../../../../../core/get_it/get_it.dart';
 import '../../../../core/entity/speaking/sentence_entity.dart';
@@ -89,9 +91,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
   void _onSubmit() {
     FocusManager.instance.primaryFocus?.unfocus();
     if (_titleCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Please enter title"))
-      );
+      AppCornerToast.show(context, "Please enter title", error: true);
       return;
     }
 
@@ -152,9 +152,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
     return BlocListener<AdminSpeakingBloc, AdminSpeakingState>(
       listener: (context, state) {
         if (state.status == AdminSpeakingStatus.failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red)
-          );
+          AppCornerToast.show(context, state.errorMessage ?? "Error", error: true);
         }
         if (state.status == AdminSpeakingStatus.success && state.selectedSet != null && widget.id != null) {
           if (!_isDataLoaded) {
@@ -162,15 +160,11 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
           }
         }
         if (state.status == AdminSpeakingStatus.success && _isDataLoaded && state.selectedSet == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Saved successfully!"), backgroundColor: Colors.green)
-          );
+          AppCornerToast.show(context, "Saved successfully!");
           context.pop();
         }
         if (state.status == AdminSpeakingStatus.success && widget.id == null && state.selectedSet == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Created successfully!"), backgroundColor: Colors.green)
-          );
+          AppCornerToast.show(context, "Created successfully!");
           context.pop();
         }
       },

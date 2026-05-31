@@ -130,6 +130,18 @@ export const listClassroomActivity = async (req, res) => {
   }
 };
 
+export const searchTeachersForCoTeacher = async (req, res) => {
+  try {
+    const list = await classroomService.searchTeachersForCoTeacher(req.user._id, {
+      q: req.query.q,
+      limit: req.query.limit,
+    });
+    return res.status(200).json(list);
+  } catch (error) {
+    return res.status(getStatusCode(error)).json({ message: error.message });
+  }
+};
+
 export const addCoTeacher = async (req, res) => {
   try {
     const doc = await classroomService.addCoTeacher(req.user._id, req.params.id, req.body || {});

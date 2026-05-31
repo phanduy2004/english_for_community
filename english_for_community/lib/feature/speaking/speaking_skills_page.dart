@@ -8,6 +8,7 @@ import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/spea
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -39,7 +40,9 @@ class SpeakingSkillsPage extends StatelessWidget {
   final bool isRetake;
   final bool embedded;
   final bool examPracticeMode;
+  final bool readOnlyReview;
   final VoidCallback? onPartComplete;
+  final void Function(int sentenceIndex, int totalSentences, int savedCount)? onExamSpeakingProgress;
 
   const SpeakingSkillsPage({
     super.key,
@@ -47,7 +50,9 @@ class SpeakingSkillsPage extends StatelessWidget {
     this.isRetake = false,
     this.embedded = false,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
     this.onPartComplete,
+    this.onExamSpeakingProgress,
   });
 
   static const routeName = 'SpeakingSkillsPage';
@@ -62,7 +67,9 @@ class SpeakingSkillsPage extends StatelessWidget {
       child: _SpeakingSkillsView(
         embedded: embedded,
         examPracticeMode: examPracticeMode,
+        readOnlyReview: readOnlyReview,
         onPartComplete: onPartComplete,
+        onExamSpeakingProgress: onExamSpeakingProgress,
       ),
     );
   }
@@ -72,12 +79,16 @@ class _SpeakingSkillsView extends StatefulWidget {
   const _SpeakingSkillsView({
     this.embedded = false,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
     this.onPartComplete,
+    this.onExamSpeakingProgress,
   });
 
   final bool embedded;
   final bool examPracticeMode;
+  final bool readOnlyReview;
   final VoidCallback? onPartComplete;
+  final void Function(int sentenceIndex, int totalSentences, int savedCount)? onExamSpeakingProgress;
 
   @override
   State<_SpeakingSkillsView> createState() => _SpeakingSkillsViewState();
@@ -114,6 +125,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
   SpeakingSetEntity? _set;
   SentenceEntity? _currentSentence;
   final Map<String, List<SpeakingAttemptEntity>> _historyMap = {};
+
+  bool get _examCompact => widget.embedded && widget.examPracticeMode;
 
   @override
   void initState() {
@@ -205,29 +218,18 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     }
   }
 
-  void _showMicSnack(String message, {bool openSettings = false}) {
+  void _showMicSnack(String message) {
     if (!mounted) return;
-    final t = context.l10n;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(message),
-        action: openSettings
-            ? SnackBarAction(label: t.settings, onPressed: openAppSettings)
-            : null,
-      ),
-    );
+    AppCornerToast.show(context, message, error: true);
   }
 
   // --- LOGIC GHI ÂM ĐƠN GIẢN (MANUAL STOP) ---
 
   Future<void> _toggleRecord() async {
+    if (widget.readOnlyReview) return;
     if (!_hasSpeech) await _initSpeech();
     if (!_hasSpeech) {
-      _showMicSnack(
-        context.l10n.speechNotAvailableSnack,
-        openSettings: true,
-      );
+      _showMicSnack(context.l10n.speechNotAvailableSnack);
       return;
     }
 
@@ -308,10 +310,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         await Future<void>.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
         if (!_speech.isListening) {
-          _showMicSnack(
-            context.l10n.micOpenFailedSnack,
-            openSettings: true,
-          );
+          _showMicSnack(context.l10n.micOpenFailedSnack);
           return;
         }
         if (mounted) {
@@ -383,6 +382,19 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   // --- NAVIGATION ---
 
+  int _speakingSavedCount() {
+    return _historyMap.values.where((attempts) => attempts.isNotEmpty).length;
+  }
+
+  void _notifyExamSpeakingProgress() {
+    if (_set == null || widget.onExamSpeakingProgress == null) return;
+    widget.onExamSpeakingProgress!(
+      _currentPageIndex,
+      _set!.sentences.length,
+      _speakingSavedCount(),
+    );
+  }
+
   void _onPageChanged(int index) {
     if (_set == null) return;
 
@@ -405,6 +417,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
       _isSubmitting = false;
       _isPlaying = false;
     });
+    _notifyExamSpeakingProgress();
   }
 
   void _goToNextSentence() {
@@ -447,6 +460,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                   _historyMap[s.id] = widget.examPracticeMode ? [] : List.from(s.history);
                 }
               });
+              _notifyExamSpeakingProgress();
             }
             if (state.status == LessonStatus.success && state.lastAttempt != null) {
               final attempt = state.lastAttempt!;
@@ -458,11 +472,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                   _historyMap[attempt.sentenceId] = list;
                 }
               });
+              _notifyExamSpeakingProgress();
             }
           },
           builder: (context, state) {
             final t = context.l10n;
             final compact = widget.embedded;
+            final examCompact = _examCompact;
             if (state.status == LessonStatus.loading || _set == null) {
               return const Center(child: CircularProgressIndicator(strokeWidth: 2));
             }
@@ -471,7 +487,10 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
               children: [
                 Container(
                   color: AppColors.surfaceCard,
-                  padding: EdgeInsets.symmetric(horizontal: compact ? 14 : 20, vertical: compact ? 10 : 12),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: examCompact ? 10 : (compact ? 14 : 20),
+                    vertical: examCompact ? 6 : (compact ? 10 : 12),
+                  ),
                   child: Column(
                     children: [
                       Row(
@@ -481,7 +500,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                             t.sentenceIndex(_currentPageIndex + 1, _set!.sentences.length),
                             style: TextStyle(
                               color: AppColors.textSecondary,
-                              fontSize: 13,
+                              fontSize: examCompact ? 11 : 13,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -489,16 +508,17 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                             '${((_currentPageIndex + 1) / _set!.sentences.length * 100).toInt()}%',
                             style: ExamSystemUi.embeddedProgressLabel(context).copyWith(
                               color: AppColors.textPrimary,
+                              fontSize: examCompact ? 11 : 12,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: examCompact ? 4 : 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
                           value: (_currentPageIndex + 1) / _set!.sentences.length,
-                          minHeight: 6,
+                          minHeight: examCompact ? 4 : 6,
                           backgroundColor: AppColors.outlineMuted,
                           color: AppSkillColors.speaking.color,
                         ),
@@ -506,25 +526,40 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                     ],
                   ),
                 ),
-                Container(height: 1, color: AppColors.outline),
+                if (!examCompact) Container(height: 1, color: AppColors.outline),
                 if (!_hasSpeech)
                   Material(
                     color: AppColors.tertiary.withValues(alpha: 0.12),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: examCompact ? 10 : 16,
+                        vertical: examCompact ? 6 : 10,
+                      ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 22),
-                          const SizedBox(width: 10),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.warning,
+                            size: examCompact ? 18 : 22,
+                          ),
+                          SizedBox(width: examCompact ? 6 : 10),
                           Expanded(
                             child: Text(
                               t.microInfoBanner,
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.35),
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: examCompact ? 11 : 13,
+                                height: 1.3,
+                              ),
                             ),
                           ),
                           TextButton(
+                            style: TextButton.styleFrom(
+                              visualDensity: examCompact ? VisualDensity.compact : VisualDensity.standard,
+                              padding: examCompact ? const EdgeInsets.symmetric(horizontal: 8) : null,
+                            ),
                             onPressed: () => _initSpeech(),
-                            child: Text(t.tryAgain),
+                            child: Text(t.tryAgain, style: TextStyle(fontSize: examCompact ? 11 : 14)),
                           ),
                         ],
                       ),
@@ -576,32 +611,41 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 ),
 
                 Container(
-                  padding: EdgeInsets.fromLTRB(compact ? 14 : 20, compact ? 12 : 16, compact ? 14 : 20, compact ? 14 : 20),
+                  padding: EdgeInsets.fromLTRB(
+                    examCompact ? 10 : (compact ? 14 : 20),
+                    examCompact ? 8 : (compact ? 12 : 16),
+                    examCompact ? 10 : (compact ? 14 : 20),
+                    examCompact ? 8 : (compact ? 14 : 20),
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceCard,
                     border: Border(top: BorderSide(color: AppColors.outline)),
-                    boxShadow: compact
-                        ? null
-                        : [
+                    boxShadow: compact && !examCompact
+                        ? [
                             BoxShadow(
                               color: Colors.black.withValues(alpha: 0.04),
                               blurRadius: 12,
                               offset: const Offset(0, -4),
                             ),
-                          ],
+                          ]
+                        : null,
                   ),
                   child: SafeArea(
                     top: false,
                     child: SizedBox(
                       width: double.infinity,
-                      height: compact ? 44 : 50,
+                      height: examCompact ? 40 : (compact ? 44 : 50),
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           backgroundColor: AppColors.primary,
                           foregroundColor: AppColors.onPrimary,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          textStyle: compact ? ExamSystemUi.embeddedButtonLabelStyle : const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(examCompact ? 10 : 12),
+                          ),
+                          textStyle: examCompact || compact
+                              ? ExamSystemUi.embeddedButtonLabelStyle
+                              : const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
                         ),
                         onPressed: (_isRecording || _isSubmitting) ? null : _goToNextSentence,
                         child: Text(
@@ -646,11 +690,13 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         required bool micBusy,
       }) {
     final compact = widget.embedded;
+    final examCompact = _examCompact;
     final primaryColor = AppColors.primary;
     final textMain = AppColors.textPrimary;
     final textMuted = AppColors.textMuted;
     final recordRed = AppColors.chartTrend;
-    final micSize = compact ? 60.0 : 72.0;
+    final micSize = examCompact ? 48.0 : (compact ? 60.0 : 72.0);
+    final playSize = examCompact ? 40.0 : 52.0;
 
     final micCore = AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -669,21 +715,21 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         ],
       ),
       child: (isSubmitting || micBusy)
-          ? const Padding(
-              padding: EdgeInsets.all(22),
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+          ? Padding(
+              padding: EdgeInsets.all(micSize * 0.32),
+              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
             )
           : Icon(
               isRecording ? Icons.stop_rounded : Icons.mic_rounded,
               color: Colors.white,
-              size: 34,
+              size: examCompact ? 26 : 34,
             ),
     );
 
     final micButton = Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: (isSubmitting || micBusy) ? null : _toggleRecord,
+        onTap: (isSubmitting || micBusy || widget.readOnlyReview) ? null : _toggleRecord,
         customBorder: const CircleBorder(),
         child: isRecording
             ? ScaleTransition(
@@ -695,6 +741,124 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
             : micCore,
       ),
     );
+
+    if (examCompact) {
+      return SingleChildScrollView(
+        primary: false,
+        padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+        child: _ShadcnCard(
+          padding: const EdgeInsets.all(12),
+          radius: 10,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTappableScript(context, sentence.script),
+              if (sentence.phoneticScript.trim().isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  sentence.phoneticScript,
+                  style: TextStyle(color: textMuted, fontSize: 11, fontFamily: 'NotoSans', height: 1.25),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.outlineMuted,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.outline),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Material(
+                          color: AppColors.surfaceCard,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: (isRecording || isSubmitting) ? null : _togglePlay,
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              width: playSize,
+                              height: playSize,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.outline),
+                              ),
+                              child: Icon(
+                                _isPlaying ? Icons.stop_rounded : Icons.volume_up_rounded,
+                                color: textMain,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(t.sampleListen, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textMuted)),
+                      ],
+                    ),
+                    const SizedBox(width: 28),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        micButton,
+                        const SizedBox(height: 4),
+                        Text(
+                          t.yourTurn,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isRecording ? recordRed : textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isRecording
+                    ? t.listeningForSpeech
+                    : isSubmitting
+                        ? t.submittingAnalysis
+                        : t.tapMicToRecord,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  height: 1.3,
+                  color: isRecording ? recordRed : textMuted,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Divider(height: 1, color: AppColors.outlineMuted),
+              const SizedBox(height: 6),
+              Text(
+                t.yourSpeechSection,
+                style: ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.3),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                transcript.isEmpty ? t.transcriptPlaceholder : transcript,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: transcript.isEmpty ? textMuted : textMain,
+                  height: 1.35,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: EdgeInsets.all(compact ? 12 : 20),
@@ -751,8 +915,8 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                                   onTap: (isRecording || isSubmitting) ? null : _togglePlay,
                                   customBorder: const CircleBorder(),
                                   child: Container(
-                                    width: 52,
-                                    height: 52,
+                                    width: playSize,
+                                    height: playSize,
                                     alignment: Alignment.center,
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
@@ -874,11 +1038,12 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   Widget _buildTappableScript(BuildContext context, String script) {
     final compact = widget.embedded;
+    final examCompact = _examCompact;
     final words = script.split(' ');
     final List<Widget> wordWidgets = [];
     final textStyle = TextStyle(
-      fontSize: compact ? 17 : 22,
-      height: 1.4,
+      fontSize: examCompact ? 15 : (compact ? 17 : 22),
+      height: 1.35,
       fontWeight: FontWeight.w500,
       color: compact ? AppColors.textPrimary : Theme.of(context).colorScheme.onSurface,
     );
@@ -906,14 +1071,16 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
 class _ShadcnCard extends StatelessWidget {
   final Widget child;
-  const _ShadcnCard({required this.child});
+  final EdgeInsetsGeometry? padding;
+  final double radius;
+  const _ShadcnCard({required this.child, this.padding, this.radius = 16});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: padding ?? const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(

@@ -14,6 +14,19 @@ export function resolveShowResultsPolicy(assignment, exam) {
   return 'after_release';
 }
 
+/** What students may see once results are visible: score only vs full graded review. */
+export function resolveResultsDetailLevel(assignment, exam) {
+  const fromAssignment = assignment?.config?.resultsDetailLevel;
+  if (fromAssignment === 'score_only' || fromAssignment === 'full_detail') {
+    return fromAssignment;
+  }
+  const fromExam = exam?.settings?.resultsDetailLevel;
+  if (fromExam === 'score_only' || fromExam === 'full_detail') {
+    return fromExam;
+  }
+  return 'full_detail';
+}
+
 /** @returns {{ kind: 'single' } | { kind: 'unlimited' } | { kind: 'limited', max: number }} */
 export function resolveAttemptPolicy(assignment, exam) {
   const cfg = assignment?.config || {};

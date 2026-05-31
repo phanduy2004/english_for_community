@@ -7,11 +7,13 @@
 
 ```bash
 cd english_for_community_backend
+npm run seed:listening-comp    # tạo CMS ListeningComprehension (cần chạy 1 lần trước)
 npm run seed:teacher-hoangdong
+npm run seed:extra-teachers   # thêm 5 giáo viên phụ (co-teacher, search username)
 npm run seed:student-app    # Home, Progress, History + Admin activity (xem seed-student-app-accounts.md)
 ```
 
-Hoặc một lệnh: `npm run seed:full-demo` (admin + hoangdong + student-app).
+Hoặc một lệnh: `npm run seed:full-demo` (admin + listening-comp + hoangdong + student-app).
 
 ---
 
@@ -26,6 +28,23 @@ Hoặc một lệnh: `npm run seed:full-demo` (admin + hoangdong + student-app).
 | Mật khẩu  | `Teacher@123456`                |
 | Role      | `teacher`                       |
 | Đăng nhập | App / Web → khu vực **Teacher** |
+
+
+---
+
+## 1b. Giáo viên bổ sung (`npm run seed:extra-teachers`)
+
+Mật khẩu chung: **`Teacher@123456`**
+
+| Họ tên | Email | Username | Lớp mẫu |
+| --- | --- | --- | --- |
+| Trần Ngọc Lan | `seed.teacher.trannl@e4c.dev` | `trannl_teacher` | Lớp 9/3 — Giao tiếp hàng ngày |
+| Phạm Minh Tuấn | `seed.teacher.phammt@e4c.dev` | `phammt_teacher` | IELTS Foundation — Khóa T5/2026 |
+| Lê Thị Hương | `seed.teacher.lethi@e4c.dev` | `lethi_huong` | Lớp 12A1 — Luyện đề THPTQG |
+| Võ Quốc Khánh | `seed.teacher.voqk@e4c.dev` | `voqk_teacher` | English Club — THPT Chuyên |
+| Nguyễn Bích Thảo | `seed.teacher.nguyenbt@e4c.dev` | `nguyenbt_teacher` | Starter English — Khối 6 |
+
+> **Co-teacher demo:** Sau khi chạy cả `seed:teacher-hoangdong` và `seed:extra-teachers`, **Lê Thị Hương** được gắn sẵn làm giáo viên phụ lớp **10A** của Hoàng Đông. Các giáo viên khác dùng để test **search username** khi thêm co-teacher.
 
 
 ---
@@ -45,8 +64,7 @@ Hoặc một lệnh: `npm run seed:full-demo` (admin + hoangdong + student-app).
 
 ## 3. Học sinh (15 tài khoản)
 
-**Mật khẩu chung:** `Student@123456` (có chữ **S** viết hoa và `@`)  
-**Role:** `user` · **Đăng nhập:** đúng **email cột bảng** (không dùng Gmail `user2@gmail.com` — đó là bộ seed khác)
+Student@12345
 
 > ⚠️ **Không nhầm với `seedAdmin.js`:** `user1@gmail.com` … `user8@gmail.com` / mật khẩu `123456` là user demo cũ, **không** map với `seed.hd.student01@e4c.dev`.
 
@@ -77,18 +95,20 @@ Hoặc một lệnh: `npm run seed:full-demo` (admin + hoangdong + student-app).
 Tất cả đề có tiền tố `[SEED:HoangDong]` trong tiêu đề:
 
 
-| Đề                                   | Kỹ năng                       |
-| ------------------------------------ | ----------------------------- |
-| Kiểm tra Nghe + Đọc + Ngữ pháp       | Nghe, Đọc, Grammar            |
-| Luyện Viết + Nói                     | Viết, Nói                     |
-| Giữa kỳ — Nghe Đọc Viết + Grammar    | Nghe, Đọc, Viết, Grammar      |
-| Đọc hiểu + Viết tóm tắt              | Đọc, Viết                     |
-| Ôn tập 4 kỹ năng (Nghe Đọc Viết Nói) | Nghe, Đọc, Viết, Nói, Grammar |
+| Đề                                            | Kỹ năng                           |
+| --------------------------------------------- | --------------------------------- |
+| Kiểm tra Nghe + Đọc + Ngữ pháp                | Nghe, Đọc, Grammar                |
+| Luyện Viết + Nói                              | Viết, Nói                         |
+| Giữa kỳ — Nghe Đọc Viết + Grammar             | Nghe, Đọc, Viết, Grammar          |
+| Đọc hiểu + Viết tóm tắt                       | Đọc, Viết                         |
+| Ôn tập 4 kỹ năng (Nghe Đọc Viết Nói)          | Nghe, Đọc, Viết, Nói, Grammar     |
+| **Nghe hiểu + Đọc (Listening Comprehension)** | **Nghe (comprehension MCQ), Đọc** |
 
 
 Kèm **15 bài giao** và **151 bài nộp + 9 đang làm** (một phần chờ chấm) để xem **Lịch** & **Phân tích**.
 
 > **CMS:** Nếu log có `No Listening/Reading in DB`, các section Nghe/Đọc trên đề seed là `no_content` cho đến khi admin thêm bài CMS trên cùng DB (Atlas).
+> **Listening Comprehension:** Đề `[SEED:HoangDong] Nghe hiểu + Đọc` cần `ListeningComprehension` CMS — chạy `npm run seed:listening-comp` trước rồi mới seed HoangDong.
 
 ---
 
@@ -148,12 +168,14 @@ Seed **không** ghi vào Mongo cài trên máy trừ khi bạn đổi `MONGO_URI
 
 **Không thấy data trên Atlas UI?** Thường do mở sai chỗ:
 
-| Sai | Đúng |
-|-----|------|
-| Cluster khác | Cluster trong URI (`e4c.yoqkkww...`) |
-| Database `test` / `admin` | **`english_community`** (tên trong `MONGO_URI`) |
-| Collection `Users` (PascalCase) | **`users`** (chữ thường, Mongoose) |
-| Filter trống / project khác | Collection `users` → filter `{ email: /seed\.hd/ }` |
+
+| Sai                             | Đúng                                                |
+| ------------------------------- | --------------------------------------------------- |
+| Cluster khác                    | Cluster trong URI (`e4c.yoqkkww...`)                |
+| Database `test` / `admin`       | `**english_community`** (tên trong `MONGO_URI`)     |
+| Collection `Users` (PascalCase) | `**users`** (chữ thường, Mongoose)                  |
+| Filter trống / project khác     | Collection `users` → filter `{ email: /seed\.hd/ }` |
+
 
 Chạy trên máy (cùng `.env`):
 
@@ -172,11 +194,13 @@ Log khi chạy seed / `npm run dev` (cùng một dòng):
 Connected to MongoDB (e4c.yoqkkww.mongodb.net/english_community)
 ```
 
-| Thành phần | Giá trị |
-|------------|---------|
-| Cluster Atlas | `e4c.yoqkkww.mongodb.net` |
-| Tên database | `english_community` |
-| Biến env | `MONGO_URI` trong `english_for_community_backend/.env` |
+
+| Thành phần    | Giá trị                                                |
+| ------------- | ------------------------------------------------------ |
+| Cluster Atlas | `e4c.yoqkkww.mongodb.net`                              |
+| Tên database  | `english_community`                                    |
+| Biến env      | `MONGO_URI` trong `english_for_community_backend/.env` |
+
 
 **Không** seed vào Mongo local trừ khi bạn đổi `MONGO_URI` sang `mongodb://127.0.0.1/...`.
 
@@ -203,29 +227,31 @@ npm run check:seed-login
 
 Kỳ vọng `check:seed-login`: 3 dòng `✅ OK` (teacher + student01 + student15).
 
-4. **Lỗi `querySrv ECONNREFUSED`**: đổi **một dòng** `MONGO_URI` sang chuỗi **Standard** từ Atlas (Connect → Drivers), không dùng biến env thứ hai.
-
-5. **Backend + app cùng Atlas**: `npm run dev` phải in kết nối Mongo OK; Flutter `api_config.dart` `_useLocal = true` và IP LAN trỏ máy chạy `npm run dev` (không gọi Render nếu chỉ seed trên Atlas từ máy local).
-
-6. **Bảo mật**: không gửi password Atlas trong chat/issue — nếu lộ, đổi password user DB trên Atlas.
+1. **Lỗi `querySrv ECONNREFUSED`**: đổi **một dòng** `MONGO_URI` sang chuỗi **Standard** từ Atlas (Connect → Drivers), không dùng biến env thứ hai.
+2. **Backend + app cùng Atlas**: `npm run dev` phải in kết nối Mongo OK; Flutter `api_config.dart` `_useLocal = true` và IP LAN trỏ máy chạy `npm run dev` (không gọi Render nếu chỉ seed trên Atlas từ máy local).
+3. **Bảo mật**: không gửi password Atlas trong chat/issue — nếu lộ, đổi password user DB trên Atlas.
 
 ### 7.3 App không đăng nhập được dù seed OK
 
 `check:seed-login` ✅ chỉ chứng minh **MongoDB + mật khẩu** đúng. App Flutter còn phải gọi **đúng API**:
 
-| Chạy app trên | `api_config.dart` cần |
-|---------------|------------------------|
-| Chrome / Web | `_useLocal = true` → `http://localhost:3000/` |
-| Android emulator | `_useLocal = true` → tự `10.0.2.2:3000` |
+
+| Chạy app trên           | `api_config.dart` cần                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| Chrome / Web            | `_useLocal = true` → `http://localhost:3000/`                                                  |
+| Android emulator        | `_useLocal = true` → tự `10.0.2.2:3000`                                                        |
 | Điện thoại thật (Wi‑Fi) | `_useLocal = true` → `_localLanIp` = IP máy chạy `npm run dev` (`ipconfig`, vd. `192.168.x.x`) |
-| APK test server online | `_useLocal = false` → Render — **phải seed cùng DB Render dùng** |
+| APK test server online  | `_useLocal = false` → Render — **phải seed cùng DB Render dùng**                               |
+
 
 **Đăng nhập** (ô *Email hoặc tên đăng nhập*):
 
-| Cách | Ví dụ STT 4 |
-|------|----------------|
+
+| Cách                    | Ví dụ STT 4                 |
+| ----------------------- | --------------------------- |
 | **Email** (khuyến nghị) | `seed.hd.student04@e4c.dev` |
-| Username | `seed_hd_s04` |
+| Username                | `seed_hd_s04`               |
+
 
 **Mật khẩu chung (tất cả 15 HS):** `Student@123456` (chữ **S** viết hoa, có `@`).
 
@@ -240,10 +266,12 @@ Khi mở app debug, xem console: `[ApiConfig] ...` và URL phải trỏ `localho
 Chỉ có **một** biến DB: `MONGO_URI` trong `english_for_community_backend/.env`.  
 Server (`npm run dev`), seed, repair — tất cả kết nối đúng URI đó. App phải gọi backend đang dùng cùng `.env`.
 
-| Bạn làm | App kết nối | Kết quả |
-|---------|-------------|---------|
+
+| Bạn làm                                  | App kết nối                                                                                | Kết quả                                                             |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | Seed lên **Atlas** (`mongodb+srv://...`) | Flutter `_useLocal = true` → `192.168.x.x:3000` nhưng máy local `.env` trỏ **local Mongo** | ❌ Tài khoản không tồn tại trên DB local → `400 Invalid credentials` |
-| Seed lên **local** | App gọi **Render** (`_useLocal = false`) | ❌ Atlas không có user seed |
+| Seed lên **local**                       | App gọi **Render** (`_useLocal = false`)                                                   | ❌ Atlas không có user seed                                          |
+
 
 **Cách xử lý:**
 
@@ -262,12 +290,13 @@ npm run check:seed-login    # xem từng email: OK / NOT IN DATABASE / password 
 ### 7.2 Các lỗi khác
 
 
-| Triệu chứng             | Nguyên nhân                         | Cách xử lý                                          |
-| ----------------------- | ----------------------------------- | --------------------------------------------------- |
-| 500 / `isVerified`      | Bug login cũ (đã sửa `authService`) | Restart backend                                     |
-| 400 Invalid credentials | Sai email, sai DB, hoặc mật khẩu cũ | `seed.hd.student01@e4c.dev` + `Student@123456` (chữ **S** hoa) |
-| 403 verify email        | `isVerified: false`                 | `npm run repair:seed-logins`                          |
-| 400 Google sign-in      | Đăng ký Google trước, không có bcrypt | `repair:seed-logins` + seed lại ghi đè mật khẩu seed |
+| Triệu chứng             | Nguyên nhân                           | Cách xử lý                                                     |
+| ----------------------- | ------------------------------------- | -------------------------------------------------------------- |
+| 500 / `isVerified`      | Bug login cũ (đã sửa `authService`)   | Restart backend                                                |
+| 400 Invalid credentials | Sai email, sai DB, hoặc mật khẩu cũ   | `seed.hd.student01@e4c.dev` + `Student@123456` (chữ **S** hoa) |
+| 403 verify email        | `isVerified: false`                   | `npm run repair:seed-logins`                                   |
+| 400 Google sign-in      | Đăng ký Google trước, không có bcrypt | `repair:seed-logins` + seed lại ghi đè mật khẩu seed           |
+
 
 ```bash
 cd english_for_community_backend
@@ -278,12 +307,14 @@ npm run check:seed-login         # kiểm tra nhanh trên đúng MONGO_URI
 
 **Lỗi thường gặp khi “đúng mật khẩu” mà vẫn không vào:**
 
-| HTTP / message | Nguyên nhân |
-|----------------|-------------|
-| `403` verify email | `isVerified: false` trong DB → chạy `npm run repair:seed-logins` |
+
+| HTTP / message            | Nguyên nhân                                                         |
+| ------------------------- | ------------------------------------------------------------------- |
+| `403` verify email        | `isVerified: false` trong DB → chạy `npm run repair:seed-logins`    |
 | `400` Invalid credentials | Sai email (HoangDong ≠ `user2@gmail.com`) hoặc mật khẩu cũ trong DB |
-| `400` Google sign-in | Tài khoản tạo bằng Google, không đăng nhập password |
-| `500` isVerified null | Backend cũ — đã sửa, **restart** `npm run dev` |
+| `400` Google sign-in      | Tài khoản tạo bằng Google, không đăng nhập password                 |
+| `500` isVerified null     | Backend cũ — đã sửa, **restart** `npm run dev`                      |
+
 
 ---
 

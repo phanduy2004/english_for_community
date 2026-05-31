@@ -151,13 +151,49 @@ export const classroomService = {
     return j;
   },
 
-  async addCoTeacher(ownerId, classroomId, { email }) {
+  async searchTeachersForCoTeacher(_requesterId, { q, limit = 10 } = {}) {
+    const term = String(q || '').trim();
+    if (term.length < 2) return [];
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
+    const cap = Math.min(Math.max(Number(limit) || 10, 1), 20);
+    const users = await User.find({
+      _destroy: { $ne: true },
+      role: { $in: ['teacher', 'admin'] },
+      $or: [{ username: regex }, { fullName: regex }, { email: regex }],
+    })
+      .select('fullName email username avatarUrl role')
+      .sort({ username: 1 })
+      .limit(cap)
+      .lean();
+    return users.map((u) => ({
+      id: u._id.toString(),
+      fullName: u.fullName || '',
+      email: u.email || '',
+      username: u.username || '',
+      avatarUrl: u.avatarUrl || '',
+      role: u.role || 'teacher',
+    }));
+  },
+
+  async addCoTeacher(ownerId, classroomId, { email, username }) {
     const { classroom, isOwner } = await this.assertCanManageClassroom(ownerId, classroomId);
     if (!isOwner) throw httpError(403, 'Only the class owner can add co-teachers');
-    const normalized = String(email || '').trim().toLowerCase();
-    if (!normalized) throw httpError(400, 'email is required');
-    const user = await User.findOne({ email: normalized, _destroy: { $ne: true } });
-    if (!user) throw httpError(404, 'User not found');
+    const usernameRaw = String(username || '').trim();
+    let user;
+    if (usernameRaw) {
+      const escaped = usernameRaw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      user = await User.findOne({
+        username: new RegExp(`^${escaped}$`, 'i'),
+        _destroy: { $ne: true },
+      });
+      if (!user) throw httpError(404, 'Teacher not found');
+    } else {
+      const normalized = String(email || '').trim().toLowerCase();
+      if (!normalized) throw httpError(400, 'username is required');
+      user = await User.findOne({ email: normalized, _destroy: { $ne: true } });
+      if (!user) throw httpError(404, 'Teacher not found');
+    }
     if (user.role !== 'teacher' && user.role !== 'admin') {
       throw httpError(400, 'Co-teacher must have teacher role');
     }

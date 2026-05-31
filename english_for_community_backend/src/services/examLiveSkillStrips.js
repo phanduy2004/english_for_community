@@ -1,10 +1,13 @@
 import Listening from '../models/Listening.js';
+import ListeningComprehension from '../models/ListeningComprehension.js';
 import Reading from '../models/Reading.js';
+import SpeakingSet from '../models/SpeakingSet.js';
 import { computeGrammarAnswers, resolveLiveGrammarNavIndex } from './examAttemptProgress.js';
 import {
   examTimeBounds,
   fetchListeningRecords,
   fetchReadingRecord,
+  fetchSpeakingRecords,
   resolveMongoResourceId,
   resolveMongoUserId,
   resourcesFromSkillSection,
@@ -24,6 +27,18 @@ function listeningCueCorrect(rec) {
   const wer = Number(rec.score?.wer);
   if (Number.isFinite(wer)) return wer <= Number(rec.score?.thresholdWer ?? 0.25);
   return null;
+}
+
+function speakingAttemptAnswered(rec) {
+  if (!rec) return false;
+  return String(rec.userTranscript || '').trim().length > 0;
+}
+
+function speakingAttemptCorrect(rec) {
+  if (!speakingAttemptAnswered(rec)) return null;
+  const wer = Number(rec?.score?.wer);
+  if (!Number.isFinite(wer)) return null;
+  return wer <= 0.25;
 }
 
 function sectionAnswers(attempt, partKey) {
@@ -96,10 +111,14 @@ export async function computeLiveSkillStrips(attempt) {
 
   for (const sec of skillSectionsFromExam(exam)) {
     const skill = String(sec.skill || '');
-    if (!['listening', 'reading'].includes(skill)) continue;
+    if (!['listening', 'reading', 'speaking'].includes(skill)) continue;
 
     const partKey = String(sec.sectionId || '').trim();
     if (!partKey) continue;
+
+    const listeningType = skill === 'listening'
+      ? (sec.sectionConfig?.listeningType || 'dictation')
+      : null;
 
     const questions = [];
     let currentQuestionIndex = null;
@@ -107,6 +126,39 @@ export async function computeLiveSkillStrips(attempt) {
     for (const res of resourcesFromSkillSection(sec)) {
       const resourceOid = resolveMongoResourceId(res.id);
       if (!resourceOid) continue;
+
+      if (skill === 'listening' && listeningType === 'comprehension') {
+        // Listening Comprehension: MCQ questions
+        const compDoc = await ListeningComprehension.findById(resourceOid).select('questions').lean();
+        const qList = Array.isArray(compDoc?.questions) ? compDoc.questions : [];
+        const secAns = sectionAnswers(plain, partKey);
+        const compAnswers = secAns?.listeningCompAnswers;
+
+        for (let i = 0; i < qList.length; i += 1) {
+          const qid = qList[i]._id != null ? String(qList[i]._id) : String(i);
+          const chosen = compAnswers && typeof compAnswers === 'object'
+            ? (compAnswers[qid] ?? compAnswers[String(i)])
+            : undefined;
+          const answered = chosen !== undefined && chosen !== null && Number(chosen) >= 0;
+          const isCorrect = answered
+            ? Number(chosen) === Number(qList[i].correctAnswerIndex ?? -1)
+              ? true
+              : false
+            : null;
+          questions.push({
+            number: questions.length + 1,
+            answered,
+            isCorrect,
+          });
+        }
+        if (activePartKey === partKey && questions.some((q) => q.answered)) {
+          currentQuestionIndex = Math.min(
+            questions.filter((q) => q.answered).length - 1,
+            questions.length - 1,
+          );
+        }
+        continue;
+      }
 
       if (skill === 'listening') {
         const listening = await Listening.findById(resourceOid).select('cues').lean();
@@ -201,12 +253,65 @@ export async function computeLiveSkillStrips(attempt) {
           }
         }
       }
+
+      if (skill === 'speaking') {
+        const setDoc = await SpeakingSet.findById(resourceOid).select('sentences').lean();
+        const sentences = Array.isArray(setDoc?.sentences)
+          ? [...setDoc.sentences].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0))
+          : [];
+        const secAns = sectionAnswers(plain, partKey);
+        const inlineIndex = Number(secAns?.speakingSentenceIndex);
+
+        // Strict exam window only — never reuse near_session / latest_linked practice attempts.
+        const { records: examRecords } = await fetchSpeakingRecords(
+          userId,
+          resourceOid,
+          bounds,
+          { examOnly: true },
+        );
+        const bySentence = new Map();
+        for (const rec of examRecords) {
+          const sid = rec?.sentenceId != null ? String(rec.sentenceId) : '';
+          if (!sid) continue;
+          const prev = bySentence.get(sid);
+          if (
+            !prev
+            || new Date(rec.createdAt || rec.submittedAt || 0).getTime()
+              > new Date(prev.createdAt || prev.submittedAt || 0).getTime()
+          ) {
+            bySentence.set(sid, rec);
+          }
+        }
+
+        for (let i = 0; i < sentences.length; i += 1) {
+          const sid = sentences[i]?.id != null ? String(sentences[i].id) : '';
+          const rec = sid ? bySentence.get(sid) : null;
+          const answered = speakingAttemptAnswered(rec);
+          questions.push({
+            number: questions.length + 1,
+            answered,
+            isCorrect: answered ? speakingAttemptCorrect(rec) : null,
+          });
+        }
+
+        if (activePartKey === partKey && questions.length > 0) {
+          if (Number.isFinite(inlineIndex) && inlineIndex >= 0) {
+            currentQuestionIndex = Math.min(Math.floor(inlineIndex), questions.length - 1);
+          } else {
+            const answeredCount = questions.filter((x) => x.answered).length;
+            if (answeredCount > 0) {
+              currentQuestionIndex = Math.min(answeredCount - 1, questions.length - 1);
+            }
+          }
+        }
+      }
     }
 
     if (questions.length > 0) {
       strips.push({
         partKey,
         skill,
+        ...(listeningType ? { listeningType } : {}),
         currentQuestionIndex,
         questions,
       });

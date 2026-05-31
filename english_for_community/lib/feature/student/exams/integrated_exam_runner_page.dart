@@ -6,10 +6,13 @@ import 'package:english_for_community/core/repository/teacher_exam_repository.da
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_panel.dart';
+import 'package:english_for_community/feature/student/exams/exam_section_tag.dart';
 import 'package:english_for_community/feature/student/exams/exam_section_resources.dart';
 import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
@@ -34,12 +37,15 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
   Map<String, dynamic>? _attempt;
   int _grammarNavIndex = 0;
   int _selectedPartIndex = 0;
+  int _selectedListeningSubIndex = 0;
   final Set<int> _visitedPartIndices = {};
+  final Set<int> _visitedListeningSubIndices = {0};
   bool _detailsExpanded = false;
   Timer? _clock;
   Timer? _liveViewDebounce;
   late final ExamLiveSessionGuard _liveGuard;
   bool _abandonBusy = false;
+  bool _autoSubmitting = false;
 
   @override
   void initState() {
@@ -74,18 +80,44 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     _clock?.cancel();
     final st = _attempt?['status'] as String? ?? '';
     if (st != 'in_progress') return;
-    if (_deadline() == null && _parseIso(_runtimeContext()?['closesAt']) == null && _parseIso(_runtimeContext()?['dueAt']) == null) {
+    final deadline = _deadline();
+    if (deadline == null &&
+        _parseIso(_runtimeContext()?['closesAt']) == null &&
+        _parseIso(_runtimeContext()?['dueAt']) == null) {
       return;
     }
+    // Timer only drives auto-submit — display is handled by _CountdownText widget.
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final d = _deadline();
       if (d != null && DateTime.now().isAfter(d)) {
-        _load();
-        return;
+        _clock?.cancel();
+        _autoSubmitOnDeadline();
       }
-      setState(() {});
     });
+  }
+
+  Future<void> _autoSubmitOnDeadline() async {
+    if (_autoSubmitting || !mounted) return;
+    final st = _attempt?['status'] as String? ?? '';
+    if (st != 'in_progress') return;
+    _autoSubmitting = true;
+    final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId, force: true);
+    if (!mounted) return;
+    _autoSubmitting = false;
+    r.fold(
+      (_) => _load(),
+      (d) {
+        setState(() {
+          _attempt = Map<String, dynamic>.from(d as Map);
+          _loading = false;
+          _error = null;
+        });
+        _syncLiveGuardBinding();
+        _restartClock();
+        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+      },
+    );
   }
 
   void _clampGrammarIndex() {
@@ -108,9 +140,54 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     if (_selectedPartIndex >= n) {
       setState(() => _selectedPartIndex = n - 1);
     }
+    _clampListeningSubIndex();
+  }
+
+  void _clampListeningSubIndex() {
+    final parts = _examParts();
+    final idx = _selectedPartIndex.clamp(0, parts.isEmpty ? 0 : parts.length - 1);
+    if (idx >= parts.length || !parts[idx].isMergedListening) return;
+    final n = parts[idx].mergedSections!.length;
+    if (n == 0) return;
+    if (_selectedListeningSubIndex >= n) {
+      setState(() => _selectedListeningSubIndex = n - 1);
+    }
+  }
+
+  /// Mount skill panels that already have saved answers so work is visible when opened.
+  void _seedVisitedPartsFromSavedWork() {
+    final parts = _examParts();
+    for (var i = 0; i < parts.length; i++) {
+      final part = parts[i];
+      if (part.isGrammar) {
+        if (_grammarItems().any(_grammarAnswered)) {
+          _visitedPartIndices.add(i);
+        }
+      } else if (part.isMergedListening) {
+        if (part.mergedSections!.any((ls) =>
+            _sectionHasWork(ls['sectionId'] as String? ?? '', 'listening'))) {
+          _visitedPartIndices.add(i);
+        }
+        for (var j = 0; j < part.mergedSections!.length; j++) {
+          final ls = part.mergedSections![j];
+          if (_sectionHasWork(ls['sectionId'] as String? ?? '', 'listening')) {
+            _visitedListeningSubIndices.add(j);
+          }
+        }
+      } else {
+        final sec = part.section;
+        final sid = sec?['sectionId'] as String? ?? '';
+        final skill = sec?['skill'] as String? ?? '';
+        if (_sectionHasWork(sid, skill)) {
+          _visitedPartIndices.add(i);
+        }
+      }
+    }
+    _visitedPartIndices.add(_selectedPartIndex);
   }
 
   /// Ordered parts: Grammar (if any) then each enabled skill section.
+  /// Multiple listening sections are merged into a single tab.
   List<_IntegratedExamPart> _examParts() {
     final l10n = context.l10n;
     final parts = <_IntegratedExamPart>[];
@@ -124,18 +201,56 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
         done: allGrammarDone,
       ));
     }
-    for (final s in _sections()) {
+
+    final allSections = _sections();
+    final listeningSections = allSections.where((s) => s['skill'] == 'listening').toList();
+    bool listeningAdded = false;
+
+    for (final s in allSections) {
       final sid = s['sectionId'] as String? ?? '';
       final skill = s['skill'] as String? ?? '';
-      parts.add(_IntegratedExamPart(
-        key: sid,
-        title: _skillTitle(skill),
-        isGrammar: false,
-        section: s,
-        done: _isSectionDone(sid),
-      ));
+
+      if (skill == 'listening') {
+        if (listeningAdded) continue;
+        listeningAdded = true;
+        if (listeningSections.length == 1) {
+          parts.add(_IntegratedExamPart(
+            key: sid,
+            title: _skillTitle('listening'),
+            isGrammar: false,
+            section: s,
+            done: _sectionHasWork(sid, skill),
+          ));
+        } else {
+          final allDone = listeningSections.every((ls) =>
+              _sectionHasWork(ls['sectionId'] as String? ?? '', 'listening'));
+          parts.add(_IntegratedExamPart(
+            key: '__listening_merged__',
+            title: _skillTitle('listening'),
+            isGrammar: false,
+            mergedSections: listeningSections,
+            done: allDone,
+          ));
+        }
+      } else {
+        parts.add(_IntegratedExamPart(
+          key: sid,
+          title: _skillTitle(skill),
+          isGrammar: false,
+          section: s,
+          done: _sectionHasWork(sid, skill),
+        ));
+      }
     }
     return parts;
+  }
+
+  void _syncLiveGuardBinding() {
+    if ((_attempt?['status'] as String?) == 'in_progress') {
+      _liveGuard.bindFromAttempt(_attempt);
+    } else {
+      _liveGuard.unbind();
+    }
   }
 
   Future<void> _load() async {
@@ -155,11 +270,11 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
         _attempt = Map<String, dynamic>.from(d as Map);
         _loading = false;
         _error = null;
-        _liveGuard.bindFromAttempt(_attempt);
+        _syncLiveGuardBinding();
         _restartClock();
         _clampGrammarIndex();
         _clampSelectedPart();
-        _visitedPartIndices.add(_selectedPartIndex);
+        _seedVisitedPartsFromSavedWork();
         setState(() {});
         unawaited(_flushLiveViewToServer());
       },
@@ -217,6 +332,83 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     return Map<String, dynamic>.from(c);
   }
 
+  String _showResultsPolicy() {
+    final rt = _runtimeContext();
+    final fromRt = rt?['showResultsPolicy'] as String?;
+    if (fromRt == 'after_submit' || fromRt == 'after_release' || fromRt == 'never') {
+      return fromRt!;
+    }
+    final settings = _snapshot()?['settings'];
+    if (settings is Map) {
+      final fromExam = settings['showResultsPolicy'] as String?;
+      if (fromExam == 'after_submit' || fromExam == 'after_release' || fromExam == 'never') {
+        return fromExam!;
+      }
+    }
+    return 'after_release';
+  }
+
+  bool _resultsReleased() {
+    if (_attempt?['resultsReleased'] == true) return true;
+    return _runtimeContext()?['resultsReleased'] == true;
+  }
+
+  bool _canViewScores() {
+    final status = _attempt?['status'] as String? ?? '';
+    if (status != 'submitted') return false;
+    final policy = _showResultsPolicy();
+    if (policy == 'never') return false;
+    if (policy == 'after_submit') return true;
+    return _resultsReleased();
+  }
+
+  String _resultsDetailLevel() {
+    final rt = _runtimeContext();
+    final fromRt = rt?['resultsDetailLevel'] as String?;
+    if (fromRt == 'score_only' || fromRt == 'full_detail') return fromRt!;
+    return 'full_detail';
+  }
+
+  /// Full answer review (grammar, skill panels) only after teacher releases results.
+  bool _canViewFullGradedResults() {
+    if (!_resultsReleased()) return false;
+    return _resultsDetailLevel() == 'full_detail';
+  }
+
+  String _resultsReviewBlockedMessage() {
+    final l10n = context.l10n;
+    if (_showResultsPolicy() == 'never') {
+      return l10n.integratedExamResultsNeverShown;
+    }
+    return l10n.integratedExamResultsAwaitingRelease;
+  }
+
+  String _skillReviewBlockedMessage() {
+    if (!_resultsReleased()) return _resultsReviewBlockedMessage();
+    if (_resultsDetailLevel() != 'full_detail') {
+      return context.l10n.integratedExamResultsScoreOnly;
+    }
+    return _resultsReviewBlockedMessage();
+  }
+
+  Map<String, dynamic>? _skillScoreEntry(String sectionId) {
+    final scores = _attempt?['scores'];
+    if (scores is! Map) return null;
+    final skillScores = scores['skillScores'];
+    if (skillScores is! Map) return null;
+    final raw = skillScores[sectionId];
+    if (raw is! Map) return null;
+    return Map<String, dynamic>.from(raw);
+  }
+
+  String? _skillFeedback(String sectionId) {
+    final note = _skillScoreEntry(sectionId)?['note'];
+    if (note is String && note.trim().isNotEmpty) return note.trim();
+    return null;
+  }
+
+  dynamic _skillScoreValue(String sectionId) => _skillScoreEntry(sectionId)?['score'];
+
   DateTime? _parseIso(dynamic v) {
     if (v == null) return null;
     try {
@@ -258,12 +450,66 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
-  bool _isSectionDone(String sectionId) {
+  /// True when the student has saved work for a skill section (not manual "mark done").
+  bool _sectionHasWork(String sectionId, String skill) {
     final ans = _attempt?['answers'];
-    if (ans is! Map) return false;
-    final a = ans[sectionId];
-    if (a is! Map) return false;
-    return a['completed'] == true;
+    if (ans is! Map || ans[sectionId] is! Map) return false;
+    final a = Map<String, dynamic>.from(ans[sectionId] as Map);
+    switch (skill) {
+      case 'reading':
+        final ra = a['readingAnswers'];
+        if (ra is Map && ra.isNotEmpty) return true;
+        return false;
+      case 'listening':
+        final listeningType = _listeningTypeForSectionId(sectionId);
+        if (listeningType == 'comprehension') {
+          final lca = a['listeningCompAnswers'];
+          if (lca is Map) {
+            for (final v in lca.values) {
+              if (v is int && v >= 0) return true;
+            }
+          }
+          return false;
+        }
+        final lc = a['listeningCues'];
+        if (lc is Map) {
+          for (final v in lc.values) {
+            if (v is String && v.trim().isNotEmpty) return true;
+          }
+        }
+        return false;
+      case 'writing':
+        final draft = a['writingDraft'];
+        return draft is String && draft.trim().isNotEmpty;
+      case 'speaking':
+        if (a['completed'] == true) return true;
+        final saved = a['speakingSaved'];
+        if (saved is num && saved > 0) return true;
+        final idx = a['speakingSentenceIndex'];
+        return idx is num && idx > 0;
+      default:
+        return false;
+    }
+  }
+
+  String _listeningTypeForSectionId(String sectionId) {
+    final snap = _attempt?['examSnapshot'];
+    if (snap is! Map) return 'dictation';
+    final sections = snap['sections'];
+    if (sections is! List) return 'dictation';
+    for (final s in sections) {
+      if (s is Map && s['sectionId'] == sectionId) {
+        final sc = s['sectionConfig'];
+        if (sc is Map) return (sc['listeningType'] as String?) ?? 'dictation';
+      }
+    }
+    return 'dictation';
+  }
+
+  String _listeningTypeFromSection(Map<String, dynamic> section) {
+    final sc = section['sectionConfig'];
+    if (sc is Map) return (sc['listeningType'] as String?) ?? 'dictation';
+    return 'dictation';
   }
 
   bool _grammarAnswered(Map<String, dynamic> item) {
@@ -301,17 +547,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     return existing;
   }
 
-  Future<void> _patchSection(String sectionId, bool completed) async {
-    final r = await getIt<TeacherExamRepository>().patchExamAttempt(widget.attemptId, {
-      sectionId: {'completed': completed},
-    });
-    if (!mounted) return;
-    r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
-      (d) => _applyAttemptMap(d),
-    );
-  }
-
   Future<void> _patchGrammarPartial(String itemId, Map<String, dynamic> partial) async {
     final merged = _mergeGrammarAnswer(itemId, partial);
     final r = await getIt<TeacherExamRepository>().patchExamAttempt(widget.attemptId, {
@@ -319,7 +554,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) {
         _applyAttemptMap(d);
         _scheduleSyncLiveView();
@@ -333,12 +568,22 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) {
         _applyAttemptMap(d);
         _scheduleSyncLiveView();
       },
     );
+  }
+
+  VoidCallback? _speakingFinishedCallback(String sectionId) {
+    return () {
+      final ans = _attempt?['answers'];
+      final existing = (ans is Map && ans[sectionId] is Map)
+          ? Map<String, dynamic>.from(ans[sectionId] as Map)
+          : <String, dynamic>{};
+      _patchSectionDraft(sectionId, {...existing, 'completed': true});
+    };
   }
 
   void _onWritingDraftChanged(String sectionId, String text) {
@@ -354,10 +599,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
   }
 
-  void _onSkillPartComplete(String sectionId) {
-    _patchSection(sectionId, true);
-  }
-
   Map<String, int>? _readingInitialAnswers(String sectionId) {
     final ans = _attempt?['answers'];
     if (ans is! Map || ans[sectionId] is! Map) return null;
@@ -371,7 +612,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
   }
 
   void _onReadingAnswersChanged(String sectionId, Map<String, int> answers, int totalQuestions) {
-    final allAnswered = totalQuestions > 0 && answers.length >= totalQuestions;
     final ans = _attempt?['answers'];
     final existing = (ans is Map && ans[sectionId] is Map)
         ? Map<String, dynamic>.from(ans[sectionId] as Map)
@@ -379,7 +619,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     _patchSectionDraft(sectionId, {
       ...existing,
       'readingAnswers': answers.map((k, v) => MapEntry(k, v)),
-      if (allAnswered) 'completed': true,
     });
   }
 
@@ -409,7 +648,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     int saved,
     int total,
   ) {
-    final allSaved = total > 0 && saved >= total;
     final ans = _attempt?['answers'];
     final existing = (ans is Map && ans[sectionId] is Map)
         ? Map<String, dynamic>.from(ans[sectionId] as Map)
@@ -419,7 +657,55 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
       'listeningCues': cueTextsByIndex,
       'listeningSaved': saved,
       'listeningTotal': total,
-      if (allSaved) 'completed': true,
+    });
+  }
+
+  void _onSpeakingProgress(
+    String sectionId,
+    int sentenceIndex,
+    int totalSentences,
+    int savedCount,
+  ) {
+    final ans = _attempt?['answers'];
+    final existing = (ans is Map && ans[sectionId] is Map)
+        ? Map<String, dynamic>.from(ans[sectionId] as Map)
+        : <String, dynamic>{};
+    _patchSectionDraft(sectionId, {
+      ...existing,
+      'speakingSentenceIndex': sentenceIndex,
+      'speakingTotal': totalSentences,
+      'speakingSaved': savedCount,
+    });
+  }
+
+  Map<String, int>? _listeningCompInitialAnswers(String sectionId) {
+    final ans = _attempt?['answers'];
+    if (ans is! Map || ans[sectionId] is! Map) return null;
+    final raw = (ans[sectionId] as Map)['listeningCompAnswers'];
+    if (raw is! Map) return null;
+    final out = <String, int>{};
+    raw.forEach((k, v) {
+      final idx = v is int ? v : int.tryParse('$v') ?? -1;
+      if (idx >= 0) out['$k'] = idx;
+    });
+    return out.isEmpty ? null : out;
+  }
+
+  void _onListeningCompProgress(
+    String sectionId,
+    Map<String, int> answers,
+    int saved,
+    int total,
+  ) {
+    final ans = _attempt?['answers'];
+    final existing = (ans is Map && ans[sectionId] is Map)
+        ? Map<String, dynamic>.from(ans[sectionId] as Map)
+        : <String, dynamic>{};
+    _patchSectionDraft(sectionId, {
+      ...existing,
+      'listeningCompAnswers': answers,
+      'listeningCompSaved': saved,
+      'listeningCompTotal': total,
     });
   }
 
@@ -439,6 +725,23 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     }
   }
 
+  /// Returns a display title for incomplete part labels (differentiates sub-types
+  /// only when both listening types are present).
+  String _sectionDisplayTitle(Map<String, dynamic> section) {
+    final skill = section['skill'] as String? ?? '';
+    if (skill != 'listening') return _skillTitle(skill);
+
+    final listeningCount =
+        _sections().where((s) => s['skill'] == 'listening').length;
+    if (listeningCount <= 1) return _skillTitle('listening');
+
+    final lt = _listeningTypeFromSection(section);
+    final sub = lt == 'comprehension'
+        ? context.l10n.teacherExamListeningTypeComprehension
+        : context.l10n.teacherExamListeningTypeDictation;
+    return '${_skillTitle('listening')} ($sub)';
+  }
+
   bool _allowPartialSubmit() {
     final ctx = _runtimeContext();
     if (ctx?['allowPartialSubmit'] == false) return false;
@@ -456,8 +759,9 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     }
     for (final s in _sections()) {
       final sid = s['sectionId'] as String? ?? '';
-      if (!_isSectionDone(sid)) {
-        missing.add(_skillTitle(s['skill'] as String? ?? ''));
+      final skill = s['skill'] as String? ?? '';
+      if (!_sectionHasWork(sid, skill)) {
+        missing.add(_sectionDisplayTitle(s));
       }
     }
     return missing;
@@ -467,7 +771,8 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     var n = 0;
     for (final s in secs) {
       final sid = s['sectionId'] as String? ?? '';
-      if (_isSectionDone(sid)) n++;
+      final skill = s['skill'] as String? ?? '';
+      if (_sectionHasWork(sid, skill)) n++;
     }
     for (final g in grammar) {
       if (_grammarAnswered(g)) n++;
@@ -497,16 +802,6 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     return DateFormat.yMMMd().add_jm().format(d);
   }
 
-  String _formatRemaining(Duration d, String expiredLabel) {
-    if (d.isNegative) return expiredLabel;
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60);
-    final s = d.inSeconds.remainder(60);
-    if (h > 0) return '${h}h ${m}m ${s}s';
-    if (m > 0) return '${m}m ${s}s';
-    return '${s}s';
-  }
-
   bool _canSubmitExam(int doneCount, int total) {
     return total > 0 && (doneCount == total || _allowPartialSubmit());
   }
@@ -531,19 +826,50 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     required int total,
     required bool submitted,
     required bool expired,
+    bool slim = false,
   }) {
     final l10n = context.l10n;
     final title = (ctx?['examTitle'] as String?)?.trim();
     final displayTitle = (title != null && title.isNotEmpty) ? title : examTitleFallback;
     final deadline = _deadline();
-    final now = DateTime.now();
-    String? urgencyLine;
-    Color urgencyColor = AppColors.textSecondary;
-    if (deadline != null && _attempt?['status'] == 'in_progress') {
-      final left = deadline.difference(now);
-      urgencyLine = '${l10n.integratedExamMetaDeadline}: ${_formatRemaining(left, l10n.integratedExamTimeUpShort)}';
-      if (left.inMinutes < 5 && !left.isNegative) urgencyColor = AppColors.warning;
-      if (left.isNegative) urgencyColor = AppColors.chartTrend;
+    final showCountdown = deadline != null && _attempt?['status'] == 'in_progress';
+
+    if (slim && !submitted && !expired) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showCountdown) ...[
+            _CountdownText(
+              deadline: deadline!,
+              deadlineLabel: l10n.integratedExamMetaDeadline,
+              expiredLabel: l10n.integratedExamTimeUpShort,
+              compact: true,
+            ),
+            if (total > 0) const SizedBox(height: 6),
+          ],
+          if (!submitted && !expired && total > 0)
+            Row(
+              children: [
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: doneCount / total,
+                      minHeight: 4,
+                      backgroundColor: AppColors.outlineMuted,
+                      color: AppSkillColors.listening.color,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.integratedExamProgress(doneCount, total),
+                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+        ],
+      );
     }
 
     return Column(
@@ -559,19 +885,12 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
             _MetaChip(icon: Icons.label_outline, label: _deliveryLabel(ctx)),
           ],
         ),
-        if (urgencyLine != null) ...[
+        if (showCountdown) ...[
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.timer_outlined, size: 16, color: urgencyColor),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  urgencyLine,
-                  style: ExamSystemUi.captionSecondary.copyWith(color: urgencyColor, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
+          _CountdownText(
+            deadline: deadline!,
+            deadlineLabel: l10n.integratedExamMetaDeadline,
+            expiredLabel: l10n.integratedExamTimeUpShort,
           ),
         ],
         if (!submitted && !expired && total > 0) ...[
@@ -592,7 +911,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     );
   }
 
-  Widget _buildDetailsExpansion(Map<String, dynamic>? ctx, String examTitleFallback) {
+  Widget _buildDetailsExpansion(Map<String, dynamic>? ctx, String examTitleFallback, {bool compact = false}) {
     final l10n = context.l10n;
     return Material(
       color: Colors.transparent,
@@ -610,13 +929,20 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+                padding: EdgeInsets.fromLTRB(12, compact ? 7 : 10, 8, compact ? 7 : 10),
                 child: Row(
                   children: [
-                    Icon(Icons.info_outline, size: 18, color: AppColors.textMuted),
+                    Icon(Icons.info_outline, size: compact ? 16 : 18, color: AppColors.textMuted),
                     const SizedBox(width: 8),
-                    Expanded(child: Text(l10n.integratedExamDetailsTitle, style: ExamSystemUi.listTitle(context))),
-                    Icon(_detailsExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.textMuted),
+                    Expanded(
+                      child: Text(
+                        l10n.integratedExamDetailsTitle,
+                        style: compact
+                            ? ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w500)
+                            : ExamSystemUi.listTitle(context),
+                      ),
+                    ),
+                    Icon(_detailsExpanded ? Icons.expand_less : Icons.expand_more, color: AppColors.textMuted, size: 20),
                   ],
                 ),
               ),
@@ -673,41 +999,51 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     );
   }
 
-  Widget _buildPartSelector(List<_IntegratedExamPart> parts, bool locked) {
+  Widget _buildPartSelector(
+    List<_IntegratedExamPart> parts,
+    bool locked, {
+    List<Map<String, dynamic>>? listeningSubSections,
+  }) {
     if (parts.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          height: 44,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: parts.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
-            itemBuilder: (context, i) {
-              final p = parts[i];
-              final selected = i == _selectedPartIndex;
-              return _PartTabChip(
-                label: p.title,
-                selected: selected,
-                done: p.done,
-                locked: locked,
-                onTap: locked
-                    ? null
-                    : () {
-                          setState(() {
-                            _selectedPartIndex = i;
-                            _visitedPartIndices.add(i);
-                          });
-                          unawaited(_flushLiveViewToServer());
-                        },
-              );
-            },
+        e4cHorizontalScroll(
+          child: ExamSectionTagRow(
+            tags: [
+              for (var i = 0; i < parts.length; i++)
+                ExamSectionTag(
+                  label: parts[i].title,
+                  selected: i == _selectedPartIndex,
+                  done: parts[i].done,
+                  enabled: !locked,
+                  skillAccent: _partUsesListeningAccent(parts[i])
+                      ? AppSkillColors.listening
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _selectedPartIndex = i;
+                      _visitedPartIndices.add(i);
+                      if (parts[i].isMergedListening) {
+                        _visitedListeningSubIndices.add(_selectedListeningSubIndex);
+                      }
+                    });
+                    unawaited(_flushLiveViewToServer());
+                  },
+                ),
+            ],
           ),
         ),
+        if (listeningSubSections != null && listeningSubSections.length > 1) ...[
+          const SizedBox(height: 6),
+          _buildListeningSubSelector(listeningSubSections, locked),
+        ],
       ],
     );
   }
+
+  bool _partUsesListeningAccent(_IntegratedExamPart part) =>
+      part.isMergedListening || part.section?['skill'] == 'listening';
 
   Widget _buildGrammarPanel(List<Map<String, dynamic>> grammar, bool locked) {
     final l10n = context.l10n;
@@ -775,19 +1111,24 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
         final i = entry.key;
         final part = entry.value;
         final isActive = i == activeIdx;
-        // Lazy: only build parts that have been visited at least once
         if (!_visitedPartIndices.contains(i)) {
           return Offstage(offstage: true, child: const SizedBox.shrink());
         }
         final Widget pane;
         if (part.isGrammar) {
           pane = SingleChildScrollView(
+            primary: false,
             padding: ExamSystemUi.pagePadding.copyWith(top: ExamSystemUi.cardGap, bottom: 24),
             child: _buildGrammarPanel(_grammarItems(), locked),
           );
-        } else {
+        } else if (part.isMergedListening) {
           pane = Padding(
             padding: ExamSystemUi.pagePadding.copyWith(top: ExamSystemUi.cardGap, bottom: 8),
+            child: _buildMergedListeningContent(part.mergedSections!, locked),
+          );
+        } else {
+          pane = Padding(
+            padding: ExamSystemUi.pagePadding.copyWith(top: 4, bottom: 4),
             child: _buildSkillPartContent(part.section!, locked),
           );
         }
@@ -820,6 +1161,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final skill = section['skill'] as String? ?? '';
     final sectionId = section['sectionId'] as String? ?? '';
     final resources = _getSectionResources(section);
+    final listeningType = _listeningTypeFromSection(section);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -834,17 +1176,32 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
             onReadingAnswersChanged: skill == 'reading'
                 ? (answers, total) => _onReadingAnswersChanged(sectionId, answers, total)
                 : null,
+            listeningType: skill == 'listening' ? listeningType : 'dictation',
             initialListeningCueTexts:
-                skill == 'listening' ? _listeningInitialCueTexts(sectionId) : null,
-            onListeningProgress: skill == 'listening'
+                skill == 'listening' && listeningType != 'comprehension'
+                    ? _listeningInitialCueTexts(sectionId)
+                    : null,
+            onListeningProgress: skill == 'listening' && listeningType != 'comprehension'
                 ? (cues, saved, total) => _onListeningProgress(sectionId, cues, saved, total)
+                : null,
+            initialListeningCompAnswers:
+                skill == 'listening' && listeningType == 'comprehension'
+                    ? _listeningCompInitialAnswers(sectionId)
+                    : null,
+            onListeningCompProgress: skill == 'listening' && listeningType == 'comprehension'
+                ? (answers, saved, total) =>
+                    _onListeningCompProgress(sectionId, answers, saved, total)
                 : null,
             initialWritingDraft: skill == 'writing' ? _writingInitialDraft(sectionId) : null,
             fixedWritingPrompt: skill == 'writing' ? _fixedWritingPrompt(section) : null,
-            onPartComplete: () => _onSkillPartComplete(sectionId),
             onWritingDraftChanged: skill == 'writing'
                 ? (text) => _onWritingDraftChanged(sectionId, text)
                 : null,
+            onSpeakingProgress: skill == 'speaking'
+                ? (index, total, saved) => _onSpeakingProgress(sectionId, index, total, saved)
+                : null,
+            onPartComplete:
+                skill == 'speaking' ? _speakingFinishedCallback(sectionId) : null,
             examPracticeMode: true,
           ),
         ),
@@ -852,38 +1209,152 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     );
   }
 
-  Widget _buildSubmittedSummary(List<_IntegratedExamPart> parts, List<Map<String, dynamic>> grammar, List<Map<String, dynamic>> secs) {
-    final l10n = context.l10n;
+  /// Dictation + comprehension sub-tabs; one panel visible at a time (no nested scroll).
+  Widget _buildMergedListeningContent(List<Map<String, dynamic>> sections, bool locked) {
+    if (sections.isEmpty) return const SizedBox.shrink();
+    final subIdx = _selectedListeningSubIndex.clamp(0, sections.length - 1);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (grammar.isNotEmpty) ...[
-          Text(l10n.integratedExamGrammarSectionTitle, style: ExamSystemUi.sectionTitle(context)),
-          const SizedBox(height: ExamSystemUi.cardGap),
-          for (var i = 0; i < grammar.length; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: ExamSystemUi.cardGap),
-              child: IntegratedExamGrammarQuestionCard(
-                displayIndex: i + 1,
-                item: grammar[i],
-                answer: () {
-                  final ans = _attempt?['answers'];
-                  if (ans is! Map) return null;
-                  final a = ans[grammar[i]['itemId']];
-                  if (a is! Map) return null;
-                  return Map<String, dynamic>.from(a);
-                }(),
-                locked: true,
-                onPartialPatch: (_) {},
+        Expanded(
+          child: Stack(
+            children: sections.asMap().entries.map((entry) {
+              final i = entry.key;
+              final sec = entry.value;
+              if (!_visitedListeningSubIndices.contains(i)) {
+                return Offstage(offstage: true, child: const SizedBox.shrink());
+              }
+              return Offstage(
+                offstage: i != subIdx,
+                child: TickerMode(
+                  enabled: i == subIdx,
+                  child: _buildEmbeddedListeningPanel(sec, locked),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListeningSubSelector(List<Map<String, dynamic>> sections, bool locked) {
+    final l10n = context.l10n;
+    final subIdx = _selectedListeningSubIndex.clamp(0, sections.length - 1);
+    return ExamListeningSubNavGroup(
+      sectionTitle: l10n.integratedExamListeningSubNavTitle,
+      hint: l10n.integratedExamListeningSubNavHint,
+      tags: [
+        for (var i = 0; i < sections.length; i++)
+          ExamSectionTag(
+            variant: ExamSectionTagVariant.sub,
+            skillAccent: AppSkillColors.listening,
+            label: _listeningTypeFromSection(sections[i]) == 'comprehension'
+                ? l10n.teacherExamListeningTypeComprehension
+                : l10n.teacherExamListeningTypeDictation,
+            selected: i == subIdx,
+            done: _sectionHasWork(sections[i]['sectionId'] as String? ?? '', 'listening'),
+            enabled: !locked,
+            onTap: () {
+              setState(() {
+                _selectedListeningSubIndex = i;
+                _visitedListeningSubIndices.add(i);
+              });
+              unawaited(_flushLiveViewToServer());
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildEmbeddedListeningPanel(Map<String, dynamic> section, bool locked) {
+    final sectionId = section['sectionId'] as String? ?? '';
+    final resources = _getSectionResources(section);
+    final listeningType = _listeningTypeFromSection(section);
+    return ExamEmbeddedSkillPanel(
+      key: ValueKey<String>('panel_$sectionId'),
+      skill: 'listening',
+      resources: resources,
+      locked: locked,
+      sectionId: sectionId,
+      listeningType: listeningType,
+      initialListeningCueTexts: listeningType != 'comprehension'
+          ? _listeningInitialCueTexts(sectionId)
+          : null,
+      onListeningProgress: listeningType != 'comprehension'
+          ? (cues, saved, total) => _onListeningProgress(sectionId, cues, saved, total)
+          : null,
+      initialListeningCompAnswers: listeningType == 'comprehension'
+          ? _listeningCompInitialAnswers(sectionId)
+          : null,
+      onListeningCompProgress: listeningType == 'comprehension'
+          ? (answers, saved, total) =>
+              _onListeningCompProgress(sectionId, answers, saved, total)
+          : null,
+      examPracticeMode: true,
+    );
+  }
+
+  Widget _buildSubmittedCompletionNotice() {
+    final l10n = context.l10n;
+    return AppCard(
+      variant: AppCardVariant.outline,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.check_circle_outline, size: 22, color: AppColors.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  l10n.studentExamSubmitted,
+                  style: ExamSystemUi.listTitle(context).copyWith(color: AppColors.primary),
+                ),
               ),
-            ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(_skillReviewBlockedMessage(), style: ExamSystemUi.captionSecondary),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSubmittedSummary(List<_IntegratedExamPart> parts, List<Map<String, dynamic>> grammar, List<Map<String, dynamic>> secs) {
+    final l10n = context.l10n;
+    final canReview = _canViewFullGradedResults();
+    if (!canReview) {
+      return _buildSubmittedCompletionNotice();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (grammar.isNotEmpty) _buildSubmittedGrammarTile(grammar, canReview),
         if (secs.isNotEmpty) ...[
+          if (grammar.isNotEmpty) const SizedBox(height: ExamSystemUi.cardGap),
           Text(l10n.integratedExamSkillsSectionTitle, style: ExamSystemUi.sectionTitle(context)),
           const SizedBox(height: ExamSystemUi.cardGap),
-          for (final s in secs) _buildSectionTile(s, true, expanded: false),
+          ..._buildSubmittedSectionTiles(secs),
         ],
       ],
+    );
+  }
+
+  Widget _buildSubmittedGrammarTile(List<Map<String, dynamic>> grammar, bool canReview) {
+    return _SubmittedGrammarReviewTile(
+      grammar: grammar,
+      canReview: canReview,
+      getAnswer: (itemId) {
+        final ans = _attempt?['answers'];
+        if (ans is! Map) return null;
+        final a = ans[itemId];
+        if (a is! Map) return null;
+        return Map<String, dynamic>.from(a);
+      },
+      isAnswered: _grammarAnswered,
     );
   }
 
@@ -935,7 +1406,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     if (total > 0 && doneCount < total) {
       if (!_allowPartialSubmit()) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.integratedExamSubmitBlockedAll)));
+          AppCornerToast.show(context, l10n.integratedExamSubmitBlockedAll, error: true);
         }
         return;
       }
@@ -983,9 +1454,9 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.studentExamSubmitted)));
+        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
         _load();
       },
     );
@@ -1028,14 +1499,12 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     await r.fold(
       (f) async {
         setState(() => _abandonBusy = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message)));
+        AppCornerToast.show(context, f.message, error: true);
       },
       (_) async {
         getIt<SocketService>().clearExamRealtimeContext();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.studentExamVoluntaryExitBlocked)),
-        );
+        AppCornerToast.show(context, l10n.studentExamVoluntaryExitBlocked);
         exitLiveExamFlow(context);
       },
     );
@@ -1134,12 +1603,20 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final l10n = context.l10n;
     final parts = _examParts();
     final locked = submitted || expired;
-    final headerPad = ExamSystemUi.pagePadding.copyWith(bottom: 0);
+    final headerPad = ExamSystemUi.pagePadding.copyWith(bottom: 0, top: 8);
+    final activeSlim = !submitted && !expired;
+    final activeIdx = parts.isEmpty ? 0 : _selectedPartIndex.clamp(0, parts.length - 1);
+    final activePart = parts.isEmpty ? null : parts[activeIdx];
+    final listeningSubSections = activePart != null && activePart.isMergedListening
+        ? activePart.mergedSections
+        : null;
 
     if (submitted || expired) {
-      return ListView(
-        padding: ExamSystemUi.pagePadding,
-        children: [
+      return e4cNoScrollbarScroll(
+        child: ListView(
+          primary: false,
+          padding: ExamSystemUi.pagePadding,
+          children: [
           _buildCompactSummary(
             ctx,
             examTitleFallback,
@@ -1159,7 +1636,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
           ],
           const SizedBox(height: ExamSystemUi.sectionGap),
           _buildSubmittedSummary(parts, grammar, secs),
-          if (submitted && _attempt?['scores'] is Map) ...[
+          if (submitted && _canViewScores() && _attempt?['scores'] is Map) ...[
             const SizedBox(height: ExamSystemUi.sectionGap),
             IntegratedScoreSummaryCard(
               attempt: Map<String, dynamic>.from(_attempt!),
@@ -1169,10 +1646,12 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
           ],
           const SizedBox(height: 80),
         ],
+        ),
       );
     }
 
-    return Column(
+    return e4cNoScrollbarScroll(
+      child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
@@ -1187,11 +1666,16 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
                 total: total,
                 submitted: submitted,
                 expired: expired,
+                slim: activeSlim,
               ),
-              const SizedBox(height: ExamSystemUi.blockGap),
-              _buildDetailsExpansion(ctx, examTitleFallback),
-              const SizedBox(height: ExamSystemUi.sectionGap),
-              _buildPartSelector(parts, locked),
+              SizedBox(height: activeSlim ? 6 : ExamSystemUi.blockGap),
+              _buildDetailsExpansion(ctx, examTitleFallback, compact: activeSlim),
+              SizedBox(height: activeSlim ? 8 : ExamSystemUi.sectionGap),
+              _buildPartSelector(
+                parts,
+                locked,
+                listeningSubSections: listeningSubSections,
+              ),
             ],
           ),
         ),
@@ -1199,89 +1683,497 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
           child: _buildPartsStack(parts, locked),
         ),
       ],
+      ),
     );
   }
 
   List<Map<String, dynamic>> _getSectionResources(Map<String, dynamic> s) =>
       sectionResourcesFrom(s);
 
-  Widget _buildSectionTile(Map<String, dynamic> s, bool locked, {bool expanded = false}) {
+  /// Builds submitted tiles, merging listening sections into one tile.
+  List<Widget> _buildSubmittedSectionTiles(List<Map<String, dynamic>> secs) {
+    final out = <Widget>[];
+    final listeningSecs = secs.where((s) => s['skill'] == 'listening').toList();
+    bool listeningAdded = false;
+    for (final s in secs) {
+      final skill = s['skill'] as String? ?? '';
+      if (skill == 'listening') {
+        if (listeningAdded) continue;
+        listeningAdded = true;
+        if (listeningSecs.length == 1) {
+          out.add(_buildSubmittedSectionTile(s));
+        } else {
+          out.add(_buildSubmittedMergedListeningTile(listeningSecs));
+        }
+      } else {
+        out.add(_buildSubmittedSectionTile(s));
+      }
+    }
+    return out;
+  }
+
+  Widget _buildSubmittedMergedListeningTile(List<Map<String, dynamic>> sections) {
+    final allDone = sections.every((s) =>
+        _sectionHasWork(s['sectionId'] as String? ?? '', 'listening'));
+    return _SubmittedMergedListeningTile(
+      title: _skillTitle('listening'),
+      done: allDone,
+      sections: sections,
+      reviewMode: _canViewFullGradedResults(),
+      resultsBlockedMessage: _skillReviewBlockedMessage(),
+      getSectionResources: _getSectionResources,
+      listeningTypeFromSection: _listeningTypeFromSection,
+      listeningInitialCueTexts: _listeningInitialCueTexts,
+      listeningCompInitialAnswers: _listeningCompInitialAnswers,
+      sectionHasWork: (sid) => _sectionHasWork(sid, 'listening'),
+    );
+  }
+
+  /// Collapsible review row — loads skill CMS only when expanded (avoids N API calls after submit).
+  Widget _buildSubmittedSectionTile(Map<String, dynamic> s) {
     final skill = s['skill'] as String? ?? '';
     final sectionId = s['sectionId'] as String? ?? '';
     final resources = _getSectionResources(s);
-    final done = _isSectionDone(sectionId);
-    final statusLabel = done ? context.l10n.integratedExamPartDone : context.l10n.integratedExamPartNotStarted;
+    if (resources.isEmpty && !(skill == 'writing' && _fixedWritingPrompt(s) != null)) {
+      return const SizedBox.shrink();
+    }
+    return _SubmittedSectionReviewTile(
+      skill: skill,
+      sectionId: sectionId,
+      section: s,
+      title: _skillTitle(skill),
+      done: _sectionHasWork(sectionId, skill),
+      reviewMode: _canViewFullGradedResults(),
+      resultsBlockedMessage: _skillReviewBlockedMessage(),
+      resources: resources,
+      fixedWritingPrompt: _fixedWritingPrompt(s),
+      readingInitial: _readingInitialAnswers(sectionId),
+      listeningInitial: _listeningInitialCueTexts(sectionId),
+      writingInitial: _writingInitialDraft(sectionId),
+      reviewFeedback: _skillFeedback(sectionId),
+      reviewScore: _skillScoreValue(sectionId),
+    );
+  }
+}
+
+/// Collapsible grammar review — one tile, questions inside when expanded.
+class _SubmittedGrammarReviewTile extends StatefulWidget {
+  const _SubmittedGrammarReviewTile({
+    required this.grammar,
+    required this.canReview,
+    required this.getAnswer,
+    required this.isAnswered,
+  });
+
+  final List<Map<String, dynamic>> grammar;
+  final bool canReview;
+  final Map<String, dynamic>? Function(String itemId) getAnswer;
+  final bool Function(Map<String, dynamic> item) isAnswered;
+
+  @override
+  State<_SubmittedGrammarReviewTile> createState() => _SubmittedGrammarReviewTileState();
+}
+
+class _SubmittedGrammarReviewTileState extends State<_SubmittedGrammarReviewTile> {
+  bool _expanded = false;
+
+  bool get _done => widget.grammar.isNotEmpty && widget.grammar.every(widget.isAnswered);
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final statusLabel =
+        _done ? l10n.integratedExamPartDone : l10n.integratedExamPartNotStarted;
+    final reviewHeight = (MediaQuery.sizeOf(context).height * 0.55).clamp(280.0, 560.0);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: expanded ? 0 : ExamSystemUi.cardGap),
+      padding: const EdgeInsets.only(bottom: ExamSystemUi.cardGap),
       child: AppCard(
         variant: AppCardVariant.outline,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (expanded)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-                child: Row(
-                  children: [
-                    Icon(
-                      done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
-                      size: ExamSystemUi.iconSm,
-                      color: done ? AppColors.primary : AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(_skillTitle(skill), style: ExamSystemUi.sectionTitle(context))),
-                    Text(statusLabel, style: ExamSystemUi.captionMuted),
-                  ],
-                ),
-              )
-            else
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                leading: Icon(
-                  done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
-                  size: ExamSystemUi.iconSm,
-                  color: done ? AppColors.primary : AppColors.textSecondary,
-                ),
-                title: Text(_skillTitle(skill), style: ExamSystemUi.listTitle(context)),
-                subtitle: resources.isEmpty
-                    ? null
-                    : Text(
-                        resources.length == 1
-                            ? (resources.first['title'] as String? ?? '')
-                            : '${resources.length} exercises',
-                        style: ExamSystemUi.captionSecondary,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              leading: Icon(
+                _done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                size: ExamSystemUi.iconSm,
+                color: _done ? AppColors.primary : AppColors.textSecondary,
               ),
-            if (expanded && resources.isNotEmpty)
+              title: Text(l10n.integratedExamGrammarSectionTitle, style: ExamSystemUi.listTitle(context)),
+              subtitle: Text(
+                l10n.questionsCount(widget.grammar.length),
+                style: ExamSystemUi.captionSecondary,
+              ),
+              trailing: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                color: AppColors.textMuted,
+              ),
+              onTap: () => setState(() => _expanded = !_expanded),
+            ),
+            if (_expanded) ...[
               Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-                child: Text(
-                  resources.length == 1
-                      ? (resources.first['title'] as String? ?? '')
-                      : '${resources.length} exercises',
-                  style: ExamSystemUi.captionSecondary,
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(statusLabel, style: ExamSystemUi.captionMuted),
                 ),
               ),
-            if (resources.isNotEmpty) ...[
               const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 6, 8, 10),
-                child: ExamEmbeddedSkillPanel(
-                  skill: skill,
-                  resources: resources,
-                  locked: locked,
-                  fixedWritingPrompt: skill == 'writing' ? _fixedWritingPrompt(s) : null,
-                  onPartComplete: locked ? () {} : () => _onSkillPartComplete(sectionId),
-                  examPracticeMode: true,
+              SizedBox(
+                height: reviewHeight,
+                child: SingleChildScrollView(
+                  primary: false,
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (var i = 0; i < widget.grammar.length; i++)
+                        IntegratedExamGrammarQuestionCard(
+                          displayIndex: i + 1,
+                          item: widget.grammar[i],
+                          answer: widget.getAnswer('${widget.grammar[i]['itemId'] ?? ''}'),
+                          locked: true,
+                          onPartialPatch: (_) {},
+                          gradingReviewMode: widget.canReview,
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Merged listening review tile — shows both dictation and comprehension in one collapsible.
+class _SubmittedMergedListeningTile extends StatefulWidget {
+  const _SubmittedMergedListeningTile({
+    required this.title,
+    required this.done,
+    required this.sections,
+    required this.reviewMode,
+    required this.resultsBlockedMessage,
+    required this.getSectionResources,
+    required this.listeningTypeFromSection,
+    required this.listeningInitialCueTexts,
+    required this.listeningCompInitialAnswers,
+    required this.sectionHasWork,
+  });
+
+  final String title;
+  final bool done;
+  final List<Map<String, dynamic>> sections;
+  final bool reviewMode;
+  final String resultsBlockedMessage;
+  final List<Map<String, dynamic>> Function(Map<String, dynamic>) getSectionResources;
+  final String Function(Map<String, dynamic>) listeningTypeFromSection;
+  final Map<String, String>? Function(String) listeningInitialCueTexts;
+  final Map<String, int>? Function(String) listeningCompInitialAnswers;
+  final bool Function(String) sectionHasWork;
+
+  @override
+  State<_SubmittedMergedListeningTile> createState() => _SubmittedMergedListeningTileState();
+}
+
+class _SubmittedMergedListeningTileState extends State<_SubmittedMergedListeningTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final statusLabel =
+        widget.done ? l10n.integratedExamPartDone : l10n.integratedExamPartNotStarted;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: ExamSystemUi.cardGap),
+      child: AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              leading: Icon(
+                widget.done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                size: ExamSystemUi.iconSm,
+                color: widget.done ? AppColors.primary : AppColors.textSecondary,
+              ),
+              title: Text(widget.title, style: ExamSystemUi.listTitle(context)),
+              subtitle: Text(
+                '${widget.sections.length} exercises',
+                style: ExamSystemUi.captionSecondary,
+              ),
+              trailing: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                color: AppColors.textMuted,
+              ),
+              onTap: () => setState(() => _expanded = !_expanded),
+            ),
+            if (_expanded) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(statusLabel, style: ExamSystemUi.captionMuted),
+                ),
+              ),
+              const Divider(height: 1),
+              for (var i = 0; i < widget.sections.length; i++) ...[
+                if (i > 0) const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+                  child: _subHeader(widget.sections[i]),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+                  child: _buildPanel(widget.sections[i]),
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _subHeader(Map<String, dynamic> section) {
+    final lt = widget.listeningTypeFromSection(section);
+    final label = lt == 'comprehension'
+        ? context.l10n.teacherExamListeningTypeComprehension
+        : context.l10n.teacherExamListeningTypeDictation;
+    final icon = lt == 'comprehension' ? Icons.headphones_outlined : Icons.text_fields_outlined;
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Text(label, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+      ],
+    );
+  }
+
+  Widget _buildPanel(Map<String, dynamic> section) {
+    if (!widget.reviewMode) {
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Text(widget.resultsBlockedMessage, style: ExamSystemUi.captionSecondary),
+      );
+    }
+    final sectionId = section['sectionId'] as String? ?? '';
+    final resources = widget.getSectionResources(section);
+    final lt = widget.listeningTypeFromSection(section);
+    return ExamEmbeddedSkillPanel(
+      key: ValueKey<String>('review_merged_$sectionId'),
+      skill: 'listening',
+      resources: resources,
+      locked: true,
+      reviewMode: true,
+      sectionId: sectionId,
+      listeningType: lt,
+      initialListeningCueTexts: lt != 'comprehension' ? widget.listeningInitialCueTexts(sectionId) : null,
+      initialListeningCompAnswers: lt == 'comprehension' ? widget.listeningCompInitialAnswers(sectionId) : null,
+      examPracticeMode: true,
+    );
+  }
+}
+
+/// Lazy-loaded skill review after submit (one CMS fetch per section when opened).
+class _SubmittedSectionReviewTile extends StatefulWidget {
+  const _SubmittedSectionReviewTile({
+    required this.skill,
+    required this.sectionId,
+    required this.section,
+    required this.title,
+    required this.done,
+    required this.reviewMode,
+    required this.resultsBlockedMessage,
+    required this.resources,
+    this.fixedWritingPrompt,
+    this.readingInitial,
+    this.listeningInitial,
+    this.writingInitial,
+    this.reviewFeedback,
+    this.reviewScore,
+  });
+
+  final String skill;
+  final String sectionId;
+  final Map<String, dynamic> section;
+  final String title;
+  final bool done;
+  final bool reviewMode;
+  final String resultsBlockedMessage;
+  final List<Map<String, dynamic>> resources;
+  final Map<String, dynamic>? fixedWritingPrompt;
+  final Map<String, int>? readingInitial;
+  final Map<String, String>? listeningInitial;
+  final String? writingInitial;
+  final String? reviewFeedback;
+  final dynamic reviewScore;
+
+  @override
+  State<_SubmittedSectionReviewTile> createState() => _SubmittedSectionReviewTileState();
+}
+
+class _SubmittedSectionReviewTileState extends State<_SubmittedSectionReviewTile> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final statusLabel =
+        widget.done ? l10n.integratedExamPartDone : l10n.integratedExamPartNotStarted;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: ExamSystemUi.cardGap),
+      child: AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              leading: Icon(
+                widget.done ? Icons.check_circle_outline : Icons.radio_button_unchecked,
+                size: ExamSystemUi.iconSm,
+                color: widget.done ? AppColors.primary : AppColors.textSecondary,
+              ),
+              title: Text(widget.title, style: ExamSystemUi.listTitle(context)),
+              subtitle: widget.resources.length == 1
+                  ? Text(
+                      widget.resources.first['title'] as String? ?? '',
+                      style: ExamSystemUi.captionSecondary,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : Text(
+                      '${widget.resources.length} exercises',
+                      style: ExamSystemUi.captionSecondary,
+                    ),
+              trailing: Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                color: AppColors.textMuted,
+              ),
+              onTap: () => setState(() => _expanded = !_expanded),
+            ),
+            if (_expanded) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(statusLabel, style: ExamSystemUi.captionMuted),
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 6, 8, 10),
+                child: widget.reviewMode
+                    ? ExamEmbeddedSkillPanel(
+                        key: ValueKey<String>('review_${widget.sectionId}'),
+                        skill: widget.skill,
+                        resources: widget.resources,
+                        locked: true,
+                        reviewMode: true,
+                        sectionId: widget.sectionId,
+                        initialReadingAnswers: widget.readingInitial,
+                        initialListeningCueTexts: widget.listeningInitial,
+                        initialWritingDraft: widget.writingInitial,
+                        fixedWritingPrompt: widget.fixedWritingPrompt,
+                        reviewFeedback: widget.reviewFeedback,
+                        reviewScore: widget.reviewScore,
+                        examPracticeMode: true,
+                      )
+                    : AppCard(
+                        variant: AppCardVariant.outline,
+                        child: Text(
+                          widget.resultsBlockedMessage,
+                          style: ExamSystemUi.captionSecondary,
+                        ),
+                      ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Self-contained countdown that rebuilds only itself each second.
+/// Prevents the root page from calling setState every second.
+class _CountdownText extends StatefulWidget {
+  const _CountdownText({
+    required this.deadline,
+    required this.deadlineLabel,
+    required this.expiredLabel,
+    this.compact = false,
+  });
+
+  final DateTime deadline;
+  final String deadlineLabel;
+  final String expiredLabel;
+  final bool compact;
+
+  @override
+  State<_CountdownText> createState() => _CountdownTextState();
+}
+
+class _CountdownTextState extends State<_CountdownText> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _format(Duration d) {
+    if (d.isNegative) return widget.expiredLabel;
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '${h}h ${m}m ${s}s';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final left = widget.deadline.difference(DateTime.now());
+    final expired = left.isNegative;
+    final urgency = !expired && left.inMinutes < 5;
+    final color = expired
+        ? AppColors.chartTrend
+        : urgency
+            ? AppColors.warning
+            : AppColors.textSecondary;
+
+    return Row(
+      children: [
+        Icon(Icons.timer_outlined, size: widget.compact ? 14 : 16, color: color),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '${widget.deadlineLabel}: ${_format(left)}',
+            style: ExamSystemUi.captionSecondary.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: widget.compact ? 11 : 12,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -1293,6 +2185,7 @@ class _IntegratedExamPart {
     required this.isGrammar,
     required this.done,
     this.section,
+    this.mergedSections,
   });
 
   final String key;
@@ -1300,66 +2193,10 @@ class _IntegratedExamPart {
   final bool isGrammar;
   final bool done;
   final Map<String, dynamic>? section;
-}
+  /// When multiple listening sections are merged into one tab.
+  final List<Map<String, dynamic>>? mergedSections;
 
-class _PartTabChip extends StatelessWidget {
-  const _PartTabChip({
-    required this.label,
-    required this.selected,
-    required this.done,
-    this.locked = false,
-    this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool done;
-  final bool locked;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = selected ? AppColors.primary : AppColors.outlineMuted;
-    final bg = done
-        ? AppColors.primary.withValues(alpha: 0.12)
-        : selected
-            ? AppColors.primary.withValues(alpha: 0.06)
-            : AppColors.surfaceCard;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: locked ? null : onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: borderColor, width: selected ? 1.5 : 0.75),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (done)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Icon(Icons.check, size: 14, color: AppColors.primary),
-                ),
-              Text(
-                label,
-                style: TextStyle(
-              fontWeight: selected ? FontWeight.w500 : FontWeight.w400,
-              fontSize: 12,
-              color: selected || done ? AppColors.primaryDark : AppColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  bool get isMergedListening => mergedSections != null && mergedSections!.isNotEmpty;
 }
 
 class _MetaChip extends StatelessWidget {
@@ -1411,33 +2248,33 @@ class _GrammarNavPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = selected ? AppColors.primary : AppColors.outlineMuted;
+    final borderColor = selected ? AppColors.textPrimary : AppColors.outline;
     final bg = answered
-        ? AppColors.primary.withValues(alpha: 0.12)
+        ? AppColors.outlineMuted.withValues(alpha: 0.45)
         : selected
-            ? AppColors.primary.withValues(alpha: 0.06)
+            ? AppColors.surfaceCard
             : AppColors.surfaceCard;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(ExamSectionTag.primaryRadius),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: 36,
-          height: 36,
+          duration: const Duration(milliseconds: 120),
+          width: 30,
+          height: 30,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: borderColor, width: selected ? 1.5 : 0.75),
+            borderRadius: BorderRadius.circular(ExamSectionTag.primaryRadius),
+            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
           ),
           child: Text(
             '$index',
             style: TextStyle(
-              fontWeight: selected || answered ? FontWeight.w500 : FontWeight.w400,
-              fontSize: 12,
-              color: answered ? AppColors.primary : AppColors.textSecondary,
+              fontWeight: selected || answered ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 11,
+              color: answered ? AppColors.textPrimary : AppColors.textSecondary,
             ),
           ),
         ),

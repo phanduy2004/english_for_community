@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -205,15 +206,15 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
         final opts = _mcqOptions.map((c) => c.text.trim()).where((s) => s.isNotEmpty).toList();
         final stem = _prompt.text.trim();
         if (stem.isEmpty || opts.length < 2) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamMcqNeedsStem)));
+          AppCornerToast.show(context, l10n.teacherExamMcqNeedsStem, error: true);
           return;
         }
         if (_mcqCorrect.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarCorrectOptions)));
+          AppCornerToast.show(context, l10n.teacherExamGrammarCorrectOptions, error: true);
           return;
         }
         if (_kind == 'mcq_single' && _mcqCorrect.length != 1) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarCorrectOptions)));
+          AppCornerToast.show(context, l10n.teacherExamGrammarCorrectOptions, error: true);
           return;
         }
         out = {
@@ -229,20 +230,20 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
         _syncClozeBlankFields();
         final passage = _clozePassage.text.trim();
         if (!RegExp(r'\{\{[0-9]+\}\}').hasMatch(passage)) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarPassageLabel)));
+          AppCornerToast.show(context, l10n.teacherExamGrammarPassageLabel, error: true);
           return;
         }
         final blanks = <Map<String, dynamic>>[];
         for (final e in _clozeAccepted.entries) {
           final acc = _splitAccepted(e.value.text);
           if (acc.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarAcceptedAnswers)));
+            AppCornerToast.show(context, l10n.teacherExamGrammarAcceptedAnswers, error: true);
             return;
           }
           blanks.add({'blankId': e.key, 'acceptedAnswers': acc});
         }
         if (blanks.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarPassageLabel)));
+          AppCornerToast.show(context, l10n.teacherExamGrammarPassageLabel, error: true);
           return;
         }
         out = {
@@ -256,7 +257,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
       case 'grammar_gap':
         final acc = _splitAccepted(_gapAccepted.text);
         if (_gapBefore.text.trim().isEmpty || _gapAfter.text.trim().isEmpty || acc.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishNeedItems)));
+          AppCornerToast.show(context, l10n.teacherExamPublishNeedItems, error: true);
           return;
         }
         out = {
@@ -273,7 +274,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
       case 'grammar_matching':
         final n = _matchLeft.length;
         if (n < 2) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishNeedItems)));
+          AppCornerToast.show(context, l10n.teacherExamPublishNeedItems, error: true);
           return;
         }
         final leftItems = <Map<String, dynamic>>[];
@@ -282,7 +283,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
           final lt = _matchLeft[i].text.trim();
           final rt = _matchRight[i].text.trim();
           if (lt.isEmpty || rt.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishNeedItems)));
+            AppCornerToast.show(context, l10n.teacherExamPublishNeedItems, error: true);
             return;
           }
           leftItems.add({'id': 'l$i', 'text': lt});
@@ -305,17 +306,17 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
       case 'grammar_reorder':
         final lines = _reorderLines.text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
         if (lines.length < 2) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamPublishNeedItems)));
+          AppCornerToast.show(context, l10n.teacherExamPublishNeedItems, error: true);
           return;
         }
         if (_reorderCorrectPerm.length != lines.length) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarReorderInstruction)));
+          AppCornerToast.show(context, l10n.teacherExamGrammarReorderInstruction, error: true);
           return;
         }
         final sorted = [..._reorderCorrectPerm]..sort();
         for (var i = 0; i < lines.length; i++) {
           if (sorted[i] != i) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamGrammarReorderInstruction)));
+            AppCornerToast.show(context, l10n.teacherExamGrammarReorderInstruction, error: true);
             return;
           }
         }

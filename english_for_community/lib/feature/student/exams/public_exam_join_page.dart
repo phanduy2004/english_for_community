@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -52,7 +53,7 @@ class _PublicExamJoinPageState extends State<PublicExamJoinPage> {
     if (!mounted) return;
     setState(() => _busy = false);
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) => setState(() => _preview = Map<String, dynamic>.from(d as Map)),
     );
   }
@@ -65,7 +66,7 @@ class _PublicExamJoinPageState extends State<PublicExamJoinPage> {
     if (!mounted) return;
     setState(() => _busy = false);
     await r.fold(
-      (f) async => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) async => AppCornerToast.show(context, f.message, error: true),
       (attempt) async {
         final map = Map<String, dynamic>.from(attempt as Map);
         final attemptId = map['id'] as String? ?? '';

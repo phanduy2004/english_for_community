@@ -1,6 +1,6 @@
 ﻿import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -169,7 +169,7 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
       body: BlocConsumer<HistoryBloc, HistoryState>(
         listener: (context, state) {
           if (state.status == HistoryStatus.error) {
-            AdminCornerToast.show(context, state.errorMessage ?? 'Error', error: true);
+            AppCornerToast.show(context, state.errorMessage ?? 'Error', error: true);
           }
         },
         builder: (context, state) {

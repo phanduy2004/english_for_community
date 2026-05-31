@@ -7,7 +7,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_dialog_shell.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +72,7 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
   }
 
   void _toast(String message, {bool error = false}) {
-    AdminCornerToast.show(context, message, error: error);
+    AppCornerToast.show(context, message, error: error);
   }
 
   Future<void> _pickImage() async {
@@ -144,7 +144,7 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
       listener: (context, state) {
         if (!_awaitingSaveResult) return;
         if (state.status == UserStatus.success && _isDirty) {
-          AdminCornerToast.show(context, t.profileUpdatedSuccess);
+          AppCornerToast.show(context, t.profileUpdatedSuccess);
           Navigator.pop(context);
           setState(() {
             _awaitingSaveResult = false;

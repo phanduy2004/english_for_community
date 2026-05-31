@@ -82,3 +82,20 @@ class TeacherClassroomCloseAssignmentRequested extends TeacherClassroomEvent {
   @override
   List<Object?> get props => [assignmentId];
 }
+
+class TeacherClassroomAssignmentSegmentChanged extends TeacherClassroomEvent {
+  const TeacherClassroomAssignmentSegmentChanged(this.segment);
+
+  final int segment;
+
+  @override
+  List<Object?> get props => [segment];
+}
+
+class TeacherClassroomAssignmentsReloadRequested extends TeacherClassroomEvent {
+  const TeacherClassroomAssignmentsReloadRequested();
+}
+
+class TeacherClassroomActivityReloadRequested extends TeacherClassroomEvent {
+  const TeacherClassroomActivityReloadRequested();
+}

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/entity/cue_entity.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
 
@@ -120,7 +121,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     final int endMs = int.tryParse(endStr ?? '') ?? 0;
 
     if (endMs <= startMs) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thời gian kết thúc phải lớn hơn bắt đầu")));
+      AppCornerToast.show(context, "Thời gian kết thúc phải lớn hơn bắt đầu", error: true);
       return;
     }
 
@@ -137,7 +138,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
                 Uri.dataFromBytes(_selectedAudioFile!.bytes!, mimeType: mimeType)
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Lỗi: Không đọc được dữ liệu file trên Web")));
+            AppCornerToast.show(context, "Lỗi: Không đọc được dữ liệu file trên Web", error: true);
             return;
           }
         } else {
@@ -153,7 +154,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
       }
 
       if (source == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Chưa có file audio")));
+        AppCornerToast.show(context, "Chưa có file audio", error: true);
         return;
       }
 
@@ -179,7 +180,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     } catch (e) {
       print("Error playing preview: $e");
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Lỗi phát audio: $e")));
+        AppCornerToast.show(context, "Lỗi phát audio: $e", error: true);
         setState(() => _playingCueKey = null);
       }
     }
@@ -189,16 +190,12 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_titleCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập Title")),
-      );
+      AppCornerToast.show(context, "Vui lòng nhập Title", error: true);
       return;
     }
 
     if (widget.id == null && _selectedAudioFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng chọn file Audio để tạo bài nghe")),
-      );
+      AppCornerToast.show(context, "Vui lòng chọn file Audio để tạo bài nghe", error: true);
       return;
     }
 
@@ -286,9 +283,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
         // 1. Xử lý Lỗi -> Tắt cờ submit để user ấn lại được
         if (state.status == AdminListeningStatus.failure) {
           setState(() => _isSubmitting = false); // 👈 Quan trọng
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red)
-          );
+          AppCornerToast.show(context, state.errorMessage ?? "Error", error: true);
         }
 
         // 2. Load Detail (Logic cũ)
@@ -301,10 +296,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
         // 3. Xử lý Update/Create Thành công
         // 🔥 ĐIỀU KIỆN MỚI: Phải đang trong quá trình submit (_isSubmitting == true)
         if (state.status == AdminListeningStatus.success && _isSubmitting) {
-
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Thao tác thành công!"), backgroundColor: Colors.green)
-          );
+          AppCornerToast.show(context, "Thao tác thành công!");
           context.pop();
         }
       },

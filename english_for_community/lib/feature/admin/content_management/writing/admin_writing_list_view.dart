@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../../core/get_it/get_it.dart';
 import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/entity/writing_topic_entity.dart';
@@ -130,9 +131,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                                 if (!mounted) return;
                                 Navigator.pop(ctx);
                                 context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Topic restored')),
-                                );
+                                AppCornerToast.show(context, 'Topic restored');
                               },
                               child: const Text('Restore'),
                             ),
@@ -218,9 +217,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
     }
     if (!mounted) return;
     context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Workflow updated')),
-    );
+    AppCornerToast.show(context, 'Workflow updated');
   }
 
   @override

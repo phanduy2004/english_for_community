@@ -48,11 +48,15 @@ abstract final class TeacherMobileUi {
 
   static ButtonStyle mobileFilledStyle(BuildContext context) => FilledButton.styleFrom(
         minimumSize: const Size(double.infinity, primaryButtonHeight),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        maximumSize: Size(double.infinity, primaryButtonHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
               fontSize: AppTypography.mobileLabel,
+              height: 1.0,
             ),
       );
 
@@ -68,14 +72,18 @@ abstract final class TeacherMobileUi {
       );
 
   static ButtonStyle mobileDangerOutlinedStyle(BuildContext context) => OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, secondaryButtonHeight),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        minimumSize: const Size(double.infinity, primaryButtonHeight),
+        maximumSize: Size(double.infinity, primaryButtonHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         foregroundColor: AppColors.danger,
         side: const BorderSide(color: AppColors.danger),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
               fontSize: AppTypography.mobileLabel,
+              height: 1.0,
             ),
       );
 

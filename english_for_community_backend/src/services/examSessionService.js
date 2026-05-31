@@ -7,6 +7,7 @@ import { teacherExamAssignmentService } from './teacherExamAssignmentService.js'
 import { computeAttemptDeadline, examAttemptService } from './examAttemptService.js';
 import { emitExamSessionEvent } from '../socket/examSocketEmit.js';
 import { buildAssignmentCardFields } from './assignmentCardEnrichment.js';
+import { assertRealtimeLobbyOpenForStudent } from './realtimeSchedule.js';
 import { broadcastAllSessionAttempts, examLiveMonitorService } from './examLiveMonitorService.js';
 import { normalizeExamSnapshot } from './examSkillSectionResources.js';
 
@@ -90,13 +91,41 @@ function computeSessionScheduledEnd(session, assignment) {
   return fromLimit;
 }
 
+/** When live session passes scheduled end (time limit / hardEndAt), auto-close like teacher "End session". */
+async function maybeAutoEndLiveSessionIfDue(session) {
+  if (!session || session.status !== 'live') return;
+  const assignment =
+    session.assignmentId && typeof session.assignmentId === 'object'
+      ? session.assignmentId
+      : null;
+  if (!assignment) return;
+  const end = computeSessionScheduledEnd(session, assignment);
+  if (!end || end.getTime() > Date.now()) return;
+  try {
+    await examSessionService.endSession(session.leaderTeacherId, session._id);
+  } catch {
+    /* race or already ended */
+  }
+}
+
 export const examSessionService = {
+  maybeAutoEndLiveSessionIfDue,
+
   /**
    * Payload for Socket.IO `exam_session_state` + teacher GET lobby (participants = students in lobby, no teacher row).
    */
   async buildRealtimePayload(sessionId, { includeContext = false } = {}) {
     const sid = sessionId?.toString?.() ?? String(sessionId);
-    const session = await ExamSession.findById(sid)
+    let session = await ExamSession.findById(sid)
+      .populate({ path: 'joinedUserIds', select: 'fullName email username' })
+      .populate({
+        path: 'assignmentId',
+        populate: [{ path: 'examId', select: 'title description settings' }, { path: 'classroomId', select: 'name' }],
+      });
+    if (session?.status === 'live') {
+      await maybeAutoEndLiveSessionIfDue(session);
+    }
+    session = await ExamSession.findById(sid)
       .populate({ path: 'joinedUserIds', select: 'fullName email username' })
       .populate({
         path: 'assignmentId',
@@ -312,6 +341,7 @@ export const examSessionService = {
 
     if (!isLeader) {
       await teacherExamAssignmentService.assertStudentEntitled(userId, assignment._id.toString());
+      assertRealtimeLobbyOpenForStudent(assignment);
 
       const voidLeft = await ExamAttempt.findOne({
         sessionId: session._id,

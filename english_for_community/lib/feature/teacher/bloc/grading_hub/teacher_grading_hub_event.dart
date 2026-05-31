@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_filter.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class TeacherGradingHubEvent extends Equatable {
@@ -21,12 +22,13 @@ class TeacherGradingHubRunAiRequested extends TeacherGradingHubEvent {
 }
 
 class TeacherGradingHubReleaseRequested extends TeacherGradingHubEvent {
-  const TeacherGradingHubReleaseRequested(this.attemptId);
+  const TeacherGradingHubReleaseRequested(this.attemptId, {this.resultsDetailLevel});
 
   final String attemptId;
+  final String? resultsDetailLevel;
 
   @override
-  List<Object?> get props => [attemptId];
+  List<Object?> get props => [attemptId, resultsDetailLevel];
 }
 
 class TeacherGradingHubBatchAiRequested extends TeacherGradingHubEvent {
@@ -39,4 +41,13 @@ class TeacherGradingHubBatchReleaseRequested extends TeacherGradingHubEvent {
 
 class TeacherGradingHubBatchFinalizeRequested extends TeacherGradingHubEvent {
   const TeacherGradingHubBatchFinalizeRequested();
+}
+
+class TeacherGradingHubFilterChanged extends TeacherGradingHubEvent {
+  const TeacherGradingHubFilterChanged(this.filter);
+
+  final TeacherGradingHubFilter filter;
+
+  @override
+  List<Object?> get props => [filter];
 }

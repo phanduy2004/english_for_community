@@ -42,6 +42,7 @@ class IntegratedScoreRowData {
     this.score,
     this.detail,
     required this.isPending,
+    this.isNoContent = false,
     this.sectionId,
   });
 
@@ -51,6 +52,8 @@ class IntegratedScoreRowData {
   final dynamic score;
   final String? detail;
   final bool isPending;
+  /// True when the student did not submit this skill section at all.
+  final bool isNoContent;
   final String? sectionId;
 }
 
@@ -89,6 +92,7 @@ String integratedSkillLabel(AppLocalizations l10n, String skill) {
 }
 
 /// Ordered skill + grammar rows from attempt snapshot and `scores.skillScores`.
+/// Multiple listening sections (dictation + comprehension) collapse to one row.
 List<IntegratedScoreRowData> listIntegratedScoreRowsFromAttempt(
   Map<String, dynamic>? attempt,
   AppLocalizations l10n,
@@ -100,26 +104,32 @@ List<IntegratedScoreRowData> listIntegratedScoreRowsFromAttempt(
   final skillScoresRaw = scores['skillScores'] as Map?;
   final rows = <IntegratedScoreRowData>[];
 
-  void addSkillRow(String sid, String skill, Map? se) {
+  void addSkillRow(String sid, String skill, Map? se, {String? detailOverride}) {
     final status = '${se?['status'] ?? ''}';
-    if (status == 'no_content') return;
     final isPending =
         status == 'pending_ai' || (status == 'pending_manual' && se?['score'] == null);
+    final scoreValue = se?['score'];
+    final displayScore = isPending ? scoreValue : (scoreValue ?? 0);
+    final rowDetail = skill == 'listening'
+        ? null
+        : (detailOverride ?? se?['detail'] as String?);
     rows.add(
       IntegratedScoreRowData(
         icon: integratedSkillIcon(skill),
         skill: skill,
         label: integratedSkillLabel(l10n, skill),
-        score: se?['score'],
-        detail: se?['detail'] as String?,
+        score: displayScore,
+        detail: rowDetail,
         isPending: isPending,
+        isNoContent: false,
         sectionId: sid.isNotEmpty ? sid : null,
       ),
     );
   }
 
+  List<Map<String, dynamic>> orderedSections = [];
   if (snap is Map) {
-    final sections = (snap['sections'] as List? ?? [])
+    orderedSections = (snap['sections'] as List? ?? [])
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList()
@@ -127,21 +137,80 @@ List<IntegratedScoreRowData> listIntegratedScoreRowsFromAttempt(
         (a, b) => (num.tryParse('${a['order'] ?? 0}') ?? 0)
             .compareTo(num.tryParse('${b['order'] ?? 0}') ?? 0),
       );
-    for (final sec in sections) {
-      final skill = '${sec['skill'] ?? ''}';
-      if (!['listening', 'speaking', 'reading', 'writing'].contains(skill)) continue;
-      final sid = '${sec['sectionId'] ?? ''}'.trim();
-      if (sid.isEmpty) continue;
-      final se = skillScoresRaw?[sid] as Map?;
-      addSkillRow(sid, skill, se);
+  }
+
+  final listeningSections =
+      orderedSections.where((s) => '${s['skill'] ?? ''}' == 'listening').toList();
+  final mergeListening = listeningSections.length > 1;
+  final mergedListening = skillScoresRaw?['__listening__'] as Map?;
+
+  for (final sec in orderedSections) {
+    final skill = '${sec['skill'] ?? ''}';
+    if (!['listening', 'speaking', 'reading', 'writing'].contains(skill)) continue;
+    final sid = '${sec['sectionId'] ?? ''}'.trim();
+    if (sid.isEmpty) continue;
+
+    if (mergeListening && skill == 'listening') {
+      if (sid != '${listeningSections.first['sectionId'] ?? ''}'.trim()) continue;
+      addSkillRow(
+        sid,
+        skill,
+        mergedListening ?? skillScoresRaw?[sid] as Map?,
+      );
+      continue;
     }
-  } else if (skillScoresRaw != null) {
+
+    final se = skillScoresRaw?[sid] as Map?;
+    addSkillRow(sid, skill, se);
+  }
+
+  if (orderedSections.isEmpty && skillScoresRaw != null) {
+    final listeningKeys = <String>[];
     for (final entry in skillScoresRaw.entries) {
+      final key = entry.key.toString();
+      if (key == '__listening__') continue;
+      final se = entry.value;
+      if (se is! Map) continue;
+      if ('${se['skill'] ?? ''}' == 'listening') {
+        listeningKeys.add(key);
+      }
+    }
+    final mergeFromScores = listeningKeys.length > 1;
+    for (final entry in skillScoresRaw.entries) {
+      final key = entry.key.toString();
+      if (key == '__listening__') continue;
       final se = entry.value;
       if (se is! Map) continue;
       final skill = '${se['skill'] ?? ''}';
-      addSkillRow(entry.key.toString(), skill, se);
+      if (mergeFromScores && skill == 'listening' && key != listeningKeys.first) continue;
+      if (mergeFromScores && skill == 'listening' && key == listeningKeys.first) {
+        final merged = skillScoresRaw['__listening__'] as Map?;
+        addSkillRow(key, skill, merged ?? se);
+        continue;
+      }
+      addSkillRow(key, skill, se);
     }
+  }
+
+  // Safety: collapse duplicate listening rows if snapshot merge was missed.
+  final listeningRows = rows.where((r) => r.skill == 'listening').toList();
+  if (listeningRows.length > 1) {
+    final firstIdx = rows.indexWhere((r) => r.skill == 'listening');
+    rows.removeWhere((r) => r.skill == 'listening');
+    final merged = skillScoresRaw?['__listening__'] as Map?;
+    final combinedScore = merged?['score'] ?? listeningRows.first.score ?? 0;
+    rows.insert(
+      firstIdx.clamp(0, rows.length),
+      IntegratedScoreRowData(
+        icon: integratedSkillIcon('listening'),
+        skill: 'listening',
+        label: integratedSkillLabel(l10n, 'listening'),
+        score: combinedScore,
+        detail: null,
+        isPending: listeningRows.any((r) => r.isPending),
+        sectionId: listeningRows.first.sectionId,
+      ),
+    );
   }
 
   final grammarScore = scores['grammarScore'] as Map?;
@@ -310,7 +379,11 @@ class _GradingScoreRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(row.icon, size: 18, color: AppColors.textSecondary),
+          Icon(
+            row.icon,
+            size: 18,
+            color: AppColors.textSecondary,
+          ),
           const SizedBox(width: 8),
           Expanded(
             flex: 3,
@@ -325,38 +398,51 @@ class _GradingScoreRow extends StatelessWidget {
                   ),
                 ),
                 if (row.detail != null && row.detail!.isNotEmpty)
-                  Text(
-                    row.detail!,
-                    style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
-                  ),
+                  row.detail!.contains(' · ')
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: row.detail!
+                              .split(' · ')
+                              .map(
+                                (part) => Text(
+                                  part.trim(),
+                                  style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                                ),
+                              )
+                              .toList(),
+                        )
+                      : Text(
+                          row.detail!,
+                          style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                        ),
               ],
             ),
           ),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: row.isPending
-                  ? Text(
-                      l10n.integratedSkillScorePending,
-                      style: ExamSystemUi.captionMuted.copyWith(
-                        color: AppColors.warning,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  : Text(
-                      row.score != null
-                          ? l10n.integratedSkillScoreLabel(formatIntegratedScore(row.score))
-                          : '—',
-                      style: ExamSystemUi.captionSecondary.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: AppColors.success,
-                      ),
-                    ),
-            ),
-          ),
+              Expanded(
+                flex: 2,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: row.isPending
+                      ? Text(
+                          l10n.integratedSkillScorePending,
+                          style: ExamSystemUi.captionMuted.copyWith(
+                            color: AppColors.warning,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                      : Text(
+                          l10n.integratedSkillScoreLabel(
+                            formatIntegratedScore(row.score ?? 0),
+                          ),
+                          style: ExamSystemUi.captionSecondary.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            color: AppColors.success,
+                          ),
+                        ),
+                ),
+              ),
         ],
       ),
     );
@@ -407,13 +493,25 @@ class IntegratedScoreSummaryCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.only(bottom: compact ? 6 : 8),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(row.icon, size: compact ? 14 : 15, color: AppColors.textSecondary),
+              Icon(
+                row.icon,
+                size: compact ? 14 : 15,
+                color: AppColors.textSecondary,
+              ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  row.label,
-                  style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.textPrimary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.label,
+                      style: ExamSystemUi.captionSecondary.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               if (row.isPending)
@@ -427,9 +525,7 @@ class IntegratedScoreSummaryCard extends StatelessWidget {
                 )
               else
                 Text(
-                  row.score != null
-                      ? l10n.integratedSkillScoreLabel(formatIntegratedScore(row.score))
-                      : '—',
+                  l10n.integratedSkillScoreLabel(formatIntegratedScore(row.score ?? 0)),
                   style: ExamSystemUi.captionSecondary.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppColors.success,

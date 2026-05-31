@@ -15,6 +15,7 @@ import Exam from '../models/Exam.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import Listening from '../models/Listening.js';
+import ListeningComprehension from '../models/ListeningComprehension.js';
 import Reading from '../models/Reading.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import { buildIntegratedScores, computeFinal } from '../services/examIntegratedScoring.js';
@@ -27,6 +28,7 @@ const TEACHER_USERNAME = process.env.HOANGDONG_TEACHER_USERNAME || 'hoangdong_te
 
 const SECTION_IDS = {
   listening: 'sec_listening',
+  listening_comp: 'sec_listening_comp',
   reading: 'sec_reading',
   writing: 'sec_writing',
   speaking: 'sec_speaking',
@@ -183,8 +185,9 @@ function grammarAnswersFor(items, accuracy = 0.85) {
 }
 
 function buildSkillSection(skill, order, resourceId, resourceTitle, extra = {}) {
+  const { sectionId: overrideSectionId, ...restExtra } = extra;
   return {
-    sectionId: SECTION_IDS[skill],
+    sectionId: overrideSectionId || SECTION_IDS[skill],
     sectionKind: 'skill_content',
     skill,
     order,
@@ -193,7 +196,7 @@ function buildSkillSection(skill, order, resourceId, resourceTitle, extra = {}) 
     resourceId: resourceId ? String(resourceId) : '',
     resourceTitle: resourceTitle || '',
     items: [],
-    ...extra,
+    ...restExtra,
   };
 }
 
@@ -205,6 +208,19 @@ function inlineListeningAnswers(listeningDoc, accuracy = 0.82) {
     cues[String(i)] = Math.random() < accuracy ? expected : 'seed wrong';
   }
   return { completed: true, listeningCues: cues };
+}
+
+function inlineListeningCompAnswers(listingCompDoc, accuracy = 0.75) {
+  const answers = {};
+  const questions = listingCompDoc?.questions || [];
+  for (const q of questions) {
+    const qid = String(q._id);
+    const correct = Number(q.correctAnswerIndex ?? 0);
+    const numOptions = Array.isArray(q.options) ? q.options.length : 4;
+    const wrong = correct === 0 ? 1 : 0;
+    answers[qid] = Math.random() < accuracy ? correct : wrong % numOptions;
+  }
+  return { completed: true, listeningCompAnswers: answers, listeningCompSaved: questions.length, listeningCompTotal: questions.length };
 }
 
 function inlineReadingAnswers(readingDoc, accuracy = 0.78) {
@@ -286,6 +302,12 @@ const EXAM_BLUEPRINTS = [
       taskType: 'Story',
       level: 'A2',
     },
+  },
+  {
+    title: `${SEED_TAG} Nghe hiểu + Đọc (Listening Comprehension)`,
+    description: 'Demo exam for Listening Comprehension (MCQ + audio) + Reading. Tests the new listening_comp section type.',
+    skills: ['listening_comp', 'reading'],
+    grammarCount: 0,
   },
 ];
 
@@ -521,7 +543,16 @@ async function loadCmsResources() {
   if (speaking) console.log(`🎤 Speaking CMS: ${speaking.title}`);
   else console.log('⚠️ No Speaking set in DB — speaking sections need a linked exercise in exam editor');
 
-  return { listening, reading, speaking };
+  const listeningComp = await ListeningComprehension.findOne({
+    _destroy: { $ne: true },
+    'questions.0': { $exists: true },
+  })
+    .select('title questions')
+    .lean();
+  if (listeningComp) console.log(`🎧 ListeningComp CMS: ${listeningComp.title} (${listeningComp.questions?.length ?? 0} questions)`);
+  else console.log('⚠️ No ListeningComprehension in DB — run npm run seed:listening-comp first');
+
+  return { listening, reading, speaking, listeningComp };
 }
 
 function buildExamDoc(teacherId, blueprint, cms) {
@@ -536,6 +567,22 @@ function buildExamDoc(teacherId, blueprint, cms) {
     }
     let resourceId = '';
     let resourceTitle = '';
+
+    if (skill === 'listening_comp') {
+      // Blueprint alias: renders as skill='listening' + sectionConfig.listeningType='comprehension'
+      if (cms.listeningComp) {
+        resourceId = cms.listeningComp._id.toString();
+        resourceTitle = cms.listeningComp.title;
+      }
+      extra.sectionConfig = { listeningType: 'comprehension' };
+      sections.push(buildSkillSection('listening', order, resourceId, resourceTitle, {
+        ...extra,
+        sectionId: SECTION_IDS.listening_comp,
+      }));
+      order += 1;
+      continue;
+    }
+
     if (skill === 'listening' && cms.listening) {
       resourceId = cms.listening._id.toString();
       resourceTitle = cms.listening.title;
@@ -580,7 +627,10 @@ function buildAttemptAnswers(exam, cms, studentIndex, options = {}) {
   for (const sec of exam.sections || []) {
     const sid = sec.sectionId;
     const skill = sec.skill;
-    if (skill === 'listening' && cms.listening) {
+    const listeningType = sec.sectionConfig?.listeningType || 'dictation';
+    if (skill === 'listening' && listeningType === 'comprehension' && cms.listeningComp) {
+      answers[sid] = inlineListeningCompAnswers(cms.listeningComp, listeningAcc - 0.05);
+    } else if (skill === 'listening' && cms.listening) {
       answers[sid] = inlineListeningAnswers(cms.listening, listeningAcc);
     } else if (skill === 'reading' && cms.reading) {
       answers[sid] = inlineReadingAnswers(cms.reading, readingAcc);

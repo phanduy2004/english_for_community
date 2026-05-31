@@ -416,7 +416,11 @@ export const patchManualGrade = async (req, res) => {
 
 export const releaseExamResults = async (req, res) => {
   try {
-    const doc = await examGradingService.releaseResults(req.user._id, req.params.attemptId);
+    const doc = await examGradingService.releaseResults(
+      req.user._id,
+      req.params.attemptId,
+      req.body || {}
+    );
     return res.status(200).json(doc);
   } catch (error) {
     return res.status(getStatusCode(error)).json({ message: error.message });

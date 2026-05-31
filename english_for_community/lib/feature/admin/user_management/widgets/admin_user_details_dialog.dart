@@ -2,6 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../core/entity/user_entity.dart';
 import '../../../../core/get_it/get_it.dart';
@@ -407,14 +408,10 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
       setState(() {
         _userFuture = getIt<UserRepository>().getUserById(widget.userId);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${user.fullName} is now ${newRole.toUpperCase()}')),
-      );
+      AppCornerToast.show(context, '${user.fullName} is now ${newRole.toUpperCase()}');
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
-      );
+      AppCornerToast.show(context, 'Failed: $e', error: true);
     }
   }
 
@@ -454,7 +451,7 @@ class _DetailRow extends StatelessWidget {
             child: GestureDetector(
               onTap: isCopyable && value != null ? () {
                 Clipboard.setData(ClipboardData(text: value!));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Copied to clipboard'), duration: Duration(seconds: 1)));
+                AppCornerToast.show(context, 'Copied to clipboard');
               } : null,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,

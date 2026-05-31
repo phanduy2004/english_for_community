@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/student/bloc/classes_hub/student_classes_hub_bloc.dart';
 import 'package:english_for_community/feature/student/bloc/classes_hub/student_classes_hub_event.dart';
 import 'package:english_for_community/feature/student/bloc/classes_hub/student_classes_hub_state.dart';
@@ -68,13 +69,11 @@ class _MyClassesHubPageState extends State<MyClassesHubPage> {
             (c.errorMessage != null && c.errorMessage != p.errorMessage),
         listener: (context, state) {
           if (state.joinSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.studentJoinClassSuccess)),
-            );
+            AppCornerToast.show(context, l10n.studentJoinClassSuccess);
             _codeCtrl.clear();
             _inviteTokenCtrl.clear();
           } else if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
         },
         builder: (context, state) {
@@ -206,7 +205,7 @@ class _JoinCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.s5),
+          const SizedBox(height: AppSpacing.s4),
           TextField(
             controller: controller,
             textCapitalization: TextCapitalization.characters,
@@ -215,7 +214,7 @@ class _JoinCard extends StatelessWidget {
             ],
             onSubmitted: (_) => onJoin(),
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w500,
               color: AppColors.textPrimary,
               letterSpacing: 0.4,
@@ -230,9 +229,9 @@ class _JoinCard extends StatelessWidget {
               filled: true,
               fillColor: AppColors.surfaceSubtle,
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              prefixIcon: const Icon(Icons.tag_rounded, size: 18, color: AppColors.textMuted),
-              prefixIconConstraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              prefixIcon: const Icon(Icons.tag_rounded, size: 16, color: AppColors.textMuted),
+              prefixIconConstraints: const BoxConstraints(minWidth: 34, minHeight: 34),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.input),
                 borderSide: const BorderSide(color: AppColors.outline),
@@ -243,9 +242,9 @@ class _JoinCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: AppSpacing.s3),
           SizedBox(
-            height: 44,
+            height: 36,
             child: FilledButton(
               onPressed: loading ? null : onJoin,
               style: FilledButton.styleFrom(
@@ -253,29 +252,29 @@ class _JoinCard extends StatelessWidget {
                 foregroundColor: AppColors.onPrimary,
                 disabledBackgroundColor: AppColors.outlineStrong,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
+                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 0.1),
               ),
               child: loading
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: 14,
+                      height: 14,
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : Text(l10n.studentJoinClassButton),
             ),
           ),
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: AppSpacing.s3),
           TextField(
             controller: tokenController,
             onSubmitted: (_) => onJoinByToken(),
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.textPrimary),
             decoration: InputDecoration(
               labelText: l10n.studentJoinClassByTokenLabel,
               hintText: l10n.studentJoinClassByTokenHint,
               filled: true,
               fillColor: AppColors.surfaceSubtle,
               isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.input),
                 borderSide: const BorderSide(color: AppColors.outline),
@@ -286,9 +285,9 @@ class _JoinCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.s3),
+          const SizedBox(height: AppSpacing.s2),
           SizedBox(
-            height: 44,
+            height: 34,
             child: OutlinedButton(
               onPressed: joiningByToken ? null : onJoinByToken,
               style: OutlinedButton.styleFrom(
@@ -297,7 +296,7 @@ class _JoinCard extends StatelessWidget {
               ),
               child: joiningByToken
                   ? const SizedBox(
-                      width: 16,
+                      width: 14,
                       height: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
@@ -396,12 +395,12 @@ class _ClassroomTile extends StatelessWidget {
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.speaking,
       onTap: onOpen,
-      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
+      padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          StudentMobileUi.skillIconBox(Icons.menu_book_rounded, size: 44, skill: SkillType.speaking),
-          const SizedBox(width: AppSpacing.s4),
+          StudentMobileUi.skillIconBox(Icons.menu_book_rounded, size: 36, skill: SkillType.speaking),
+          const SizedBox(width: AppSpacing.s3),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

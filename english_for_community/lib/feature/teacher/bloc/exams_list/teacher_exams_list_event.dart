@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_filter.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class TeacherExamsListEvent extends Equatable {
@@ -54,4 +55,13 @@ class TeacherExamsListPublishRequested extends TeacherExamsListEvent {
 
   @override
   List<Object?> get props => [examId];
+}
+
+class TeacherExamsListFilterChanged extends TeacherExamsListEvent {
+  const TeacherExamsListFilterChanged(this.filter);
+
+  final TeacherExamsListStatusFilter filter;
+
+  @override
+  List<Object?> get props => [filter];
 }

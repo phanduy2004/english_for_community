@@ -10,7 +10,7 @@ class PracticeTab extends StatelessWidget {
   final TextEditingController controller;
   final Function(String) onTextChange;
   final VoidCallback onSubmit;
-  final VoidCallback onReplay;
+  final VoidCallback? onReplay;
   final VoidCallback onNext;
   final VoidCallback onPrev;
   final bool showHint;
@@ -19,6 +19,7 @@ class PracticeTab extends StatelessWidget {
   final Function(bool) onToggleAutoPlay;
   final VoidCallback? onAllFinished;
   final bool examPracticeMode;
+  final bool readOnlyReview;
 
   const PracticeTab({
     super.key,
@@ -35,6 +36,7 @@ class PracticeTab extends StatelessWidget {
     required this.onToggleAutoPlay,
     this.onAllFinished,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
   });
 
   @override
@@ -87,6 +89,7 @@ class PracticeTab extends StatelessWidget {
           TextField(
             controller: controller,
             maxLines: 3,
+            readOnly: readOnlyReview,
             style: compact ? ExamSystemUi.embeddedBodyStyle : null,
             decoration: InputDecoration(
               hintText: t.dictationTypeWhatYouHearHint,
@@ -97,7 +100,7 @@ class PracticeTab extends StatelessWidget {
                 borderSide: BorderSide(color: compact ? AppColors.outlineMuted : AppColors.outline),
               ),
             ),
-            onChanged: onTextChange,
+            onChanged: readOnlyReview ? null : onTextChange,
           ),
           if (!examPracticeMode && showHint && lastHint != null)
             Container(
@@ -135,42 +138,62 @@ class PracticeTab extends StatelessWidget {
                 ],
               ),
             ),
-          const SizedBox(height: 20),
-          Row(children: [
-            Expanded(child: ElevatedButton.icon(
-              onPressed: onBtn,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: btnColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: Icon(btnIcon, size: 18),
-              label: Text(btnText),
-            )),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: onReplay,
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Icon(Icons.replay),
-            ),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: [
-            Text(
-              t.listeningAutoPlayNext,
-              style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const Spacer(),
-            Switch(
-              value: autoPlay,
-              onChanged: onToggleAutoPlay,
-              activeThumbColor: Theme.of(context).primaryColor,
-            ),
-          ]),
+          if (!readOnlyReview) ...[
+            const SizedBox(height: 20),
+            if (examPracticeMode)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onBtn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: btnColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(btnIcon, size: 18),
+                  label: Text(btnText),
+                ),
+              )
+            else ...[
+              Row(children: [
+                Expanded(child: ElevatedButton.icon(
+                  onPressed: onBtn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: btnColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: Icon(btnIcon, size: 18),
+                  label: Text(btnText),
+                )),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: onReplay,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    foregroundColor: onReplay == null ? AppColors.textMuted : null,
+                  ),
+                  child: Icon(onReplay == null ? Icons.play_disabled : Icons.replay),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              Row(children: [
+                Text(
+                  t.listeningAutoPlayNext,
+                  style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const Spacer(),
+                Switch(
+                  value: autoPlay,
+                  onChanged: onToggleAutoPlay,
+                  activeThumbColor: Theme.of(context).primaryColor,
+                ),
+              ]),
+            ],
+          ],
         ],
       ),
     );

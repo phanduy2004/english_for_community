@@ -61,7 +61,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        height: 60,
+        height: 54,
         backgroundColor: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
         indicatorColor: AppColors.primaryTint,
@@ -85,8 +85,8 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           elevation: 0,
-          minimumSize: const Size(64, 44),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          minimumSize: const Size(56, 36),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
@@ -104,8 +104,8 @@ class AppTheme {
           foregroundColor: AppColors.onPrimary,
           disabledBackgroundColor: AppColors.outlineStrong,
           disabledForegroundColor: AppColors.textMuted,
-          minimumSize: const Size(64, 44),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          minimumSize: const Size(56, 36),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: baseText.labelLarge?.copyWith(
             color: AppColors.onPrimary,
@@ -118,8 +118,8 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.textPrimary,
           side: const BorderSide(color: AppColors.outlineStrong),
-          minimumSize: const Size(64, 40),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          minimumSize: const Size(56, 34),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: baseText.labelLarge,
         ),
@@ -133,13 +133,15 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceCard,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.outlineStrong),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         hintStyle: baseText.bodySmall,
@@ -155,7 +157,6 @@ class AppTheme {
         },
       ),
       scrollbarTheme: ScrollbarThemeData(
-        thumbVisibility: WidgetStatePropertyAll(true),
         radius: const Radius.circular(4),
         thickness: WidgetStatePropertyAll(6),
         crossAxisMargin: 2,

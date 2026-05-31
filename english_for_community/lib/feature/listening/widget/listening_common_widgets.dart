@@ -1,4 +1,5 @@
 ﻿import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:flutter/material.dart';
@@ -156,14 +157,19 @@ class ListeningHeader extends StatelessWidget {
 // =============================================================================
 class ListeningPlayer extends StatelessWidget {
   final AudioPlayer player;
-  final VoidCallback onTogglePlay;
-  final Function(Duration) onSeek;
+  final VoidCallback? onTogglePlay;
+  final Function(Duration)? onSeek;
+  final bool disabled;
+  /// When false, shows a read-only progress bar (exam anti-cheat).
+  final bool allowSeek;
 
   const ListeningPlayer({
     super.key,
     required this.player,
-    required this.onTogglePlay,
-    required this.onSeek,
+    this.onTogglePlay,
+    this.onSeek,
+    this.disabled = false,
+    this.allowSeek = true,
   });
 
   // Helper để format duration (00:00)
@@ -176,6 +182,8 @@ class ListeningPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final isDisabled = disabled || onTogglePlay == null;
+    final canSeek = allowSeek && !isDisabled && onSeek != null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -189,69 +197,95 @@ class ListeningPlayer extends StatelessWidget {
         stream: player.playerStateStream,
         builder: (_, s) {
           final isPlaying = s.data?.playing ?? false;
-          return Row(
+          return Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Play/Pause Button
-              Material(
-                color: primary,
-                borderRadius: BorderRadius.circular(12),
-                child: InkWell(
-                  onTap: onTogglePlay,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    alignment: Alignment.center,
-                    child: Icon(
-                      isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      color: AppColors.onPrimary,
-                      size: 30,
+              Row(
+                children: [
+                  Material(
+                    color: isDisabled ? AppColors.textMuted : primary,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      onTap: isDisabled ? null : onTogglePlay,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: 44,
+                        height: 44,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          isDisabled
+                              ? Icons.play_disabled_rounded
+                              : isPlaying
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                          color: AppColors.onPrimary,
+                          size: 30,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Slider & Time
-              Expanded(
-                child: StreamBuilder<Duration>(
-                  stream: player.positionStream,
-                  builder: (_, p) {
-                    final pos = p.data ?? Duration.zero;
-                    final dur = player.duration ?? const Duration(milliseconds: 1);
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StreamBuilder<Duration>(
+                      stream: player.positionStream,
+                      builder: (_, p) {
+                        final pos = p.data ?? Duration.zero;
+                        final dur = player.duration ?? const Duration(milliseconds: 1);
 
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        SliderTheme(
-                          data: SliderTheme.of(context).copyWith(
-                            trackHeight: 4,
-                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                            activeTrackColor: primary,
-                            inactiveTrackColor: primary.withValues(alpha: 0.1),
-                            thumbColor: primary,
-                          ),
-                          child: Slider(
-                            value: (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0),
-                            onChanged: (v) {
-                              onSeek(Duration(milliseconds: (dur.inMilliseconds * v).round()));
-                            },
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(_formatDuration(pos), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                              Text(_formatDuration(dur), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
-                          ),
-                        )
-                      ],
-                    );
-                  },
-                ),
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (canSeek)
+                              SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  trackHeight: 4,
+                                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
+                                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                                  activeTrackColor: isDisabled ? AppColors.textMuted : primary,
+                                  inactiveTrackColor: primary.withValues(alpha: 0.1),
+                                  thumbColor: isDisabled ? AppColors.textMuted : primary,
+                                ),
+                                child: Slider(
+                                  value: (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0),
+                                  onChanged: (v) {
+                                    onSeek?.call(Duration(milliseconds: (dur.inMilliseconds * v).round()));
+                                  },
+                                ),
+                              )
+                            else
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(
+                                  value: isDisabled
+                                      ? 1.0
+                                      : (pos.inMilliseconds / dur.inMilliseconds).clamp(0.0, 1.0),
+                                  minHeight: 4,
+                                  backgroundColor: primary.withValues(alpha: 0.1),
+                                  color: isDisabled ? AppColors.textMuted : primary,
+                                ),
+                              ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(_formatDuration(isDisabled ? dur : pos), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                  if (isDisabled)
+                                    Text(
+                                      context.l10n.listeningCompPlayedOnce,
+                                      style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w500),
+                                    )
+                                  else
+                                    Text(_formatDuration(dur), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                ],
+                              ),
+                            )
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           );
@@ -284,12 +318,14 @@ class CueSelector extends StatelessWidget {
 
     return SizedBox(
       height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: count,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        itemBuilder: (context, i) {
+      child: e4cHorizontalScroll(
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          primary: false,
+          itemCount: count,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          itemBuilder: (context, i) {
           final isSel = i == selectedIndex;
           final isDone = completedIdx.contains(i);
 
@@ -333,6 +369,7 @@ class CueSelector extends StatelessWidget {
             ),
           );
         },
+        ),
       ),
     );
   }

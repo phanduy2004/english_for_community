@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+
 // 👇 Import GetIt để lấy Dependency (Repository/Bloc)
 import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../../core/get_it/get_it.dart';
@@ -293,9 +295,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                                 if (!mounted) return;
                                 Navigator.pop(ctx);
                                 _fetchData();
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Reading restored')),
-                                );
+                                AppCornerToast.show(context, 'Reading restored');
                               },
                               child: const Text('Restore'),
                             ),

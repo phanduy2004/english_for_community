@@ -71,6 +71,7 @@ class _HomePageState extends State<HomePage> {
       _HomeContentView(
         onOpenNotifications: _openNotifications,
         onOpenAiAssistant: _openAiAssistant,
+        onOpenProfile: _openProfile,
       ),
       const ProgressReportPage(),
       BlocProvider.value(
@@ -214,6 +215,11 @@ class _HomePageState extends State<HomePage> {
     showAppNotificationsDialog(context);
   }
 
+  void _openProfile() {
+    context.read<UserBloc>().add(GetProfileEvent());
+    setState(() => _tab = 2);
+  }
+
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
@@ -279,9 +285,9 @@ class _HomeHeaderAiButton extends StatelessWidget {
         onTap: onPressed,
         splashColor: AppColors.onPrimary.withValues(alpha: 0.12),
         child: const SizedBox(
-          width: 40,
-          height: 40,
-          child: Icon(Icons.auto_awesome, color: AppColors.onPrimary, size: 20),
+          width: 34,
+          height: 34,
+          child: Icon(Icons.auto_awesome, color: AppColors.onPrimary, size: 17),
         ),
       ),
     );
@@ -295,10 +301,12 @@ class _HomeHeaderAiButton extends StatelessWidget {
 class _HomeContentView extends StatelessWidget {
   final VoidCallback onOpenNotifications;
   final VoidCallback onOpenAiAssistant;
+  final VoidCallback onOpenProfile;
 
   const _HomeContentView({
     required this.onOpenNotifications,
     required this.onOpenAiAssistant,
+    required this.onOpenProfile,
   });
 
   @override
@@ -319,6 +327,7 @@ class _HomeContentView extends StatelessWidget {
             showAllLessons,
             onOpenNotifications,
             onOpenAiAssistant,
+            onOpenProfile,
             t,
           ),
         );
@@ -332,6 +341,7 @@ class _HomeContentView extends StatelessWidget {
     ValueNotifier<bool> showAllLessons,
     VoidCallback onOpenNotifications,
     VoidCallback onOpenAiAssistant,
+    VoidCallback onOpenProfile,
     AppLocalizations t,
   ) {
     if (state.status == UserStatus.initial || state.status == UserStatus.loading) {
@@ -382,6 +392,7 @@ class _HomeContentView extends StatelessWidget {
                     );
               },
               child: SingleChildScrollView(
+                primary: false,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: StudentMobileUi.pagePadding,
                 child: Column(
@@ -394,6 +405,7 @@ class _HomeContentView extends StatelessWidget {
                       t,
                       onOpenNotifications: onOpenNotifications,
                       onOpenAiAssistant: onOpenAiAssistant,
+                      onOpenProfile: onOpenProfile,
                     ),
                     const SizedBox(height: AppSpacing.s4),
                     _buildDailyGoalCard(scrollContext, dailyProgress, dailyGoal, progressValue, t),
@@ -429,6 +441,7 @@ class _HomeContentView extends StatelessWidget {
     AppLocalizations t, {
     required VoidCallback onOpenNotifications,
     required VoidCallback onOpenAiAssistant,
+    required VoidCallback onOpenProfile,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,17 +466,25 @@ class _HomeContentView extends StatelessWidget {
         const SizedBox(width: AppSpacing.s3),
         _HomeHeaderAiButton(onPressed: onOpenAiAssistant),
         const SizedBox(width: AppSpacing.s3),
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.outline, width: 1),
-            image: DecorationImage(
-              image: (avatarUrl != null && avatarUrl.startsWith('http'))
-                  ? NetworkImage(avatarUrl)
-                  : const AssetImage('assets/avatar.png') as ImageProvider,
-              fit: BoxFit.cover,
+        Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onOpenProfile,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.outline, width: 1),
+                image: DecorationImage(
+                  image: (avatarUrl != null && avatarUrl.startsWith('http'))
+                      ? NetworkImage(avatarUrl)
+                      : const AssetImage('assets/avatar.png') as ImageProvider,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ),
         ),
@@ -480,7 +501,7 @@ class _HomeContentView extends StatelessWidget {
   ) {
     return AppCard(
       variant: AppCardVariant.outline,
-      padding: const EdgeInsets.all(AppSpacing.s5),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
       child: Column(
         children: [
           Row(
@@ -491,7 +512,7 @@ class _HomeContentView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(t.homeDailyGoal, style: StudentMobileUi.cardTitle(context)),
-                    const SizedBox(height: AppSpacing.s2),
+                    const SizedBox(height: AppSpacing.s1),
                     Text(
                       t.homeDailyLessonsLine(progress, goal),
                       style: StudentMobileUi.body(context),
@@ -499,11 +520,11 @@ class _HomeContentView extends StatelessWidget {
                   ],
                 ),
               ),
-              Icon(Icons.emoji_events_outlined, color: AppColors.accent, size: 24),
+              Icon(Icons.emoji_events_outlined, color: AppColors.accent, size: 20),
             ],
           ),
-          const SizedBox(height: AppSpacing.s5),
-          StudentMobileUi.skillProgressBar(value: progressValue),
+          const SizedBox(height: AppSpacing.s3),
+          StudentMobileUi.skillProgressBar(value: progressValue, height: 6),
         ],
       ),
     );
