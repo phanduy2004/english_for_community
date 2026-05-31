@@ -4,6 +4,7 @@ import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamSession from '../models/ExamSession.js';
 import Listening from '../models/Listening.js';
+import ListeningComprehension from '../models/ListeningComprehension.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import Reading from '../models/Reading.js';
 import WritingTopic from '../models/WritingTopics.js';
@@ -46,14 +47,56 @@ const INTEGRATED_FOUR_SKILLS_ORDER = ['listening', 'speaking', 'reading', 'writi
 /** Vertical exam order for `skills_exam` (Grammar is in settings, not a section). */
 const SKILLS_EXAM_SKILL_ORDER = ['reading', 'listening', 'writing', 'speaking'];
 
-async function assertSkillResourceExists(skill, resourceId) {
+/**
+ * Auto-corrects sectionConfig.listeningType for listening sections whose resourceId
+ * belongs to the opposite collection (e.g. a ListeningComprehension doc saved in a
+ * dictation slot due to legacy data or a previous bug).  Mutates sections in-place.
+ */
+async function normalizeListeningSections(sections) {
+  if (!Array.isArray(sections)) return;
+  for (const sec of sections) {
+    if (sec?.skill !== 'listening') continue;
+    const currentType = sec.sectionConfig?.listeningType;
+    const resourceId = primaryResourceIdFromSection(sec);
+    if (!resourceId || !mongoose.isValidObjectId(String(resourceId))) continue;
+    const oid = new mongoose.Types.ObjectId(String(resourceId));
+
+    if (!currentType || currentType === 'dictation') {
+      // Verify it really is in the Listening (dictation) collection.
+      const dictDoc = await Listening.findById(oid).select('_id');
+      if (!dictDoc) {
+        // Not a dictation resource – check if it belongs to comprehension.
+        const compDoc = await ListeningComprehension.findById(oid).select('_id');
+        if (compDoc) {
+          sec.sectionConfig = { ...(sec.sectionConfig || {}), listeningType: 'comprehension' };
+        }
+      }
+    } else if (currentType === 'comprehension') {
+      // Verify it really is in ListeningComprehension.
+      const compDoc = await ListeningComprehension.findById(oid).select('_id');
+      if (!compDoc) {
+        const dictDoc = await Listening.findById(oid).select('_id');
+        if (dictDoc) {
+          sec.sectionConfig = { ...(sec.sectionConfig || {}), listeningType: 'dictation' };
+        }
+      }
+    }
+  }
+}
+
+async function assertSkillResourceExists(skill, resourceId, { listeningType } = {}) {
   if (!resourceId || !mongoose.isValidObjectId(String(resourceId))) {
     throw httpError(400, `Invalid resource id for skill ${skill}`);
   }
   const oid = new mongoose.Types.ObjectId(String(resourceId));
   let doc;
-  if (skill === 'listening') doc = await Listening.findById(oid).select('_id');
-  else if (skill === 'speaking') doc = await SpeakingSet.findById(oid).select('_id');
+  if (skill === 'listening') {
+    if (listeningType === 'comprehension') {
+      doc = await ListeningComprehension.findById(oid).select('_id');
+    } else {
+      doc = await Listening.findById(oid).select('_id');
+    }
+  } else if (skill === 'speaking') doc = await SpeakingSet.findById(oid).select('_id');
   else if (skill === 'reading') doc = await Reading.findById(oid).select('_id');
   else if (skill === 'writing') doc = await WritingTopic.findById(oid).select('_id');
   else throw httpError(400, `Unknown skill ${skill}`);
@@ -63,27 +106,61 @@ async function assertSkillResourceExists(skill, resourceId) {
 async function validateIntegratedFourSkillsExam(exam) {
   if (!exam.title || !String(exam.title).trim()) throw httpError(400, 'Exam title is required');
   const sections = Array.isArray(exam.sections) ? exam.sections : [];
-  if (sections.length !== 4) {
-    throw httpError(400, 'Integrated exam must have exactly 4 sections (listening, speaking, reading, writing)');
+
+  // Listening can appear as 1 section (dictation only OR comprehension only)
+  // or as 2 sections (both types). Other 3 skills must each appear once.
+  const listeningSections = sections.filter((s) => s?.skill === 'listening');
+  const otherSections = sections.filter((s) => s?.skill !== 'listening');
+
+  if (listeningSections.length === 0) {
+    throw httpError(400, 'Integrated exam must include at least one listening section');
   }
-  const sorted = [...sections].sort((a, b) => Number(a.order ?? 0) - Number(b.order ?? 0));
-  for (let i = 0; i < 4; i += 1) {
-    const sec = sorted[i];
-    const expected = INTEGRATED_FOUR_SKILLS_ORDER[i];
-    if (!sec || sec.sectionKind !== 'skill_content') {
-      throw httpError(400, `Section ${i + 1} must be a skill_content section`);
+  if (listeningSections.length > 2) {
+    throw httpError(400, 'Integrated exam cannot have more than two listening sections');
+  }
+
+  const missingSkills = ['speaking', 'reading', 'writing'].filter(
+    (sk) => !otherSections.some((s) => s?.skill === sk)
+  );
+  if (missingSkills.length > 0) {
+    throw httpError(
+      400,
+      `Integrated exam is missing skill section(s): ${missingSkills.join(', ')}`
+    );
+  }
+  if (otherSections.length !== 3) {
+    throw httpError(400, 'Integrated exam must have exactly one section each for speaking, reading, and writing');
+  }
+
+  // Validate listening sections (1 or 2), each with their listeningType
+  const seenListeningTypes = new Set();
+  for (const sec of listeningSections) {
+    const listeningType = sec.sectionConfig?.listeningType || 'dictation';
+    if (seenListeningTypes.has(listeningType)) {
+      throw httpError(400, `Duplicate listening section type "${listeningType}"`);
     }
-    if (String(sec.skill) !== expected) {
-      throw httpError(400, `Section order ${i + 1} must be skill "${expected}"`);
-    }
+    seenListeningTypes.add(listeningType);
     if (!sec.sectionId || !String(sec.sectionId).trim()) {
-      throw httpError(400, `Section ${i + 1} needs a stable sectionId`);
+      throw httpError(400, `Listening section (${listeningType}) needs a stable sectionId`);
     }
     const resourceId = primaryResourceIdFromSection(sec);
     if (!resourceId) {
-      throw httpError(400, `Section ${expected} needs a selected exercise (resourceId)`);
+      throw httpError(400, `Listening (${listeningType}) needs a selected exercise (resourceId)`);
     }
-    await assertSkillResourceExists(expected, resourceId);
+    await assertSkillResourceExists('listening', resourceId, { listeningType });
+  }
+
+  // Validate the other three skills (speaking, reading, writing)
+  for (const sec of otherSections) {
+    const sk = String(sec.skill || '');
+    if (!sec.sectionId || !String(sec.sectionId).trim()) {
+      throw httpError(400, `Section for ${sk} needs a stable sectionId`);
+    }
+    const resourceId = primaryResourceIdFromSection(sec);
+    if (!resourceId) {
+      throw httpError(400, `Section ${sk} needs a selected exercise (resourceId)`);
+    }
+    await assertSkillResourceExists(sk, resourceId);
   }
 }
 
@@ -190,13 +267,44 @@ async function validateSkillsExam(exam) {
   if (sections.length === 0 && grammarItems.length === 0) {
     throw httpError(400, 'Enable at least one skill with content or add at least one Grammar question');
   }
+
+  // Track seen skills. Listening is special: allow up to two (one per listeningType).
   const seen = new Set();
+  const seenListeningTypes = new Set();
   let lastIdx = -1;
+
   for (const sec of sections) {
     const sk = String(sec.skill || '');
     if (!SKILLS_EXAM_SKILL_ORDER.includes(sk)) {
       throw httpError(400, `Unknown skill section "${sk}"`);
     }
+
+    if (sk === 'listening') {
+      const listeningType = sec.sectionConfig?.listeningType || 'dictation';
+      if (seenListeningTypes.has(listeningType)) {
+        throw httpError(400, `Duplicate listening section type "${listeningType}"`);
+      }
+      seenListeningTypes.add(listeningType);
+      // Only advance order index on the first listening section.
+      if (!seen.has(sk)) {
+        const idx = SKILLS_EXAM_SKILL_ORDER.indexOf(sk);
+        if (idx <= lastIdx) {
+          throw httpError(400, 'Skill sections must follow exam order: reading → listening → writing → speaking');
+        }
+        lastIdx = idx;
+        seen.add(sk);
+      }
+      if (!sec.sectionId || !String(sec.sectionId).trim()) {
+        throw httpError(400, `Listening section (${listeningType}) needs sectionId`);
+      }
+      const resourceId = primaryResourceIdFromSection(sec);
+      if (!resourceId) {
+        throw httpError(400, `Listening (${listeningType}) needs a selected exercise (resourceId)`);
+      }
+      await assertSkillResourceExists('listening', resourceId, { listeningType });
+      continue;
+    }
+
     if (seen.has(sk)) throw httpError(400, `Duplicate skill section "${sk}"`);
     seen.add(sk);
     const idx = SKILLS_EXAM_SKILL_ORDER.indexOf(sk);
@@ -233,6 +341,9 @@ async function validateSkillsExam(exam) {
 }
 
 async function validatePublishedExam(exam) {
+  // Auto-correct any listening sections whose listeningType doesn't match the actual resource collection.
+  await normalizeListeningSections(exam.sections);
+
   const fmt = exam?.settings?.examFormat;
   if (fmt === 'integrated_four_skills') {
     await validateIntegratedFourSkillsExam(exam);
@@ -329,12 +440,17 @@ export const teacherExamService = {
     if (body.description != null) exam.description = String(body.description);
     if (body.sections != null) {
       exam.sections = body.sections;
+      await normalizeListeningSections(exam.sections);
+      exam.markModified('sections');
       if (exam.status === 'published') {
         const candidate = exam.toObject ? exam.toObject() : { ...exam };
         await validatePublishedExam(candidate);
       }
     }
-    if (body.settings != null) exam.settings = { ...defaultSettings, ...exam.settings, ...body.settings };
+    if (body.settings != null) {
+      exam.settings = { ...defaultSettings, ...exam.settings, ...body.settings };
+      exam.markModified('settings');
+    }
     exam.contentVersion = (exam.contentVersion || 1) + 1;
     await exam.save();
     return exam;
@@ -343,6 +459,8 @@ export const teacherExamService = {
   async publish(teacherId, examId) {
     const exam = await this.assertTeacherOwnsExam(teacherId, examId);
     await validatePublishedExam(exam);
+    // normalizeListeningSections (called inside validatePublishedExam) may mutate sections
+    exam.markModified('sections');
     exam.status = 'published';
     await exam.save();
     return exam;

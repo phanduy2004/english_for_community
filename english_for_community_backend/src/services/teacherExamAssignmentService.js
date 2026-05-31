@@ -14,6 +14,7 @@ import {
   attemptStatsByAssignment,
   serializeActiveSession,
 } from './assignmentCardEnrichment.js';
+import { isRealtimeLobbyClosedForStudent } from './realtimeSchedule.js';
 
 function httpError(statusCode, message) {
   const e = new Error(message);
@@ -37,9 +38,16 @@ export function normalizeAssignmentConfig(raw = {}) {
   if (sr !== 'after_submit' && sr !== 'after_release' && sr !== 'never') {
     delete c.showResultsPolicy;
   }
+  const rd = c.resultsDetailLevel;
+  if (rd !== 'score_only' && rd !== 'full_detail') {
+    delete c.resultsDetailLevel;
+  }
   if (c.timeLimitSeconds !== undefined) {
     const n = Number(c.timeLimitSeconds);
     c.timeLimitSeconds = Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+  }
+  if (c.realtimeScheduleMode !== 'manual' && c.realtimeScheduleMode !== 'scheduled') {
+    delete c.realtimeScheduleMode;
   }
   return c;
 }
@@ -134,12 +142,20 @@ function enrichStudentAssignmentView(a, activeSessionMap, closedSessionMap) {
     const closed = closedSessionMap.get(aid);
     if (active) {
       plain.activeSession = serializeActiveSession(active);
-      studentCanStart = active.status === 'lobby' || active.status === 'live';
-      studentStatusHint = active.status;
+      if (isRealtimeLobbyClosedForStudent(a)) {
+        studentCanStart = false;
+        studentStatusHint = 'not_yet_open';
+      } else {
+        studentCanStart = active.status === 'lobby' || active.status === 'live';
+        studentStatusHint = active.status;
+      }
     } else if (closed) {
       plain.latestClosedSession = serializeActiveSession(closed);
       studentCanStart = false;
       studentStatusHint = 'session_ended';
+    } else if (isRealtimeLobbyClosedForStudent(a)) {
+      studentCanStart = false;
+      studentStatusHint = 'not_yet_open';
     } else {
       studentCanStart = false;
       studentStatusHint = 'waiting_for_teacher';
@@ -446,10 +462,24 @@ export const teacherExamAssignmentService = {
     const cfg = { ...(a.config || {}) };
     const patchCfg = body.config;
     if (patchCfg && typeof patchCfg === 'object') {
-      const dateFields = ['dueAt', 'opensAt', 'closesAt'];
+      const dateFields = [
+        'dueAt',
+        'opensAt',
+        'closesAt',
+        'lobbyOpensAt',
+        'scheduledStartAt',
+        'hardEndAt',
+      ];
       for (const k of dateFields) {
         if (patchCfg[k] !== undefined) {
           cfg[k] = patchCfg[k] ? new Date(patchCfg[k]) : null;
+        }
+      }
+      if (patchCfg.realtimeScheduleMode !== undefined) {
+        cfg.realtimeScheduleMode = patchCfg.realtimeScheduleMode;
+        if (patchCfg.realtimeScheduleMode === 'manual') {
+          cfg.lobbyOpensAt = null;
+          cfg.scheduledStartAt = null;
         }
       }
       if (patchCfg.timeLimitSeconds !== undefined) {
@@ -460,6 +490,7 @@ export const teacherExamAssignmentService = {
       if (patchCfg.attemptPolicy !== undefined) cfg.attemptPolicy = patchCfg.attemptPolicy;
       if (patchCfg.maxAttempts !== undefined) cfg.maxAttempts = patchCfg.maxAttempts;
       if (patchCfg.showResultsPolicy !== undefined) cfg.showResultsPolicy = patchCfg.showResultsPolicy;
+      if (patchCfg.resultsDetailLevel !== undefined) cfg.resultsDetailLevel = patchCfg.resultsDetailLevel;
       a.config = normalizeAssignmentConfig(cfg);
     }
     await a.save();

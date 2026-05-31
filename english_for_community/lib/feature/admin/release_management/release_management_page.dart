@@ -1,6 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -240,7 +240,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
     );
     if (second != true || !context.mounted) return;
     if (codeCtrl.text.trim().toUpperCase() != 'FORCE') {
-      AdminCornerToast.show(context, context.l10n.adminReleaseConfirmCodeInvalid, error: true);
+      AppCornerToast.show(context, context.l10n.adminReleaseConfirmCodeInvalid, error: true);
       return;
     }
     context.read<ReleaseManagementBloc>().add(
@@ -266,9 +266,9 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
         listener: (context, state) {
           if (state.status == ReleaseManagementStatus.error &&
               state.errorMessage != null) {
-            AdminCornerToast.show(context, state.errorMessage!, error: true);
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           } else if (state.status == ReleaseManagementStatus.actionSuccess) {
-            AdminCornerToast.show(context, context.l10n.adminActionSuccess);
+            AppCornerToast.show(context, context.l10n.adminActionSuccess);
           }
         },
         builder: (context, state) {

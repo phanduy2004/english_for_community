@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
+import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_filter.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,6 +9,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     required this.repository,
     required this.assignmentId,
   }) : super(TeacherGradingHubState.initial()) {
+    on<TeacherGradingHubFilterChanged>(_onFilter);
     on<TeacherGradingHubLoadRequested>(_onLoad);
     on<TeacherGradingHubRunAiRequested>(_onRunAi);
     on<TeacherGradingHubReleaseRequested>(_onRelease);
@@ -18,6 +20,17 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
 
   final TeacherExamRepository repository;
   final String assignmentId;
+
+  void _onFilter(
+    TeacherGradingHubFilterChanged event,
+    Emitter<TeacherGradingHubState> emit,
+  ) {
+    if (event.filter == state.filter) return;
+    emit(state.copyWith(
+      filter: event.filter,
+      visibleAttempts: teacherGradingHubVisibleAttempts(state.attempts, event.filter),
+    ));
+  }
 
   Future<void> _onLoad(
     TeacherGradingHubLoadRequested event,
@@ -32,6 +45,9 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
       )),
       (hub) {
         final m = Map<String, dynamic>.from(hub as Map);
+        final attempts = (m['attempts'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
         emit(state.copyWith(
           status: TeacherGradingHubStatus.success,
           assignment: m['assignment'] is Map
@@ -40,9 +56,8 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
           stats: m['stats'] is Map
               ? Map<String, dynamic>.from(m['stats'] as Map)
               : {},
-          attempts: (m['attempts'] as List? ?? [])
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList(),
+          attempts: attempts,
+          visibleAttempts: teacherGradingHubVisibleAttempts(attempts, state.filter),
         ));
       },
     );
@@ -68,7 +83,10 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     Emitter<TeacherGradingHubState> emit,
   ) async {
     emit(state.copyWith(attemptMutationId: event.attemptId));
-    final r = await repository.releaseExamResults(event.attemptId);
+    final r = await repository.releaseExamResults(
+      event.attemptId,
+      resultsDetailLevel: event.resultsDetailLevel,
+    );
     r.fold(
       (f) => emit(state.copyWith(errorMessage: f.message, clearAttemptMutation: true)),
       (_) {

@@ -7,6 +7,7 @@ import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_runner_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
@@ -128,7 +129,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
 
   Future<void> _autoSubmitOnDeadline() async {
     if (!mounted) return;
-    final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId);
+    final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId, force: true);
     if (!mounted) return;
     r.fold(
       (_) {
@@ -136,7 +137,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
       },
       (d) {
         setState(() => _attempt = Map<String, dynamic>.from(d as Map));
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.studentExamSubmitted)));
+        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
       },
     );
   }
@@ -161,7 +162,11 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
             _clampItemIndex();
             _hydrateCurrentItem();
           });
-          _liveGuard.bindFromAttempt(m);
+          if ((m['status'] as String?) == 'in_progress') {
+            _liveGuard.bindFromAttempt(m);
+          } else {
+            _liveGuard.unbind();
+          }
           _maybeStartTicker();
         }
       },
@@ -284,7 +289,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     final r = await getIt<TeacherExamRepository>().patchExamAttempt(widget.attemptId, entry);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) => setState(() => _attempt = Map<String, dynamic>.from(d as Map)),
     );
   }
@@ -319,12 +324,157 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     if (!mounted) return;
     final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId);
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) {
         _stopTicker();
-        setState(() => _attempt = Map<String, dynamic>.from(d as Map));
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.studentExamSubmitted)));
+        final m = Map<String, dynamic>.from(d as Map);
+        setState(() {
+          _attempt = m;
+          _itemIndex = 0;
+          _hydrateCurrentItem();
+        });
+        _liveGuard.unbind();
+        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
       },
+    );
+  }
+
+  Map<String, dynamic> _answerMapForItem(String itemId) {
+    final ans = _attempt?['answers'];
+    if (ans is! Map || ans[itemId] is! Map) return {};
+    return Map<String, dynamic>.from(ans[itemId] as Map);
+  }
+
+  Widget _buildReviewItemCard(Map<String, dynamic> item) {
+    final l10n = context.l10n;
+    final id = item['itemId'] as String? ?? '';
+    final a = _answerMapForItem(id);
+    final kind = item['kind'] as String? ?? '';
+
+    if (kind == 'mcq_single') {
+      final opts = (item['options'] as List?) ?? [];
+      final sel = a['selectedIndexes'];
+      final selected = sel is List && sel.isNotEmpty ? (sel.first as num).toInt() : null;
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item['stem'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
+            ...List.generate(opts.length, (i) {
+              return StudentMobileUi.mcqOption(
+                context: context,
+                index: i,
+                text: opts[i] as String,
+                selected: selected == i,
+                onTap: null,
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    if (kind == 'mcq_multi') {
+      final opts = (item['options'] as List?) ?? [];
+      final sel = a['selectedIndexes'];
+      final selected = <int>{};
+      if (sel is List) {
+        for (final x in sel) {
+          if (x is num) selected.add(x.toInt());
+        }
+      }
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item['stem'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
+            ...List.generate(opts.length, (i) {
+              return StudentMobileUi.mcqOption(
+                context: context,
+                index: i,
+                text: opts[i] as String,
+                multiSelect: true,
+                checked: selected.contains(i),
+                onTap: null,
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    if (kind == 'fill_blank') {
+      final defs = item['blanks'] as List? ?? [];
+      final blanks = a['blanks'];
+      final blankMap = blanks is Map ? Map<String, dynamic>.from(blanks) : <String, dynamic>{};
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if ((item['template'] as String?)?.trim().isNotEmpty == true)
+              Padding(
+                padding: const EdgeInsets.only(bottom: StudentMobileUi.sectionGap),
+                child: Text(item['template'] as String, style: StudentMobileUi.caption(context)),
+              ),
+            for (final b in defs)
+              if (b is Map) ...[
+                Text(b['blankId'] as String? ?? '', style: StudentMobileUi.caption(context)),
+                const SizedBox(height: 4),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColors.outlineMuted),
+                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.surfaceSubtle,
+                  ),
+                  child: Text(
+                    blankMap[b['blankId'] as String? ?? '']?.toString() ?? '—',
+                    style: StudentMobileUi.body(context),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+          ],
+        ),
+      );
+    }
+
+    if (kind == 'essay') {
+      final text = a['text'] as String? ?? '';
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(item['prompt'] as String? ?? '', style: StudentMobileUi.cardTitle(context)),
+            const SizedBox(height: StudentMobileUi.cardGap),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.outlineMuted),
+                borderRadius: BorderRadius.circular(8),
+                color: AppColors.surfaceSubtle,
+              ),
+              child: Text(
+                text.trim().isEmpty ? '—' : text,
+                style: StudentMobileUi.body(context),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return AppCard(
+      variant: AppCardVariant.outline,
+      child: Text(l10n.studentExamItemUnsupported, style: StudentMobileUi.body(context)),
     );
   }
 
@@ -570,7 +720,21 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                                 variant: AppCardVariant.outline,
                                 child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
                               ),
-                            if (item != null) ...[
+                            if (locked && flat.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              for (var i = 0; i < flat.length; i++) ...[
+                                if (flat.length > 1)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Text(
+                                      l10n.studentExamQuestionProgress(i + 1, flat.length),
+                                      style: StudentMobileUi.caption(context),
+                                    ),
+                                  ),
+                                _buildReviewItemCard(flat[i]),
+                                if (i < flat.length - 1) const SizedBox(height: StudentMobileUi.sectionGap),
+                              ],
+                            ] else if (item != null) ...[
                               const SizedBox(height: 8),
                               _buildItemCard(item, locked),
                             ] else if (!locked)

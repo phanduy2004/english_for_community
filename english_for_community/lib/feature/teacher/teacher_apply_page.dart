@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_theme.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
@@ -126,11 +127,9 @@ class _TeacherApplyPageState extends State<TeacherApplyPage> {
             (c.errorMessage != null && p.errorMessage != c.errorMessage),
         listener: (context, state) {
           if (state.status == TeacherApplyStatus.submitted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(l10n.teacherApplySubmitted)),
-            );
+            AppCornerToast.show(context, l10n.teacherApplySubmitted);
           } else if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
         },
         builder: (context, state) {

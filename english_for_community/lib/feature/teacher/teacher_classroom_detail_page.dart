@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -41,7 +44,6 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
   final _editName = TextEditingController();
   final _editDesc = TextEditingController();
   late TabController _tabs;
-  int _assignmentSegment = 0;
   /// Context under [BlocProvider] — State's own [context] is above the bloc.
   BuildContext? _blocCtx;
 
@@ -138,9 +140,9 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
     final r = await getIt<TeacherExamRepository>().rejectClassroomMember(widget.classroomId, uid);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.teacherMemberRejected)));
+        AppCornerToast.show(context, context.l10n.teacherMemberRejected);
         _reload();
       },
     );
@@ -258,10 +260,10 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
     final examsR = await getIt<TeacherExamRepository>().listMyExams();
     if (!mounted) return;
     await examsR.fold(
-      (f) async => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) async => AppCornerToast.show(context, f.message, error: true),
       (list) async {
         if (list.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherNoExams)));
+          AppCornerToast.show(context, l10n.teacherNoExams, error: true);
           return;
         }
         final published = <Map<String, dynamic>>[];
@@ -270,7 +272,7 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
           if ((m['status'] as String?) == 'published') published.add(m);
         }
         if (published.isEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherNoPublishedExams)));
+          AppCornerToast.show(context, l10n.teacherNoPublishedExams, error: true);
           return;
         }
         final picked = await showDialog<String>(
@@ -297,7 +299,17 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
     if (code.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: code));
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.copiedToClipboard)));
+      AppCornerToast.show(context, context.l10n.copiedToClipboard);
+    }
+  }
+
+  Future<void> _copyInviteToken() async {
+    final classroom = _bloc.state.classroom;
+    final token = classroom?['inviteToken'] as String? ?? '';
+    if (token.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: token));
+    if (mounted) {
+      AppCornerToast.show(context, context.l10n.copiedToClipboard);
     }
   }
 
@@ -313,14 +325,12 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
             (c.errorMessage != null && c.errorMessage != p.errorMessage),
         listener: (context, state) {
           if (state.archived && context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(context.l10n.teacherClassArchivedMessage)),
-            );
+            AppCornerToast.show(context, context.l10n.teacherClassArchivedMessage);
             context.pop();
             return;
           }
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
           final room = state.classroom;
           if (room != null) {
@@ -422,8 +432,8 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                           _AssignmentsTab(
                             active: _activeAssignmentsFrom(assignments),
                             history: _historyAssignmentsFrom(assignments),
-                            segment: _assignmentSegment,
-                            onSegmentChanged: (i) => setState(() => _assignmentSegment = i),
+                            segment: state.assignmentSegment,
+                            onSegmentChanged: (i) => _bloc.add(TeacherClassroomAssignmentSegmentChanged(i)),
                             onAssignExam: _openAssignExamPicker,
                             onOpenAssignment: _openStudentAttempts,
                             onManageSession: _openSession,
@@ -433,9 +443,11 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                           ),
                           _MembersTab(
                             members: members,
+                            inviteCode: (data?['inviteCode'] as String?) ?? '',
                             onApprove: _approveMember,
                             onReject: _rejectMember,
                             onRemove: _removeMember,
+                            onCopyInvite: _copyInviteCode,
                             onRefresh: () async => _reload(silent: true),
                           ),
                           _ActivityTab(classroomId: widget.classroomId),
@@ -444,11 +456,19 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                             descriptionController: _editDesc,
                             policy: policy,
                             inviteCode: (data?['inviteCode'] as String?) ?? '',
+                            inviteToken: (data?['inviteToken'] as String?) ?? '',
                             classroomId: widget.classroomId,
+                            primaryTeacher: data?['teacherId'],
+                            members: members,
+                            activeMemberCount: activeMembers,
+                            pendingMemberCount: _memberCount(data, 'memberCountPending'),
+                            assignmentCount: assignments.length,
                             integrations: data?['integrations'],
+                            archived: data?['archived'] == true,
                             createdAt: _formatDate(context, data?['createdAt']),
                             updatedAt: _formatDate(context, data?['updatedAt']),
                             onCopyInvite: _copyInviteCode,
+                            onCopyInviteToken: _copyInviteToken,
                             onSave: _saveClassroomSettings,
                             onRotateInvite: _rotateClassInvite,
                             onArchive: _archiveClassroom,
@@ -686,13 +706,29 @@ class _AssignmentsTab extends StatelessWidget {
             children: [
               Text(l10n.teacherClassDetailAssignmentsTitle, style: TeacherWebUi.sectionTitle(context)),
               const SizedBox(height: AppSpacing.s5),
-              SegmentedButton<int>(
-                segments: [
-                  ButtonSegment(value: 0, label: Text(l10n.teacherClassDetailActiveTitle)),
-                  ButtonSegment(value: 1, label: Text(l10n.teacherClassDetailHistoryTitle)),
+              TeacherSegmentTileRow<int>(
+                selected: segment,
+                onChanged: onSegmentChanged,
+                options: [
+                  TeacherSegmentOption(
+                    value: 0,
+                    label: l10n.teacherClassDetailActiveTitle,
+                    icon: Icons.playlist_add_check_outlined,
+                    count: active.length,
+                    fg: AppColors.primary,
+                    bg: AppColors.primaryTint,
+                    border: AppColors.primary,
+                  ),
+                  TeacherSegmentOption(
+                    value: 1,
+                    label: l10n.teacherClassDetailHistoryTitle,
+                    icon: Icons.history_rounded,
+                    count: history.length,
+                    fg: AppColors.info,
+                    bg: AppColors.infoBg,
+                    border: AppColors.info,
+                  ),
                 ],
-                selected: {segment},
-                onSelectionChanged: (s) => onSegmentChanged(s.first),
               ),
             ],
           ),
@@ -739,89 +775,515 @@ class _AssignmentsTab extends StatelessWidget {
   }
 }
 
-class _MembersTab extends StatelessWidget {
+enum _MemberFilter { all, active, pending }
+
+class _MembersTab extends StatefulWidget {
   const _MembersTab({
     required this.members,
+    required this.inviteCode,
     required this.onApprove,
     required this.onReject,
     required this.onRemove,
+    required this.onCopyInvite,
     required this.onRefresh,
   });
 
   final List<dynamic> members;
+  final String inviteCode;
   final Future<void> Function(Map<String, dynamic>) onApprove;
   final Future<void> Function(Map<String, dynamic>) onReject;
   final Future<void> Function(Map<String, dynamic>) onRemove;
+  final VoidCallback onCopyInvite;
   final Future<void> Function() onRefresh;
+
+  @override
+  State<_MembersTab> createState() => _MembersTabState();
+}
+
+class _MembersTabState extends State<_MembersTab> {
+  final _searchCtrl = TextEditingController();
+  _MemberFilter _filter = _MemberFilter.all;
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, dynamic>> get _studentMembers => widget.members
+      .map((raw) => Map<String, dynamic>.from(raw as Map))
+      .where((m) => m['roleInClass'] != 'co_teacher')
+      .toList();
+
+  String _memberName(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) {
+      final name = (u['fullName'] as String?)?.trim();
+      if (name != null && name.isNotEmpty) return name;
+      final un = (u['username'] as String?)?.trim();
+      if (un != null && un.isNotEmpty) return un;
+      final em = (u['email'] as String?)?.trim();
+      if (em != null && em.isNotEmpty) return em;
+    }
+    return _memberUid(m);
+  }
+
+  String _memberEmail(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) {
+      return (u['email'] as String?)?.trim() ?? '';
+    }
+    return '';
+  }
+
+  String _memberUsername(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) return (u['username'] as String?)?.trim() ?? '';
+    return '';
+  }
+
+  String _memberUid(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) return (u['id'] ?? u['_id'])?.toString() ?? '';
+    return u?.toString() ?? '';
+  }
+
+  String? _memberAvatar(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) return (u['avatar'] as String?)?.trim();
+    return null;
+  }
+
+  String? _memberJoinDate(Map<String, dynamic> m) {
+    final raw = m['joinedAt'] ?? m['createdAt'];
+    if (raw == null) return null;
+    final dt = DateTime.tryParse(raw.toString());
+    if (dt == null) return null;
+    return DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(dt.toLocal());
+  }
+
+  bool _matchesSearch(Map<String, dynamic> m, String q) {
+    if (q.isEmpty) return true;
+    final lower = q.toLowerCase();
+    return _memberName(m).toLowerCase().contains(lower) ||
+        _memberEmail(m).toLowerCase().contains(lower) ||
+        _memberUsername(m).toLowerCase().contains(lower);
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    if (members.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: onRefresh,
-        child: ListView(
-          padding: TeacherWebUi.pageScrollPadding(context),
+    final query = _searchCtrl.text.trim();
+    final all = _studentMembers;
+
+    final pending = all.where((m) => (m['status'] as String? ?? '') == 'pending').toList();
+    final active = all.where((m) => (m['status'] as String? ?? '') != 'pending').toList();
+
+    List<Map<String, dynamic>> filtered;
+    switch (_filter) {
+      case _MemberFilter.active:
+        filtered = active;
+      case _MemberFilter.pending:
+        filtered = pending;
+      case _MemberFilter.all:
+        filtered = all;
+    }
+    if (query.isNotEmpty) {
+      filtered = filtered.where((m) => _matchesSearch(m, query)).toList();
+    }
+
+    final pendingFiltered = filtered.where((m) => (m['status'] as String? ?? '') == 'pending').toList();
+    final activeFiltered = filtered.where((m) => (m['status'] as String? ?? '') != 'pending').toList();
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: CustomScrollView(
+        slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            sliver: SliverToBoxAdapter(
+              child: _buildToolbar(l10n, all.length, pending.length, active.length),
+            ),
+          ),
+          if (filtered.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildEmptyState(l10n, all.isEmpty),
+            )
+          else ...[
+            if (pendingFiltered.isNotEmpty) ...[
+              _sectionHeader(l10n.teacherClassMemberStatusPending, pendingFiltered.length),
+              _memberSliver(pendingFiltered, isPending: true),
+            ],
+            if (activeFiltered.isNotEmpty) ...[
+              _sectionHeader(l10n.teacherMembersActiveSection, activeFiltered.length),
+              _memberSliver(activeFiltered, isPending: false),
+            ],
+            const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolbar(AppLocalizations l10n, int total, int pendingCount, int activeCount) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           children: [
-            const SizedBox(height: 40),
-            Text(l10n.teacherClassMembersEmpty, style: TeacherWebUi.webBody(context), textAlign: TextAlign.center),
+            Expanded(
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: (_) => setState(() {}),
+                style: TeacherWebUi.webBody(context),
+                decoration: TeacherWebUi.formInputDecoration(context, hintText: l10n.teacherMembersSearchHint).copyWith(
+                  prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textSecondary),
+                  suffixIcon: _searchCtrl.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: () {
+                            _searchCtrl.clear();
+                            setState(() {});
+                          },
+                        )
+                      : null,
+                ),
+              ),
+            ),
+            if (widget.inviteCode.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Tooltip(
+                message: l10n.teacherMembersCopyInvite,
+                child: OutlinedButton.icon(
+                  onPressed: widget.onCopyInvite,
+                  icon: const Icon(Icons.link, size: 16),
+                  label: Text(l10n.teacherMembersInvite),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    minimumSize: const Size(0, 36),
+                    textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                    side: const BorderSide(color: AppColors.outline),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          children: [
+            TeacherFilterChip(
+              label: '${l10n.teacherMembersFilterAll} ($total)',
+              selected: _filter == _MemberFilter.all,
+              onSelected: () => setState(() => _filter = _MemberFilter.all),
+            ),
+            TeacherFilterChip(
+              label: '${l10n.teacherMembersFilterActive} ($activeCount)',
+              selected: _filter == _MemberFilter.active,
+              onSelected: () => setState(() => _filter = _MemberFilter.active),
+            ),
+            if (pendingCount > 0)
+              TeacherFilterChip(
+                label: '${l10n.teacherMembersFilterPending} ($pendingCount)',
+                selected: _filter == _MemberFilter.pending,
+                onSelected: () => setState(() => _filter = _MemberFilter.pending),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyState(AppLocalizations l10n, bool noMembers) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              noMembers ? Icons.people_outline : Icons.search_off_outlined,
+              size: 48,
+              color: AppColors.textSecondary,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              noMembers ? l10n.teacherClassMembersEmpty : l10n.teacherMembersNoResults,
+              style: TeacherWebUi.webBody(context),
+              textAlign: TextAlign.center,
+            ),
+            if (noMembers) ...[
+              const SizedBox(height: 8),
+              Text(
+                l10n.teacherMembersEmptyHint,
+                style: TeacherWebUi.metaMuted,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  SliverPadding _sectionHeader(String title, int count) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
+      sliver: SliverToBoxAdapter(
+        child: Row(
+          children: [
+            Text(
+              title.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '$count',
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  SliverPadding _memberSliver(List<Map<String, dynamic>> list, {required bool isPending}) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      sliver: SliverList.separated(
+        itemCount: list.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 6),
+        itemBuilder: (context, i) => _MemberRow(
+          member: list[i],
+          isPending: isPending,
+          name: _memberName(list[i]),
+          email: _memberEmail(list[i]),
+          avatar: _memberAvatar(list[i]),
+          joinDate: _memberJoinDate(list[i]),
+          onApprove: () => widget.onApprove(list[i]),
+          onReject: () => widget.onReject(list[i]),
+          onRemove: () => widget.onRemove(list[i]),
+        ),
+      ),
+    );
+  }
+}
+
+class _MemberRow extends StatelessWidget {
+  const _MemberRow({
+    required this.member,
+    required this.isPending,
+    required this.name,
+    required this.email,
+    required this.avatar,
+    required this.joinDate,
+    required this.onApprove,
+    required this.onReject,
+    required this.onRemove,
+  });
+
+  final Map<String, dynamic> member;
+  final bool isPending;
+  final String name;
+  final String email;
+  final String? avatar;
+  final String? joinDate;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return Material(
+      color: AppColors.surfaceCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: AppColors.outline),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            _buildAvatar(),
+            const SizedBox(width: 12),
+            Expanded(child: _buildInfo(context, l10n)),
+            const SizedBox(width: 8),
+            _buildActions(context, l10n),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    if (avatar != null && avatar!.isNotEmpty) {
+      return CircleAvatar(
+        radius: 18,
+        backgroundImage: NetworkImage(avatar!),
+        backgroundColor: AppColors.surfaceSubtle,
       );
     }
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        padding: TeacherWebUi.pageScrollPadding(context),
-        itemCount: members.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final m = Map<String, dynamic>.from(members[i] as Map);
-          final st = m['status'] as String? ?? '';
-          final pending = st == 'pending';
-          final uid = () {
-            final u = m['userId'];
-            if (u is Map) return (u['id'] ?? u['_id'])?.toString() ?? '';
-            return u?.toString() ?? '';
-          }();
-          final title = () {
-            final u = m['userId'];
-            if (u is Map) {
-              final name = (u['fullName'] as String?)?.trim();
-              if (name != null && name.isNotEmpty) return name;
-              final un = (u['username'] as String?)?.trim();
-              if (un != null && un.isNotEmpty) return un;
-              final em = (u['email'] as String?)?.trim();
-              if (em != null && em.isNotEmpty) return em;
-            }
-            return uid;
-          }();
-          return Material(
-            color: AppColors.surfaceCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: const BorderSide(color: AppColors.outline),
+    final initials = name.isNotEmpty ? name[0].toUpperCase() : '?';
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: AppColors.primaryTint,
+      child: Text(
+        initials,
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+      ),
+    );
+  }
+
+  Widget _buildInfo(BuildContext context, AppLocalizations l10n) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                name,
+                style: TeacherWebUi.listTitle(context),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            child: ListTile(
-              title: Text(title, style: TeacherWebUi.listTitle(context)),
-              subtitle: pending ? Text(l10n.teacherClassMemberStatusPending, style: TeacherWebUi.metaMuted) : null,
-              trailing: uid.isEmpty
-                  ? null
-                  : pending
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextButton(onPressed: () => onReject(m), child: Text(l10n.teacherMemberReject)),
-                            FilledButton(onPressed: () => onApprove(m), child: Text(l10n.teacherMemberApprove)),
-                          ],
-                        )
-                      : TextButton(
-                          onPressed: () => onRemove(m),
-                          child: Text(l10n.teacherClassMemberRemove),
-                        ),
+            if (isPending) ...[
+              const SizedBox(width: 8),
+              _StatusPill(label: l10n.teacherMembersStatusPending, color: AppColors.warning),
+            ],
+          ],
+        ),
+        if (email.isNotEmpty || joinDate != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              [
+                if (email.isNotEmpty) email,
+                if (joinDate != null) joinDate!,
+              ].join(' · '),
+              style: TeacherWebUi.metaMuted,
+              overflow: TextOverflow.ellipsis,
             ),
-          );
-        },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildActions(BuildContext context, AppLocalizations l10n) {
+    if (isPending) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CompactActionButton(
+            label: l10n.teacherMemberReject,
+            icon: Icons.close,
+            onPressed: onReject,
+            danger: true,
+          ),
+          const SizedBox(width: 6),
+          _CompactActionButton(
+            label: l10n.teacherMemberApprove,
+            icon: Icons.check,
+            onPressed: onApprove,
+            filled: true,
+          ),
+        ],
+      );
+    }
+    return SizedBox(
+      width: 32,
+      height: 32,
+      child: IconButton(
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        icon: const Icon(Icons.person_remove_outlined, size: 18, color: AppColors.textSecondary),
+        tooltip: l10n.teacherClassMemberRemove,
+        onPressed: onRemove,
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: color),
+      ),
+    );
+  }
+}
+
+class _CompactActionButton extends StatelessWidget {
+  const _CompactActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.filled = false,
+    this.danger = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final bool filled;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = danger ? AppColors.danger : (filled ? Colors.white : AppColors.textPrimary);
+    final bg = filled
+        ? AppColors.primary
+        : danger
+            ? AppColors.danger.withValues(alpha: 0.08)
+            : AppColors.surfaceSubtle;
+
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onPressed,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: fg),
+              const SizedBox(width: 4),
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: fg)),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -837,66 +1299,61 @@ class _ActivityTab extends StatefulWidget {
 }
 
 class _ActivityTabState extends State<_ActivityTab> {
-  bool _reloading = true;
-  List<dynamic> _rows = [];
-
   @override
   void initState() {
     super.initState();
-    _reload();
+    context.read<TeacherClassroomBloc>().add(const TeacherClassroomActivityReloadRequested());
   }
 
   Future<void> _reload() async {
-    setState(() => _reloading = true);
-    final r = await getIt<TeacherExamRepository>().listClassroomActivity(widget.classroomId);
-    if (!mounted) return;
-    r.fold((_) => setState(() => _reloading = false), (list) {
-      setState(() {
-        _rows = list;
-        _reloading = false;
-      });
-    });
+    context.read<TeacherClassroomBloc>().add(const TeacherClassroomActivityReloadRequested());
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    if (_reloading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_rows.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: _reload,
-        child: ListView(
-          padding: TeacherWebUi.pageScrollPadding(context),
-          children: [
-            const SizedBox(height: 40),
-            Text(l10n.teacherClassActivityEmpty, style: TeacherWebUi.webBody(context), textAlign: TextAlign.center),
-          ],
-        ),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: _reload,
-      child: ListView.separated(
-        padding: TeacherWebUi.pageScrollPadding(context),
-        itemCount: _rows.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
-        itemBuilder: (context, i) {
-          final m = Map<String, dynamic>.from(_rows[i] as Map);
-          final msg = (m['message'] as String?) ?? (m['type'] as String?) ?? '';
-          final at = DateTime.tryParse(m['createdAt'] as String? ?? '');
-          return ListTile(
-            tileColor: AppColors.surfaceCard,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: AppColors.outline),
+    return BlocBuilder<TeacherClassroomBloc, TeacherClassroomState>(
+      builder: (context, state) {
+        if (state.activityReloading && state.activityRows.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.activityRows.isEmpty) {
+          return RefreshIndicator(
+            onRefresh: _reload,
+            child: ListView(
+              padding: TeacherWebUi.pageScrollPadding(context),
+              children: [
+                const SizedBox(height: 40),
+                Text(l10n.teacherClassActivityEmpty, style: TeacherWebUi.webBody(context), textAlign: TextAlign.center),
+              ],
             ),
-            title: Text(msg, style: TeacherWebUi.listTitle(context)),
-            subtitle: at != null ? Text(DateFormat.yMMMd().add_jm().format(at.toLocal()), style: TeacherWebUi.metaMuted) : null,
           );
-        },
-      ),
+        }
+        return RefreshIndicator(
+          onRefresh: _reload,
+          child: ListView.separated(
+            padding: TeacherWebUi.pageScrollPadding(context),
+            itemCount: state.activityRows.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            itemBuilder: (context, i) {
+              final m = Map<String, dynamic>.from(state.activityRows[i] as Map);
+              final msg = (m['message'] as String?) ?? (m['type'] as String?) ?? '';
+              final at = DateTime.tryParse(m['createdAt'] as String? ?? '');
+              return ListTile(
+                tileColor: AppColors.surfaceCard,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: const BorderSide(color: AppColors.outline),
+                ),
+                title: Text(msg, style: TeacherWebUi.listTitle(context)),
+                subtitle: at != null
+                    ? Text(DateFormat.yMMMd().add_jm().format(at.toLocal()), style: TeacherWebUi.metaMuted)
+                    : null,
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }
@@ -907,11 +1364,19 @@ class _SettingsTab extends StatefulWidget {
     required this.descriptionController,
     required this.policy,
     required this.inviteCode,
+    required this.inviteToken,
     required this.classroomId,
+    required this.primaryTeacher,
+    required this.members,
+    required this.activeMemberCount,
+    required this.pendingMemberCount,
+    required this.assignmentCount,
     this.integrations,
+    this.archived = false,
     required this.createdAt,
     required this.updatedAt,
     required this.onCopyInvite,
+    required this.onCopyInviteToken,
     required this.onSave,
     required this.onRotateInvite,
     required this.onArchive,
@@ -923,11 +1388,19 @@ class _SettingsTab extends StatefulWidget {
   final TextEditingController descriptionController;
   final String policy;
   final String inviteCode;
+  final String inviteToken;
   final String classroomId;
+  final dynamic primaryTeacher;
+  final List<dynamic> members;
+  final int activeMemberCount;
+  final int pendingMemberCount;
+  final int assignmentCount;
   final dynamic integrations;
+  final bool archived;
   final String? createdAt;
   final String? updatedAt;
   final VoidCallback onCopyInvite;
+  final VoidCallback onCopyInviteToken;
   final VoidCallback onSave;
   final VoidCallback onRotateInvite;
   final VoidCallback onArchive;
@@ -939,25 +1412,193 @@ class _SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<_SettingsTab> {
-  final _coEmail = TextEditingController();
+  final _coUsername = TextEditingController();
   final _googleCourseId = TextEditingController();
+  Timer? _searchDebounce;
+  List<Map<String, dynamic>> _searchResults = [];
+  bool _searching = false;
+  String? _addingTeacherId;
+  late List<Map<String, dynamic>> _coTeacherMembers;
+
+  @override
+  void initState() {
+    super.initState();
+    _coTeacherMembers = _coTeachersFrom(widget.members);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SettingsTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.members != widget.members) {
+      _coTeacherMembers = _coTeachersFrom(widget.members);
+    }
+  }
+
+  List<Map<String, dynamic>> _coTeachersFrom(List<dynamic> members) {
+    return members
+        .map((raw) => Map<String, dynamic>.from(raw as Map))
+        .where((m) => m['roleInClass'] == 'co_teacher' && m['status'] == 'active')
+        .toList();
+  }
 
   @override
   void dispose() {
-    _coEmail.dispose();
+    _searchDebounce?.cancel();
+    _coUsername.dispose();
     _googleCourseId.dispose();
     super.dispose();
   }
 
-  Future<void> _addCoTeacher() async {
-    final l10n = context.l10n;
-    final r = await getIt<TeacherExamRepository>().addCoTeacher(widget.classroomId, _coEmail.text.trim());
+  Set<String> get _coTeacherUserIds {
+    return _coTeacherMembers.map(_memberUserId).where((id) => id.isNotEmpty).toSet();
+  }
+
+  String _memberUserId(Map<String, dynamic> m) {
+    final u = m['userId'];
+    if (u is Map) return (u['id'] ?? u['_id'])?.toString() ?? '';
+    return u?.toString() ?? '';
+  }
+
+  String _userDisplayName(Map<String, dynamic>? user) {
+    if (user == null) return '—';
+    final name = (user['fullName'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final username = (user['username'] as String?)?.trim();
+    if (username != null && username.isNotEmpty) return username;
+    final email = (user['email'] as String?)?.trim();
+    if (email != null && email.isNotEmpty) return email;
+    return '—';
+  }
+
+  String? _userUsername(Map<String, dynamic>? user) {
+    final username = (user?['username'] as String?)?.trim();
+    return username != null && username.isNotEmpty ? username : null;
+  }
+
+  String? _userEmail(Map<String, dynamic>? user) {
+    final email = (user?['email'] as String?)?.trim();
+    return email != null && email.isNotEmpty ? email : null;
+  }
+
+  String _userInitial(Map<String, dynamic>? user) {
+    final label = _userDisplayName(user);
+    if (label == '—') return '?';
+    return label[0].toUpperCase();
+  }
+
+  void _onCoTeacherSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    setState(() {});
+    final q = value.trim();
+    if (q.length < 2) {
+      setState(() {
+        _searchResults = [];
+        _searching = false;
+      });
+      return;
+    }
+    setState(() => _searching = true);
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () => _runCoTeacherSearch(q));
+  }
+
+  Future<void> _runCoTeacherSearch(String query) async {
+    final r = await getIt<TeacherExamRepository>().searchTeachersForCoTeacher(query);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (_) => setState(() {
+        _searchResults = [];
+        _searching = false;
+      }),
+      (list) {
+        final primaryId = widget.primaryTeacher is Map
+            ? ((widget.primaryTeacher as Map)['id'] ?? (widget.primaryTeacher as Map)['_id'])?.toString()
+            : widget.primaryTeacher?.toString();
+        final blocked = {..._coTeacherUserIds, if (primaryId != null && primaryId.isNotEmpty) primaryId};
+        setState(() {
+          _searchResults = list
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .where((u) => !blocked.contains(u['id']?.toString()))
+              .toList();
+          _searching = false;
+        });
+      },
+    );
+  }
+
+  Map<String, dynamic> _memberFromTeacherSearch(Map<String, dynamic> teacher) {
+    return {
+      'roleInClass': 'co_teacher',
+      'status': 'active',
+      'userId': teacher,
+    };
+  }
+
+  Map<String, dynamic> _normalizeAddedMember(dynamic raw, Map<String, dynamic> teacher) {
+    if (raw is Map) {
+      final m = Map<String, dynamic>.from(raw);
+      final u = m['userId'];
+      if (u is Map && (u['username'] as String?)?.isNotEmpty == true) return m;
+      if (u == null || u is! Map) {
+        m['userId'] = teacher;
+      }
+      return m;
+    }
+    return _memberFromTeacherSearch(teacher);
+  }
+
+  Future<void> _addCoTeacher(Map<String, dynamic> teacher) async {
+    final l10n = context.l10n;
+    final teacherId = teacher['id']?.toString() ?? '';
+    final username = (teacher['username'] as String?)?.trim() ?? '';
+    if (username.isEmpty) return;
+    setState(() => _addingTeacherId = teacherId);
+    final r = await getIt<TeacherExamRepository>().addCoTeacher(widget.classroomId, username);
+    if (!mounted) return;
+    setState(() => _addingTeacherId = null);
+    r.fold(
+      (f) => AppCornerToast.show(context, f.message, error: true),
+      (member) {
+        final added = _normalizeAddedMember(member, teacher);
+        final addedId = _memberUserId(added);
+        setState(() {
+          _coTeacherMembers = [
+            ..._coTeacherMembers.where((m) => _memberUserId(m) != addedId),
+            added,
+          ];
+          _searchResults = _searchResults.where((u) => u['id']?.toString() != teacherId).toList();
+          _coUsername.clear();
+        });
+        AppCornerToast.show(context, l10n.teacherCoTeacherAdded);
+        widget.onRefresh();
+      },
+    );
+  }
+
+  Future<void> _removeCoTeacher(Map<String, dynamic> member) async {
+    final l10n = context.l10n;
+    final uid = _memberUserId(member);
+    if (uid.isEmpty) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.teacherCoTeacherRemove),
+        content: Text(l10n.teacherCoTeacherRemoveConfirm),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.teacherCoTeacherRemove)),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final r = await getIt<TeacherExamRepository>().removeCoTeacher(widget.classroomId, uid);
+    if (!mounted) return;
+    r.fold(
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherCoTeacherAdded)));
-        _coEmail.clear();
+        setState(() {
+          _coTeacherMembers = _coTeacherMembers.where((m) => _memberUserId(m) != uid).toList();
+        });
+        AppCornerToast.show(context, l10n.teacherCoTeacherRemoved);
         widget.onRefresh();
       },
     );
@@ -970,9 +1611,9 @@ class _SettingsTabState extends State<_SettingsTab> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherGoogleClassroomLink)));
+        AppCornerToast.show(context, l10n.teacherGoogleClassroomLink);
         widget.onRefresh();
       },
     );
@@ -983,9 +1624,9 @@ class _SettingsTabState extends State<_SettingsTab> {
     final r = await getIt<TeacherExamRepository>().unlinkGoogleClassroom(widget.classroomId);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherGoogleClassroomUnlink)));
+        AppCornerToast.show(context, l10n.teacherGoogleClassroomUnlink);
         widget.onRefresh();
       },
     );
@@ -995,161 +1636,608 @@ class _SettingsTabState extends State<_SettingsTab> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final gc = widget.integrations is Map ? (widget.integrations as Map)['googleClassroom'] : null;
-  final gcName = gc is Map ? gc['courseName'] as String? : null;
-    return ListView(
-      padding: TeacherWebUi.pageScrollPadding(context),
-      children: [
-        Align(
-          alignment: Alignment.topCenter,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: TeacherWebUi.contentMaxForm),
-            child: Column(
+    final gcName = gc is Map ? gc['courseName'] as String? : null;
+    final primary = widget.primaryTeacher is Map
+        ? Map<String, dynamic>.from(widget.primaryTeacher as Map)
+        : null;
+
+    return RefreshIndicator(
+      onRefresh: widget.onRefresh,
+      child: ListView(
+        padding: TeacherWebUi.pageScrollPadding(context),
+        children: [
+          TeacherResponsiveColumns(
+            left: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(l10n.teacherClassSettingsAbout, style: TeacherWebUi.sectionTitle(context)),
-                const SizedBox(height: AppSpacing.s4),
-                TextField(
-                  controller: widget.nameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.teacherClassNameLabel,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.s4),
-                TextField(
-                  controller: widget.descriptionController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    labelText: l10n.teacherExamDescriptionLabel,
-                    border: const OutlineInputBorder(),
+                _SettingsSectionCard(
+                  title: l10n.teacherClassSettingsAbout,
+                  icon: Icons.edit_note_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextField(
+                        controller: widget.nameController,
+                        decoration: InputDecoration(
+                          labelText: l10n.teacherClassNameLabel,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      TextField(
+                        controller: widget.descriptionController,
+                        maxLines: 3,
+                        decoration: InputDecoration(
+                          labelText: l10n.teacherExamDescriptionLabel,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s5),
+                      TeacherInlineActions(
+                        children: [
+                          FilledButton(
+                            style: TeacherWebUi.compactFilledStyle(context),
+                            onPressed: widget.saving ? null : widget.onSave,
+                            child: widget.saving
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : Text(l10n.teacherClassSaveSettings),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: AppSpacing.s5),
-                TeacherInlineActions(
-                  children: [
-                    FilledButton(
-                      style: TeacherWebUi.compactFilledStyle(context),
-                      onPressed: widget.saving ? null : widget.onSave,
-                      child: widget.saving
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Text(l10n.teacherClassSaveSettings),
-                    ),
-                  ],
-                ),
-                if (widget.createdAt != null) ...[
-                  const SizedBox(height: AppSpacing.s6),
-                  _SettingsField(label: l10n.teacherClassCreatedLabel, value: widget.createdAt!),
-                ],
-                if (widget.updatedAt != null) _SettingsField(label: l10n.teacherClassUpdatedLabel, value: widget.updatedAt!),
-                const SizedBox(height: AppSpacing.s8),
-                Text(l10n.teacherCoTeacherAdd, style: TeacherWebUi.sectionTitle(context)),
-                const SizedBox(height: AppSpacing.s4),
-                TextField(
-                  controller: _coEmail,
-                  decoration: InputDecoration(
-                    labelText: l10n.teacherCoTeacherEmailHint,
-                    border: const OutlineInputBorder(),
+                _SettingsSectionCard(
+                  title: l10n.teacherClassSettingsTeam,
+                  icon: Icons.groups_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(l10n.teacherCoTeacherPrimaryTeacher, style: TeacherWebUi.webCaption(context)),
+                      const SizedBox(height: AppSpacing.s3),
+                      _TeacherPersonTile(
+                        name: _userDisplayName(primary),
+                        username: _userUsername(primary),
+                        email: _userEmail(primary),
+                        avatarUrl: primary?['avatarUrl'] as String?,
+                        initial: _userInitial(primary),
+                        badge: l10n.teacherCoTeacherPrimaryTeacher,
+                        badgeColor: AppColors.primary,
+                      ),
+                      const SizedBox(height: AppSpacing.s6),
+                      Text(l10n.teacherCoTeacherListTitle, style: TeacherWebUi.webCaption(context)),
+                      const SizedBox(height: AppSpacing.s3),
+                      if (_coTeacherMembers.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
+                          child: Text(l10n.teacherCoTeacherNone, style: TeacherWebUi.metaMuted),
+                        )
+                      else
+                        ..._coTeacherMembers.map((m) {
+                          final user = m['userId'] is Map
+                              ? Map<String, dynamic>.from(m['userId'] as Map)
+                              : null;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.s3),
+                            child: _TeacherPersonTile(
+                              name: _userDisplayName(user),
+                              username: _userUsername(user),
+                              email: _userEmail(user),
+                              avatarUrl: user?['avatarUrl'] as String?,
+                              initial: _userInitial(user),
+                              trailing: IconButton(
+                                tooltip: l10n.teacherCoTeacherRemove,
+                                icon: const Icon(Icons.person_remove_outlined, size: 20),
+                                color: AppColors.danger,
+                                onPressed: () => _removeCoTeacher(m),
+                              ),
+                            ),
+                          );
+                        }),
+                      const Divider(height: AppSpacing.s8, color: AppColors.outlineMuted),
+                      Text(l10n.teacherCoTeacherAdd, style: TeacherWebUi.webCaption(context)),
+                      const SizedBox(height: AppSpacing.s3),
+                      TextField(
+                        controller: _coUsername,
+                        decoration: InputDecoration(
+                          labelText: l10n.teacherCoTeacherUsernameHint,
+                          hintText: l10n.teacherCoTeacherSearchPlaceholder,
+                          prefixIcon: const Icon(Icons.search, size: 20),
+                          suffixIcon: _searching
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                )
+                              : (_coUsername.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 18),
+                                      onPressed: () {
+                                        _coUsername.clear();
+                                        setState(() {
+                                          _searchResults = [];
+                                        });
+                                      },
+                                    )
+                                  : null),
+                          border: const OutlineInputBorder(),
+                        ),
+                        onChanged: _onCoTeacherSearchChanged,
+                      ),
+                      if (_coUsername.text.trim().length >= 2 && !_searching && _searchResults.isEmpty) ...[
+                        const SizedBox(height: AppSpacing.s3),
+                        Text(l10n.teacherCoTeacherSearchEmpty, style: TeacherWebUi.metaMuted),
+                      ] else if (_searchResults.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.s3),
+                        Material(
+                          color: AppColors.surfaceSubtle,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: const BorderSide(color: AppColors.outline),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Column(
+                            children: [
+                              for (var i = 0; i < _searchResults.length; i++) ...[
+                                if (i > 0) const Divider(height: 1, color: AppColors.outlineMuted),
+                                _CoTeacherSearchResultRow(
+                                  teacher: _searchResults[i],
+                                  adding: _addingTeacherId == _searchResults[i]['id']?.toString(),
+                                  addLabel: l10n.teacherCoTeacherAdd,
+                                  onAdd: () => _addCoTeacher(_searchResults[i]),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.s4),
-                TeacherInlineActions(
-                  children: [
-                    TeacherOutlinedButton(label: l10n.teacherCoTeacherAdd, onPressed: _addCoTeacher),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.s8),
-                Text(l10n.teacherIntegrationsTitle, style: TeacherWebUi.sectionTitle(context)),
-                if (gcName != null && gcName.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.s4),
-                    child: Text(gcName, style: TeacherWebUi.webBody(context)),
+              ],
+            ),
+            right: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SettingsSectionCard(
+                  title: l10n.teacherClassSettingsStats,
+                  icon: Icons.insights_outlined,
+                  child: Column(
+                    children: [
+                      _SettingsInfoRow(
+                        icon: Icons.groups_outlined,
+                        label: l10n.teacherClassStatStudents,
+                        value: '${widget.activeMemberCount}',
+                      ),
+                      _SettingsInfoRow(
+                        icon: Icons.hourglass_top_outlined,
+                        label: l10n.teacherClassStatPendingMembers,
+                        value: '${widget.pendingMemberCount}',
+                      ),
+                      _SettingsInfoRow(
+                        icon: Icons.assignment_outlined,
+                        label: l10n.teacherClassStatActiveAssignments,
+                        value: '${widget.assignmentCount}',
+                      ),
+                      if (widget.createdAt != null)
+                        _SettingsInfoRow(
+                          icon: Icons.event_outlined,
+                          label: l10n.teacherClassCreatedLabel,
+                          value: widget.createdAt!,
+                        ),
+                      if (widget.updatedAt != null)
+                        _SettingsInfoRow(
+                          icon: Icons.update_outlined,
+                          label: l10n.teacherClassUpdatedLabel,
+                          value: widget.updatedAt!,
+                        ),
+                      if (widget.archived)
+                        _SettingsInfoRow(
+                          icon: Icons.archive_outlined,
+                          label: l10n.teacherClassArchive,
+                          value: l10n.teacherClassArchive,
+                          valueColor: AppColors.warning,
+                        ),
+                    ],
                   ),
-                TextField(
-                  controller: _googleCourseId,
-                  decoration: InputDecoration(
-                    labelText: l10n.teacherGoogleClassroomCourseId,
-                    border: const OutlineInputBorder(),
-                  ),
                 ),
-                const SizedBox(height: AppSpacing.s4),
-                TeacherInlineActions(
-                  children: [
-                    TeacherOutlinedButton(
-                      label: l10n.teacherGoogleClassroomLink,
-                      onPressed: _linkGoogle,
-                    ),
-                  ],
-                ),
-                if (gc != null)
-                  TextButton(onPressed: _unlinkGoogle, child: Text(l10n.teacherGoogleClassroomUnlink)),
-                const SizedBox(height: AppSpacing.s8),
-                Text(l10n.teacherClassSettingsJoin, style: TeacherWebUi.sectionTitle(context)),
-                const SizedBox(height: AppSpacing.s4),
-                _SettingsField(label: l10n.teacherClassSettingsJoin, value: widget.policy),
                 const SizedBox(height: AppSpacing.s5),
-                _SettingsField(label: l10n.teacherInviteCode, value: widget.inviteCode, mono: true),
-                const SizedBox(height: AppSpacing.s4),
-                TeacherInlineActions(
-                  children: [
-                    TeacherOutlinedButton(
-                      label: l10n.copyInviteCode,
-                      icon: Icons.copy_outlined,
-                      onPressed: widget.onCopyInvite,
-                    ),
-                    TeacherOutlinedButton(
-                      label: l10n.teacherClassRotateInvite,
-                      icon: Icons.refresh_rounded,
-                      onPressed: widget.onRotateInvite,
-                    ),
-                    TeacherDangerOutlinedButton(
-                      label: l10n.teacherClassArchive,
-                      icon: Icons.archive_outlined,
-                      onPressed: widget.onArchive,
-                    ),
-                  ],
+                _SettingsSectionCard(
+                  title: l10n.teacherClassSettingsInvite,
+                  icon: Icons.link_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _SettingsInfoRow(
+                        icon: Icons.login_outlined,
+                        label: l10n.teacherClassSettingsJoin,
+                        value: widget.policy,
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      Text(l10n.teacherInviteCode, style: TeacherWebUi.webCaption(context)),
+                      const SizedBox(height: AppSpacing.s3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryTint,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+                        ),
+                        child: SelectableText(
+                          widget.inviteCode.isEmpty ? '—' : widget.inviteCode,
+                          style: TeacherWebUi.webH1(context).copyWith(
+                            letterSpacing: 4,
+                            color: AppColors.primaryDark,
+                            fontSize: 22,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      if (widget.inviteToken.isNotEmpty) ...[
+                        Text(l10n.teacherInviteToken, style: TeacherWebUi.webCaption(context)),
+                        const SizedBox(height: 4),
+                        Text(l10n.teacherInviteTokenHint, style: TeacherWebUi.metaMuted),
+                        const SizedBox(height: AppSpacing.s3),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceSubtle,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: AppColors.outline),
+                          ),
+                          child: SelectableText(
+                            widget.inviteToken,
+                            style: TeacherWebUi.webBody(context).copyWith(
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s4),
+                      ],
+                      TeacherInlineActions(
+                        children: [
+                          TeacherOutlinedButton(
+                            label: l10n.copyInviteCode,
+                            icon: Icons.copy_outlined,
+                            onPressed: widget.inviteCode.isEmpty ? null : widget.onCopyInvite,
+                          ),
+                          if (widget.inviteToken.isNotEmpty)
+                            TeacherOutlinedButton(
+                              label: l10n.copyInviteToken,
+                              icon: Icons.content_copy_outlined,
+                              onPressed: widget.onCopyInviteToken,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                _SettingsSectionCard(
+                  title: l10n.teacherIntegrationsTitle,
+                  icon: Icons.extension_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (gcName != null && gcName.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                          child: _SettingsInfoRow(
+                            icon: Icons.school_outlined,
+                            label: 'Google Classroom',
+                            value: gcName,
+                          ),
+                        ),
+                      TextField(
+                        controller: _googleCourseId,
+                        decoration: InputDecoration(
+                          labelText: l10n.teacherGoogleClassroomCourseId,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.s4),
+                      TeacherInlineActions(
+                        children: [
+                          TeacherOutlinedButton(
+                            label: l10n.teacherGoogleClassroomLink,
+                            onPressed: _linkGoogle,
+                          ),
+                        ],
+                      ),
+                      if (gc != null)
+                        TextButton(onPressed: _unlinkGoogle, child: Text(l10n.teacherGoogleClassroomUnlink)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                _SettingsSectionCard(
+                  title: l10n.teacherClassSettingsDanger,
+                  icon: Icons.settings_suggest_outlined,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TeacherInlineActions(
+                        children: [
+                          TeacherOutlinedButton(
+                            label: l10n.teacherClassRotateInvite,
+                            icon: Icons.refresh_rounded,
+                            onPressed: widget.onRotateInvite,
+                          ),
+                          TeacherDangerOutlinedButton(
+                            label: l10n.teacherClassArchive,
+                            icon: Icons.archive_outlined,
+                            onPressed: widget.onArchive,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: AppSpacing.s9),
+        ],
+      ),
     );
   }
 }
 
-class _SettingsField extends StatelessWidget {
-  const _SettingsField({
-    required this.label,
-    required this.value,
-    this.mono = false,
+class _CoTeacherSearchResultRow extends StatelessWidget {
+  const _CoTeacherSearchResultRow({
+    required this.teacher,
+    required this.adding,
+    required this.addLabel,
+    required this.onAdd,
   });
 
+  final Map<String, dynamic> teacher;
+  final bool adding;
+  final String addLabel;
+  final VoidCallback onAdd;
+
+  String _displayName() {
+    final name = (teacher['fullName'] as String?)?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final username = (teacher['username'] as String?)?.trim();
+    if (username != null && username.isNotEmpty) return username;
+    return '—';
+  }
+
+  String? _username() {
+    final username = (teacher['username'] as String?)?.trim();
+    return username != null && username.isNotEmpty ? username : null;
+  }
+
+  String _initial() {
+    final label = _displayName();
+    return label != '—' ? label[0].toUpperCase() : '?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final username = _username();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: AppColors.primaryTint,
+            backgroundImage: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
+                ? NetworkImage(teacher['avatarUrl'] as String)
+                : null,
+            child: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
+                ? null
+                : Text(
+                    _initial(),
+                    style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w700),
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_displayName(), style: TeacherWebUi.listTitle(context)),
+                if (username != null)
+                  Text('@$username', style: TeacherWebUi.metaMuted),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (adding)
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: Padding(
+                padding: EdgeInsets.all(4),
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              onPressed: onAdd,
+              child: Text(addLabel),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsSectionCard extends StatelessWidget {
+  const _SettingsSectionCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.s5),
+      decoration: TeacherWebUi.cardDecoration(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(child: Text(title, style: TeacherWebUi.sectionTitle(context))),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s5),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsInfoRow extends StatelessWidget {
+  const _SettingsInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
   final String label;
   final String value;
-  final bool mono;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.s5),
-      child: Column(
+      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TeacherWebUi.webCaption(context)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TeacherWebUi.webBody(context).copyWith(
-              color: AppColors.textPrimary,
-              fontFamily: mono ? 'monospace' : null,
-              letterSpacing: mono ? 2 : null,
-              fontWeight: mono ? FontWeight.w600 : FontWeight.w400,
+          Icon(icon, size: 18, color: AppColors.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TeacherWebUi.webCaption(context)),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TeacherWebUi.webBody(context).copyWith(
+                    color: valueColor ?? AppColors.textPrimary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TeacherPersonTile extends StatelessWidget {
+  const _TeacherPersonTile({
+    required this.name,
+    this.username,
+    this.email,
+    this.avatarUrl,
+    required this.initial,
+    this.badge,
+    this.badgeColor,
+    this.trailing,
+  });
+
+  final String name;
+  final String? username;
+  final String? email;
+  final String? avatarUrl;
+  final String initial;
+  final String? badge;
+  final Color? badgeColor;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.primaryTint,
+            backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty) ? NetworkImage(avatarUrl!) : null,
+            child: (avatarUrl == null || avatarUrl!.isEmpty)
+                ? Text(initial, style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w700))
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: TeacherWebUi.listTitle(context)),
+                if (username != null) ...[
+                  const SizedBox(height: 2),
+                  Text('@$username', style: TeacherWebUi.metaMuted),
+                ],
+                if (email != null && email!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(email!, style: TeacherWebUi.metaMuted, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
+              ],
+            ),
+          ),
+          if (badge != null)
+            Container(
+              margin: const EdgeInsets.only(left: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.35)),
+              ),
+              child: Text(
+                badge!,
+                style: TeacherWebUi.webCaption(context).copyWith(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: badgeColor ?? AppColors.primaryDark,
+                ),
+              ),
+            ),
+          if (trailing != null) trailing!,
         ],
       ),
     );

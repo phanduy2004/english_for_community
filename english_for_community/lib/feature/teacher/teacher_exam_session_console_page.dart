@@ -1,27 +1,28 @@
-import 'package:english_for_community/core/api/token_storage.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
-import 'package:english_for_community/core/socket/socket_service.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_assignment_card.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_session_console/teacher_exam_session_console_bloc.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_session_console/teacher_exam_session_console_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_session_console/teacher_exam_session_console_state.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_mobile_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_compact_strip.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_timing.dart';
-import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_participant_status_chip.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_live_monitor_panel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class TeacherExamSessionConsolePage extends StatefulWidget {
+class TeacherExamSessionConsolePage extends StatelessWidget {
   const TeacherExamSessionConsolePage({super.key, required this.assignmentId});
 
   final String assignmentId;
@@ -30,7 +31,36 @@ class TeacherExamSessionConsolePage extends StatefulWidget {
   static const String routeName = 'TeacherExamSessionConsolePage';
 
   @override
-  State<TeacherExamSessionConsolePage> createState() => _TeacherExamSessionConsolePageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<TeacherExamSessionConsoleBloc>(param1: assignmentId)
+        ..add(TeacherExamSessionConsoleStarted(assignmentId)),
+      child: _TeacherExamSessionConsoleDisposeScope(
+        child: _TeacherExamSessionConsoleView(assignmentId: assignmentId),
+      ),
+    );
+  }
+}
+
+class _TeacherExamSessionConsoleDisposeScope extends StatefulWidget {
+  const _TeacherExamSessionConsoleDisposeScope({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_TeacherExamSessionConsoleDisposeScope> createState() =>
+      _TeacherExamSessionConsoleDisposeScopeState();
+}
+
+class _TeacherExamSessionConsoleDisposeScopeState extends State<_TeacherExamSessionConsoleDisposeScope> {
+  @override
+  void dispose() {
+    context.read<TeacherExamSessionConsoleBloc>().add(const TeacherExamSessionConsoleStopped());
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 String _participantDisplayName(Map<String, dynamic> p) {
@@ -49,271 +79,60 @@ String _participantSubtitle(Map<String, dynamic> p) {
   return (p['userId'] as String?)?.trim() ?? '';
 }
 
-class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsolePage> {
-  Map<String, dynamic>? _assignmentContext;
-  Map<String, dynamic>? _session;
-  bool _loading = true;
-  bool _busy = false;
-  String? _error;
-  String? _boundSessionId;
-  List<Map<String, dynamic>> _participants = [];
-  int _joinedCount = 0;
-  int _readyCount = 0;
-  Map<String, dynamic>? _liveMonitor;
+Future<void> _confirmKick(BuildContext context, Map<String, dynamic> participant) async {
+  final l10n = context.l10n;
+  final userId = participant['userId']?.toString() ?? '';
+  if (userId.isEmpty) return;
+  final name = _participantDisplayName(participant);
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(l10n.examSessionKickStudentTitle),
+      content: Text(l10n.examSessionKickStudentConfirm(name.isEmpty ? l10n.teacherDashboardStudentUnknown : name)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.chartTrend),
+          onPressed: () => Navigator.pop(ctx, true),
+          child: Text(l10n.examSessionKickStudentAction),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true || !context.mounted) return;
+  context.read<TeacherExamSessionConsoleBloc>().add(TeacherExamSessionConsoleKickRequested(userId));
+  AppCornerToast.show(context, l10n.examSessionKickStudentDone);
+}
 
-  String? get _sessionId => _session?['id'] as String? ?? _session?['_id']?.toString();
-  String get _status => (_session?['status'] as String?) ?? 'lobby';
+class _TeacherExamSessionConsoleView extends StatelessWidget {
+  const _TeacherExamSessionConsoleView({required this.assignmentId});
 
-  @override
-  void initState() {
-    super.initState();
-    _loadConsole();
-  }
+  final String assignmentId;
 
-  @override
-  void dispose() {
-    if (_boundSessionId != null) {
-      getIt<SocketService>().offExamSessionState();
-      getIt<SocketService>().clearExamRealtimeContext();
-    }
-    super.dispose();
-  }
-
-  Future<void> _loadConsole() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final r = await getIt<TeacherExamRepository>().getSessionConsole(widget.assignmentId);
-    if (!mounted) return;
-    r.fold(
-      (f) => setState(() {
-        _error = f.message;
-        _loading = false;
-      }),
-      (data) async {
-        final m = Map<String, dynamic>.from(data as Map);
-        final ctx = m['assignment'];
-        if (ctx is Map) _assignmentContext = Map<String, dynamic>.from(ctx);
-        final sessionDoc = m['session'];
-        if (sessionDoc is Map) _session = Map<String, dynamic>.from(sessionDoc);
-        final live = m['liveState'];
-        if (live is Map) _ingestLobbyPayload(Map<String, dynamic>.from(live));
-        final lm = m['liveMonitor'];
-        if (lm is Map) {
-          _liveMonitor = Map<String, dynamic>.from(lm);
-        } else if (_status != 'live' && _status != 'grading') {
-          _liveMonitor = null;
-        }
-        final sid = _sessionId ?? '';
-        if (sid.isNotEmpty && _status == 'live' && _liveMonitor == null) {
-          final lmR = await getIt<TeacherExamRepository>().getSessionLiveMonitor(sid);
-          lmR.fold((_) {}, (data) {
-            if (data is Map) _liveMonitor = Map<String, dynamic>.from(data);
-          });
-        }
-        setState(() => _loading = false);
-        if (sid.isNotEmpty && (_status == 'lobby' || _status == 'live')) {
-          await _bindLiveSocket(sid);
-        }
-      },
-    );
-  }
-
-  Future<void> _bindLiveSocket(String sessionId) async {
-    if (sessionId.isEmpty) return;
-    if (_boundSessionId == sessionId) return;
-    if (_boundSessionId != null) {
-      getIt<SocketService>().offExamSessionState();
-      getIt<SocketService>().clearExamRealtimeContext();
-    }
-    _boundSessionId = sessionId;
-    await _refreshLobbySnapshot(sessionId);
-    final token = await TokenStorage.readAccessToken() ?? '';
-    if (!mounted || token.isEmpty) return;
-    getIt<SocketService>().setExamRealtimeContext(accessToken: token, sessionId: sessionId);
-    getIt<SocketService>().listenExamSessionState(_onSocketLobby);
-  }
-
-  void _onSocketLobby(Map<String, dynamic> payload) {
-    if (payload['sessionId']?.toString() != _boundSessionId) return;
-    if (!mounted) return;
-    setState(() => _ingestLobbyPayload(payload));
-  }
-
-  void _ingestLobbyPayload(Map<String, dynamic> p) {
-    final raw = p['participants'];
-    if (raw is List) {
-      _participants = raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    }
-    final jc = p['joinedCount'];
-    if (jc is num) {
-      _joinedCount = jc.toInt();
-    } else {
-      _joinedCount = _participants.length;
-    }
-    final rc = p['readyCount'];
-    if (rc is num) {
-      _readyCount = rc.toInt();
-    } else {
-      _readyCount = _participants.where((x) => x['ready'] == true).length;
-    }
-    final st = p['status']?.toString();
-    if (st != null) {
-      _session = Map<String, dynamic>.from(_session ?? {});
-      _session!['status'] = st;
-    }
-    final room = p['roomCode'];
-    if (room is String && room.isNotEmpty) {
-      _session = Map<String, dynamic>.from(_session ?? {});
-      _session!['roomCode'] = room;
-    }
-    final ctx = p['context'];
-    if (ctx is Map) {
-      _assignmentContext = Map<String, dynamic>.from(ctx);
-    }
-    final created = p['createdAt'];
-    if (created != null && _session != null) {
-      _session = Map<String, dynamic>.from(_session!);
-      _session!['createdAt'] = created;
-    }
-    _mergeSessionTimingFromPayload(p);
-  }
-
-  void _mergeSessionTimingFromPayload(Map<String, dynamic> p) {
-    _session = Map<String, dynamic>.from(_session ?? {});
-    for (final key in ['startedAt', 'endedAt', 'scheduledEndAt', 'hardEndAt', 'timeLimitSeconds']) {
-      final v = p[key];
-      if (v != null) _session![key] = v;
-    }
-  }
-
-  Future<void> _refreshLobbySnapshot(String sessionId) async {
-    final r = await getIt<TeacherExamRepository>().getExamSessionLobby(sessionId);
-    if (!mounted) return;
-    r.fold((_) {}, (data) {
-      if (data is Map) setState(() => _ingestLobbyPayload(Map<String, dynamic>.from(data)));
-    });
-  }
-
-  Future<void> _create() async {
-    setState(() => _busy = true);
-    final r = await getIt<TeacherExamRepository>().createExamSession(widget.assignmentId);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await r.fold(
-      (f) async {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message)));
-      },
-      (d) async {
-        final m = Map<String, dynamic>.from(d as Map);
-        setState(() => _session = m);
-        final id = _sessionId ?? '';
-        if (id.isNotEmpty) await _bindLiveSocket(id);
-        if (mounted) await _loadConsole();
-      },
-    );
-  }
-
-  Future<void> _start() async {
-    final id = _sessionId ?? '';
-    if (id.isEmpty) return;
-    setState(() => _busy = true);
-    final r = await getIt<TeacherExamRepository>().startExamSession(id);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await r.fold(
-      (f) async {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message)));
-      },
-      (d) async {
-        setState(() => _session = Map<String, dynamic>.from(d as Map));
-        await _loadConsole();
-      },
-    );
-  }
-
-  Future<void> _kickStudentFromMonitor(Map<String, dynamic> student) async {
-    await _kickStudent({
-      'userId': student['userId'],
-      'fullName': student['fullName'],
-      'email': student['email'],
-      'username': student['username'],
-    });
-  }
-
-  Future<void> _kickStudent(Map<String, dynamic> participant) async {
-    final sid = _sessionId ?? '';
-    final userId = participant['userId']?.toString() ?? '';
-    if (sid.isEmpty || userId.isEmpty) return;
-    final l10n = context.l10n;
-    final name = _participantDisplayName(participant);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.examSessionKickStudentTitle),
-        content: Text(l10n.examSessionKickStudentConfirm(name.isEmpty ? l10n.teacherDashboardStudentUnknown : name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.cancel)),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppColors.chartTrend),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.examSessionKickStudentAction),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _busy = true);
-    final r = await getIt<TeacherExamRepository>().kickExamSessionParticipant(sid, userId);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
-      (data) {
-        if (data is Map) setState(() => _ingestLobbyPayload(Map<String, dynamic>.from(data)));
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.examSessionKickStudentDone)));
-      },
-    );
-  }
-
-  Future<void> _end() async {
-    final id = _sessionId ?? '';
-    if (id.isEmpty) return;
-    setState(() => _busy = true);
-    final r = await getIt<TeacherExamRepository>().endExamSession(id);
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await r.fold(
-      (f) async {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message)));
-      },
-      (d) async {
-        setState(() => _session = Map<String, dynamic>.from(d as Map));
-        await _refreshLobbySnapshot(id);
-      },
-    );
-  }
-
-  bool get _isLobby => _status == 'lobby';
-  bool get _isLive => _status == 'live';
-
-  TeacherExamSessionTimingLabels? _sessionTiming(BuildContext context) {
+  TeacherExamSessionTimingLabels? _sessionTiming(
+    BuildContext context,
+    TeacherExamSessionConsoleState state,
+  ) {
     return TeacherExamSessionTimingLabels.fromMaps(
       context,
-      sessionStatus: _status,
-      session: _session,
-      assignmentContext: _assignmentContext,
+      sessionStatus: state.sessionStatus,
+      session: state.session,
+      assignmentContext: state.assignmentContext,
     );
   }
 
-  Widget _sessionCompactStrip(BuildContext context, String roomCode, String createdLabel) {
+  Widget _sessionCompactStrip(
+    BuildContext context,
+    TeacherExamSessionConsoleState state,
+    String roomCode,
+    String createdLabel,
+  ) {
     return TeacherExamSessionCompactStrip(
-      contextData: _assignmentContext ?? {},
-      sessionStatus: _status,
+      contextData: state.assignmentContext ?? {},
+      sessionStatus: state.sessionStatus,
       roomCode: roomCode,
       sessionCreatedAt: createdLabel,
-      timing: _sessionTiming(context),
+      timing: _sessionTiming(context, state),
     );
   }
 
@@ -327,28 +146,31 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
     return l10n.teacherLiveMonitorSummaryLine(inProgress, submitted, flagged, avgLabel);
   }
 
-  List<Widget> _rosterSection(BuildContext context) {
-    if (_isLive) {
+  List<Widget> _rosterSection(BuildContext context, TeacherExamSessionConsoleState state) {
+    if (state.isLive) {
       return [
         BlocBuilder<TeacherLiveMonitorBloc, TeacherLiveMonitorState>(
+          buildWhen: teacherLiveMonitorSummaryBuildWhen,
           builder: (context, monitorState) => _rosterCard(
             context,
-            monitorByUserId: TeacherExamParticipantStatusResolver.indexByUserId(monitorState.students),
+            state,
+            monitorByUserId: monitorState.studentsByUserId,
             summary: monitorState.summary,
           ),
         ),
       ];
     }
-    return [_rosterCard(context)];
+    return [_rosterCard(context, state)];
   }
 
   Widget _rosterCard(
-    BuildContext context, {
+    BuildContext context,
+    TeacherExamSessionConsoleState state, {
     Map<String, Map<String, dynamic>> monitorByUserId = const {},
     Map<String, dynamic> summary = const {},
   }) {
     final l10n = context.l10n;
-    final rosterTitle = _isLive
+    final rosterTitle = state.isLive
         ? l10n.teacherExamSessionLiveRosterTitleLive
         : l10n.teacherExamSessionLiveRosterTitle;
 
@@ -361,7 +183,7 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
           children: [
             Text(rosterTitle, style: ExamSystemUi.listTitle(context)),
             const SizedBox(height: 12),
-            if (_isLive && summary.isNotEmpty) ...[
+            if (state.isLive && summary.isNotEmpty) ...[
               Text(
                 _liveSummaryLine(context, summary),
                 style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
@@ -371,34 +193,41 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
               const SizedBox(height: 8),
             ],
             Text(
-              l10n.teacherExamSessionJoinedCount(_joinedCount),
+              l10n.teacherExamSessionJoinedCount(state.joinedCount),
               style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
             ),
-            if (_isLobby && _joinedCount > 0) ...[
+            if (state.isLobby && state.joinedCount > 0) ...[
               const SizedBox(height: 4),
               Text(
-                l10n.examSessionReadyCount(_readyCount, _joinedCount),
+                l10n.examSessionReadyCount(state.readyCount, state.joinedCount),
                 style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.primary),
               ),
             ],
             const SizedBox(height: 12),
-            if (_participants.isEmpty)
+            if (state.participants.isEmpty)
               Text(l10n.teacherExamSessionNoParticipantsYet, style: ExamSystemUi.captionSecondary)
             else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _participants.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, i) {
-                  final p = _participants[i];
-                  final uid = p['userId']?.toString() ?? '';
-                  return _participantTile(
-                    context,
-                    p,
-                    monitorRow: uid.isEmpty ? null : monitorByUserId[uid],
-                  );
-                },
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (var i = 0; i < state.participants.length; i++) ...[
+                    if (i > 0) const Divider(height: 1),
+                    Builder(
+                      builder: (context) {
+                        final p = state.participants[i];
+                        final uid = p['userId']?.toString() ?? '';
+                        return RepaintBoundary(
+                          child: _participantTile(
+                            context,
+                            state,
+                            p,
+                            monitorRow: uid.isEmpty ? null : monitorByUserId[uid],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
               ),
           ],
         ),
@@ -408,6 +237,7 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
 
   Widget _participantTile(
     BuildContext context,
+    TeacherExamSessionConsoleState state,
     Map<String, dynamic> p, {
     Map<String, dynamic>? monitorRow,
   }) {
@@ -415,17 +245,17 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
     final name = _participantDisplayName(p);
     final sub = _participantSubtitle(p);
     final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
-    final phase = _isLobby
+    final phase = state.isLobby
         ? TeacherExamSessionPhase.lobby
-        : (_isLive ? TeacherExamSessionPhase.live : TeacherExamSessionPhase.ended);
+        : (state.isLive ? TeacherExamSessionPhase.live : TeacherExamSessionPhase.ended);
     final chipStatus = TeacherExamParticipantStatusResolver.resolve(
       phase: phase,
       participant: p,
       monitorRow: monitorRow,
     );
     final attemptStatus = monitorRow?['status']?.toString() ?? '';
-    final showKick = _isLobby || (_isLive && attemptStatus == 'in_progress');
-    final inProgressLive = _isLive && chipStatus == TeacherExamParticipantStatus.inProgress;
+    final showKick = state.isLobby || (state.isLive && attemptStatus == 'in_progress');
+    final inProgressLive = state.isLive && chipStatus == TeacherExamParticipantStatus.inProgress;
     final pct = ((monitorRow?['progressPercent'] as num?)?.toDouble() ?? 0) / 100;
 
     return Padding(
@@ -487,7 +317,7 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
             const SizedBox(width: 4),
             IconButton(
               tooltip: l10n.examSessionKickStudentAction,
-              onPressed: _busy ? null : () => _kickStudent(p),
+              onPressed: state.busy ? null : () => _confirmKick(context, p),
               icon: Icon(Icons.person_remove_outlined, size: 20, color: AppColors.chartTrend),
               visualDensity: VisualDensity.compact,
               padding: EdgeInsets.zero,
@@ -499,34 +329,61 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
     );
   }
 
-  /// Primary session controls — top-right header (dashboard "New exam" pattern).
-  List<Widget> _sessionHeaderActions(BuildContext context) {
+  List<Widget> _sessionHeaderActions(BuildContext context, TeacherExamSessionConsoleState state) {
     final l10n = context.l10n;
-    final sid = _sessionId ?? '';
+    final sid = state.sessionId ?? '';
     if (sid.isEmpty) {
       return [
         TeacherOutlinedButton(
           label: l10n.teacherExamCreateSession,
-          onPressed: _busy ? null : _create,
+          onPressed: state.busy
+              ? null
+              : () => context.read<TeacherExamSessionConsoleBloc>().add(const TeacherExamSessionConsoleCreateRequested()),
         ),
       ];
     }
+    final startBtn = state.isLobby
+        ? TeacherFilledButton(
+            label: l10n.teacherExamStartSession,
+            onPressed: state.busy
+                ? null
+                : () => context
+                    .read<TeacherExamSessionConsoleBloc>()
+                    .add(const TeacherExamSessionConsoleStartRequested()),
+          )
+        : null;
+    final endBtn = (state.isLive || state.isLobby)
+        ? TeacherDangerOutlinedButton(
+            label: l10n.teacherExamEndSession,
+            onPressed: state.busy
+                ? null
+                : () => context
+                    .read<TeacherExamSessionConsoleBloc>()
+                    .add(const TeacherExamSessionConsoleEndRequested()),
+          )
+        : null;
+
+    if (startBtn == null && endBtn == null) return const [];
+
+    if (TeacherMobileUi.isMobileWorkspace(context)) {
+      return [if (startBtn != null) startBtn, if (endBtn != null) endBtn];
+    }
+
     return [
-      if (_isLobby)
-        TeacherFilledButton(
-          label: l10n.teacherExamStartSession,
-          onPressed: _busy ? null : _start,
-        ),
-      if (_isLive || _isLobby)
-        TeacherDangerOutlinedButton(
-          label: l10n.teacherExamEndSession,
-          onPressed: _busy ? null : _end,
-        ),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (startBtn != null) ...[startBtn, const SizedBox(width: 8)],
+          if (endBtn != null) endBtn,
+        ],
+      ),
     ];
   }
 
   Widget _buildControlTab(
     BuildContext context,
+    TeacherExamSessionConsoleState state,
     String sharePath, {
     required String roomCode,
     required String createdLabel,
@@ -535,9 +392,9 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
     return ListView(
       padding: TeacherWebUi.pageScrollPadding(context),
       children: [
-        _sessionCompactStrip(context, roomCode, createdLabel),
+        _sessionCompactStrip(context, state, roomCode, createdLabel),
         const SizedBox(height: ExamSystemUi.cardGap),
-        if (_isLive) ...[
+        if (state.isLive) ...[
           DecoratedBox(
             decoration: ExamSystemUi.softCard(),
             child: Padding(
@@ -550,14 +407,14 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
           ),
           const SizedBox(height: ExamSystemUi.cardGap),
         ],
-        if (sharePath.isNotEmpty && _isLobby) ...[
+        if (sharePath.isNotEmpty && state.isLobby) ...[
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: () async {
                 await Clipboard.setData(ClipboardData(text: sharePath));
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.copiedToClipboard)));
+                  AppCornerToast.show(context, l10n.copiedToClipboard);
                 }
               },
               icon: const Icon(Icons.link, size: 18),
@@ -566,16 +423,22 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
           ),
           const SizedBox(height: 10),
         ],
-        ..._rosterSection(context),
+        ..._rosterSection(context, state),
       ],
     );
   }
 
-  Widget _buildLiveTabbedBody(BuildContext context, String sid, String roomCode, String createdLabel) {
+  Widget _buildLiveTabbedBody(
+    BuildContext context,
+    TeacherExamSessionConsoleState state,
+    String sid,
+    String roomCode,
+    String createdLabel,
+  ) {
     final l10n = context.l10n;
     return BlocProvider(
       create: (_) => getIt<TeacherLiveMonitorBloc>(param1: sid)
-        ..add(TeacherLiveMonitorStarted(initialSnapshot: _liveMonitor)),
+        ..add(TeacherLiveMonitorStarted(initialSnapshot: state.liveMonitor)),
       child: DefaultTabController(
         length: 2,
         initialIndex: 1,
@@ -601,11 +464,19 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
                 children: [
                   _buildControlTab(
                     context,
+                    state,
                     sid.isEmpty ? '' : '/student/exam-session/$sid',
                     roomCode: roomCode,
                     createdLabel: createdLabel,
                   ),
-                  TeacherLiveMonitorPanel(onKickStudent: _kickStudentFromMonitor),
+                  TeacherLiveMonitorPanel(
+                    onKickStudent: (student) => _confirmKick(context, {
+                      'userId': student['userId'],
+                      'fullName': student['fullName'],
+                      'email': student['email'],
+                      'username': student['username'],
+                    }),
+                  ),
                 ],
               ),
             ),
@@ -618,67 +489,83 @@ class _TeacherExamSessionConsolePageState extends State<TeacherExamSessionConsol
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final sid = _sessionId ?? '';
-    final sharePath = sid.isEmpty ? '' : '/student/exam-session/$sid';
-    final roomCode = (_session?['roomCode'] as String?) ?? '';
-    final createdIso = _session?['createdAt']?.toString();
-    final createdLabel = ExamAssignmentCard.formatIso(context, createdIso) ?? '';
 
-    final mobile = TeacherMobileUi.isMobileWorkspace(context);
-    final sessionActions = _loading || _error != null ? const <Widget>[] : _sessionHeaderActions(context);
+    return BlocConsumer<TeacherExamSessionConsoleBloc, TeacherExamSessionConsoleState>(
+      listenWhen: (prev, curr) =>
+          curr.errorMessage != null && prev.errorMessage != curr.errorMessage,
+      listener: (context, state) {
+        final msg = state.errorMessage;
+        if (msg != null) {
+          AppCornerToast.show(context, msg, error: true);
+        }
+      },
+      builder: (context, state) {
+        final sid = state.sessionId ?? '';
+        final roomCode = (state.session?['roomCode'] as String?) ?? '';
+        final createdIso = state.session?['createdAt']?.toString();
+        final createdLabel = ExamAssignmentCard.formatIso(context, createdIso) ?? '';
 
-    return TeacherPageScaffold(
-      title: l10n.teacherExamConsoleTitle,
-      maxWidth: TeacherWebUi.contentMaxTable,
-      scrollable: false,
-      showBack: true,
-      actions: mobile ? const [] : sessionActions,
-      bottomActions: mobile ? sessionActions : null,
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: TeacherWebUi.pageScrollPadding(context),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center, style: ExamSystemUi.captionSecondary),
-                        const SizedBox(height: 16),
-                        TeacherRetryButton(onPressed: _loadConsole),
-                      ],
-                    ),
-                  ),
-                )
-              : _isLive && sid.isNotEmpty
-                  ? _buildLiveTabbedBody(context, sid, roomCode, createdLabel)
-                  : ListView(
-                      padding: TeacherWebUi.pageScrollPadding(context),
-                      children: [
-                        _sessionCompactStrip(context, roomCode, createdLabel),
-                        const SizedBox(height: ExamSystemUi.cardGap),
-                        if (sharePath.isNotEmpty && _isLobby) ...[
-                          const SizedBox(height: 10),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton.icon(
-                              onPressed: () async {
-                                await Clipboard.setData(ClipboardData(text: sharePath));
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(l10n.copiedToClipboard)),
-                                  );
-                                }
-                              },
-                              icon: const Icon(Icons.link, size: 18),
-                              label: Text(l10n.copyInviteCode),
+        final loading = state.status == TeacherExamSessionConsoleStatus.loading;
+        final error = state.status == TeacherExamSessionConsoleStatus.error ? state.errorMessage : null;
+        final mobile = TeacherMobileUi.isMobileWorkspace(context);
+        final sessionActions = loading || error != null ? const <Widget>[] : _sessionHeaderActions(context, state);
+
+        return TeacherPageScaffold(
+          title: l10n.teacherExamConsoleTitle,
+          maxWidth: TeacherWebUi.contentMaxTable,
+          scrollable: false,
+          showBack: true,
+          actions: mobile ? const [] : sessionActions,
+          bottomActions: mobile ? sessionActions : null,
+          body: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+                  ? Center(
+                      child: Padding(
+                        padding: TeacherWebUi.pageScrollPadding(context),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(error, textAlign: TextAlign.center, style: ExamSystemUi.captionSecondary),
+                            const SizedBox(height: 16),
+                            TeacherRetryButton(
+                              onPressed: () => context
+                                  .read<TeacherExamSessionConsoleBloc>()
+                                  .add(TeacherExamSessionConsoleStarted(assignmentId)),
                             ),
-                          ),
-                        ],
-                        const SizedBox(height: ExamSystemUi.sectionGap),
-                        ..._rosterSection(context),
-                      ],
-                    ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : state.isLive && sid.isNotEmpty
+                      ? _buildLiveTabbedBody(context, state, sid, roomCode, createdLabel)
+                      : ListView(
+                          padding: TeacherWebUi.pageScrollPadding(context),
+                          children: [
+                            _sessionCompactStrip(context, state, roomCode, createdLabel),
+                            const SizedBox(height: ExamSystemUi.cardGap),
+                            if (sid.isNotEmpty && state.isLobby) ...[
+                              const SizedBox(height: 10),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () async {
+                                    await Clipboard.setData(ClipboardData(text: '/student/exam-session/$sid'));
+                                    if (context.mounted) {
+                                      AppCornerToast.show(context, l10n.copiedToClipboard);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.link, size: 18),
+                                  label: Text(l10n.copyInviteCode),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: ExamSystemUi.sectionGap),
+                            ..._rosterSection(context, state),
+                          ],
+                        ),
+        );
+      },
     );
   }
 }

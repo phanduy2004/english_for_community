@@ -97,7 +97,7 @@ class AppNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 60,
+      height: 54,
       child: NavigationBar(
         selectedIndex: currentIndex,
         labelBehavior: labelBehavior,
@@ -113,8 +113,8 @@ class AppNavigationBar extends StatelessWidget {
           onIndexSelected(i);
         },
         destinations: items.map((it) {
-          final icon = Icon(it.icon, size: 22);
-          final selected = Icon(it.selectedIcon, size: 22);
+          final icon = Icon(it.icon, size: 20);
+          final selected = Icon(it.selectedIcon, size: 20);
 
           final iconWithBadge = it.badge == null
               ? icon

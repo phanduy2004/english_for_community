@@ -1,9 +1,10 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 
-/// Compact success/error toast — bottom-right, width fits label (`07-web-components`).
-class TeacherCornerToast {
-  TeacherCornerToast._();
+/// Compact floating toast positioned at the bottom-right corner.
+/// Replaces full-width SnackBars with a messenger-style notification.
+class AppCornerToast {
+  AppCornerToast._();
 
   static const double _horizontalPadding = 16;
   static const double _edgeInset = 20;

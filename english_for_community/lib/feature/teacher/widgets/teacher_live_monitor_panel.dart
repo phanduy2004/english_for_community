@@ -5,6 +5,7 @@ import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/feature/teacher/teacher_student_live_screen_page.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_participant_status_chip.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_question_strip.dart';
@@ -63,6 +64,7 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
     final unknown = l10n.teacherDashboardStudentUnknown;
 
     return BlocBuilder<TeacherLiveMonitorBloc, TeacherLiveMonitorState>(
+      buildWhen: teacherLiveMonitorSummaryBuildWhen,
       builder: (context, state) {
         if (state.status == TeacherLiveMonitorStatus.loading && state.students.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -89,15 +91,8 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
         final submitted = (summary['submitted'] as num?)?.toInt() ?? 0;
         final flagged = (summary['flagged'] as num?)?.toInt() ?? 0;
         final avg = (summary['avgProgressPercent'] as num?)?.toDouble() ?? 0;
-        final visible = state.visibleStudents;
 
         final avgLabel = avg == avg.roundToDouble() ? '${avg.toInt()}' : avg.toStringAsFixed(1);
-        final summaryLine = l10n.teacherLiveMonitorSummaryLine(
-          inProgress,
-          submitted,
-          flagged,
-          avgLabel,
-        );
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,85 +100,112 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
             Material(
               color: AppColors.surfaceCard,
               child: Container(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 8),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
                 decoration: const BoxDecoration(
                   border: Border(bottom: BorderSide(color: AppColors.outlineMuted)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      summaryLine,
-                      style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        TeacherLiveMonitorMetricChip(
+                          value: '$inProgress',
+                          label: l10n.teacherLiveMonitorFilterInProgress,
+                          accent: AppColors.info,
+                        ),
+                        TeacherLiveMonitorMetricChip(
+                          value: '$submitted',
+                          label: l10n.teacherLiveMonitorFilterSubmitted,
+                          accent: AppColors.primary,
+                        ),
+                        TeacherLiveMonitorMetricChip(
+                          value: '$flagged',
+                          label: l10n.teacherLiveMonitorFilterFlagged,
+                          accent: AppColors.warning,
+                        ),
+                        TeacherLiveMonitorMetricChip(
+                          value: '$avgLabel%',
+                          label: l10n.teacherLiveMonitorDetailProgress,
+                          accent: AppColors.accentDark,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: TeacherLiveMonitorFilter.values.map((f) {
-                          final selected = state.filter == f;
-                          final label = switch (f) {
-                            TeacherLiveMonitorFilter.all => l10n.teacherLiveMonitorFilterAll,
-                            TeacherLiveMonitorFilter.inProgress => l10n.teacherLiveMonitorFilterInProgress,
-                            TeacherLiveMonitorFilter.submitted => l10n.teacherLiveMonitorFilterSubmitted,
-                            TeacherLiveMonitorFilter.flagged => l10n.teacherLiveMonitorFilterFlagged,
-                          };
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 6),
-                            child: FilterChip(
-                              label: Text(label, style: const TextStyle(fontSize: 12)),
-                              visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              selected: selected,
-                              onSelected: (_) => context.read<TeacherLiveMonitorBloc>().add(
-                                    TeacherLiveMonitorFilterChanged(f),
-                                  ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: TeacherLiveMonitorFilter.values.map((f) {
+                        final selected = state.filter == f;
+                        final label = switch (f) {
+                          TeacherLiveMonitorFilter.all => l10n.teacherLiveMonitorFilterAll,
+                          TeacherLiveMonitorFilter.inProgress => l10n.teacherLiveMonitorFilterInProgress,
+                          TeacherLiveMonitorFilter.submitted => l10n.teacherLiveMonitorFilterSubmitted,
+                          TeacherLiveMonitorFilter.flagged => l10n.teacherLiveMonitorFilterFlagged,
+                        };
+                        return TeacherFilterChip(
+                          label: label,
+                          selected: selected,
+                          onSelected: () => context.read<TeacherLiveMonitorBloc>().add(
+                                TeacherLiveMonitorFilterChanged(f),
+                              ),
+                        );
+                      }).toList(),
                     ),
                   ],
                 ),
               ),
             ),
             Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  context.read<TeacherLiveMonitorBloc>().add(const TeacherLiveMonitorRefreshRequested());
-                  await context.read<TeacherLiveMonitorBloc>().stream.firstWhere(
-                        (s) => s.status != TeacherLiveMonitorStatus.loading,
-                      );
-                },
-                child: visible.isEmpty
-                    ? ListView(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 48),
-                            child: Center(
-                              child: Text(l10n.teacherLiveMonitorNoStudents, style: ExamSystemUi.captionSecondary),
-                            ),
-                          ),
-                        ],
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-                        itemCount: visible.length,
-                        itemBuilder: (context, index) {
-                          final s = visible[index];
-                          return _StudentMonitorTile(
-                            student: s,
-                            unknown: unknown,
-                            l10n: l10n,
-                            onKickStudent: onKickStudent,
-                            onWatchScreen: () => _openLiveScreen(context, s),
-                            riskColor: _riskColor,
+              child: BlocBuilder<TeacherLiveMonitorBloc, TeacherLiveMonitorState>(
+                buildWhen: teacherLiveMonitorListBuildWhen,
+                builder: (context, listState) {
+                  final list = listState.visibleStudents;
+                  return RefreshIndicator(
+                    onRefresh: () async {
+                      context.read<TeacherLiveMonitorBloc>().add(const TeacherLiveMonitorRefreshRequested());
+                      await context.read<TeacherLiveMonitorBloc>().stream.firstWhere(
+                            (s) => s.status != TeacherLiveMonitorStatus.loading,
                           );
-                        },
-                      ),
+                    },
+                    child: list.isEmpty
+                        ? ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 48),
+                                child: Center(
+                                  child: Text(
+                                    l10n.teacherLiveMonitorNoStudents,
+                                    style: ExamSystemUi.captionSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+                            itemCount: list.length,
+                            itemBuilder: (context, index) {
+                              final s = list[index];
+                              final uid = s['userId']?.toString() ?? '$index';
+                              return RepaintBoundary(
+                                child: _StudentMonitorTile(
+                                  key: ValueKey('live_tile_$uid'),
+                                  student: s,
+                                  unknown: unknown,
+                                  l10n: l10n,
+                                  onKickStudent: onKickStudent,
+                                  onWatchScreen: () => _openLiveScreen(context, s),
+                                  riskColor: _riskColor,
+                                ),
+                              );
+                            },
+                          ),
+                  );
+                },
               ),
             ),
           ],
@@ -195,6 +217,7 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
 
 class _StudentMonitorTile extends StatelessWidget {
   const _StudentMonitorTile({
+    super.key,
     required this.student,
     required this.unknown,
     required this.l10n,
@@ -227,7 +250,10 @@ class _StudentMonitorTile extends StatelessWidget {
     final risk = student['integrityRiskLevel']?.toString();
     final chipStatus = TeacherExamParticipantStatusResolver.fromAttemptStatus(status);
     final inProgress = chipStatus == TeacherExamParticipantStatus.inProgress;
-    final strips = TeacherExamQuestionStripSection.parseStrips(student['skillStrips']);
+    final cached = student['_parsedSkillStrips'];
+    final strips = cached is List<Map<String, dynamic>>
+        ? cached
+        : TeacherExamQuestionStripSection.parseStrips(student['skillStrips']);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),

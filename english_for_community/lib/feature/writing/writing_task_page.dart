@@ -12,6 +12,7 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -27,6 +28,7 @@ class WritingTaskPage extends StatelessWidget {
   final String? userId;
   final bool embedded;
   final bool examPracticeMode;
+  final bool readOnlyReview;
   final String? initialExamDraft;
   final VoidCallback? onPartComplete;
   final void Function(String text)? onEmbeddedDraftChanged;
@@ -43,6 +45,7 @@ class WritingTaskPage extends StatelessWidget {
     this.userId,
     this.embedded = false,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
     this.initialExamDraft,
     this.onPartComplete,
     this.onEmbeddedDraftChanged,
@@ -85,6 +88,7 @@ class WritingTaskPage extends StatelessWidget {
         initialTaskType: selectedTaskType,
         embedded: embedded,
         examPracticeMode: examPracticeMode,
+        readOnlyReview: readOnlyReview,
         initialExamDraft: initialExamDraft,
         onPartComplete: onPartComplete,
         onEmbeddedDraftChanged: onEmbeddedDraftChanged,
@@ -108,6 +112,7 @@ class WritingTaskView extends StatefulWidget {
   final String? initialTaskType;
   final bool embedded;
   final bool examPracticeMode;
+  final bool readOnlyReview;
   final String? initialExamDraft;
   final VoidCallback? onPartComplete;
   final void Function(String text)? onEmbeddedDraftChanged;
@@ -120,6 +125,7 @@ class WritingTaskView extends StatefulWidget {
     this.initialTaskType,
     this.embedded = false,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
     this.initialExamDraft,
     this.onPartComplete,
     this.onEmbeddedDraftChanged,
@@ -188,6 +194,27 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         setState(() {});
       }
     });
+
+    _applyInitialExamDraft(widget.initialExamDraft);
+  }
+
+  void _applyInitialExamDraft(String? draft) {
+    final t = draft?.trim() ?? '';
+    if (t.isEmpty) return;
+    if (_text.text.trim() == t) return;
+    _isProgrammaticEdit = true;
+    _text.text = t;
+    _isProgrammaticEdit = false;
+    _wordCount = t.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    _lastEditingValue = _text.value;
+  }
+
+  @override
+  void didUpdateWidget(covariant WritingTaskView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialExamDraft != oldWidget.initialExamDraft) {
+      _applyInitialExamDraft(widget.initialExamDraft);
+    }
   }
 
   @override
@@ -212,9 +239,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   void _submit(WritingTaskState s) {
     if (s.submission == null || _taskType == null) return;
     if (!_canSubmitNow) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please write at least $_minimumSubmitWords words before submitting.')),
-      );
+      AppCornerToast.show(context, 'Please write at least $_minimumSubmitWords words before submitting.', error: true);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -509,7 +534,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               _isAutoSaving = false;
               if (_shouldCloseAfterSave) {
                 _shouldCloseAfterSave = false;
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.writingDraftSavedSnack)));
+                AppCornerToast.show(context, context.l10n.writingDraftSavedSnack);
                 Navigator.of(context).pop();
               }
             }
@@ -520,9 +545,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               }
               if (widget.embedded) {
                 widget.onPartComplete?.call();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.studentExamSubmitted)),
-                );
+                AppCornerToast.show(context, context.l10n.studentExamSubmitted);
               } else {
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)),
@@ -531,7 +554,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             }
             if (state.status == WritingTaskStatus.error) {
               _isAutoSaving = false;
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? context.l10n.genericLoadError)));
+              AppCornerToast.show(context, state.errorMessage ?? context.l10n.genericLoadError, error: true);
             }
           },
           builder: (context, state) {
@@ -576,8 +599,9 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                                 : _Editor(
                               controller: _text,
                               focusNode: _focusNode,
-                              readOnly: isSubmitting,
+                              readOnly: isSubmitting || widget.readOnlyReview,
                             ),
+                            if (!widget.readOnlyReview)
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                               child: _EditorQuickToolbar(
@@ -610,6 +634,8 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                       savedLabel: _savedLabel,
                       onSubmit: () => _submit(state),
                     )
+                  else if (widget.readOnlyReview)
+                    const SizedBox.shrink()
                   else
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),

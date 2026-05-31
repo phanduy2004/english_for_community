@@ -2,7 +2,7 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/util/file_download.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,11 +17,11 @@ Future<void> exportAssignmentScoresExcel(
 
   await r.fold(
     (f) async {
-      TeacherCornerToast.show(context, f.message, error: true);
+      AppCornerToast.show(context, f.message, error: true);
     },
     (file) async {
       if (file.bytes.isEmpty) {
-        TeacherCornerToast.show(context, l10n.teacherGradingHubExportEmpty, error: true);
+        AppCornerToast.show(context, l10n.teacherGradingHubExportEmpty, error: true);
         return;
       }
 
@@ -35,7 +35,7 @@ Future<void> exportAssignmentScoresExcel(
           mimeType: mime,
         );
         if (!context.mounted) return;
-        TeacherCornerToast.show(context, l10n.teacherGradingHubExportDone);
+        AppCornerToast.show(context, l10n.teacherGradingHubExportDone);
         return;
       }
 
@@ -43,7 +43,7 @@ Future<void> exportAssignmentScoresExcel(
         ClipboardData(text: l10n.teacherGradingHubExportMobileHint(file.filename)),
       );
       if (!context.mounted) return;
-      TeacherCornerToast.show(context, l10n.teacherGradingHubExportMobileCopied);
+      AppCornerToast.show(context, l10n.teacherGradingHubExportMobileCopied);
     },
   );
 }

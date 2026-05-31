@@ -9,6 +9,7 @@ import 'package:translator/translator.dart';
 
 import '../../../../core/api/api_config.dart';
 import '../../../../core/locale/l10n_context.dart';
+import '../../../../core/ui/widget/app_corner_toast.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -186,12 +187,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         if (mounted) {
           final currentState = context.read<ListeningCompBloc>().state;
           if (currentState.status == CompStatus.success) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.l10n.quizTimeUpSubmitting),
-                backgroundColor: Colors.orange,
-              ),
-            );
+            AppCornerToast.show(context, context.l10n.quizTimeUpSubmitting, error: true);
             _submitQuiz(context);
           }
         }
@@ -328,12 +324,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         }
 
         if (state.status == CompStatus.error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage ?? context.l10n.commonError),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppCornerToast.show(context, state.errorMessage ?? context.l10n.commonError, error: true);
         }
       },
       builder: (context, state) {
@@ -628,7 +619,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
       controller: _questionsScrollController,
       padding: StudentMobileUi.pagePadding,
       itemCount: entity.questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.sectionGap),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.exerciseSectionGap),
       itemBuilder: (context, index) {
         final q = entity.questions[index];
         final isExpanded = _expandedFeedback.contains(q.id);
@@ -641,7 +632,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.all(AppSpacing.s5),
+                padding: StudentMobileUi.exerciseCardPadding,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -649,7 +640,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                       t.listeningCompQuestionNumber(index + 1),
                       style: StudentMobileUi.caption(context),
                     ),
-                    const SizedBox(height: AppSpacing.s3),
+                    const SizedBox(height: AppSpacing.s2),
                     Text(q.questionText, style: StudentMobileUi.cardTitle(context)),
                     if (_showTranslation && _translatedQuestions.containsKey(q.id)) ...[
                       const SizedBox(height: AppSpacing.s2),
@@ -662,7 +653,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 0, AppSpacing.s5, AppSpacing.s5),
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
                 child: Column(
                   children: List.generate(q.options.length, (optIdx) {
                     final isSelected = _selectedAnswers[q.id.toString()] == optIdx;

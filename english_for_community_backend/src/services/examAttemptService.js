@@ -6,6 +6,8 @@ import ExamSession from '../models/ExamSession.js';
 import User from '../models/User.js';
 import DictationAttempt from '../models/DictationAttempt.js';
 import Listening from '../models/Listening.js';
+import ListeningComprehension from '../models/ListeningComprehension.js';
+import ListeningCompAttempt from '../models/ListeningCompAttempt.js';
 import Reading from '../models/Reading.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import SpeakingAttempt from '../models/SpeakingAttempt.js';
@@ -13,12 +15,13 @@ import WritingSubmission from '../models/WritingSubmission.js';
 import { wordErrorRate } from '../untils/scoring.js';
 import { teacherExamService } from './teacherExamService.js';
 import { teacherExamAssignmentService } from './teacherExamAssignmentService.js';
-import { resolveAttemptPolicy, resolveShowResultsPolicy } from './assignmentPolicy.js';
+import { resolveAttemptPolicy, resolveResultsDetailLevel, resolveShowResultsPolicy } from './assignmentPolicy.js';
 import { computeAdaptiveState, isAdaptiveExamSnapshot } from './examAdaptiveService.js';
 import { broadcastAttemptProgress } from './examLiveMonitorService.js';
 import {
   buildIntegratedScores,
   integratedAutoScoresStale,
+  integratedSkillEntriesMissing,
   mergePreservedSkillScores,
 } from './examIntegratedScoring.js';
 import {
@@ -266,13 +269,28 @@ function computeAttemptDeadline(assignment, startedAt) {
   return null;
 }
 
+/**
+ * When per-attempt deadline has passed, auto-submit (partial allowed) instead of leaving `expired`.
+ */
 async function lazyExpireIfNeeded(attempt) {
   if (!attempt || attempt.status !== 'in_progress') return attempt;
   if (!attempt.attemptDeadlineAt) return attempt;
   if (new Date(attempt.attemptDeadlineAt).getTime() >= Date.now()) return attempt;
-  attempt.status = 'expired';
-  await attempt.save();
-  return attempt;
+
+  const userId = attempt.userId?.toString?.() ?? String(attempt.userId);
+  const attemptId = attempt._id?.toString?.() ?? String(attempt._id);
+  try {
+    await examAttemptService.submit(userId, attemptId, {
+      force: true,
+      forceEnd: true,
+    });
+    const refreshed = await ExamAttempt.findById(attemptId);
+    return refreshed || attempt;
+  } catch {
+    attempt.status = 'expired';
+    await attempt.save();
+    return attempt;
+  }
 }
 
 function iso(d) {
@@ -352,6 +370,9 @@ async function attachRuntimeContextToAttempt(attemptDoc) {
     sessionId: plain.sessionId != null ? String(plain.sessionId) : null,
     allowPartialSubmit,
     partialSubmitConfirm: cfg.partialSubmitConfirm !== false,
+    showResultsPolicy: resolveShowResultsPolicy(assignment, snap),
+    resultsDetailLevel: resolveResultsDetailLevel(assignment, snap),
+    resultsReleased: !!plain.resultsReleased,
   };
 
   return plain;
@@ -480,7 +501,8 @@ async function fetchReadingRecord(userId, readingId, bounds, opts = {}) {
   return { records: null, source: null };
 }
 
-async function fetchSpeakingRecords(userId, speakingSetId, bounds) {
+async function fetchSpeakingRecords(userId, speakingSetId, bounds, opts = {}) {
+  const examOnly = opts.examOnly === true;
   const strict = await SpeakingAttempt.find({
     userId,
     speakingSetId: String(speakingSetId),
@@ -493,6 +515,7 @@ async function fetchSpeakingRecords(userId, speakingSetId, bounds) {
     .sort({ sentenceId: 1 })
     .lean();
   if (strict.length > 0) return { records: strict, source: 'exam_window' };
+  if (examOnly) return { records: [], source: null };
 
   const soft = await SpeakingAttempt.find({
     userId,
@@ -515,6 +538,7 @@ async function fetchSpeakingRecords(userId, speakingSetId, bounds) {
 
 async function fetchWritingRecord(userId, topicId, bounds) {
   const statuses = ['draft', 'submitted', 'reviewed'];
+  const selectFields = 'content score status submittedAt createdAt feedback wordCount generatedPrompt';
   let doc = await WritingSubmission.findOne({
     userId,
     topicId,
@@ -525,7 +549,7 @@ async function fetchWritingRecord(userId, topicId, bounds) {
     ],
   })
     .sort({ updatedAt: -1 })
-    .select('content score status submittedAt createdAt feedback wordCount')
+    .select(selectFields)
     .lean();
   if (doc) return { records: doc, source: 'exam_window' };
 
@@ -536,13 +560,13 @@ async function fetchWritingRecord(userId, topicId, bounds) {
     createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
   })
     .sort({ updatedAt: -1 })
-    .select('content score status submittedAt createdAt feedback wordCount')
+    .select(selectFields)
     .lean();
   if (doc) return { records: doc, source: 'near_session' };
 
   doc = await WritingSubmission.findOne({ userId, topicId, status: { $in: statuses } })
     .sort({ updatedAt: -1 })
-    .select('content score status submittedAt createdAt feedback wordCount')
+    .select(selectFields)
     .lean();
   if (doc) return { records: doc, source: 'latest_linked' };
   return { records: null, source: null };
@@ -562,7 +586,14 @@ async function ensureIntegratedScoresOnAttempt(attemptDoc) {
     typeof skillScores === 'object' &&
     Object.keys(skillScores).length > 0 &&
     scores.examFormat;
-  const needsRebuild = !hasNewFormat || integratedAutoScoresStale(scores);
+
+  // Also rebuild if any exam section is missing from skillScores (e.g. older attempts)
+  const skillSections = (exam?.sections || []).filter(
+    (s) => s?.skill && (s.sectionKind === 'skill_content' || s.sectionKind == null)
+  );
+  const hasMissingEntries = hasNewFormat && integratedSkillEntriesMissing(skillSections, skillScores);
+
+  const needsRebuild = !hasNewFormat || integratedAutoScoresStale(scores) || hasMissingEntries;
   if (!needsRebuild) return attemptDoc;
 
   const plain = attemptDoc.toObject ? attemptDoc.toObject() : attemptDoc;
@@ -646,6 +677,76 @@ async function buildInlineListeningRecords(listeningId, listeningCues, cueOffset
   return records;
 }
 
+/**
+ * Fetch Listening Comprehension questions + student answers for teacher grading display.
+ * Returns { questions, answers, audioUrl, title, source } or null if not found.
+ */
+async function fetchListeningCompRecordForGrading(userId, listCompId, bounds, secAns) {
+  const oid = resolveMongoResourceId(listCompId);
+  if (!oid) return null;
+
+  const lc = await ListeningComprehension.findById(oid)
+    .select('title audioUrl questions')
+    .lean();
+  if (!lc) return null;
+
+  // Prefer inline answers from exam attempt (most accurate — no cross-attempt confusion)
+  const inlineAnswers = secAns?.listeningCompAnswers;
+  if (inlineAnswers && typeof inlineAnswers === 'object' && Object.keys(inlineAnswers).length > 0) {
+    return {
+      questions: lc.questions,
+      answers: inlineAnswers,
+      audioUrl: lc.audioUrl,
+      title: lc.title,
+      source: 'exam_inline',
+    };
+  }
+
+  // Fallback: query ListeningCompAttempt within exam window (strict, then near-session)
+  if (userId && bounds) {
+    let attemptDoc = await ListeningCompAttempt.findOne({
+      userId,
+      listeningId: oid,
+      createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!attemptDoc) {
+      attemptDoc = await ListeningCompAttempt.findOne({
+        userId,
+        listeningId: oid,
+        createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+    }
+
+    if (attemptDoc) {
+      const byQid = {};
+      for (const a of Array.isArray(attemptDoc.answers) ? attemptDoc.answers : []) {
+        byQid[String(a.questionId)] = a.chosenIndex;
+      }
+      return {
+        questions: lc.questions,
+        answers: byQid,
+        audioUrl: lc.audioUrl,
+        title: lc.title,
+        source: 'near_session',
+      };
+    }
+  }
+
+  // No answers found — return questions only (teacher can still see the exercise)
+  return {
+    questions: lc.questions,
+    answers: {},
+    audioUrl: lc.audioUrl,
+    title: lc.title,
+    source: null,
+  };
+}
+
 /** Build reading-attempt-shaped doc from integrated exam inline `readingAnswers`. */
 async function buildInlineReadingRecord(readingId, readingAnswers) {
   const doc = await Reading.findById(readingId).select('questions').lean();
@@ -709,27 +810,36 @@ async function attachSkillWorkForGrading(attemptDoc) {
       let source = null;
       switch (sec.skill) {
         case 'listening': {
-          if (bounds && userId) {
-            const r = await fetchListeningRecords(userId, resourceOid, bounds);
-            records = r.records;
-            source = r.source;
-          } else {
-            records = [];
-          }
-          if ((!records || records.length === 0) && secAns?.listeningCues) {
-            const inline = await buildInlineListeningRecords(
-              resourceOid,
-              secAns.listeningCues,
-              listeningCueOffset
-            );
-            if (inline.length > 0) {
-              records = inline;
-              source = 'exam_inline';
+          const listeningType = sec.sectionConfig?.listeningType || 'dictation';
+          if (listeningType === 'comprehension') {
+            const compRecord = await fetchListeningCompRecordForGrading(userId, res.id, bounds, secAns);
+            if (compRecord) {
+              records = compRecord;
+              source = compRecord.source || null;
             }
-          }
-          {
-            const doc = await Listening.findById(resourceOid).select('cues').lean();
-            listeningCueOffset += Array.isArray(doc?.cues) ? doc.cues.length : 0;
+          } else {
+            if (bounds && userId) {
+              const r = await fetchListeningRecords(userId, resourceOid, bounds);
+              records = r.records;
+              source = r.source;
+            } else {
+              records = [];
+            }
+            if ((!records || records.length === 0) && secAns?.listeningCues) {
+              const inline = await buildInlineListeningRecords(
+                resourceOid,
+                secAns.listeningCues,
+                listeningCueOffset
+              );
+              if (inline.length > 0) {
+                records = inline;
+                source = 'exam_inline';
+              }
+            }
+            {
+              const doc = await Listening.findById(resourceOid).select('cues').lean();
+              listeningCueOffset += Array.isArray(doc?.cues) ? doc.cues.length : 0;
+            }
           }
           break;
         }
@@ -750,9 +860,17 @@ async function attachSkillWorkForGrading(attemptDoc) {
         }
         case 'speaking': {
           if (bounds && userId) {
-            const r = await fetchSpeakingRecords(userId, res.id, bounds);
-            records = r.records;
-            source = r.source;
+            // Display only records from the exam window (strict or near-session).
+            // latest_linked records from old practice sessions are intentionally excluded —
+            // showing them would mislead the teacher into thinking the student did speaking in this exam.
+            const { records: spRecs, source: spSrc } = await fetchSpeakingRecords(userId, res.id, bounds);
+            if (spSrc !== 'latest_linked') {
+              records = spRecs;
+              source = spSrc;
+            } else {
+              records = [];
+              source = null;
+            }
           } else {
             records = [];
           }
@@ -761,8 +879,15 @@ async function attachSkillWorkForGrading(attemptDoc) {
         case 'writing': {
           if (bounds && userId) {
             const r = await fetchWritingRecord(userId, resourceOid, bounds);
-            records = r.records;
-            source = r.source;
+            if (r.records) {
+              const hasContent = String(r.records.content ?? '').trim().length > 0;
+              const hasPrompt = r.records.generatedPrompt?.text || r.records.generatedPrompt?.title;
+              // Attach if student wrote something OR if there is a generated prompt to show
+              if (hasContent || hasPrompt) {
+                records = r.records;
+                source = r.source;
+              }
+            }
           }
           if (!records && secAns?.writingDraft) {
             records = {
@@ -796,6 +921,7 @@ export {
   examTimeBounds,
   fetchListeningRecords,
   fetchReadingRecord,
+  fetchSpeakingRecords,
   fetchWritingRecord,
   resolveMongoResourceId,
   resolveMongoUserId,

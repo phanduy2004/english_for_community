@@ -81,11 +81,11 @@ async function resolveWritingTextForSection(sec, attempt) {
 
 export const examGradingService = {
   async runIntegratedWritingAi(teacherId, attempt) {
-    if (!process.env.GROQ_API_KEY) throw httpError(503, 'AI grading unavailable');
-
     const exam = attempt.examSnapshot || {};
     const writingSecs = findWritingSections(exam);
     if (writingSecs.length === 0) throw httpError(400, 'No writing section in this exam');
+
+    if (!process.env.GROQ_API_KEY) throw httpError(503, 'AI grading unavailable');
 
     const skillOverrides = {};
 
@@ -271,9 +271,22 @@ ${text || '(empty)'}`;
     return attempt;
   },
 
-  async releaseResults(teacherId, attemptId) {
+  async releaseResults(teacherId, attemptId, body = {}) {
     const attempt = await assertTeacherOwnsAttempt(teacherId, attemptId);
     const wasReleased = !!attempt.resultsReleased;
+
+    const detailLevel = body?.resultsDetailLevel;
+    if (detailLevel === 'score_only' || detailLevel === 'full_detail') {
+      const assignment = await ExamAssignment.findById(attempt.assignmentId);
+      if (assignment) {
+        assignment.config = {
+          ...(assignment.config || {}),
+          resultsDetailLevel: detailLevel,
+        };
+        await assignment.save();
+      }
+    }
+
     attempt.resultsReleased = true;
     attempt.gradingState = 'finalized';
     await attempt.save();

@@ -1,6 +1,30 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+/// Scroll without visible scrollbar — horizontal chip/tab rows on mobile.
+class E4cNoScrollbarScrollBehavior extends E4cScrollBehavior {
+  const E4cNoScrollbarScrollBehavior();
+
+  @override
+  Widget buildScrollbar(
+    BuildContext context,
+    Widget child,
+    ScrollableDetails details,
+  ) {
+    return child;
+  }
+}
+
+/// Wrap scroll areas that should not show a scrollbar thumb.
+Widget e4cNoScrollbarScroll({required Widget child}) {
+  return ScrollConfiguration(
+    behavior: const E4cNoScrollbarScrollBehavior(),
+    child: child,
+  );
+}
+
+/// Horizontal lists (chip rows, cue selectors) without a visible scrollbar.
+Widget e4cHorizontalScroll({required Widget child}) => e4cNoScrollbarScroll(child: child);
 /// Scroll behavior for E4C (web + desktop).
 ///
 /// Avoids `Scrollbar's ScrollController has no ScrollPosition attached` when
@@ -69,16 +93,29 @@ class _SafeScrollbarState extends State<_SafeScrollbar> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.controller.hasClients) {
+    if (!widget.controller.hasClients || widget.controller.positions.length != 1) {
       return widget.child;
     }
-    return Scrollbar(
-      controller: widget.controller,
-      thumbVisibility: true,
-      interactive: true,
-      radius: const Radius.circular(4),
-      thickness: 6,
-      child: widget.child,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final axis = widget.controller.position.axis;
+        // Skip Scrollbar when the scroll axis is unbounded (e.g. vertical scroll inside
+        // ListView children, or horizontal scroll inside a Column with unbounded height).
+        final scrollAxisBounded = axis == Axis.vertical
+            ? constraints.hasBoundedHeight
+            : constraints.hasBoundedWidth;
+        if (!scrollAxisBounded) {
+          return widget.child;
+        }
+        return Scrollbar(
+          controller: widget.controller,
+          thumbVisibility: true,
+          interactive: true,
+          radius: const Radius.circular(4),
+          thickness: 6,
+          child: widget.child,
+        );
+      },
     );
   }
 }

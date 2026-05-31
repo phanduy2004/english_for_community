@@ -91,7 +91,14 @@ import '../../feature/teacher/bloc/apply/teacher_apply_bloc.dart';
 import '../../feature/teacher/bloc/classroom/teacher_classroom_bloc.dart';
 import '../../feature/teacher/bloc/dashboard/teacher_dashboard_bloc.dart';
 import '../../feature/teacher/bloc/exams_list/teacher_exams_list_bloc.dart';
+import '../../feature/teacher/bloc/calendar/teacher_calendar_bloc.dart';
+import '../../feature/teacher/bloc/exam_attempt_grade/teacher_exam_attempt_grade_bloc.dart';
+import '../../feature/teacher/bloc/exam_editor/teacher_exam_editor_bloc.dart';
+import '../../feature/teacher/bloc/integrated_exam_editor/teacher_integrated_exam_editor_bloc.dart';
+import '../../feature/teacher/bloc/exam_session_console/teacher_exam_session_console_bloc.dart';
+import '../../feature/teacher/bloc/gradebook/teacher_gradebook_bloc.dart';
 import '../../feature/teacher/bloc/grading_hub/teacher_grading_hub_bloc.dart';
+import '../../feature/teacher/bloc/student_live_screen/teacher_student_live_screen_bloc.dart';
 import '../socket/socket_service.dart';
 import '../locale/app_locale_controller.dart';
 
@@ -301,6 +308,45 @@ void registerBloc() {
       repository: getIt(),
       socketService: getIt(),
       sessionId: sessionId,
+    ),
+  );
+  getIt.registerFactory(() => TeacherCalendarBloc(repository: getIt()));
+  getIt.registerFactoryParam<TeacherGradebookBloc, String, void>(
+    (classroomId, _) => TeacherGradebookBloc(
+      repository: getIt(),
+      classroomId: classroomId,
+    ),
+  );
+  getIt.registerFactoryParam<TeacherExamSessionConsoleBloc, String, void>(
+    (assignmentId, _) => TeacherExamSessionConsoleBloc(
+      repository: getIt(),
+      socketService: getIt(),
+      assignmentId: assignmentId,
+    ),
+  );
+  getIt.registerFactoryParam<TeacherStudentLiveScreenBloc, String, void>(
+    (attemptId, _) => TeacherStudentLiveScreenBloc(
+      repository: getIt(),
+      socketService: getIt(),
+      attemptId: attemptId,
+    ),
+  );
+  getIt.registerFactoryParam<TeacherExamEditorBloc, String, void>(
+    (examId, _) => TeacherExamEditorBloc(
+      repository: getIt(),
+      examId: examId,
+    ),
+  );
+  getIt.registerFactoryParam<TeacherIntegratedExamEditorBloc, String, void>(
+    (examId, _) => TeacherIntegratedExamEditorBloc(
+      repository: getIt(),
+      examId: examId,
+    ),
+  );
+  getIt.registerFactoryParam<TeacherExamAttemptGradeBloc, String, void>(
+    (attemptId, _) => TeacherExamAttemptGradeBloc(
+      repository: getIt(),
+      attemptId: attemptId,
     ),
   );
   getIt.registerFactory(() => StudentClassesHubBloc(repository: getIt()));

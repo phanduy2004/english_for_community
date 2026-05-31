@@ -4,7 +4,7 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
@@ -187,7 +187,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                                 onPressed: () async {
                                   await datasource.restoreUser(u.id);
                                   if (!mounted) return;
-                                  AdminCornerToast.show(context, l10n.adminUserRestored(u.fullName));
+                                  AppCornerToast.show(context, l10n.adminUserRestored(u.fullName));
                                   Navigator.pop(ctx);
                                   _fetchUsers();
                                 },

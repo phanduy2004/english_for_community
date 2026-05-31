@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -14,6 +15,7 @@ import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dar
 import 'package:english_for_community/feature/teacher/teacher_apply_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_assignment_list_utils.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialogs.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_content_label.dart';
 import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_attempt_grade_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_grading_page.dart';
@@ -21,10 +23,13 @@ import 'package:english_for_community/feature/teacher/teacher_exam_session_conso
 import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_integrated_exam_editor_page.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_bloc.dart';
+import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_derived.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_state.dart';
+import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_skills_exam_draft_payload.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,47 +51,24 @@ class TeacherDashboardPage extends StatelessWidget {
   }
 }
 
-enum _AssignmentFilter { all, selfPaced, scheduled, realtime, publicLink }
-
-class _TeacherDashboardView extends StatefulWidget {
+class _TeacherDashboardView extends StatelessWidget {
   const _TeacherDashboardView();
 
-  @override
-  State<_TeacherDashboardView> createState() => _TeacherDashboardViewState();
-}
-
-class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
-  final TextEditingController _searchCtrl = TextEditingController();
-  _AssignmentFilter _assignmentFilter = _AssignmentFilter.all;
-  String? _classroomFilterId;
-
-  @override
-  void initState() {
-    super.initState();
-    _searchCtrl.addListener(() => setState(() {}));
-  }
-
-  @override
-  void dispose() {
-    _searchCtrl.dispose();
-    super.dispose();
-  }
-
-  void _reload() {
+  void _reload(BuildContext context) {
     context.read<TeacherDashboardBloc>().add(const TeacherDashboardLoadRequested());
   }
 
-  Future<void> _copyAssignmentPublicToken(Map<String, dynamic> m) async {
+  Future<void> _copyAssignmentPublicToken(BuildContext context, Map<String, dynamic> m) async {
     final pj = m['publicJoin'];
     if (pj is! Map) return;
     final t = pj['token'] as String? ?? '';
     if (t.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: t));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.dashboardPublicTokenCopied)));
+    if (!context.mounted) return;
+    AppCornerToast.show(context, context.l10n.dashboardPublicTokenCopied);
   }
 
-  Future<void> _rotateAssignmentPublicLink(Map<String, dynamic> m) async {
+  Future<void> _rotateAssignmentPublicLink(BuildContext context, Map<String, dynamic> m) async {
     final l10n = context.l10n;
     final id = m['id'] as String? ?? '';
     if (id.isEmpty) return;
@@ -101,11 +83,11 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
         ],
       ),
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !context.mounted) return;
     context.read<TeacherDashboardBloc>().add(TeacherDashboardRotatePublicLinkRequested(id));
   }
 
-  Future<void> _closeAssignmentPublic(Map<String, dynamic> m) async {
+  Future<void> _closeAssignmentPublic(BuildContext context, Map<String, dynamic> m) async {
     final l10n = context.l10n;
     final id = m['id'] as String? ?? '';
     if (id.isEmpty) return;
@@ -120,7 +102,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
         ],
       ),
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !context.mounted) return;
     context.read<TeacherDashboardBloc>().add(TeacherDashboardCloseAssignmentRequested(id));
   }
 
@@ -130,7 +112,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
     return DateTime.tryParse(v.toString());
   }
 
-  Future<void> _createClass() async {
+  Future<void> _createClass(BuildContext context) async {
     final nameCtrl = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
@@ -146,15 +128,15 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
         ],
       ),
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !context.mounted) return;
     final name = nameCtrl.text.trim();
     if (name.isEmpty) return;
     final r = await getIt<TeacherExamRepository>().createClassroom(name: name);
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.teacherClassCreated)));
-        _reload();
+        AppCornerToast.show(context, context.l10n.teacherClassCreated);
+        _reload(context);
       },
     );
     nameCtrl.dispose();
@@ -200,46 +182,6 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
     }).length;
   }
 
-  List<Map<String, dynamic>> _filteredAssignments(List<dynamic> assignments) {
-    final q = _searchCtrl.text.trim().toLowerCase();
-    final out = <Map<String, dynamic>>[];
-    for (final raw in assignments) {
-      final m = Map<String, dynamic>.from(raw as Map);
-      if (!TeacherAssignmentListUtils.isActiveListItem(m)) continue;
-      if (!TeacherAssignmentListUtils.matchesClassroomFilter(m, _classroomFilterId)) continue;
-      if (!_passesAssignmentFilter(m)) continue;
-      if (q.isNotEmpty) {
-        final title = _examTitleFromAssignment(m).toLowerCase();
-        if (!title.contains(q)) continue;
-      }
-      out.add(m);
-    }
-    return out;
-  }
-
-  bool _passesAssignmentFilter(Map<String, dynamic> m) {
-    switch (_assignmentFilter) {
-      case _AssignmentFilter.all:
-        return true;
-      case _AssignmentFilter.selfPaced:
-        return (m['mode'] as String?) == 'self_paced';
-      case _AssignmentFilter.scheduled:
-        return (m['mode'] as String?) == 'scheduled';
-      case _AssignmentFilter.realtime:
-        return (m['mode'] as String?) == 'realtime';
-      case _AssignmentFilter.publicLink:
-        return (m['audience'] as String?) == 'public_link';
-    }
-  }
-
-  String _examTitleFromAssignment(Map<String, dynamic> m) {
-    final exam = m['examId'];
-    if (exam is Map) {
-      return (exam['title'] as String?) ?? context.l10n.studentExamUnknownTitle;
-    }
-    return context.l10n.studentExamUnknownTitle;
-  }
-
   String? _examIdFromAssignment(Map<String, dynamic> m) {
     final exam = m['examId'];
     if (exam is Map) {
@@ -282,18 +224,18 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
     return '';
   }
 
-  Future<void> _newSkillsExam() async {
+  Future<void> _newSkillsExam(BuildContext context) async {
     final l10n = context.l10n;
     final r = await getIt<TeacherExamRepository>().createExamDraft(buildTeacherSkillsExamDraftPayload(l10n));
-    if (!mounted) return;
+    if (!context.mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) {
         final m = Map<String, dynamic>.from(d as Map);
         final id = (m['id'] ?? m['_id'])?.toString() ?? '';
         if (id.isEmpty) return;
         context.push('${TeacherIntegratedExamEditorPage.routePathPrefix}/$id/integrated-edit');
-        _reload();
+        _reload(context);
       },
     );
   }
@@ -325,7 +267,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
       listener: (context, state) {
         final msg = state.errorMessage;
         if (msg == null) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        AppCornerToast.show(context, msg, error: true);
       },
       builder: (context, state) {
         final loading =
@@ -345,20 +287,20 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
       actions: [
         IconButton(
           style: TeacherWebUi.compactHeaderIconStyle(),
-          onPressed: _reload,
+          onPressed: () => _reload(context),
           icon: const Icon(Icons.refresh_outlined, size: 18),
           color: AppColors.textSecondary,
           tooltip: l10n.retry,
         ),
         OutlinedButton.icon(
           style: TeacherWebUi.compactOutlinedStyle(context),
-          onPressed: _createClass,
+          onPressed: () => _createClass(context),
           icon: const Icon(Icons.add, size: 16),
           label: Text(l10n.teacherClassFab),
         ),
         FilledButton.icon(
           style: TeacherWebUi.compactFilledStyle(context),
-          onPressed: _newSkillsExam,
+          onPressed: () => _newSkillsExam(context),
           icon: const Icon(Icons.add, size: 16),
           label: Text(l10n.teacherDashboardActionNewExam),
         ),
@@ -380,7 +322,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                   children: [
                     Text(error, textAlign: TextAlign.center, style: TeacherWebUi.webBody(context)),
                     const SizedBox(height: AppSpacing.s5),
-                    TeacherRetryButton(onPressed: _reload),
+                    TeacherRetryButton(onPressed: () => _reload(context)),
                   ],
                 ),
               ),
@@ -388,7 +330,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
           }
           return RefreshIndicator(
             onRefresh: () async {
-              _reload();
+              _reload(context);
             },
             child: ListView(
               padding: TeacherWebUi.pageScrollPadding(context),
@@ -418,7 +360,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                     const SizedBox(height: AppSpacing.s3),
                     _ShortcutRow(
                       onExamBank: () => context.push(TeacherExamsListPage.routePath),
-                      onNewSkills: _newSkillsExam,
+                      onNewSkills: () => _newSkillsExam(context),
                       onApply: () => context.push(TeacherApplyPage.routePath),
                     ),
                     const SizedBox(height: AppSpacing.s6),
@@ -432,7 +374,10 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                       right: _DashboardLiveColumn(
                         l10n: l10n,
                         assignments: assignments,
-                        examTitleFn: _examTitleFromAssignment,
+                        examTitleFn: (m) => teacherDashboardExamTitleFromAssignment(
+                          m,
+                          fallback: l10n.studentExamUnknownTitle,
+                        ),
                         classNameFn: _classNameFromAssignment,
                         onOpenConsole: (id) => context.push('${TeacherExamSessionConsolePage.routePath}/$id'),
                       ),
@@ -460,9 +405,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                                 : () async {
                                     await Clipboard.setData(ClipboardData(text: code));
                                     if (context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(l10n.copiedToClipboard)),
-                                      );
+                                      AppCornerToast.show(context, l10n.copiedToClipboard);
                                     }
                                   },
                           );
@@ -471,38 +414,17 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                     const SizedBox(height: AppSpacing.s6),
                     Text(l10n.teacherDashboardSectionAssignments, style: TeacherWebUi.sectionTitle(context)),
                     const SizedBox(height: 6),
-                    TextField(
-                      controller: _searchCtrl,
-                      style: TeacherWebUi.webBody(context),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: l10n.teacherDashboardSearchHint,
-                        hintStyle: TeacherWebUi.metaMuted,
-                        prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textMuted),
-                        filled: true,
-                        fillColor: AppColors.surfaceCard,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
-                          borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.45), width: 0.5),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
-                          borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.45), width: 0.5),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
-                          borderSide: const BorderSide(color: AppColors.primary, width: 1),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
+                    _DashboardSearchField(
+                      searchQuery: state.searchQuery,
+                      hintText: l10n.teacherDashboardSearchHint,
                     ),
                     const SizedBox(height: 12),
                     if (classrooms.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: DropdownButtonFormField<String?>(
-                          key: ValueKey(_classroomFilterId),
-                          initialValue: _classroomFilterId,
+                          key: ValueKey(state.classroomFilterId),
+                          initialValue: state.classroomFilterId,
                           isExpanded: true,
                           decoration: InputDecoration(
                             labelText: l10n.teacherDashboardFilterByClass,
@@ -524,11 +446,13 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                               final name = (m['name'] as String?)?.trim() ?? id;
                               return DropdownMenuItem<String?>(
                                 value: id.isEmpty ? null : id,
-                                child: Text(name, overflow: TextOverflow.ellipsis),
+                                child: TeacherTaggedTitleRow.fromRaw(name, compact: true, maxLines: 1),
                               );
                             }),
                           ],
-                          onChanged: (v) => setState(() => _classroomFilterId = v),
+                          onChanged: (v) => context
+                              .read<TeacherDashboardBloc>()
+                              .add(TeacherDashboardClassroomFilterChanged(v)),
                         ),
                       ),
                     Wrap(
@@ -537,35 +461,53 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                       children: [
                         TeacherFilterChip(
                           label: l10n.teacherDashboardFilterAll,
-                          selected: _assignmentFilter == _AssignmentFilter.all,
-                          onSelected: () => setState(() => _assignmentFilter = _AssignmentFilter.all),
+                          selected: state.assignmentFilter == TeacherDashboardAssignmentFilter.all,
+                          onSelected: () => context.read<TeacherDashboardBloc>().add(
+                                const TeacherDashboardAssignmentFilterChanged(TeacherDashboardAssignmentFilter.all),
+                              ),
                         ),
                         TeacherFilterChip(
                           label: l10n.examModeSelfPaced,
-                          selected: _assignmentFilter == _AssignmentFilter.selfPaced,
-                          onSelected: () => setState(() => _assignmentFilter = _AssignmentFilter.selfPaced),
+                          selected: state.assignmentFilter == TeacherDashboardAssignmentFilter.selfPaced,
+                          onSelected: () => context.read<TeacherDashboardBloc>().add(
+                                const TeacherDashboardAssignmentFilterChanged(
+                                  TeacherDashboardAssignmentFilter.selfPaced,
+                                ),
+                              ),
                         ),
                         TeacherFilterChip(
                           label: l10n.examModeScheduled,
-                          selected: _assignmentFilter == _AssignmentFilter.scheduled,
-                          onSelected: () => setState(() => _assignmentFilter = _AssignmentFilter.scheduled),
+                          selected: state.assignmentFilter == TeacherDashboardAssignmentFilter.scheduled,
+                          onSelected: () => context.read<TeacherDashboardBloc>().add(
+                                const TeacherDashboardAssignmentFilterChanged(
+                                  TeacherDashboardAssignmentFilter.scheduled,
+                                ),
+                              ),
                         ),
                         TeacherFilterChip(
                           label: l10n.examModeRealtime,
-                          selected: _assignmentFilter == _AssignmentFilter.realtime,
-                          onSelected: () => setState(() => _assignmentFilter = _AssignmentFilter.realtime),
+                          selected: state.assignmentFilter == TeacherDashboardAssignmentFilter.realtime,
+                          onSelected: () => context.read<TeacherDashboardBloc>().add(
+                                const TeacherDashboardAssignmentFilterChanged(
+                                  TeacherDashboardAssignmentFilter.realtime,
+                                ),
+                              ),
                         ),
                         TeacherFilterChip(
                           label: l10n.teacherDashboardFilterPublic,
-                          selected: _assignmentFilter == _AssignmentFilter.publicLink,
-                          onSelected: () => setState(() => _assignmentFilter = _AssignmentFilter.publicLink),
+                          selected: state.assignmentFilter == TeacherDashboardAssignmentFilter.publicLink,
+                          onSelected: () => context.read<TeacherDashboardBloc>().add(
+                                const TeacherDashboardAssignmentFilterChanged(
+                                  TeacherDashboardAssignmentFilter.publicLink,
+                                ),
+                              ),
                         ),
                       ],
                     ),
                     const SizedBox(height: ExamSystemUi.cardGap),
                     Builder(
                       builder: (context) {
-                        final list = _filteredAssignments(assignments);
+                        final list = state.filteredAssignments;
                         if (list.isEmpty) {
                           return TeacherEmptyCard(message: l10n.teacherNoAssignments);
                         }
@@ -576,7 +518,10 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                                   padding: const EdgeInsets.only(bottom: 10),
                                   child: _AssignmentHubCard(
                                     assignment: Map<String, dynamic>.from(m as Map),
-                                    title: _examTitleFromAssignment(m),
+                                    title: teacherDashboardExamTitleFromAssignment(
+                                      m,
+                                      fallback: l10n.studentExamUnknownTitle,
+                                    ),
                                     modeLabel: _modeLabel(context, m['mode'] as String? ?? ''),
                                     audienceLabel: (m['audience'] as String?) == 'public_link'
                                         ? l10n.teacherDashboardAudiencePublic
@@ -586,9 +531,12 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                                         ? null
                                         : l10n.teacherDashboardClassLabel(_classNameFromAssignment(m)),
                                     isRealtime: (m['mode'] as String?) == 'realtime',
-                                    onCopyPublicToken: () => _copyAssignmentPublicToken(Map<String, dynamic>.from(m as Map)),
-                                    onRotatePublicLink: () => _rotateAssignmentPublicLink(Map<String, dynamic>.from(m as Map)),
-                                    onClosePublic: () => _closeAssignmentPublic(Map<String, dynamic>.from(m as Map)),
+                                    onCopyPublicToken: () =>
+                                        _copyAssignmentPublicToken(context, Map<String, dynamic>.from(m as Map)),
+                                    onRotatePublicLink: () =>
+                                        _rotateAssignmentPublicLink(context, Map<String, dynamic>.from(m as Map)),
+                                    onClosePublic: () =>
+                                        _closeAssignmentPublic(context, Map<String, dynamic>.from(m as Map)),
                                     onGrade: () {
                                       final id = m['id'] as String? ?? '';
                                       if (id.isNotEmpty) {
@@ -609,7 +557,7 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
                                         examId: examId,
                                       );
                                       if (!context.mounted) return;
-                                      if (created != null) _reload();
+                                      if (created != null) _reload(context);
                                     },
                                   ),
                                 ),
@@ -625,6 +573,70 @@ class _TeacherDashboardViewState extends State<_TeacherDashboardView> {
       ),
     );
       },
+    );
+  }
+}
+
+class _DashboardSearchField extends StatefulWidget {
+  const _DashboardSearchField({required this.searchQuery, required this.hintText});
+
+  final String searchQuery;
+  final String hintText;
+
+  @override
+  State<_DashboardSearchField> createState() => _DashboardSearchFieldState();
+}
+
+class _DashboardSearchFieldState extends State<_DashboardSearchField> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.searchQuery);
+  }
+
+  @override
+  void didUpdateWidget(covariant _DashboardSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchQuery != widget.searchQuery && _controller.text != widget.searchQuery) {
+      _controller.text = widget.searchQuery;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: _controller,
+      style: TeacherWebUi.webBody(context),
+      onChanged: (v) => context.read<TeacherDashboardBloc>().add(TeacherDashboardSearchQueryChanged(v)),
+      decoration: InputDecoration(
+        isDense: true,
+        hintText: widget.hintText,
+        hintStyle: TeacherWebUi.metaMuted,
+        prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textMuted),
+        filled: true,
+        fillColor: AppColors.surfaceCard,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
+          borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.45), width: 0.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
+          borderSide: BorderSide(color: AppColors.outline.withValues(alpha: 0.45), width: 0.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ExamSystemUi.cardRadius),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      ),
     );
   }
 }
@@ -1237,7 +1249,7 @@ class _ClassroomCard extends StatelessWidget {
     return TeacherListRow(
       onTap: onOpen,
       leading: const TeacherIconBadge(icon: Icons.class_outlined, color: AppColors.secondary),
-      title: name,
+      titleWidget: TeacherTaggedTitleRow.fromRaw(name, compact: true),
       subtitle: '${l10n.teacherInviteCode}: $inviteCode\n$memberLine',
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

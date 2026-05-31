@@ -18,6 +18,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/theme/app_color.dart' as T;
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -192,9 +193,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         final code = event.data?['code'] as String? ?? 'unknown';
         final msg = event.data?['message'] as String? ?? context.l10n.genericLoadError;
         SpeakingTelemetry.logError(code);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
-        );
+        AppCornerToast.show(context, msg, error: true);
         break;
 
       case 'status':
@@ -277,12 +276,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       if (!status.isGranted) {
         await SpeakingTelemetry.logMicDenied();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.freeSpeakingMicDenied),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppCornerToast.show(context, context.l10n.freeSpeakingMicDenied, error: true);
         }
         return;
       }
@@ -366,9 +360,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   // Hiển thị BottomSheet chọn giọng
   void _showVoiceSelector() {
     if (_callStatus != VapiCallStatus.disconnected && _callStatus != VapiCallStatus.ended) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.freeSpeakingEndCallToChangeVoice)),
-      );
+      AppCornerToast.show(context, context.l10n.freeSpeakingEndCallToChangeVoice, error: true);
       return;
     }
 

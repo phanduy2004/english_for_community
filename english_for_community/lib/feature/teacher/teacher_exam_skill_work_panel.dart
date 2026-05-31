@@ -17,13 +17,11 @@ class TeacherExamSkillWorkPanel extends StatefulWidget {
     super.key,
     required this.skill,
     required this.resources,
-    this.markedComplete = false,
     this.integratedScoreScale = false,
   });
 
   final String skill;
   final List<Map<String, dynamic>> resources;
-  final bool markedComplete;
   /// When true, show embedded skill stats on 0–10 scale (integrated exams), not legacy pts.
   final bool integratedScoreScale;
 
@@ -87,18 +85,8 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    if (widget.resources.isEmpty) {
-      return _emptyStateCard(
-        context,
-        widget.markedComplete ? l10n.teacherAttemptGradeOnlyMarkedComplete : l10n.teacherAttemptGradeNoSkillWork,
-      );
-    }
-
-    if (!_anyWork) {
-      return _emptyStateCard(
-        context,
-        widget.markedComplete ? l10n.teacherAttemptGradeOnlyMarkedComplete : l10n.teacherAttemptGradeNoSkillWork,
-      );
+    if (widget.resources.isEmpty || !_anyWork) {
+      return _emptyStateCard(context, l10n.teacherAttemptGradeNoSkillWork);
     }
 
     final hint = _sourceHint(context);
@@ -276,6 +264,11 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
 
   Widget _buildListeningWork(BuildContext context, dynamic records) {
     final l10n = context.l10n;
+    // Comprehension format: { questions, answers, audioUrl, title, source }
+    if (records is Map) {
+      return _buildListeningCompWork(context, Map<String, dynamic>.from(records));
+    }
+    // Dictation format: List of cue records
     if (records is! List || records.isEmpty) {
       return Text(l10n.teacherAttemptGradeNoSkillWork, style: TeacherWebUi.webBody(context));
     }
@@ -318,6 +311,67 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
               ),
             ),
           ],
+      ],
+    );
+  }
+
+  Widget _buildListeningCompWork(BuildContext context, Map<String, dynamic> compData) {
+    final l10n = context.l10n;
+    final questionsRaw = compData['questions'] as List? ?? [];
+    final answersRaw = compData['answers'];
+    final answers = answersRaw is Map
+        ? Map<String, int>.fromEntries(
+            answersRaw.entries
+                .map((e) => MapEntry('${e.key}', int.tryParse('${e.value}') ?? (e.value is int ? e.value as int : -1)))
+                .where((e) => e.value >= 0),
+          )
+        : <String, int>{};
+
+    if (questionsRaw.isEmpty) {
+      return Text(l10n.teacherAttemptGradeNoSkillWork, style: TeacherWebUi.webBody(context));
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var qi = 0; qi < questionsRaw.length; qi++) ...[
+          if (qi > 0) const SizedBox(height: 10),
+          Builder(builder: (context) {
+            final q = questionsRaw[qi];
+            if (q is! Map) return const SizedBox.shrink();
+            final qid = '${q['_id'] ?? q['id'] ?? ''}';
+            final questionText = '${q['questionText'] ?? ''}';
+            final options = (q['options'] as List?)?.map((e) => '$e').toList() ?? [];
+            final correctIdx = int.tryParse('${q['correctAnswerIndex'] ?? ''}') ?? (q['correctAnswerIndex'] is int ? q['correctAnswerIndex'] as int : -1);
+            final chosenIdx = answers[qid];
+
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.outlineMuted),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    l10n.teacherAttemptGradeQuestionN(qi + 1),
+                    style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(questionText, style: ExamSystemUi.questionStem(context)),
+                  const SizedBox(height: 8),
+                  McqGradingReviewList(
+                    options: options,
+                    correctIndexes: correctIdx >= 0 ? {correctIdx} : {},
+                    selectedIndexes: chosenIdx != null ? {chosenIdx} : {},
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ],
     );
   }
@@ -369,11 +423,87 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
     final content = '${sub['content'] ?? ''}'.trim();
     final score = sub['score'];
     final wordCount = sub['wordCount'];
-    final status = sub['status'] as String?;
+
+    // AI-generated prompt fields
+    final generatedPrompt = sub['generatedPrompt'];
+    final promptTitle = generatedPrompt is Map ? '${generatedPrompt['title'] ?? ''}'.trim() : '';
+    final promptText = generatedPrompt is Map ? '${generatedPrompt['text'] ?? ''}'.trim() : '';
+    final taskType = generatedPrompt is Map ? '${generatedPrompt['taskType'] ?? ''}'.trim() : '';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Prompt block
+        if (promptTitle.isNotEmpty || promptText.isNotEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.infoBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.assignment_outlined, size: 16, color: AppColors.info),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.teacherAttemptGradeWritingPromptLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.info,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    if (taskType.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          taskType,
+                          style: const TextStyle(fontSize: 11, color: AppColors.info),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (promptTitle.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    promptTitle,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                if (promptText.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  SelectableText(
+                    promptText,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.55,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
+        // Score / word count chips
         Wrap(
           spacing: 8,
           runSpacing: 6,
@@ -388,15 +518,20 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
                 label: l10n.teacherAttemptGradeWordCount(wordCount.toInt()),
                 tone: _WritingChipTone.meta,
               ),
-            if (status != null && status.isNotEmpty)
-              TeacherStatusChip(label: status, tone: _WritingChipTone.meta),
           ],
         ),
         const SizedBox(height: 12),
-        SelectableText(
-          content.isNotEmpty ? content : '—',
-          style: TeacherWebUi.webBody(context).copyWith(height: 1.55, fontSize: 14),
-        ),
+        // Essay text
+        if (content.isNotEmpty)
+          SelectableText(
+            content,
+            style: TeacherWebUi.webBody(context).copyWith(height: 1.6, fontSize: 14),
+          )
+        else
+          Text(
+            l10n.teacherAttemptGradeNoEssayText,
+            style: TeacherWebUi.webBody(context).copyWith(color: AppColors.textMuted),
+          ),
       ],
     );
   }

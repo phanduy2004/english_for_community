@@ -10,12 +10,16 @@ import 'widget/app_card.dart';
 
 /// Mobile UI helpers for student screens — `docs/ui-ux-system/03`, `04`, `05`, `15`.
 abstract final class StudentMobileUi {
-  static const double pageHPadding = 14;
-  static const double pageTopPadding = 14;
-  static const double pageBottomPadding = 24;
-  static const double sectionGap = 20;
-  static const double cardGap = 12;
-  static const double appBarHeight = 52;
+  static const double pageHPadding = 12;
+  static const double pageTopPadding = 10;
+  static const double pageBottomPadding = 20;
+  static const double sectionGap = 14;
+  static const double cardGap = 8;
+  static const double appBarHeight = 46;
+
+  /// Compact spacing for skill runners (reading/listening MCQ, etc.).
+  static const double exerciseSectionGap = 10;
+  static const EdgeInsets exerciseCardPadding = EdgeInsets.all(10);
 
   static EdgeInsets get pagePadding => const EdgeInsets.fromLTRB(
         pageHPadding,
@@ -114,37 +118,54 @@ abstract final class StudentMobileUi {
         ? AppSkillColors.of(skill).tint
         : AppColors.surfaceSubtle;
     final bodyStyle = StudentMobileUi.body(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: iconBg,
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: (skill != null
-                        ? AppSkillColors.of(skill).color
-                        : AppColors.outline)
-                    .withValues(alpha: 0.25),
-              ),
-            ),
-            child: Icon(icon, size: 36, color: iconColor),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bottomInset = MediaQuery.paddingOf(context).bottom;
+        const verticalPad = AppSpacing.s10;
+        final minContentHeight = (constraints.maxHeight - verticalPad * 2 - bottomInset)
+            .clamp(0.0, double.infinity);
+
+        return SingleChildScrollView(
+          padding: EdgeInsets.fromLTRB(
+            pageHPadding,
+            verticalPad,
+            pageHPadding,
+            verticalPad + bottomInset,
           ),
-          const SizedBox(height: AppSpacing.s5),
-          Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
-          const SizedBox(height: AppSpacing.s3),
-          Text(body, style: bodyStyle, textAlign: TextAlign.center),
-          if (ctaLabel != null && onCta != null) ...[
-            const SizedBox(height: AppSpacing.s5),
-            FilledButton(onPressed: onCta, child: Text(ctaLabel)),
-          ],
-        ],
-      ),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: minContentHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: (skill != null
+                              ? AppSkillColors.of(skill).color
+                              : AppColors.outline)
+                          .withValues(alpha: 0.25),
+                    ),
+                  ),
+                  child: Icon(icon, size: 28, color: iconColor),
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
+                const SizedBox(height: AppSpacing.s3),
+                Text(body, style: bodyStyle, textAlign: TextAlign.center),
+                if (ctaLabel != null && onCta != null) ...[
+                  const SizedBox(height: AppSpacing.s5),
+                  FilledButton(onPressed: onCta, child: Text(ctaLabel)),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -352,7 +373,7 @@ abstract final class StudentMobileUi {
           color: colors?.color.withValues(alpha: 0.20) ?? AppColors.outline,
         ),
       ),
-      padding: const EdgeInsets.all(AppSpacing.s5),
+      padding: const EdgeInsets.all(AppSpacing.s4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -361,10 +382,10 @@ abstract final class StudentMobileUi {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(title, style: sectionTitle(context)),
-                const SizedBox(height: AppSpacing.s2),
+                const SizedBox(height: AppSpacing.s1),
                 Text(subtitle, style: body(context)),
                 if (badge != null) ...[
-                  const SizedBox(height: AppSpacing.s3),
+                  const SizedBox(height: AppSpacing.s2),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.s3,
@@ -384,8 +405,8 @@ abstract final class StudentMobileUi {
               ],
             ),
           ),
-          const SizedBox(width: AppSpacing.s4),
-          skillIconBox(icon, skill: skill, size: 52),
+          const SizedBox(width: AppSpacing.s3),
+          skillIconBox(icon, skill: skill, size: 44),
         ],
       ),
     );
@@ -502,7 +523,7 @@ abstract final class StudentMobileUi {
     final set = skill != null ? AppSkillColors.of(skill) : null;
     final fg = iconColor ?? set?.color ?? AppColors.primary;
     final bg = iconBg ?? set?.tint ?? AppColors.primaryTint;
-    const iconDiameter = 48.0;
+    const iconDiameter = 42.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -550,21 +571,21 @@ abstract final class StudentMobileUi {
     return AppCard(
       variant: AppCardVariant.outline,
       padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.s4,
+        vertical: AppSpacing.s3,
         horizontal: AppSpacing.s3,
       ),
       child: Column(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 30,
+            height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, size: 18, color: fg),
+            child: Icon(icon, size: 15, color: fg),
           ),
-          const SizedBox(height: AppSpacing.s3),
-          Text(value, style: kpi(context)),
           const SizedBox(height: AppSpacing.s2),
+          Text(value, style: kpi(context)),
+          const SizedBox(height: AppSpacing.s1),
           Text(
             label,
             style: caption(context),
@@ -626,8 +647,8 @@ abstract final class StudentMobileUi {
     String? tooltip,
     Widget? badge,
   }) {
-    const size = 40.0;
-    const iconSize = 20.0;
+    const size = 34.0;
+    const iconSize = 18.0;
     return SizedBox(
       width: size,
       height: size,
@@ -691,10 +712,10 @@ abstract final class StudentMobileUi {
   }) {
     return Container(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.s5,
         AppSpacing.s4,
-        AppSpacing.s5,
-        AppSpacing.s4 + MediaQuery.paddingOf(context).bottom,
+        AppSpacing.s3,
+        AppSpacing.s4,
+        AppSpacing.s3 + MediaQuery.paddingOf(context).bottom,
       ),
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
@@ -707,7 +728,7 @@ abstract final class StudentMobileUi {
           FilledButton(
             onPressed: ctaEnabled && !loading ? onCta : null,
             style: FilledButton.styleFrom(
-              minimumSize: const Size(88, 44),
+              minimumSize: const Size(80, 36),
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.onPrimary,
             ),
@@ -785,7 +806,7 @@ abstract final class StudentMobileUi {
     bool showReviewCorrect = false,
     bool showReviewWrong = false,
     String? subtitle,
-    EdgeInsetsGeometry margin = const EdgeInsets.only(bottom: AppSpacing.s3),
+    EdgeInsetsGeometry margin = const EdgeInsets.only(bottom: AppSpacing.s2),
   }) {
     var bg = AppColors.surfaceCard;
     var border = AppColors.outline;
@@ -831,9 +852,9 @@ abstract final class StudentMobileUi {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 36,
+                width: 30,
                 alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s4),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
                 decoration: BoxDecoration(
                   color: border.withValues(alpha: 0.12),
                   borderRadius: const BorderRadius.horizontal(
@@ -851,10 +872,10 @@ abstract final class StudentMobileUi {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.s4,
-                    AppSpacing.s4,
                     AppSpacing.s3,
-                    AppSpacing.s4,
+                    AppSpacing.s3,
+                    AppSpacing.s3,
+                    AppSpacing.s3,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

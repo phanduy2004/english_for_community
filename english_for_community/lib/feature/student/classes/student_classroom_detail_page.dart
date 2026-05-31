@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_bloc.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_event.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_state.dart';
@@ -130,7 +131,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     }
     final start = await getIt<TeacherExamRepository>().startExamAttempt(assignmentId);
     await start.fold(
-      (f) async => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) async => AppCornerToast.show(context, f.message, error: true),
       (attempt) async {
         final map = Map<String, dynamic>.from(attempt as Map);
         final attemptId = map['id'] as String? ?? '';
@@ -150,7 +151,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
 
     return AppCard(
       variant: AppCardVariant.filled,
-      padding: const EdgeInsets.all(AppSpacing.s5),
+      padding: const EdgeInsets.all(AppSpacing.s4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -163,19 +164,19 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                   children: [
                     Text(name, style: StudentMobileUi.sectionTitle(context)),
                     if (teacherLine.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.s3),
+                      const SizedBox(height: AppSpacing.s2),
                       Text(teacherLine, style: StudentMobileUi.body(context)),
                     ],
                   ],
                 ),
               ),
-              StudentMobileUi.skillIconBox(Icons.class_outlined, size: 48),
+              StudentMobileUi.skillIconBox(Icons.class_outlined, size: 38),
             ],
           ),
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: AppSpacing.s3),
           Wrap(
-            spacing: AppSpacing.s3,
-            runSpacing: AppSpacing.s3,
+            spacing: AppSpacing.s2,
+            runSpacing: AppSpacing.s2,
             children: [
               _metaChip(l10n.studentClassMemberCount(active)),
               _metaChip(_joinPolicyLabel(l10n, policy)),
@@ -243,12 +244,12 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                       AppCard(
                         variant: AppCardVariant.outline,
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(l10n.studentClassInfoTitle, style: StudentMobileUi.sectionTitle(context)),
-                              const SizedBox(height: AppSpacing.s5),
+                              const SizedBox(height: AppSpacing.s3),
                               Builder(
                                 builder: (ctx) {
                                   final desc = (classroom?['description'] as String?)?.trim() ?? '';
@@ -262,7 +263,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                                   );
                                 },
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 8),
                               if (classroom != null) ...[
                                 Builder(
                                   builder: (ctx) {

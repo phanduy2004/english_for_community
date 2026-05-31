@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
@@ -34,7 +34,7 @@ class _TeacherChangePasswordDialogState extends State<TeacherChangePasswordDialo
   }
 
   void _toast(String message, {bool error = false}) {
-    TeacherCornerToast.show(context, message, error: error);
+    AppCornerToast.show(context, message, error: error);
   }
 
   void _submit() {

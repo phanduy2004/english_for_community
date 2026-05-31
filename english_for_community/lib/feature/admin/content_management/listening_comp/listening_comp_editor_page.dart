@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../../core/get_it/get_it.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../content_widgets.dart';
@@ -118,13 +119,13 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_titleCtrl.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng nhập Title")));
+      AppCornerToast.show(context, "Vui lòng nhập Title", error: true);
       return;
     }
 
     // Ràng buộc Audio: Nếu tạo mới BẮT BUỘC phải chọn audio. Nếu sửa thì có thể giữ nguyên (ko chọn thêm)
     if (widget.id == null && _selectedAudioFile == null && _currentAudioUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Vui lòng chọn file Audio")));
+      AppCornerToast.show(context, "Vui lòng chọn file Audio", error: true);
       return;
     }
 
@@ -169,7 +170,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
       listener: (context, state) {
         if (state.status == AdminListeningCompStatus.failure) {
           setState(() => _isSubmitting = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage ?? "Error"), backgroundColor: Colors.red));
+          AppCornerToast.show(context, state.errorMessage ?? "Error", error: true);
         }
 
         // Lắng nghe khi API lấy chi tiết trả về Thành Công -> Gọi _populateData
@@ -180,7 +181,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
         }
 
         if (state.status == AdminListeningCompStatus.success && _isSubmitting) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Thao tác thành công!"), backgroundColor: Colors.green));
+          AppCornerToast.show(context, "Thao tác thành công!");
           context.pop(); // Quay lại trang List
         }
       },

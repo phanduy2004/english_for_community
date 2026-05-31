@@ -1,6 +1,8 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:flutter/material.dart';
 
 /// Numbered boxes per skill: green = correct, red = wrong, gray = unanswered.
@@ -31,6 +33,13 @@ class TeacherExamQuestionStripSection extends StatelessWidget {
       case 'grammar':
         return t.integratedExamGrammarSectionTitle;
       case 'listening':
+        final lt = strip['listeningType']?.toString() ?? '';
+        if (lt == 'comprehension') {
+          return '${t.teacherExamIntegratedSkillListening} · ${t.teacherExamListeningTypeComprehension}';
+        }
+        if (lt == 'dictation') {
+          return '${t.teacherExamIntegratedSkillListening} · ${t.teacherExamListeningTypeDictation}';
+        }
         return t.teacherExamIntegratedSkillListening;
       case 'reading':
         return t.teacherExamIntegratedSkillReading;
@@ -62,24 +71,26 @@ class TeacherExamQuestionStripSection extends StatelessWidget {
         const SizedBox(height: 6),
         SizedBox(
           height: boxSize + 4,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: questions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 5),
-            itemBuilder: (context, i) {
-              final q = questions[i];
-              final answered = q['answered'] == true;
-              final isCorrect = q['isCorrect'];
-              final selected = currentQuestionIndex != null && currentQuestionIndex == i;
-              return _QuestionBox(
-                number: (q['number'] as num?)?.toInt() ?? (i + 1),
-                answered: answered,
-                isCorrect: isCorrect is bool ? isCorrect : null,
-                selected: selected,
-                size: boxSize,
-                fontSize: fontSize,
-              );
-            },
+          child: e4cHorizontalScroll(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: questions.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 5),
+              itemBuilder: (context, i) {
+                final q = questions[i];
+                final answered = q['answered'] == true;
+                final isCorrect = q['isCorrect'];
+                final selected = currentQuestionIndex != null && currentQuestionIndex == i;
+                return _QuestionBox(
+                  number: (q['number'] as num?)?.toInt() ?? (i + 1),
+                  answered: answered,
+                  isCorrect: isCorrect is bool ? isCorrect : null,
+                  selected: selected,
+                  size: boxSize,
+                  fontSize: fontSize,
+                );
+              },
+            ),
           ),
         ),
       ],
@@ -104,18 +115,40 @@ class TeacherExamSkillStripsPanel extends StatelessWidget {
     if (skillStrips.isEmpty) return const SizedBox.shrink();
     final l10n = context.l10n;
 
+    // Merge multiple listening strips into one section with sub-labels.
+    final listeningStrips = skillStrips.where((s) => s['skill'] == 'listening').toList();
+    final otherStrips = skillStrips.where((s) => s['skill'] != 'listening').toList();
+
+    final merged = <Map<String, dynamic>>[];
+    bool listeningInserted = false;
+    for (final strip in skillStrips) {
+      if (strip['skill'] == 'listening') {
+        if (!listeningInserted) {
+          listeningInserted = true;
+          merged.add({'__merged_listening__': true, 'strips': listeningStrips});
+        }
+      } else {
+        merged.add(strip);
+      }
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (showLegend)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              l10n.teacherLiveMonitorQuestionStripLegend,
-              style: ExamSystemUi.captionMuted.copyWith(fontSize: 10),
+            child: TeacherQuestionStatusLegend(
+              correctLabel: l10n.teacherLiveMonitorGrammarCorrect,
+              wrongLabel: l10n.teacherLiveMonitorGrammarWrong,
+              unansweredLabel: l10n.teacherLiveMonitorGrammarNotAnswered,
             ),
           ),
-        ...skillStrips.map((strip) {
+        ...merged.map((entry) {
+          if (entry['__merged_listening__'] == true) {
+            return _buildMergedListeningStrip(context, entry['strips'] as List);
+          }
+          final strip = entry;
           final rawQ = strip['questions'];
           final questions = rawQ is List
               ? rawQ.map((e) => Map<String, dynamic>.from(e as Map)).toList()
@@ -131,6 +164,80 @@ class TeacherExamSkillStripsPanel extends StatelessWidget {
             ),
           );
         }),
+      ],
+    );
+  }
+
+  Widget _buildMergedListeningStrip(BuildContext context, List<dynamic> strips) {
+    final l10n = context.l10n;
+    final title = l10n.teacherExamIntegratedSkillListening;
+    return Padding(
+      padding: EdgeInsets.only(bottom: compact ? 8 : 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title,
+            style: ExamSystemUi.captionSecondary.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: compact ? 11 : 12,
+            ),
+          ),
+          const SizedBox(height: 6),
+          for (final strip in strips) ...[
+            _buildListeningSubStrip(context, Map<String, dynamic>.from(strip as Map)),
+            const SizedBox(height: 4),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListeningSubStrip(BuildContext context, Map<String, dynamic> strip) {
+    final lt = strip['listeningType']?.toString() ?? 'dictation';
+    final subLabel = lt == 'comprehension'
+        ? context.l10n.teacherExamListeningTypeComprehension
+        : context.l10n.teacherExamListeningTypeDictation;
+    final rawQ = strip['questions'];
+    final questions = rawQ is List
+        ? rawQ.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+        : <Map<String, dynamic>>[];
+    final current = (strip['currentQuestionIndex'] as num?)?.toInt();
+    final boxSize = compact ? 28.0 : 32.0;
+    final fontSize = compact ? 11.0 : 12.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          subLabel,
+          style: ExamSystemUi.captionMuted.copyWith(fontSize: compact ? 10 : 11),
+        ),
+        const SizedBox(height: 3),
+        SizedBox(
+          height: boxSize + 4,
+          child: e4cHorizontalScroll(
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: questions.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 5),
+              itemBuilder: (context, i) {
+                final q = questions[i];
+                final answered = q['answered'] == true;
+                final isCorrect = q['isCorrect'];
+                final selected = current != null && current == i;
+                return _QuestionBox(
+                  number: (q['number'] as num?)?.toInt() ?? (i + 1),
+                  answered: answered,
+                  isCorrect: isCorrect is bool ? isCorrect : null,
+                  selected: selected,
+                  size: boxSize,
+                  fontSize: fontSize,
+                );
+              },
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -112,7 +112,7 @@ class _ChartCard extends StatelessWidget {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.s5),
+        padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,7 +127,7 @@ class _ChartCard extends StatelessWidget {
                         context.l10n.weeklyActivity,
                         style: StudentMobileUi.cardTitle(context),
                       ),
-                      const SizedBox(height: AppSpacing.s2),
+                      const SizedBox(height: AppSpacing.s1),
                       Text(
                         context.l10n.weeklySummaryLine(_fmtMinutes(totalWeek), dailyProgress, dailyGoal),
                         style: StudentMobileUi.caption(context),
@@ -139,14 +139,15 @@ class _ChartCard extends StatelessWidget {
               ],
             ),
             if (dailyGoal > 0) ...[
-              const SizedBox(height: AppSpacing.s4),
+              const SizedBox(height: AppSpacing.s3),
               StudentMobileUi.skillProgressBar(
                 value: dailyGoal > 0 ? dailyProgress / dailyGoal : 0,
                 color: AppColors.accent,
+                height: 6,
               ),
             ],
             if (summary.callout.message.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.s3),
+              const SizedBox(height: AppSpacing.s2),
               Text(
                 summary.callout.message,
                 maxLines: 2,
@@ -154,9 +155,9 @@ class _ChartCard extends StatelessWidget {
                 style: StudentMobileUi.caption(context).copyWith(fontStyle: FontStyle.italic),
               ),
             ],
-            const SizedBox(height: AppSpacing.s3),
+            const SizedBox(height: AppSpacing.s2),
             SizedBox(
-              height: 160,
+              height: 120,
               child: WeeklyActivityBarsChart(
                 values: minutes.take(n).toList(),
                 labels: labels.take(n).toList(),
@@ -169,7 +170,7 @@ class _ChartCard extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton.icon(
                 onPressed: () => context.pushNamed(ProgressReportPage.routeName),
-                icon: const Icon(Icons.insights_outlined, size: 18, color: AppColors.accent),
+                icon: const Icon(Icons.insights_outlined, size: 16, color: AppColors.accent),
                 label: Text(
                   context.l10n.fullProgressStats,
                   style: AppTypography.label(),

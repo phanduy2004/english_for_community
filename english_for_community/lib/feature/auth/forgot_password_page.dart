@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -107,9 +108,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
     context.read<UserBloc>().add(RequestForgotPasswordEvent(email: _email!));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.resendingCodeSnack)),
-    );
+    AppCornerToast.show(context, context.l10n.resendingCodeSnack);
     startTimer();
   }
 
@@ -137,9 +136,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _focusNode.requestFocus();
           });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.otpSentEmailSnack)),
-          );
+          AppCornerToast.show(context, context.l10n.otpSentEmailSnack);
         }
       },
       builder: (context, state) {

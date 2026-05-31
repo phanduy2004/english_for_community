@@ -7,6 +7,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/api/api_config.dart';
 import '../../../core/locale/l10n_context.dart';
+import '../../../core/ui/widget/app_corner_toast.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_skill_colors.dart';
 import '../../../core/ui/student_mobile_ui.dart';
@@ -32,6 +33,7 @@ class ListeningSkillsPage extends StatefulWidget {
   final String? targetCommentId; // ID comment cần highlight
   final bool embedded;
   final bool examPracticeMode;
+  final bool readOnlyReview;
   final VoidCallback? onPartComplete;
   final void Function(Map<String, String> cueTextsByIndex, int savedCount, int totalCount)?
       onExamListeningProgress;
@@ -46,6 +48,7 @@ class ListeningSkillsPage extends StatefulWidget {
     this.targetCommentId,
     this.embedded = false,
     this.examPracticeMode = false,
+    this.readOnlyReview = false,
     this.onPartComplete,
     this.onExamListeningProgress,
   });
@@ -66,6 +69,10 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
   bool _showHint = false;
   int _currentIndex = -1;
   StreamSubscription<ja.PlayerState>? _psSub;
+
+  /// Tracks cue indices whose audio clip has been fully played (exam-only).
+  final Set<int> _playedCues = {};
+  bool get _currentCuePlayed => widget.examPracticeMode && _playedCues.contains(_currentIndex);
 
   @override
   void initState() {
@@ -88,6 +95,9 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
       if (st.processingState == ja.ProcessingState.completed) {
         await _player.pause();
         await _player.seek(Duration.zero);
+        if (widget.examPracticeMode && _currentIndex >= 0) {
+          setState(() => _playedCues.add(_currentIndex));
+        }
       }
     });
 
@@ -254,11 +264,11 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     setState(() => _showHint = !result.passed);
     if (!mounted) return;
     final t = context.l10n;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(result.passed ? '✅ ${t.dictationSnackCorrect}' : '⚠️ ${t.dictationSnackTryAgain}'),
-      duration: const Duration(milliseconds: 1000),
-      backgroundColor: result.passed ? Colors.green : Colors.orange,
-    ));
+    AppCornerToast.show(
+      context,
+      result.passed ? '✅ ${t.dictationSnackCorrect}' : '⚠️ ${t.dictationSnackTryAgain}',
+      error: !result.passed,
+    );
   }
 
   Widget _buildCueContent(BuildContext context, String myUserId) {
@@ -293,10 +303,12 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
               controller: _dictationCtrl,
               onTextChange: (v) => context.read<CueBloc>().add(UpdateUserAnswer(v)),
               onSubmit: () => _submitAndScore(context),
-              onReplay: () async {
-                await _player.seek(Duration.zero);
-                _player.play();
-              },
+              onReplay: widget.examPracticeMode || _currentCuePlayed
+                  ? null
+                  : () async {
+                      await _player.seek(Duration.zero);
+                      _player.play();
+                    },
               onNext: () => context.read<CueBloc>().add(const NextCue()),
               onPrev: () => context.read<CueBloc>().add(const PrevCue()),
               showHint: _showHint,
@@ -305,6 +317,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
               onToggleAutoPlay: (v) => setState(() => _autoPlayAfterClip = v),
               onAllFinished: widget.onPartComplete,
               examPracticeMode: widget.examPracticeMode,
+              readOnlyReview: widget.readOnlyReview,
             );
 
             if (widget.embedded) {
@@ -320,8 +333,10 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                   const SizedBox(height: 16),
                   ListeningPlayer(
                     player: _player,
-                    onTogglePlay: () => _player.playing ? _player.pause() : _player.play(),
-                    onSeek: (d) => _player.seek(d),
+                    onTogglePlay: _currentCuePlayed ? null : () => _player.playing ? _player.pause() : _player.play(),
+                    onSeek: widget.examPracticeMode ? null : (d) => _player.seek(d),
+                    allowSeek: !widget.examPracticeMode,
+                    disabled: _currentCuePlayed,
                   ),
                   const SizedBox(height: 16),
                   CueSelector(

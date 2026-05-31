@@ -3,8 +3,10 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_content_label.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_realtime_schedule_section.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -51,6 +53,9 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   DateTime? _dueAt;
   DateTime? _opensAt;
   DateTime? _closesAt;
+  String _realtimeScheduleMode = 'manual';
+  DateTime? _lobbyOpensAt;
+  DateTime? _scheduledStartAt;
   DateTime? _publicExpiresAt;
   final _timeLimitMinutes = TextEditingController();
   final _publicMaxUses = TextEditingController();
@@ -58,9 +63,22 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   String _attemptPolicy = 'single';
   int _maxAttempts = 2;
   String _showResultsPolicy = 'after_release';
+  String _resultsDetailLevel = 'full_detail';
   List<dynamic> _presets = [];
 
   static const _maxAttemptChoices = [2, 3, 5, 10];
+
+  // ─── Per-mode accent colours (info callouts only — not selection tiles) ───
+  static const _modeInfoColors = {
+    'practice': (fg: Color(0xFF7C3AED), bg: Color(0xFFF5F3FF)),
+  };
+
+  // ─── Policy colours ────────────────────────────────────────────────────────
+  static const _policyColors = {
+    'after_submit':  (fg: Color(0xFF15803D), bg: Color(0xFFECFDF5), border: Color(0xFF86EFAC)),
+    'after_release': (fg: Color(0xFFD97706), bg: Color(0xFFFFFBEB), border: Color(0xFFFCD34D)),
+    'never':         (fg: Color(0xFFDC2626), bg: Color(0xFFFEF2F2), border: Color(0xFFFCA5A5)),
+  };
 
   @override
   void dispose() {
@@ -96,10 +114,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         for (final raw in list) {
           final m = Map<String, dynamic>.from(raw as Map);
           final id = (m['id'] ?? m['_id'])?.toString() ?? '';
-          if (id == wanted) {
-            pickId = id;
-            break;
-          }
+          if (id == wanted) { pickId = id; break; }
         }
       }
       if (pickId == null && list.isNotEmpty) {
@@ -128,6 +143,8 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
       if (ma is num) _maxAttempts = ma.toInt();
       final sr = cfg['showResultsPolicy'] as String?;
       if (sr != null) _showResultsPolicy = sr;
+      final rd = cfg['resultsDetailLevel'] as String?;
+      if (rd == 'score_only' || rd == 'full_detail') _resultsDetailLevel = rd!;
       if (cfg.containsKey('allowPartialSubmit')) {
         _allowPartialSubmit = cfg['allowPartialSubmit'] == true;
       }
@@ -173,6 +190,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
       'attemptPolicy': _attemptPolicy,
       if (_attemptPolicy == 'limited') 'maxAttempts': _maxAttempts,
       'showResultsPolicy': _showResultsPolicy,
+      'resultsDetailLevel': _resultsDetailLevel,
       'allowPartialSubmit': _allowPartialSubmit,
     };
     _applyTimeLimitToConfig(presetCfg);
@@ -182,9 +200,9 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => TeacherCornerToast.show(context, f.message, error: true),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        TeacherCornerToast.show(context, l10n.teacherAssignmentPresetSaved);
+        AppCornerToast.show(context, l10n.teacherAssignmentPresetSaved);
         _bootstrap();
       },
     );
@@ -193,11 +211,21 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   Future<void> _submit() async {
     final l10n = context.l10n;
     if (_examStatus != 'published') {
-      TeacherCornerToast.show(context, l10n.teacherAssignmentExamNotPublished, error: true);
+      AppCornerToast.show(context, l10n.teacherAssignmentExamNotPublished, error: true);
       return;
     }
     if (_audience == 'classroom' && (_classroomId == null || _classroomId!.isEmpty)) {
-      TeacherCornerToast.show(context, l10n.teacherAssignmentPickClass, error: true);
+      AppCornerToast.show(context, l10n.teacherAssignmentPickClass, error: true);
+      return;
+    }
+    if (_mode == 'realtime' &&
+        _realtimeScheduleMode == 'scheduled' &&
+        _scheduledStartAt == null) {
+      AppCornerToast.show(
+        context,
+        l10n.teacherAssignmentRealtimeScheduledStartRequired,
+        error: true,
+      );
       return;
     }
     setState(() => _submitting = true);
@@ -206,6 +234,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
       'partialSubmitConfirm': true,
       'attemptPolicy': _attemptPolicy,
       'showResultsPolicy': _showResultsPolicy,
+      'resultsDetailLevel': _resultsDetailLevel,
       if (_attemptPolicy == 'limited') 'maxAttempts': _maxAttempts,
     };
     if (_mode == 'self_paced' && _dueAt != null) {
@@ -214,6 +243,15 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     if (_mode == 'scheduled') {
       if (_opensAt != null) config['opensAt'] = _opensAt!.toUtc().toIso8601String();
       if (_closesAt != null) config['closesAt'] = _closesAt!.toUtc().toIso8601String();
+    }
+    if (_mode == 'realtime') {
+      config['realtimeScheduleMode'] = _realtimeScheduleMode;
+      if (_realtimeScheduleMode == 'scheduled') {
+        config['scheduledStartAt'] = _scheduledStartAt!.toUtc().toIso8601String();
+        if (_lobbyOpensAt != null) {
+          config['lobbyOpensAt'] = _lobbyOpensAt!.toUtc().toIso8601String();
+        }
+      }
     }
     _applyTimeLimitToConfig(config);
 
@@ -237,9 +275,9 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     if (!mounted) return;
     setState(() => _submitting = false);
     r.fold(
-      (f) => TeacherCornerToast.show(context, f.message, error: true),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) async {
-        TeacherCornerToast.show(context, l10n.teacherAssignmentCreated);
+        AppCornerToast.show(context, l10n.teacherAssignmentCreated);
         if (_audience == 'public_link' && d is Map) {
           final pj = d['publicJoin'];
           if (pj is Map && (pj['token'] as String?)?.isNotEmpty == true) {
@@ -254,7 +292,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: tok));
                       Navigator.pop(ctx);
-                      TeacherCornerToast.show(context, l10n.dashboardPublicTokenCopied);
+                      AppCornerToast.show(context, l10n.dashboardPublicTokenCopied);
                     },
                     child: Text(l10n.dashboardPublicCopyToken),
                   ),
@@ -271,12 +309,16 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     );
   }
 
-  Future<void> _pickDateTime(void Function(DateTime) onPicked, {DateTime? initial}) async {
+  Future<void> _pickDateTime(
+    void Function(DateTime) onPicked, {
+    DateTime? initial,
+    DateTime? firstDate,
+  }) async {
     final now = DateTime.now();
     final d = await showDatePicker(
       context: context,
       initialDate: initial ?? now,
-      firstDate: now.subtract(const Duration(days: 1)),
+      firstDate: firstDate ?? now.subtract(const Duration(days: 1)),
       lastDate: now.add(const Duration(days: 365 * 2)),
     );
     if (d == null || !mounted) return;
@@ -291,16 +333,14 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   InputDecoration _textDec({String? hint}) =>
       TeacherWebUi.formInputDecoration(context, hintText: hint);
 
-  Widget _formGroup({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TeacherWebUi.formFieldLabel(context, label),
-        const SizedBox(height: 6),
-        child,
-      ],
-    );
-  }
+  Widget _formGroup({required String label, required Widget child}) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TeacherWebUi.formFieldLabel(context, label),
+          const SizedBox(height: 6),
+          child,
+        ],
+      );
 
   Widget _dateField({
     required String label,
@@ -351,6 +391,117 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     );
   }
 
+  // ─── Section header with coloured icon ────────────────────────────────────
+  Widget _sectionHeader(String label, IconData icon, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(icon, size: 13, color: color),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label.toUpperCase(),
+          style: TeacherWebUi.sectionTitle(context).copyWith(
+            letterSpacing: 0.5,
+            fontSize: 10.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ─── Audience tiles ────────────────────────────────────────────────────────
+  Widget _audienceSection(AppLocalizations l10n) {
+    final options = [
+      (
+        value: 'classroom',
+        icon: Icons.groups_2_outlined,
+        title: l10n.teacherAssignmentAudienceClassroom,
+        hint: l10n.teacherAssignmentAudienceClassroomHint,
+      ),
+      (
+        value: 'public_link',
+        icon: Icons.link_rounded,
+        title: l10n.teacherAssignmentAudiencePublic,
+        hint: l10n.teacherAssignmentAudiencePublicHint,
+      ),
+    ];
+
+    return Row(
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(width: 10),
+          Expanded(child: _audienceTile(options[i])),
+        ],
+      ],
+    );
+  }
+
+  Widget _audienceTile(dynamic opt) {
+    final selected = _audience == opt.value;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _audience = opt.value),
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  opt.icon as IconData,
+                  size: 16,
+                  color: TeacherWebUi.choiceTileIconColor(selected: selected),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      opt.title as String,
+                      style: TeacherWebUi.webLabel(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      opt.hint as String,
+                      style: TeacherWebUi.metaMuted.copyWith(fontSize: 10.5, height: 1.3),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(Icons.check_circle_rounded, size: 15, color: AppColors.primary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Mode grid (2×2 with per-mode accent) ─────────────────────────────────
   Widget _modeGrid(AppLocalizations l10n) {
     final options = [
       _ModeOption(
@@ -381,111 +532,116 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final wide = c.maxWidth >= 400;
+        final wide = c.maxWidth >= 380;
         return GridView.count(
           crossAxisCount: wide ? 2 : 1,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 8,
           crossAxisSpacing: 8,
-          childAspectRatio: wide ? 2.4 : 3.2,
-          children: options.map((o) {
-            final selected = _mode == o.value;
-            return Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => setState(() => _mode = o.value),
-                borderRadius: BorderRadius.circular(10),
-                child: Ink(
-                  decoration: BoxDecoration(
-                    color: selected ? AppColors.primaryTint : AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: selected ? AppColors.primary : AppColors.outlineMuted,
-                      width: selected ? 1.5 : 1,
-                    ),
-                  ),
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(o.icon, size: 18, color: selected ? AppColors.primaryDark : AppColors.textMuted),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              o.title,
-                              style: TeacherWebUi.webLabel(context).copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: selected ? AppColors.primaryDark : AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              o.hint,
-                              style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.3),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (selected)
-                        const Icon(Icons.check_circle, size: 16, color: AppColors.primary),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+          childAspectRatio: wide ? 2.6 : 3.5,
+          children: options.map((o) => _modeCard(o)).toList(),
         );
       },
     );
   }
 
+  Widget _modeCard(_ModeOption o) {
+    final selected = _mode == o.value;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => setState(() => _mode = o.value),
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+          decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Icon(
+                  o.icon,
+                  size: 15,
+                  color: TeacherWebUi.choiceTileIconColor(selected: selected),
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      o.title,
+                      style: TeacherWebUi.webLabel(context).copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
+                        color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      o.hint,
+                      style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.3),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              if (selected)
+                const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.primary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Schedule block ────────────────────────────────────────────────────────
   Widget _scheduleBlock(AppLocalizations l10n) {
     if (_mode == 'practice') {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceSubtle,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.outlineMuted),
-        ),
-        child: Text(
-          l10n.teacherAssignExamModeHintPractice,
-          style: TeacherWebUi.metaMuted.copyWith(height: 1.4),
-        ),
-      );
-    }
-
-    if (_mode == 'realtime') {
-      return Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.infoBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.info_outline, size: 18, color: AppColors.info),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                l10n.teacherAssignExamRealtimeNote,
-                style: TeacherWebUi.webBody(context).copyWith(fontSize: 12, height: 1.45),
-              ),
-            ),
-          ],
-        ),
+      final pc = _modeInfoColors['practice']!;
+      return _infoBox(
+        icon: Icons.info_outline_rounded,
+        text: l10n.teacherAssignExamModeHintPractice,
+        color: pc.fg,
+        bg: pc.bg,
       );
     }
 
     final children = <Widget>[];
+    if (_mode == 'realtime') {
+      children.add(
+        TeacherRealtimeScheduleSection(
+          scheduleMode: _realtimeScheduleMode,
+          scheduledStartAt: _scheduledStartAt,
+          lobbyOpensAt: _lobbyOpensAt,
+          onScheduleModeChanged: (m) => setState(() {
+            _realtimeScheduleMode = m;
+            if (m == 'manual') {
+              _scheduledStartAt = null;
+              _lobbyOpensAt = null;
+            }
+          }),
+          onScheduledStartChanged: (d) => setState(() => _scheduledStartAt = d),
+          onLobbyOpensChanged: (d) => setState(() => _lobbyOpensAt = d),
+          formatDateTime: _formatDateTime,
+          onPickDateTime: ({required initial, required onPicked, firstDate}) =>
+              _pickDateTime(onPicked, initial: initial, firstDate: firstDate),
+        ),
+      );
+      children.add(const SizedBox(height: AppSpacing.s4));
+    }
+
     if (_mode == 'self_paced') {
       children.add(
         _dateField(
@@ -532,46 +688,58 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
           ),
         ),
         const SizedBox(height: AppSpacing.s3),
+        // Quick-pick chips with accent
         Wrap(
           spacing: 6,
           runSpacing: 6,
           children: [30, 45, 60, 90, 120].map((m) {
-            return FilterChip(
-              label: Text(l10n.teacherAssignmentTimeLimitPresetMinutes(m), style: const TextStyle(fontSize: 11)),
-              selected: _timeLimitMinutes.text.trim() == '$m',
-              onSelected: (_) => setState(() => _timeLimitMinutes.text = '$m'),
-              showCheckmark: false,
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
+            final active = _timeLimitMinutes.text.trim() == '$m';
+            return GestureDetector(
+              onTap: () => setState(() => _timeLimitMinutes.text = '$m'),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 120),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: active ? AppColors.primaryTint : AppColors.surfaceSubtle,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: active ? AppColors.primary : AppColors.outlineStrong,
+                    width: active ? 1.5 : 1,
+                  ),
+                ),
+                child: Text(
+                  l10n.teacherAssignmentTimeLimitPresetMinutes(m),
+                  style: TeacherWebUi.webLabel(context).copyWith(
+                    fontSize: 11,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active ? AppColors.primary : AppColors.textSecondary,
+                  ),
+                ),
+              ),
             );
           }).toList(),
         ),
       ]);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: children,
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children);
   }
 
+  // ─── Rules panel ──────────────────────────────────────────────────────────
   Widget _rulesPanel(AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SegmentedButton<String>(
-          segments: [
-            ButtonSegment(value: 'single', label: Text(l10n.teacherAssignmentAttemptSingle)),
-            ButtonSegment(value: 'unlimited', label: Text(l10n.teacherAssignmentAttemptUnlimited)),
-            ButtonSegment(value: 'limited', label: Text(l10n.teacherAssignmentAttemptLimited)),
+        // Attempt policy row
+        TeacherWebUi.formFieldLabel(context, l10n.teacherAssignmentSectionRules),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            for (final ap in ['single', 'unlimited', 'limited']) ...[
+              if (ap != 'single') const SizedBox(width: 8),
+              Expanded(child: _attemptTile(ap, l10n)),
+            ],
           ],
-          selected: {_attemptPolicy},
-          onSelectionChanged: (s) {
-            if (s.isEmpty) return;
-            setState(() => _attemptPolicy = s.first);
-          },
-          showSelectedIcon: false,
-          style: TeacherWebUi.segmentedControlStyle(context),
         ),
         if (_attemptPolicy == 'limited') ...[
           const SizedBox(height: AppSpacing.s4),
@@ -582,43 +750,40 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
               initialValue: _maxAttempts,
               isExpanded: true,
               decoration: _textDec(),
-              items: _maxAttemptChoices.map((n) => DropdownMenuItem(value: n, child: Text('$n'))).toList(),
+              items: _maxAttemptChoices
+                  .map((n) => DropdownMenuItem(value: n, child: Text('$n')))
+                  .toList(),
               onChanged: (v) {
                 if (v != null) setState(() => _maxAttempts = v);
               },
             ),
           ),
         ],
+        const SizedBox(height: AppSpacing.s5),
+        // When students see results — 3 coloured tiles
+        TeacherWebUi.formFieldLabel(context, l10n.teacherAssignmentShowResults),
+        const SizedBox(height: 8),
+        _policyTiles(l10n),
+        const SizedBox(height: AppSpacing.s5),
+        TeacherWebUi.formFieldLabel(context, l10n.teacherAssignmentResultsDetailLabel),
+        const SizedBox(height: 8),
+        _detailLevelTiles(l10n),
         const SizedBox(height: AppSpacing.s4),
-        _formGroup(
-          label: l10n.teacherAssignmentShowResults,
-          child: DropdownButtonFormField<String>(
-            key: ValueKey(_showResultsPolicy),
-            initialValue: _showResultsPolicy,
-            isExpanded: true,
-            decoration: _textDec(),
-            items: [
-              DropdownMenuItem(value: 'after_submit', child: Text(l10n.teacherExamPolicyAfterSubmit)),
-              DropdownMenuItem(value: 'after_release', child: Text(l10n.teacherExamPolicyAfterRelease)),
-              DropdownMenuItem(value: 'never', child: Text(l10n.teacherExamPolicyNever)),
-            ],
-            onChanged: (v) {
-              if (v != null) setState(() => _showResultsPolicy = v);
-            },
-          ),
-        ),
+        // Partial submit toggle
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.surfaceSubtle,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: AppColors.outlineMuted),
+            border: Border.all(color: AppColors.outline),
           ),
           child: SwitchListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
             title: Text(
               l10n.teacherAssignmentAllowPartialSubmit,
-              style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w500, fontSize: 13),
+              style: TeacherWebUi.webBody(context).copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
             ),
             subtitle: Text(
               l10n.teacherAssignmentAllowPartialSubmitHint,
@@ -632,6 +797,207 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     );
   }
 
+  Widget _attemptTile(String value, AppLocalizations l10n) {
+    final selected = _attemptPolicy == value;
+    final label = switch (value) {
+      'single'    => l10n.teacherAssignmentAttemptSingle,
+      'unlimited' => l10n.teacherAssignmentAttemptUnlimited,
+      _           => l10n.teacherAssignmentAttemptLimited,
+    };
+    final icon = switch (value) {
+      'single'    => Icons.looks_one_outlined,
+      'unlimited' => Icons.all_inclusive_rounded,
+      _           => Icons.format_list_numbered_rounded,
+    };
+    return GestureDetector(
+      onTap: () => setState(() => _attemptPolicy = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: TeacherWebUi.choiceTileIconColor(selected: selected),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TeacherWebUi.webLabel(context).copyWith(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailLevelTiles(AppLocalizations l10n) {
+    return Row(
+      children: [
+        Expanded(
+          child: _detailLevelTile(
+            value: 'score_only',
+            icon: Icons.leaderboard_outlined,
+            label: l10n.teacherResultsDetailScoreOnly,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _detailLevelTile(
+            value: 'full_detail',
+            icon: Icons.fact_check_outlined,
+            label: l10n.teacherResultsDetailFull,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailLevelTile({
+    required String value,
+    required IconData icon,
+    required String label,
+  }) {
+    final selected = _resultsDetailLevel == value;
+    return GestureDetector(
+      onTap: () => setState(() => _resultsDetailLevel = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+        child: Column(
+          children: [
+            Icon(icon, size: 18, color: TeacherWebUi.choiceTileIconColor(selected: selected)),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TeacherWebUi.webLabel(context).copyWith(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+                height: 1.25,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _policyTiles(AppLocalizations l10n) {
+    final options = [
+      (
+        value: 'after_submit',
+        icon: Icons.check_circle_outline_rounded,
+        label: l10n.teacherExamPolicyAfterSubmit,
+      ),
+      (
+        value: 'after_release',
+        icon: Icons.lock_open_outlined,
+        label: l10n.teacherExamPolicyAfterRelease,
+      ),
+      (
+        value: 'never',
+        icon: Icons.visibility_off_outlined,
+        label: l10n.teacherExamPolicyNever,
+      ),
+    ];
+    return Row(
+      children: [
+        for (var i = 0; i < options.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(child: _policyTile(options[i])),
+        ],
+      ],
+    );
+  }
+
+  Widget _policyTile(dynamic opt) {
+    final selected = _showResultsPolicy == opt.value;
+    final pc = _policyColors[opt.value]!;
+    return GestureDetector(
+      onTap: () => setState(() => _showResultsPolicy = opt.value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? pc.bg : AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: selected ? pc.border : AppColors.outline,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              opt.icon as IconData,
+              size: 16,
+              color: selected ? pc.fg : AppColors.textMuted,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              opt.label as String,
+              textAlign: TextAlign.center,
+              style: TeacherWebUi.metaMuted.copyWith(
+                fontSize: 10,
+                height: 1.3,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                color: selected ? pc.fg : AppColors.textSecondary,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoBox({
+    required IconData icon,
+    required String text,
+    required Color color,
+    required Color bg,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TeacherWebUi.metaMuted.copyWith(
+                color: color.withValues(alpha: 0.85),
+                fontSize: 12,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Build ─────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -646,10 +1012,12 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         icon: Icons.assignment_add,
         width: 560,
         maxBodyHeight: 200,
-        body: const Center(child: Padding(
-          padding: EdgeInsets.all(32),
-          child: CircularProgressIndicator(strokeWidth: 2),
-        )),
+        body: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
       );
     }
 
@@ -658,57 +1026,51 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
       subtitle: subtitle,
       icon: Icons.assignment_add,
       width: 560,
-      maxBodyHeight: 520,
+      maxBodyHeight: 540,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Exam not published warning ───────────────────────────────
           if (_examStatus != 'published')
-            Container(
-              margin: const EdgeInsets.only(bottom: AppSpacing.s5),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.warningBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-              ),
-              child: Text(
-                l10n.teacherAssignmentExamNotPublished,
-                style: TeacherWebUi.webBody(context).copyWith(color: AppColors.warning, fontSize: 13),
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.s5),
+              child: _infoBox(
+                icon: Icons.warning_amber_rounded,
+                text: l10n.teacherAssignmentExamNotPublished,
+                color: AppColors.warning,
+                bg: AppColors.warningBg,
               ),
             ),
-          TeacherDialogSectionLabel(l10n.teacherAssignmentSectionAudience),
-          const SizedBox(height: AppSpacing.s3),
-          SegmentedButton<String>(
-            segments: [
-              ButtonSegment(value: 'classroom', label: Text(l10n.teacherAssignmentAudienceClassroom)),
-              ButtonSegment(value: 'public_link', label: Text(l10n.teacherAssignmentAudiencePublic)),
-            ],
-            selected: {_audience},
-            onSelectionChanged: (s) {
-              if (s.isEmpty) return;
-              setState(() => _audience = s.first);
-            },
-            showSelectedIcon: false,
-            style: TeacherWebUi.segmentedControlStyle(context),
-          ),
-          const SizedBox(height: AppSpacing.s4),
-          if (_audience == 'classroom')
-            _formGroup(
-              label: l10n.teacherAssignmentClassroom,
-              child: DropdownButtonFormField<String>(
-                key: ValueKey(_classroomId),
-                initialValue: _classrooms.isEmpty ? null : _classroomId,
-                isExpanded: true,
-                decoration: _textDec(),
-                items: _classrooms.map((raw) {
-                  final m = Map<String, dynamic>.from(raw as Map);
-                  final id = (m['id'] ?? m['_id'])?.toString() ?? '';
-                  final name = (m['name'] as String?) ?? id;
-                  return DropdownMenuItem(value: id, child: Text(name));
-                }).toList(),
-                onChanged: (v) => setState(() => _classroomId = v),
-              ),
-            )
+
+          // ── Section: Audience ────────────────────────────────────────
+          _sectionHeader(l10n.teacherAssignmentSectionAudience, Icons.people_outline_rounded, AppColors.primary),
+          const SizedBox(height: 10),
+          _audienceSection(l10n),
+          const SizedBox(height: 14),
+
+          if (_audience == 'classroom') ...[
+            TeacherWebUi.formFieldLabel(context, l10n.teacherAssignmentClassroom),
+            const SizedBox(height: 8),
+            if (_classrooms.isEmpty)
+              _infoBox(
+                icon: Icons.info_outline_rounded,
+                text: l10n.teacherAssignmentPickClass,
+                color: AppColors.textSecondary,
+                bg: AppColors.surfaceSubtle,
+              )
+            else
+              ..._classrooms.map((raw) {
+                final m = Map<String, dynamic>.from(raw as Map);
+                final id = (m['id'] ?? m['_id'])?.toString() ?? '';
+                final name = (m['name'] as String?) ?? id;
+                return TeacherClassroomSelectTile(
+                  key: ValueKey(id),
+                  name: name,
+                  selected: _classroomId == id,
+                  onTap: () => setState(() => _classroomId = id),
+                );
+              }),
+          ]
           else ...[
             _formGroup(
               label: l10n.teacherAssignmentPublicMaxUsesHint,
@@ -722,20 +1084,37 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
             _dateField(
               label: l10n.teacherAssignmentPublicExpiresHint,
               value: _publicExpiresAt,
-              onTap: () => _pickDateTime((d) => setState(() => _publicExpiresAt = d), initial: _publicExpiresAt),
+              onTap: () => _pickDateTime(
+                (d) => setState(() => _publicExpiresAt = d),
+                initial: _publicExpiresAt,
+              ),
               onClear: () => setState(() => _publicExpiresAt = null),
             ),
           ],
-          const SizedBox(height: AppSpacing.s5),
-          const Divider(height: 1, color: AppColors.outlineMuted),
-          const SizedBox(height: AppSpacing.s5),
-          TeacherDialogSectionLabel(l10n.teacherAssignmentSectionDelivery),
-          const SizedBox(height: AppSpacing.s3),
+
+          // ── Divider ──────────────────────────────────────────────────
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18),
+            child: Divider(height: 1, color: AppColors.outlineMuted),
+          ),
+
+          // ── Section: Delivery mode ───────────────────────────────────
+          _sectionHeader(
+            l10n.teacherAssignmentSectionDelivery,
+            Icons.send_outlined,
+            AppColors.primary,
+          ),
+          const SizedBox(height: 10),
           _modeGrid(l10n),
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: 14),
           _scheduleBlock(l10n),
+
+          // ── Preset picker ────────────────────────────────────────────
           if (_presets.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.s4),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 14),
+              child: Divider(height: 1, color: AppColors.outlineMuted),
+            ),
             _formGroup(
               label: l10n.teacherAssignmentPresetLabel,
               child: Row(
@@ -771,7 +1150,12 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
               ),
             ),
           ],
-          const SizedBox(height: AppSpacing.s4),
+
+          // ── Section: Rules (expandable) ──────────────────────────────
+          const Padding(
+            padding: EdgeInsets.only(top: 18, bottom: 4),
+            child: Divider(height: 1, color: AppColors.outlineMuted),
+          ),
           TeacherDialogExpandableSection(
             icon: Icons.tune_rounded,
             title: l10n.teacherAssignExamAdvancedRules,

@@ -14,6 +14,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
@@ -268,7 +269,7 @@ class _ProfilePageState extends State<ProfilePage> {
       listener: (context, state) {
         if (state.status == UserStatus.unauthenticated) context.goNamed(LoginPage.routeName);
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          AppCornerToast.show(context, state.errorMessage!, error: true);
         }
       },
       builder: (context, state) {
@@ -304,6 +305,7 @@ class _ProfilePageState extends State<ProfilePage> {
             color: AppColors.primary,
             onRefresh: () async => context.read<UserBloc>().add(GetProfileEvent()),
             child: SingleChildScrollView(
+              primary: false,
               padding: StudentMobileUi.pagePadding,
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(

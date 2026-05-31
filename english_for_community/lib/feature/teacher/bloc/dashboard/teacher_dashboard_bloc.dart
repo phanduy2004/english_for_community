@@ -1,6 +1,5 @@
-import 'dart:math' as math;
-
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
+import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_derived.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,9 +9,68 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
     on<TeacherDashboardLoadRequested>(_onLoad);
     on<TeacherDashboardCloseAssignmentRequested>(_onCloseAssignment);
     on<TeacherDashboardRotatePublicLinkRequested>(_onRotatePublicLink);
+    on<TeacherDashboardSearchQueryChanged>(_onSearchQuery);
+    on<TeacherDashboardAssignmentFilterChanged>(_onAssignmentFilter);
+    on<TeacherDashboardClassroomFilterChanged>(_onClassroomFilter);
   }
 
   final TeacherExamRepository repository;
+
+  List<Map<String, dynamic>> _filtered(List<dynamic> assignments) =>
+      teacherDashboardFilterAssignments(
+        assignments: assignments,
+        searchQuery: state.searchQuery,
+        assignmentFilter: state.assignmentFilter,
+        classroomFilterId: state.classroomFilterId,
+      );
+
+  void _onSearchQuery(
+    TeacherDashboardSearchQueryChanged event,
+    Emitter<TeacherDashboardState> emit,
+  ) {
+    emit(state.copyWith(
+      searchQuery: event.query,
+      filteredAssignments: teacherDashboardFilterAssignments(
+        assignments: state.assignments,
+        searchQuery: event.query,
+        assignmentFilter: state.assignmentFilter,
+        classroomFilterId: state.classroomFilterId,
+      ),
+    ));
+  }
+
+  void _onAssignmentFilter(
+    TeacherDashboardAssignmentFilterChanged event,
+    Emitter<TeacherDashboardState> emit,
+  ) {
+    if (event.filter == state.assignmentFilter) return;
+    emit(state.copyWith(
+      assignmentFilter: event.filter,
+      filteredAssignments: teacherDashboardFilterAssignments(
+        assignments: state.assignments,
+        searchQuery: state.searchQuery,
+        assignmentFilter: event.filter,
+        classroomFilterId: state.classroomFilterId,
+      ),
+    ));
+  }
+
+  void _onClassroomFilter(
+    TeacherDashboardClassroomFilterChanged event,
+    Emitter<TeacherDashboardState> emit,
+  ) {
+    if (event.classroomId == state.classroomFilterId) return;
+    emit(state.copyWith(
+      classroomFilterId: event.classroomId,
+      clearClassroomFilter: event.classroomId == null,
+      filteredAssignments: teacherDashboardFilterAssignments(
+        assignments: state.assignments,
+        searchQuery: state.searchQuery,
+        assignmentFilter: state.assignmentFilter,
+        classroomFilterId: event.classroomId,
+      ),
+    ));
+  }
 
   Future<void> _onLoad(
     TeacherDashboardLoadRequested event,
@@ -32,18 +90,25 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
     List<dynamic> classrooms = [];
     List<dynamic> assignments = [];
     List<dynamic> exams = [];
+    Map<String, dynamic>? actionItems;
 
-    final cr = await repository.listMyClassroomsAsTeacher();
-    cr.fold((f) => err = f.message, (list) => classrooms = list);
+    // Load core dashboard data in parallel (was 4 sequential round-trips).
+    final results = await Future.wait([
+      repository.listMyClassroomsAsTeacher(),
+      repository.listMyAssignments(),
+      repository.listMyExams(),
+      repository.getTeacherDashboardActionItems(),
+    ]);
 
+    results[0].fold((f) => err = f.message, (list) => classrooms = list as List<dynamic>);
     if (err == null) {
-      final ar = await repository.listMyAssignments();
-      ar.fold((f) => err ??= f.message, (list) => assignments = list);
+      results[1].fold((f) => err ??= f.message, (list) => assignments = list as List<dynamic>);
     }
-
     if (err == null) {
-      final er = await repository.listMyExams();
-      er.fold((f) => err ??= f.message, (list) => exams = list);
+      results[2].fold((f) => err ??= f.message, (list) => exams = list as List<dynamic>);
+    }
+    if (err == null) {
+      results[3].fold((_) {}, (d) => actionItems = d as Map<String, dynamic>);
     }
 
     if (err != null) {
@@ -55,9 +120,7 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
       return;
     }
 
-    Map<String, dynamic>? actionItems;
-    final air = await repository.getTeacherDashboardActionItems();
-    air.fold((_) {}, (d) => actionItems = d);
+    final gradingQueue = _parseGradingQueue(actionItems?['gradingQueue']);
 
     emit(state.copyWith(
       status: TeacherDashboardStatus.success,
@@ -65,13 +128,9 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
       assignments: assignments,
       exams: exams,
       actionItems: actionItems,
-      gradingLoading: true,
-    ));
-
-    final queue = await _buildGradingQueue(assignments);
-    emit(state.copyWith(
-      gradingQueue: queue,
+      gradingQueue: gradingQueue,
       gradingLoading: false,
+      filteredAssignments: _filtered(assignments),
     ));
   }
 
@@ -105,86 +164,36 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
     );
   }
 
-  Future<List<TeacherGradingQueueItem>> _buildGradingQueue(List<dynamic> assignments) async {
-    final collected = <TeacherGradingQueueItem>[];
-    final assignmentMeta = <String, Map<String, dynamic>>{};
-    for (final raw in assignments) {
-      final m = Map<String, dynamic>.from(raw as Map);
-      final id = m['id'] as String? ?? '';
-      if (id.isNotEmpty) assignmentMeta[id] = m;
+  static List<TeacherGradingQueueItem> _parseGradingQueue(dynamic raw) {
+    if (raw is! List) return [];
+    final items = <TeacherGradingQueueItem>[];
+    for (final entry in raw) {
+      if (entry is! Map) continue;
+      final m = Map<String, dynamic>.from(entry);
+      final attemptId = m['attemptId'] as String? ?? '';
+      if (attemptId.isEmpty) continue;
+      items.add(
+        TeacherGradingQueueItem(
+          attemptId: attemptId,
+          assignmentId: m['assignmentId'] as String? ?? '',
+          assignmentTitle: (m['assignmentTitle'] as String?)?.trim().isNotEmpty == true
+              ? (m['assignmentTitle'] as String).trim()
+              : 'Exam',
+          studentLabel: (m['studentLabel'] as String?)?.trim().isNotEmpty == true
+              ? (m['studentLabel'] as String).trim()
+              : 'Student',
+          gradingState: m['gradingState'] as String? ?? '',
+          resultsReleased: m['resultsReleased'] == true,
+          submittedAt: _parseDate(m['submittedAt']),
+        ),
+      );
     }
-    final ids = assignmentMeta.keys.toList();
-    const batch = 5;
-    for (var i = 0; i < ids.length; i += batch) {
-      final end = math.min(i + batch, ids.length);
-      final chunk = ids.sublist(i, end);
-      final futures = chunk.map(repository.listAssignmentAttempts).toList();
-      final results = await Future.wait(futures);
-      for (var j = 0; j < chunk.length; j++) {
-        final assignmentId = chunk[j];
-        final meta = assignmentMeta[assignmentId]!;
-        final title = _examTitleFromAssignment(meta);
-        results[j].fold((_) {}, (attempts) {
-          for (final raw in attempts) {
-            final a = Map<String, dynamic>.from(raw as Map);
-            if (!_needsGradingAttention(a)) continue;
-            final attemptId = a['id'] as String? ?? '';
-            if (attemptId.isEmpty) continue;
-            collected.add(
-              TeacherGradingQueueItem(
-                attemptId: attemptId,
-                assignmentId: assignmentId,
-                assignmentTitle: title,
-                studentLabel: _formatStudentLabel(a['userId']),
-                gradingState: a['gradingState'] as String? ?? '',
-                resultsReleased: a['resultsReleased'] == true,
-                submittedAt: _parseDate(a['submittedAt']),
-              ),
-            );
-          }
-        });
-      }
-    }
-    collected.sort((a, b) {
-      final ta = a.submittedAt?.millisecondsSinceEpoch ?? 0;
-      final tb = b.submittedAt?.millisecondsSinceEpoch ?? 0;
-      return tb.compareTo(ta);
-    });
-    return collected.length > 15 ? collected.sublist(0, 15) : collected;
-  }
-
-  static bool _needsGradingAttention(Map<String, dynamic> m) {
-    if ((m['status'] as String?) != 'submitted') return false;
-    final gs = m['gradingState'] as String? ?? '';
-    final released = m['resultsReleased'] == true;
-    if (gs == 'pending_manual' || gs == 'pending_ai') return true;
-    if (gs == 'finalized' && !released) return true;
-    return false;
+    return items;
   }
 
   static DateTime? _parseDate(dynamic v) {
     if (v == null) return null;
     if (v is DateTime) return v;
     return DateTime.tryParse(v.toString());
-  }
-
-  static String _formatStudentLabel(dynamic userField) {
-    if (userField is Map) {
-      final m = Map<String, dynamic>.from(userField);
-      for (final key in ['fullName', 'email', 'username']) {
-        final s = (m[key] as String?)?.trim();
-        if (s != null && s.isNotEmpty) return s;
-      }
-    }
-    return 'Student';
-  }
-
-  static String _examTitleFromAssignment(Map<String, dynamic> m) {
-    final exam = m['examId'];
-    if (exam is Map) {
-      final t = (exam['title'] as String?)?.trim();
-      if (t != null && t.isNotEmpty) return t;
-    }
-    return 'Exam';
   }
 }

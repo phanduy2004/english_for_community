@@ -18,13 +18,19 @@ import 'package:english_for_community/feature/student/exams/integrated_exam_gram
 import 'package:english_for_community/feature/student/exams/integrated_exam_score_widgets.dart';
 import 'package:english_for_community/feature/teacher/integrated_writing_grading_panel.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_skill_work_panel.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_attempt_grade/teacher_exam_attempt_grade_bloc.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_attempt_grade/teacher_exam_attempt_grade_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/exam_attempt_grade/teacher_exam_attempt_grade_state.dart';
 import 'package:english_for_community/feature/teacher/teacher_grading_hub_labels.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_release_results_dialog.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 /// Per-attempt grading: full student summary + section scores + item rubric.
-class TeacherExamAttemptGradePage extends StatefulWidget {
+class TeacherExamAttemptGradePage extends StatelessWidget {
   const TeacherExamAttemptGradePage({
     super.key,
     required this.assignmentId,
@@ -40,21 +46,42 @@ class TeacherExamAttemptGradePage extends StatefulWidget {
       '/teacher/exam-grading/$assignmentId/attempt/$attemptId';
 
   @override
-  State<TeacherExamAttemptGradePage> createState() => _TeacherExamAttemptGradePageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<TeacherExamAttemptGradeBloc>(param1: attemptId)
+        ..add(const TeacherExamAttemptGradeLoadRequested()),
+      child: _TeacherExamAttemptGradeView(
+        assignmentId: assignmentId,
+        attemptId: attemptId,
+      ),
+    );
+  }
 }
 
-class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePage> {
-  bool _loading = true;
-  String? _error;
-  Map<String, dynamic>? _attempt;
+class _TeacherExamAttemptGradeView extends StatefulWidget {
+  const _TeacherExamAttemptGradeView({
+    required this.assignmentId,
+    required this.attemptId,
+  });
+
+  final String assignmentId;
+  final String attemptId;
+
+  @override
+  State<_TeacherExamAttemptGradeView> createState() => _TeacherExamAttemptGradeViewState();
+}
+
+class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeView> {
   final Map<String, TextEditingController> _pointsCtr = {};
   final Map<String, TextEditingController> _noteCtr = {};
   // Skill score controllers for Speaking/Writing in integrated exams
   final Map<String, TextEditingController> _skillScoreCtr = {};
   final Map<String, TextEditingController> _skillNoteCtr = {};
-  final Set<String> _expandedSkillSections = {};
   final ScrollController _bodyScrollController = ScrollController();
-  bool _aiGrading = false;
+
+  TeacherExamAttemptGradeBloc get _bloc => context.read<TeacherExamAttemptGradeBloc>();
+
+  Map<String, dynamic>? get _attempt => _bloc.state.attempt;
 
   @override
   void dispose() {
@@ -72,12 +99,6 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
       c.dispose();
     }
     super.dispose();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
   }
 
   List<Map<String, dynamic>> _flattenItems(Map<String, dynamic> snap) {
@@ -100,92 +121,73 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
     return out;
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final r = await getIt<TeacherExamRepository>().getGradingAttempt(widget.attemptId);
-    r.fold(
-      (f) => setState(() => _error = f.message),
-      (d) {
-        for (final c in _pointsCtr.values) {
-          c.dispose();
-        }
-        for (final c in _noteCtr.values) {
-          c.dispose();
-        }
-        for (final c in _skillScoreCtr.values) {
-          c.dispose();
-        }
-        for (final c in _skillNoteCtr.values) {
-          c.dispose();
-        }
-        _pointsCtr.clear();
-        _noteCtr.clear();
-        _skillScoreCtr.clear();
-        _skillNoteCtr.clear();
-        final m = Map<String, dynamic>.from(d as Map);
-        _attempt = m;
-        _expandedSkillSections.clear();
-        final snap = m['examSnapshot'];
-        final scores = m['scores'];
-        final integrated = isIntegratedExamFromAttempt(m);
-        final skillScoresRaw = scores is Map ? scores['skillScores'] as Map? : null;
-        if (skillScoresRaw != null) {
-          for (final entry in skillScoresRaw.entries) {
-            final sid = entry.key.toString();
-            final se = entry.value;
-            if (se is! Map) continue;
-            final skill = '${se['skill'] ?? ''}';
-            if (skill != 'speaking' && skill != 'writing') continue;
-            final existing = se['score'];
-            final aiDraft = se['aiDraftScore'];
-            final note = '${se['note'] ?? ''}';
-            _skillScoreCtr[sid] = TextEditingController(
-              text: existing != null
-                  ? '$existing'
-                  : (aiDraft != null ? formatIntegratedScore(aiDraft) : ''),
-            );
-            _skillNoteCtr[sid] = TextEditingController(text: note);
-          }
-        }
-        final sw = m['skillWork'];
-        if (sw is Map) {
-          for (final k in sw.keys) {
-            _expandedSkillSections.add(k.toString());
-          }
-        }
-        final itemsScores = scores is Map ? scores['items'] as Map? : null;
-        if (!integrated && snap is Map) {
-          final flat = _flattenItems(Map<String, dynamic>.from(snap));
-          for (final it in flat) {
-            final kind = it['kind'] as String? ?? '';
-            if (['reading', 'listening'].contains(kind)) continue;
-            final id = it['itemId'] as String? ?? '';
-            if (id.isEmpty) continue;
-            final ir = itemsScores?[id] as Map?;
-            final ap = ir?['awardedPoints'];
-            final note = (ir?['manual'] as Map?)?['note'] as String? ?? '';
-            _pointsCtr[id] = TextEditingController(text: '${ap ?? 0}');
-            _noteCtr[id] = TextEditingController(text: note);
-          }
-        }
-        if (!integrated && itemsScores != null) {
-          for (final entry in itemsScores.entries) {
-            final id = entry.key.toString();
-            if (_pointsCtr.containsKey(id)) continue;
-            final ir = entry.value;
-            if (ir is! Map) continue;
-            final ap = ir['awardedPoints'];
-            final note = (ir['manual'] as Map?)?['note'] as String? ?? '';
-            _pointsCtr[id] = TextEditingController(text: '${ap ?? 0}');
-            _noteCtr[id] = TextEditingController(text: note);
-          }
-        }
-      },
-    );
-    if (mounted) setState(() => _loading = false);
+  void _syncControllersFromAttempt(Map<String, dynamic> m) {
+    for (final c in _pointsCtr.values) {
+      c.dispose();
+    }
+    for (final c in _noteCtr.values) {
+      c.dispose();
+    }
+    for (final c in _skillScoreCtr.values) {
+      c.dispose();
+    }
+    for (final c in _skillNoteCtr.values) {
+      c.dispose();
+    }
+    _pointsCtr.clear();
+    _noteCtr.clear();
+    _skillScoreCtr.clear();
+    _skillNoteCtr.clear();
+
+    final snap = m['examSnapshot'];
+    final scores = m['scores'];
+    final integrated = isIntegratedExamFromAttempt(m);
+    final skillScoresRaw = scores is Map ? scores['skillScores'] as Map? : null;
+    if (skillScoresRaw != null) {
+      for (final entry in skillScoresRaw.entries) {
+        final sid = entry.key.toString();
+        final se = entry.value;
+        if (se is! Map) continue;
+        final skill = '${se['skill'] ?? ''}';
+        if (skill != 'speaking' && skill != 'writing') continue;
+        final existing = se['score'];
+        final aiDraft = se['aiDraftScore'];
+        final note = '${se['note'] ?? ''}';
+        _skillScoreCtr[sid] = TextEditingController(
+          text: existing != null
+              ? '$existing'
+              : (aiDraft != null ? formatIntegratedScore(aiDraft) : ''),
+        );
+        _skillNoteCtr[sid] = TextEditingController(text: note);
+      }
+    }
+    final itemsScores = scores is Map ? scores['items'] as Map? : null;
+    if (!integrated && snap is Map) {
+      final flat = _flattenItems(Map<String, dynamic>.from(snap));
+      for (final it in flat) {
+        final kind = it['kind'] as String? ?? '';
+        if (['reading', 'listening'].contains(kind)) continue;
+        final id = it['itemId'] as String? ?? '';
+        if (id.isEmpty) continue;
+        final ir = itemsScores?[id] as Map?;
+        final ap = ir?['awardedPoints'];
+        final note = (ir?['manual'] as Map?)?['note'] as String? ?? '';
+        _pointsCtr[id] = TextEditingController(text: '${ap ?? 0}');
+        _noteCtr[id] = TextEditingController(text: note);
+      }
+    }
+    if (!integrated && itemsScores != null) {
+      for (final entry in itemsScores.entries) {
+        final id = entry.key.toString();
+        if (_pointsCtr.containsKey(id)) continue;
+        final ir = entry.value;
+        if (ir is! Map) continue;
+        final ap = ir['awardedPoints'];
+        final note = (ir['manual'] as Map?)?['note'] as String? ?? '';
+        _pointsCtr[id] = TextEditingController(text: '${ap ?? 0}');
+        _noteCtr[id] = TextEditingController(text: note);
+      }
+    }
   }
 
   String? _completenessLabel(AppLocalizations l10n) {
@@ -338,6 +340,81 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
     return [];
   }
 
+  String _listeningTypeFromSection(Map<String, dynamic> sec) {
+    final sc = sec['sectionConfig'];
+    if (sc is Map) return (sc['listeningType'] as String?) ?? 'dictation';
+    return 'dictation';
+  }
+
+  String _listeningSectionLabel(AppLocalizations l10n, Map<String, dynamic> sec) {
+    final base = _skillSectionLabel(l10n, 'listening', null);
+    final lt = _listeningTypeFromSection(sec);
+    final typeLabel = lt == 'comprehension'
+        ? l10n.teacherExamListeningTypeComprehension
+        : l10n.teacherExamListeningTypeDictation;
+    return '$base · $typeLabel';
+  }
+
+  bool _sectionHasPartialSkillWork(String sectionId, Map<String, dynamic> section) {
+    final answers = _attempt?['answers'];
+    if (answers is! Map || answers[sectionId] is! Map) return false;
+    final a = Map<String, dynamic>.from(answers[sectionId] as Map);
+    final skill = section['skill'] as String? ?? '';
+    if (skill == 'listening') {
+      final lt = _listeningTypeFromSection(section);
+      if (lt == 'comprehension') {
+        final comp = a['listeningCompAnswers'];
+        return comp is Map && comp.isNotEmpty;
+      }
+      final cues = a['listeningCues'];
+      if (cues is Map) {
+        for (final v in cues.values) {
+          if (v is String && v.trim().isNotEmpty) return true;
+        }
+      }
+      return false;
+    }
+    if (skill == 'reading') {
+      final ra = a['readingAnswers'];
+      return ra is Map && ra.isNotEmpty;
+    }
+    if (skill == 'writing') {
+      final draft = a['writingDraft'];
+      return draft is String && draft.trim().isNotEmpty;
+    }
+    if (skill == 'speaking') {
+      return a['completed'] == true ||
+          (a['speakingSaved'] is num && (a['speakingSaved'] as num) > 0);
+    }
+    return false;
+  }
+
+  bool _skillWorkResourceHasContent(Map<String, dynamic> resource) {
+    final rec = resource['records'];
+    if (rec == null) return false;
+    if (rec is List) {
+      return rec.any((row) {
+        if (row is! Map) return false;
+        final text = '${row['userText'] ?? ''}'.trim();
+        return text.isNotEmpty;
+      });
+    }
+    if (rec is Map) {
+      final content = '${rec['content'] ?? ''}'.trim();
+      if (content.isNotEmpty) return true;
+      final answers = rec['answers'];
+      if (answers is Map && answers.isNotEmpty) return true;
+      if (answers is List && answers.isNotEmpty) return true;
+      final gp = rec['generatedPrompt'];
+      if (gp is Map) {
+        final t = '${gp['text'] ?? ''}'.trim();
+        final ti = '${gp['title'] ?? ''}'.trim();
+        if (t.isNotEmpty || ti.isNotEmpty) return true;
+      }
+    }
+    return false;
+  }
+
   String _localizedItemKindLabel(BuildContext context, String kind) {
     const grammarKinds = {
       'mcq_single',
@@ -361,71 +438,57 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
     return ans.toString();
   }
 
-  Future<void> _runAi() async {
-    setState(() => _aiGrading = true);
-    final r = await getIt<TeacherExamRepository>().runAiGradingDraft(widget.attemptId);
-    if (!mounted) return;
-    setState(() => _aiGrading = false);
-    r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
-      (_) {
-        final msg = _isIntegratedFormat
-            ? context.l10n.integratedWritingGradingRunAi
-            : context.l10n.teacherExamRunAi;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-        _load();
-      },
-    );
-  }
+  void _runAi() => _bloc.add(const TeacherExamAttemptGradeRunAiRequested());
 
   Future<void> _finalize() async {
     final r = await getIt<TeacherExamRepository>().finalizeExamAttempt(widget.attemptId);
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.teacherGradingFinalized)));
-        _load();
+        AppCornerToast.show(context, context.l10n.teacherGradingFinalized);
+        _bloc.add(const TeacherExamAttemptGradeLoadRequested());
       },
     );
   }
 
   Future<void> _release() async {
-    final r = await getIt<TeacherExamRepository>().releaseExamResults(widget.attemptId);
+    final rt = _attempt?['runtimeContext'];
+    final cfgLevel = rt is Map ? rt['resultsDetailLevel'] as String? : null;
+    final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
+    final detail = await TeacherReleaseResultsDialog.show(
+      context,
+      initialDetailLevel: initial,
+    );
+    if (detail == null || !mounted) return;
+    final r = await getIt<TeacherExamRepository>().releaseExamResults(
+      widget.attemptId,
+      resultsDetailLevel: detail,
+    );
     if (!mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.teacherExamReleaseResults)));
-        _load();
+        AppCornerToast.show(context, context.l10n.teacherExamReleaseResults);
+        _bloc.add(const TeacherExamAttemptGradeLoadRequested());
       },
     );
   }
 
-  Future<void> _saveSkillScore(String sid) async {
+  void _saveSkillScore(String sid) {
     final ctr = _skillScoreCtr[sid];
     if (ctr == null) return;
     final score = double.tryParse(ctr.text.trim());
     if (score == null) return;
     final note = _skillNoteCtr[sid]?.text ?? '';
-    final body = <String, dynamic>{
-      'skillScores': {
-        sid: {'score': score, 'note': note},
-      },
-    };
-    final r = await getIt<TeacherExamRepository>().patchManualGrade(widget.attemptId, body);
-    if (!mounted) return;
-    r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
-      (_) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(context.l10n.integratedSkillScoreSaved)));
-        _load();
-      },
-    );
+    _bloc.add(TeacherExamAttemptGradeSaveSkillScoreRequested(
+      sectionId: sid,
+      score: score,
+      note: note,
+    ));
   }
 
-  Future<void> _save({bool finalize = false}) async {
+  void _save({bool finalize = false}) {
     final items = <String, dynamic>{};
     for (final e in _pointsCtr.entries) {
       final id = e.key;
@@ -436,17 +499,7 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
       }
     }
     if (items.isEmpty && !finalize) return;
-    final body = <String, dynamic>{'items': items};
-    if (finalize) body['finalize'] = true;
-    final r = await getIt<TeacherExamRepository>().patchManualGrade(widget.attemptId, body);
-    if (!mounted) return;
-    r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
-      (_) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(context.l10n.teacherGradingSaved)));
-        _load();
-      },
-    );
+    _bloc.add(TeacherExamAttemptGradeSaveRequested(items: items, finalize: finalize));
   }
 
   Widget _summaryHeader(BuildContext context, AppLocalizations l10n) {
@@ -581,6 +634,47 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
     );
   }
 
+  /// Compact inline score badge for skill section header row.
+  Widget _buildSectionScoreBadge(BuildContext context, AppLocalizations l10n, Map? secScore) {
+    final status = '${secScore?['status'] ?? ''}';
+    final score = secScore?['score'];
+    if (status == 'pending_manual' || status == 'pending_ai') {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          l10n.integratedSkillScorePending,
+          style: const TextStyle(fontSize: 11, color: AppColors.warning, fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+    if (score != null || status == 'finalized' || status == 'no_content') {
+      final display = score ?? 0;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.success.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Text(
+          '${_formatScore(display)} / 10',
+          style: const TextStyle(fontSize: 12, color: AppColors.success, fontWeight: FontWeight.w700),
+        ),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  String _formatScore(dynamic score) {
+    final n = num.tryParse('$score');
+    if (n == null) return '—';
+    if (n == n.truncate()) return '${n.toInt()}';
+    return n.toStringAsFixed(1);
+  }
+
   /// Footer shown inside each skill section card in integrated exams.
   Widget _buildSkillScoreFooter(
       BuildContext context, AppLocalizations l10n, String sid, String skill) {
@@ -592,7 +686,8 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
     final seDetail = se?['detail'] as String?;
     final isPending =
         seStatus == 'pending_ai' || (seStatus == 'pending_manual' && seScore == null);
-    final isEditable = skill == 'speaking' || skill == 'writing';
+    // Speaking is auto-graded via WER; only writing requires teacher/AI manual grading.
+    final isEditable = skill == 'writing';
     final canEdit = _attempt?['status'] == 'submitted' && isEditable && _skillScoreCtr.containsKey(sid);
 
     if (skill == 'writing' && canEdit) {
@@ -608,7 +703,7 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
         noteController: _skillNoteCtr[sid]!,
         onSave: () => _saveSkillScore(sid),
         onRunAi: _runAi,
-        aiLoading: _aiGrading == true,
+        aiLoading: _bloc.state.aiGrading,
         canEdit: canEdit == true,
       );
     }
@@ -858,8 +953,6 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
         final secTitle = (m['title'] as String?)?.trim() ?? '';
         final instr = (m['instructions'] as String?)?.trim() ?? '';
         final titles = _resourceTitlesFromSection(m);
-        final a = answers[sid];
-        final completed = a is Map && a['completed'] == true;
         final skillWorkRaw = _attempt?['skillWork'];
         final skillWorkMap = skillWorkRaw is Map ? Map<String, dynamic>.from(skillWorkRaw) : <String, dynamic>{};
         final workEntry = skillWorkMap[sid] is Map ? Map<String, dynamic>.from(skillWorkMap[sid] as Map) : null;
@@ -867,7 +960,16 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
                 ?.map((e) => Map<String, dynamic>.from(e as Map))
                 .toList() ??
             <Map<String, dynamic>>[];
-        final expanded = _expandedSkillSections.contains(sid);
+        final hasWork = workResources.any(_skillWorkResourceHasContent) ||
+            _sectionHasPartialSkillWork(sid, m);
+        final expanded = _bloc.state.expandedSkillSections.contains(sid);
+
+        // Score entry for this section
+        final scoresMap = _attempt?['scores'] as Map?;
+        final skillScoresMap = scoresMap?['skillScores'] as Map?;
+        final secScore = skillScoresMap?[sid] as Map?;
+        final secStatus = '${secScore?['status'] ?? ''}';
+        final isNoContent = secStatus == 'no_content' && !hasWork;
 
         out.add(
           Padding(
@@ -877,117 +979,116 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  LayoutBuilder(
-                    builder: (context, c) {
-                      final stackStatus = c.maxWidth < 520;
-                      final statusChip = Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: (completed ? AppColors.success : AppColors.warning).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: (completed ? AppColors.success : AppColors.warning).withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: Text(
-                          completed ? l10n.teacherAttemptGradeMarkedComplete : l10n.teacherAttemptGradeNotMarkedComplete,
-                          style: ExamSystemUi.captionSecondary.copyWith(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: completed ? AppColors.success : AppColors.warning,
-                          ),
-                        ),
-                      );
-                      final titleBlock = Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _skillSectionLabel(l10n, skill, null),
-                            style: ExamSystemUi.questionStem(context),
-                          ),
-                          if (secTitle.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(secTitle, style: ExamSystemUi.captionSecondary),
-                          ],
-                          if (titles.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Text(
-                              titles.join(' · '),
-                              style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
-                            ),
-                          ],
-                        ],
-                      );
-                      if (stackStatus) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Icon(_skillIcon(skill), size: 22, color: AppColors.primary),
-                                const SizedBox(width: 12),
-                                Expanded(child: titleBlock),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(_skillIcon(skill), size: 20, color: isNoContent ? AppColors.textMuted : AppColors.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                skill == 'listening'
+                                    ? _listeningSectionLabel(l10n, m)
+                                    : _skillSectionLabel(l10n, skill, null),
+                                style: ExamSystemUi.questionStem(context).copyWith(
+                                  color: isNoContent ? AppColors.textMuted : null,
+                                ),
+                              ),
+                              if (secTitle.isNotEmpty) ...[
+                                const SizedBox(height: 2),
+                                Text(secTitle, style: ExamSystemUi.captionSecondary),
                               ],
-                            ),
-                            const SizedBox(height: 8),
-                            Align(alignment: Alignment.centerLeft, child: statusChip),
-                          ],
-                        );
-                      }
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(_skillIcon(skill), size: 22, color: AppColors.primary),
-                          const SizedBox(width: 12),
-                          Expanded(child: titleBlock),
-                          const SizedBox(width: 8),
-                          Flexible(child: statusChip),
-                        ],
-                      );
-                    },
+                              if (titles.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  titles.join(' · '),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isNoContent ? AppColors.textMuted : AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                        // Inline score badge
+                        _buildSectionScoreBadge(context, l10n, secScore),
+                      ],
+                    ),
                   ),
                   if (instr.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.teacherAttemptGradeInstructions,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      instr,
-                      style: const TextStyle(fontSize: 14, height: 1.45, color: AppColors.textPrimary),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: TextButton.icon(
-                      onPressed: () => setState(() {
-                        if (expanded) {
-                          _expandedSkillSections.remove(sid);
-                        } else {
-                          _expandedSkillSections.add(sid);
-                        }
-                      }),
-                      icon: Icon(expanded ? Icons.expand_less : Icons.visibility_outlined, size: 20),
-                      label: Text(
-                        expanded ? l10n.teacherAttemptGradeHideSkillWork : l10n.teacherAttemptGradeViewSkillWork,
-                        style: const TextStyle(color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+                    const Padding(padding: EdgeInsets.symmetric(horizontal: 14), child: Divider(height: 20)),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
+                      child: Text(
+                        instr,
+                        style: const TextStyle(fontSize: 13, height: 1.45, color: AppColors.textSecondary),
                       ),
                     ),
-                  ),
-                  if (expanded) ...[
-                    const SizedBox(height: 8),
-                    TeacherExamSkillWorkPanel(
-                      skill: skill,
-                      resources: workResources,
-                      markedComplete: completed,
-                      integratedScoreScale: true,
-                    ),
                   ],
-                  const Divider(height: 1),
-                  _buildSkillScoreFooter(context, l10n, sid, skill),
+                  if (isNoContent) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+                      child: Row(
+                        children: [
+                          Icon(Icons.do_not_disturb_alt_outlined, size: 14, color: AppColors.textMuted),
+                          const SizedBox(width: 6),
+                          Text(
+                            l10n.teacherAttemptGradeNoSkillWork,
+                            style: ExamSystemUi.captionMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 4),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          onPressed: hasWork
+                              ? () => _bloc.add(TeacherExamAttemptGradeSectionExpandedToggled(sid))
+                              : null,
+                          icon: Icon(expanded ? Icons.expand_less : Icons.visibility_outlined, size: 18),
+                          label: Text(
+                            expanded
+                                ? l10n.teacherAttemptGradeHideSkillWork
+                                : l10n.teacherAttemptGradeViewSkillWork,
+                            style: TextStyle(
+                              color: hasWork ? AppColors.primaryDark : AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (expanded && hasWork) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 14),
+                        child: Divider(height: 12),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 4, 14, 8),
+                        child: TeacherExamSkillWorkPanel(
+                          skill: skill,
+                          resources: workResources,
+                          integratedScoreScale: true,
+                        ),
+                      ),
+                    ],
+                    const Divider(height: 1),
+                    _buildSkillScoreFooter(context, l10n, sid, skill),
+                  ],
                 ],
               ),
             ),
@@ -1179,8 +1280,8 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
                 style: mobile
                     ? TeacherMobileUi.mobileOutlinedCompactStyle(context)
                     : TeacherWebUi.compactOutlinedStyle(context),
-                onPressed: _aiGrading ? null : _runAi,
-                icon: _aiGrading
+                onPressed: _bloc.state.aiGrading ? null : _runAi,
+                icon: _bloc.state.aiGrading
                     ? SizedBox(
                         width: mobile ? 18 : 16,
                         height: mobile ? 18 : 16,
@@ -1256,62 +1357,97 @@ class _TeacherExamAttemptGradePageState extends State<TeacherExamAttemptGradePag
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return TeacherPageScaffold(
-      title: l10n.teacherGradingDetailTitle,
-      showBack: true,
-      scrollable: false,
-      maxWidth: TeacherWebUi.contentMaxEditor,
-      breadcrumbs: [
-        TeacherBreadcrumb(label: l10n.teacherNavDashboard, location: TeacherDashboardPage.routePath),
-        TeacherBreadcrumb(label: l10n.teacherDashboardSectionGrading),
-        TeacherBreadcrumb(label: l10n.teacherGradingDetailTitle),
-      ],
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.s7),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center, style: TeacherWebUi.webBody(context)),
-                        const SizedBox(height: AppSpacing.s5),
-                        TeacherRetryButton(onPressed: _load),
-                      ],
-                    ),
-                  ),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: E4cScrollableColumn(
-                        padding: const EdgeInsets.only(bottom: 24),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: ExamSystemUi.webTeacherContentMaxWidth),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _summaryHeader(context, l10n),
-                                const SizedBox(height: ExamSystemUi.cardGap),
-                                _statusChips(context, l10n),
-                                const SizedBox(height: ExamSystemUi.blockGap),
-                                _metaLines(l10n),
-                                const SizedBox(height: ExamSystemUi.blockGap),
-                                _totalScoreCard(context, l10n),
-                                ..._buildIntegratedWorkSection(context, l10n),
-                                ..._classicItemsSection(context, l10n),
-                              ],
+    return BlocConsumer<TeacherExamAttemptGradeBloc, TeacherExamAttemptGradeState>(
+      listenWhen: (prev, curr) =>
+          (curr.attempt != null && prev.attempt != curr.attempt) ||
+          (curr.errorMessage != null && prev.errorMessage != curr.errorMessage) ||
+          (curr.successMessage != null && prev.successMessage != curr.successMessage),
+      listener: (context, state) {
+        if (state.errorMessage != null) {
+          AppCornerToast.show(context, state.errorMessage!, error: true);
+        }
+        final success = state.successMessage;
+        if (success == 'ai_done') {
+          final msg = _isIntegratedFormat
+              ? context.l10n.integratedWritingGradingRunAi
+              : context.l10n.teacherExamRunAi;
+          AppCornerToast.show(context, msg);
+        } else if (success == 'saved') {
+          AppCornerToast.show(context, l10n.teacherGradingSaved);
+        } else if (success == 'skill_saved') {
+          AppCornerToast.show(context, l10n.integratedSkillScoreSaved);
+        }
+        if (state.attempt != null) {
+          _syncControllersFromAttempt(state.attempt!);
+        }
+      },
+      builder: (context, state) {
+        final loading = state.status == TeacherExamAttemptGradeStatus.loading;
+        final error = state.status == TeacherExamAttemptGradeStatus.error ? state.errorMessage : null;
+
+        return TeacherPageScaffold(
+          title: l10n.teacherGradingDetailTitle,
+          showBack: true,
+          scrollable: false,
+          maxWidth: TeacherWebUi.contentMaxEditor,
+          breadcrumbs: [
+            TeacherBreadcrumb(label: l10n.teacherNavDashboard, location: TeacherDashboardPage.routePath),
+            TeacherBreadcrumb(label: l10n.teacherDashboardSectionGrading),
+            TeacherBreadcrumb(label: l10n.teacherGradingDetailTitle),
+          ],
+          body: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.s7),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(error, textAlign: TextAlign.center, style: TeacherWebUi.webBody(context)),
+                            const SizedBox(height: AppSpacing.s5),
+                            TeacherRetryButton(
+                              onPressed: () => _bloc.add(const TeacherExamAttemptGradeLoadRequested()),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                    ),
-                    _bottomActions(context, l10n),
-                  ],
-                ),
+                    )
+                  : state.attempt == null
+                      ? const SizedBox.shrink()
+                      : Column(
+                          children: [
+                            Expanded(
+                              child: E4cScrollableColumn(
+                                padding: const EdgeInsets.only(bottom: 24),
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: ConstrainedBox(
+                                    constraints:
+                                        const BoxConstraints(maxWidth: ExamSystemUi.webTeacherContentMaxWidth),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                                      children: [
+                                        _summaryHeader(context, l10n),
+                                        const SizedBox(height: ExamSystemUi.cardGap),
+                                        _statusChips(context, l10n),
+                                        const SizedBox(height: ExamSystemUi.blockGap),
+                                        _metaLines(l10n),
+                                        const SizedBox(height: ExamSystemUi.blockGap),
+                                        _totalScoreCard(context, l10n),
+                                        ..._buildIntegratedWorkSection(context, l10n),
+                                        ..._classicItemsSection(context, l10n),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _bottomActions(context, l10n),
+                          ],
+                        ),
+        );
+      },
     );
   }
 }

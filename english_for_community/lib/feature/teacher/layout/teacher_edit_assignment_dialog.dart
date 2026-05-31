@@ -4,7 +4,10 @@ import 'package:english_for_community/core/repository/teacher_exam_repository.da
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_realtime_schedule_section.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/teacher/teacher_grading_hub_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -54,9 +57,9 @@ class _TeacherEditAssignmentDialogState
   DateTime? _dueAt;
   DateTime? _opensAt;
   DateTime? _closesAt;
+  String _realtimeScheduleMode = 'manual';
   DateTime? _lobbyOpensAt;
   DateTime? _scheduledStartAt;
-  DateTime? _hardEndAt;
 
   final _timeLimitCtrl = TextEditingController();
 
@@ -64,6 +67,7 @@ class _TeacherEditAssignmentDialogState
   String _attemptPolicy = 'single';
   int _maxAttempts = 2;
   String _showResultsPolicy = 'after_release';
+  String _resultsDetailLevel = 'full_detail';
   bool _allowPartialSubmit = true;
 
   static const _maxAttemptChoices = [2, 3, 5, 10];
@@ -91,7 +95,12 @@ class _TeacherEditAssignmentDialogState
     _closesAt = _tryParseDate(cfg['closesAt']);
     _lobbyOpensAt = _tryParseDate(cfg['lobbyOpensAt']);
     _scheduledStartAt = _tryParseDate(cfg['scheduledStartAt']);
-    _hardEndAt = _tryParseDate(cfg['hardEndAt']);
+    final rsm = cfg['realtimeScheduleMode'] as String?;
+    if (rsm == 'scheduled' || rsm == 'manual') {
+      _realtimeScheduleMode = rsm!;
+    } else {
+      _realtimeScheduleMode = _scheduledStartAt != null ? 'scheduled' : 'manual';
+    }
 
     final tls = cfg['timeLimitSeconds'];
     if (tls is num && tls > 0) {
@@ -103,6 +112,8 @@ class _TeacherEditAssignmentDialogState
     if (ma is num) _maxAttempts = ma.toInt().clamp(2, 10);
     _showResultsPolicy =
         (cfg['showResultsPolicy'] as String?) ?? 'after_release';
+    final rd = cfg['resultsDetailLevel'] as String?;
+    if (rd == 'score_only' || rd == 'full_detail') _resultsDetailLevel = rd!;
     _allowPartialSubmit = cfg['allowPartialSubmit'] != false;
   }
 
@@ -141,6 +152,18 @@ class _TeacherEditAssignmentDialogState
   }
 
   Future<void> _save() async {
+    final l10n = context.l10n;
+    if (_mode == 'realtime' &&
+        _realtimeScheduleMode == 'scheduled' &&
+        _scheduledStartAt == null) {
+      AppCornerToast.show(
+        context,
+        l10n.teacherAssignmentRealtimeScheduledStartRequired,
+        error: true,
+      );
+      return;
+    }
+
     setState(() => _saving = true);
 
     final patchCfg = <String, dynamic>{};
@@ -156,15 +179,14 @@ class _TeacherEditAssignmentDialogState
           patchCfg['closesAt'] = _closesAt!.toUtc().toIso8601String();
         }
       case 'realtime':
-        if (_lobbyOpensAt != null) {
-          patchCfg['lobbyOpensAt'] = _lobbyOpensAt!.toUtc().toIso8601String();
-        }
-        if (_scheduledStartAt != null) {
+        patchCfg['realtimeScheduleMode'] = _realtimeScheduleMode;
+        if (_realtimeScheduleMode == 'scheduled') {
           patchCfg['scheduledStartAt'] =
               _scheduledStartAt!.toUtc().toIso8601String();
-        }
-        if (_hardEndAt != null) {
-          patchCfg['hardEndAt'] = _hardEndAt!.toUtc().toIso8601String();
+          patchCfg['lobbyOpensAt'] = _lobbyOpensAt?.toUtc().toIso8601String();
+        } else {
+          patchCfg['scheduledStartAt'] = null;
+          patchCfg['lobbyOpensAt'] = null;
         }
     }
 
@@ -177,6 +199,7 @@ class _TeacherEditAssignmentDialogState
     patchCfg['attemptPolicy'] = _attemptPolicy;
     if (_attemptPolicy == 'limited') patchCfg['maxAttempts'] = _maxAttempts;
     patchCfg['showResultsPolicy'] = _showResultsPolicy;
+    patchCfg['resultsDetailLevel'] = _resultsDetailLevel;
     patchCfg['allowPartialSubmit'] = _allowPartialSubmit;
 
     final result = await getIt<TeacherExamRepository>()
@@ -186,12 +209,9 @@ class _TeacherEditAssignmentDialogState
     setState(() => _saving = false);
 
     result.fold(
-      (f) => ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.teacherAssignmentEditSaved)),
-        );
+        AppCornerToast.show(context, context.l10n.teacherAssignmentEditSaved);
         Navigator.of(context).pop(true);
       },
     );
@@ -316,16 +336,14 @@ class _TeacherEditAssignmentDialogState
   }
 
   Widget _segmented<T>({
-    required Set<T> selection,
-    required void Function(Set<T>) onChanged,
-    required List<ButtonSegment<T>> segments,
+    required T selected,
+    required ValueChanged<T> onChanged,
+    required List<TeacherSegmentOption<T>> options,
   }) {
-    return SegmentedButton<T>(
-      segments: segments,
-      selected: selection,
-      onSelectionChanged: onChanged,
-      showSelectedIcon: false,
-      style: TeacherWebUi.segmentedControlStyle(context),
+    return TeacherSegmentTileRow<T>(
+      selected: selected,
+      onChanged: onChanged,
+      options: options,
     );
   }
 
@@ -337,21 +355,24 @@ class _TeacherEditAssignmentDialogState
         _formGroup(
           label: l10n.teacherAssignmentAttemptPolicy,
           child: _segmented<String>(
-            selection: {_attemptPolicy},
-            onChanged: (s) {
-              if (s.isEmpty) return;
-              setState(() => _attemptPolicy = s.first);
-            },
-            segments: [
-              ButtonSegment(
-                  value: 'single',
-                  label: Text(l10n.teacherAssignmentAttemptSingle)),
-              ButtonSegment(
-                  value: 'unlimited',
-                  label: Text(l10n.teacherAssignmentAttemptUnlimited)),
-              ButtonSegment(
-                  value: 'limited',
-                  label: Text(l10n.teacherAssignmentAttemptLimited)),
+            selected: _attemptPolicy,
+            onChanged: (v) => setState(() => _attemptPolicy = v),
+            options: [
+              TeacherSegmentOption(
+                value: 'single',
+                label: l10n.teacherAssignmentAttemptSingle,
+                icon: Icons.looks_one_outlined,
+              ),
+              TeacherSegmentOption(
+                value: 'unlimited',
+                label: l10n.teacherAssignmentAttemptUnlimited,
+                icon: Icons.all_inclusive_rounded,
+              ),
+              TeacherSegmentOption(
+                value: 'limited',
+                label: l10n.teacherAssignmentAttemptLimited,
+                icon: Icons.format_list_numbered_rounded,
+              ),
             ],
           ),
         ),
@@ -397,6 +418,30 @@ class _TeacherEditAssignmentDialogState
             ],
             onChanged: (v) {
               if (v != null) setState(() => _showResultsPolicy = v);
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s5),
+        _formGroup(
+          label: l10n.teacherAssignmentResultsDetailLabel,
+          child: DropdownButtonFormField<String>(
+            key: ValueKey(_resultsDetailLevel),
+            initialValue: _resultsDetailLevel,
+            isExpanded: true,
+            decoration: TeacherWebUi.formInputDecoration(context),
+            icon: const Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
+            items: [
+              DropdownMenuItem(
+                value: 'score_only',
+                child: Text(l10n.teacherResultsDetailScoreOnly),
+              ),
+              DropdownMenuItem(
+                value: 'full_detail',
+                child: Text(l10n.teacherResultsDetailFull),
+              ),
+            ],
+            onChanged: (v) {
+              if (v != null) setState(() => _resultsDetailLevel = v);
             },
           ),
         ),
@@ -501,28 +546,31 @@ class _TeacherEditAssignmentDialogState
           ],
 
           if (_mode == 'realtime') ...[
-            _dateField(
-              label: l10n.teacherAssignmentRealtimeLobbyOpens,
-              value: _lobbyOpensAt,
-              onPicked: (d) => _lobbyOpensAt = d,
-              onClear: () => setState(() => _lobbyOpensAt = null),
-              optional: true,
-            ),
-            const SizedBox(height: AppSpacing.s5),
-            _dateField(
-              label: l10n.teacherAssignmentRealtimeScheduledStart,
-              value: _scheduledStartAt,
-              onPicked: (d) => _scheduledStartAt = d,
-              onClear: () => setState(() => _scheduledStartAt = null),
-              optional: true,
-            ),
-            const SizedBox(height: AppSpacing.s5),
-            _dateField(
-              label: l10n.teacherAssignmentRealtimeHardEnd,
-              value: _hardEndAt,
-              onPicked: (d) => _hardEndAt = d,
-              onClear: () => setState(() => _hardEndAt = null),
-              optional: true,
+            TeacherRealtimeScheduleSection(
+              scheduleMode: _realtimeScheduleMode,
+              scheduledStartAt: _scheduledStartAt,
+              lobbyOpensAt: _lobbyOpensAt,
+              onScheduleModeChanged: (m) => setState(() {
+                _realtimeScheduleMode = m;
+                if (m == 'manual') {
+                  _scheduledStartAt = null;
+                  _lobbyOpensAt = null;
+                }
+              }),
+              onScheduledStartChanged: (d) =>
+                  setState(() => _scheduledStartAt = d),
+              onLobbyOpensChanged: (d) => setState(() => _lobbyOpensAt = d),
+              formatDateTime: _fmtDateTime,
+              onPickDateTime: ({
+                required initial,
+                required onPicked,
+                firstDate,
+              }) =>
+                  _pickDateTime(
+                    current: initial,
+                    onPicked: (d) => setState(() => onPicked(d)),
+                    firstDate: firstDate,
+                  ),
             ),
             const SizedBox(height: AppSpacing.s5),
           ],

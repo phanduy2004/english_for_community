@@ -293,25 +293,26 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       color: AppColors.primary,
       backgroundColor: AppColors.surfaceCard,
       child: SingleChildScrollView(
+        primary: false,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: StudentMobileUi.pagePadding,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             StudentMobileUi.sectionHeader(context, title: t.progressOverview),
-            const SizedBox(height: AppSpacing.s2),
+            const SizedBox(height: AppSpacing.s1),
             Text(t.progressPerformanceMetrics, style: StudentMobileUi.body(context)),
-            const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s3),
             StudentMobileUi.filterRow(
               labels: rangeLabels,
               selectedIndex: _range.index,
               onSelected: (i) => _onRangeSelected(context, i),
             ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
+            const SizedBox(height: AppSpacing.s4),
 
             AppCard(
               variant: AppCardVariant.outline,
-              padding: const EdgeInsets.all(AppSpacing.s5),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
               child: Column(
                 children: [
                   Row(
@@ -325,7 +326,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                               _periodHeading(_range, t),
                               style: StudentMobileUi.cardTitle(context),
                             ),
-                            const SizedBox(height: AppSpacing.s2),
+                            const SizedBox(height: AppSpacing.s1),
                             Text(
                               _fmtHhMm(totalMinutesInActualRange, t),
                               style: StudentMobileUi.kpi(context),
@@ -333,18 +334,19 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                           ],
                         ),
                       ),
-                      StudentMobileUi.skillIconBox(Icons.timer_outlined),
+                      StudentMobileUi.skillIconBox(Icons.timer_outlined, size: 36),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.s5),
+                  const SizedBox(height: AppSpacing.s3),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.chip),
                     child: StudentMobileUi.skillProgressBar(
                       value: progress,
                       color: AppColors.accent,
+                      height: 6,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.s4),
+                  const SizedBox(height: AppSpacing.s2),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -361,17 +363,17 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 ],
               ),
             ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
+            const SizedBox(height: AppSpacing.s4),
 
             Text(t.progressDetailedStats, style: StudentMobileUi.sectionTitle(context)),
-            const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s3),
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               crossAxisCount: 3,
               crossAxisSpacing: StudentMobileUi.cardGap,
               mainAxisSpacing: StudentMobileUi.cardGap,
-              childAspectRatio: 0.85,
+              childAspectRatio: 1.12,
               children: [
                 _StatBox(
                   icon: Icons.style_rounded,
@@ -416,32 +418,32 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 ),
               ],
             ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
+            const SizedBox(height: AppSpacing.s4),
 
             StudentMobileUi.sectionHeader(context, title: t.progressLeaderboard),
-            const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s3),
             AppCard(
               variant: AppCardVariant.outline,
               padding: EdgeInsets.zero,
               child: _buildLeaderboardContent(state, t),
             ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
+            const SizedBox(height: AppSpacing.s4),
 
             AppCard(
               variant: AppCardVariant.outline,
-              padding: const EdgeInsets.all(AppSpacing.s5),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
               child: Column(
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(t.progressActivity, style: StudentMobileUi.sectionTitle(context)),
-                      const Icon(Icons.bar_chart, color: AppColors.textSecondary, size: 20),
+                      const Icon(Icons.bar_chart, color: AppColors.textSecondary, size: 18),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.s6),
+                  const SizedBox(height: AppSpacing.s3),
                   SizedBox(
-                    height: 160,
+                    height: 120,
                     child: WeeklyActivityBarsChart(
                       values: chart.minutes,
                       labels: chart.labels,
@@ -453,14 +455,14 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 ],
               ),
             ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
+            const SizedBox(height: AppSpacing.s4),
             AppCard(
               variant: AppCardVariant.outline,
-              padding: const EdgeInsets.all(AppSpacing.s5),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
               child: Row(
                 children: [
-                  const Icon(Icons.celebration_rounded, color: AppColors.success, size: 32),
-                  const SizedBox(width: AppSpacing.s5),
+                  const Icon(Icons.celebration_rounded, color: AppColors.success, size: 24),
+                  const SizedBox(width: AppSpacing.s3),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -469,16 +471,16 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                           callout.title,
                           style: StudentMobileUi.cardTitle(context).copyWith(color: AppColors.success),
                         ),
-                        const SizedBox(height: AppSpacing.s2),
+                        const SizedBox(height: AppSpacing.s1),
                         Text(callout.message, style: StudentMobileUi.body(context)),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.success),
+                  const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.s9),
+            const SizedBox(height: AppSpacing.s5),
           ],
         ),
       ),
@@ -583,11 +585,11 @@ class _LeaderRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
           child: Row(
             children: [
               SizedBox(
-                width: 32,
+                width: 28,
                 child: Text(
                   '#$rank',
                   style: StudentMobileUi.caption(context).copyWith(
@@ -596,10 +598,10 @@ class _LeaderRow extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.s3),
+              const SizedBox(width: AppSpacing.s2),
               Container(
-                width: 36,
-                height: 36,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.outline),
@@ -609,10 +611,10 @@ class _LeaderRow extends StatelessWidget {
                   color: AppColors.surfaceSubtle,
                 ),
                 child: (avatarUrl == null || avatarUrl!.isEmpty)
-                    ? const Icon(Icons.person, size: 20, color: AppColors.textSecondary)
+                    ? const Icon(Icons.person, size: 16, color: AppColors.textSecondary)
                     : null,
               ),
-              const SizedBox(width: AppSpacing.s4),
+              const SizedBox(width: AppSpacing.s3),
               Expanded(
                 child: Text(
                   name,
@@ -653,14 +655,14 @@ class _StatBox extends StatelessWidget {
     return AppCard(
       variant: AppCardVariant.outline,
       onTap: onTap,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2, vertical: AppSpacing.s2),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          StudentMobileUi.skillIconBox(icon, size: 40, skill: skill),
-          const SizedBox(height: AppSpacing.s3),
+          StudentMobileUi.skillIconBox(icon, size: 28, skill: skill),
+          const SizedBox(height: AppSpacing.s1),
           Text(value, style: StudentMobileUi.kpi(context)),
-          const SizedBox(height: AppSpacing.s2),
+          const SizedBox(height: AppSpacing.s1),
           Text(
             label,
             style: StudentMobileUi.caption(context),

@@ -1,5 +1,6 @@
 import ExamAttempt from '../models/ExamAttempt.js';
 import { resolveAttemptPolicy, allowsAnotherAttemptAfterSubmit } from './assignmentPolicy.js';
+import { resolveRealtimeScheduleMode } from './realtimeSchedule.js';
 import { walkItems, walkSkillContentSections } from './teacherExamService.js';
 
 function iso(d) {
@@ -53,6 +54,10 @@ export function summarizeSchedule(assignment) {
   } else if (mode === 'scheduled') {
     base.opensAt = iso(cfg.opensAt);
     base.closesAt = iso(cfg.closesAt);
+  } else if (mode === 'realtime') {
+    base.realtimeScheduleMode = resolveRealtimeScheduleMode(cfg);
+    base.lobbyOpensAt = iso(cfg.lobbyOpensAt);
+    base.scheduledStartAt = iso(cfg.scheduledStartAt);
   }
   const tl = cfg.timeLimitSeconds ?? null;
   if (tl != null) base.timeLimitSeconds = Number(tl);

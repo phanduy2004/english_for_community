@@ -1,8 +1,10 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/teacher/bloc/calendar/teacher_calendar_bloc.dart';
+import 'package:english_for_community/feature/teacher/bloc/calendar/teacher_calendar_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/calendar/teacher_calendar_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
@@ -10,156 +12,112 @@ import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dar
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_grading_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class TeacherCalendarPage extends StatefulWidget {
+class TeacherCalendarPage extends StatelessWidget {
   const TeacherCalendarPage({super.key});
 
   static const String routePath = '/teacher/calendar';
   static const String routeName = 'TeacherCalendarPage';
 
   @override
-  State<TeacherCalendarPage> createState() => _TeacherCalendarPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<TeacherCalendarBloc>()..add(const TeacherCalendarLoadRequested()),
+      child: const _TeacherCalendarView(),
+    );
+  }
 }
 
-class _TeacherCalendarPageState extends State<TeacherCalendarPage> {
-  bool _loading = true;
-  String? _error;
-  List<Map<String, dynamic>> _events = [];
-  bool _monthView = true;
-  late DateTime _displayedMonth;
-  DateTime? _selectedDay;
+List<Map<String, dynamic>> _eventsForDay(DateTime day, List<Map<String, dynamic>> events) {
+  return events.where((e) {
+    final at = DateTime.tryParse(e['at'] as String? ?? '')?.toLocal();
+    if (at == null) return false;
+    return at.year == day.year && at.month == day.month && at.day == day.day;
+  }).toList();
+}
 
-  @override
-  void initState() {
-    super.initState();
-    final now = DateTime.now();
-    _displayedMonth = DateTime(now.year, now.month);
-    _load();
+Map<String, List<Map<String, dynamic>>> _eventsGroupedByDate(List<Map<String, dynamic>> events) {
+  final grouped = <String, List<Map<String, dynamic>>>{};
+  for (final e in events) {
+    final at = DateTime.tryParse(e['at'] as String? ?? '')?.toLocal();
+    if (at == null) continue;
+    final key = at.toIso8601String().substring(0, 10);
+    grouped.putIfAbsent(key, () => []).add(e);
   }
+  return Map.fromEntries(
+    grouped.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+  );
+}
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final from = DateTime(_displayedMonth.year, _displayedMonth.month - 1, 1);
-    final to = DateTime(_displayedMonth.year, _displayedMonth.month + 3, 1);
-    final r = await getIt<TeacherExamRepository>().getTeacherCalendarEvents(
-      from: from.toUtc().toIso8601String(),
-      to: to.toUtc().toIso8601String(),
-    );
-    if (!mounted) return;
-    r.fold(
-      (f) => setState(() {
-        _error = f.message;
-        _loading = false;
-      }),
-      (d) {
-        final list = (d['events'] as List? ?? [])
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-        setState(() {
-          _events = list;
-          _loading = false;
-        });
-      },
-    );
-  }
-
-  void _goToToday() {
-    final now = DateTime.now();
-    setState(() {
-      _displayedMonth = DateTime(now.year, now.month);
-      _selectedDay = now;
-    });
-  }
-
-  void _prevMonth() {
-    setState(() {
-      _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month - 1);
-      _selectedDay = null;
-    });
-  }
-
-  void _nextMonth() {
-    setState(() {
-      _displayedMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1);
-      _selectedDay = null;
-    });
-  }
-
-  List<Map<String, dynamic>> _eventsForDay(DateTime day) {
-    return _events.where((e) {
-      final at = DateTime.tryParse(e['at'] as String? ?? '')?.toLocal();
-      if (at == null) return false;
-      return at.year == day.year && at.month == day.month && at.day == day.day;
-    }).toList();
-  }
-
-  Map<String, List<Map<String, dynamic>>> _eventsGroupedByDate() {
-    final grouped = <String, List<Map<String, dynamic>>>{};
-    for (final e in _events) {
-      final at = DateTime.tryParse(e['at'] as String? ?? '')?.toLocal();
-      if (at == null) continue;
-      final key = at.toIso8601String().substring(0, 10);
-      grouped.putIfAbsent(key, () => []).add(e);
-    }
-    return Map.fromEntries(
-      grouped.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
-    );
-  }
+class _TeacherCalendarView extends StatelessWidget {
+  const _TeacherCalendarView();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final useListScroll = !_loading && _error == null && !_monthView;
 
-    return TeacherPageScaffold(
-      scrollable: !useListScroll,
-      title: l10n.teacherNavCalendar,
-      breadcrumbs: [
-        TeacherBreadcrumb(label: l10n.teacherNavDashboard, location: TeacherDashboardPage.routePath),
-        TeacherBreadcrumb(label: l10n.teacherNavCalendar),
-      ],
-      actions: [
-        TextButton(onPressed: _goToToday, child: Text(l10n.teacherCalendarToday)),
-        const SizedBox(width: AppSpacing.s2),
-        _ViewToggle(
-          monthView: _monthView,
-          onChanged: (v) => setState(() {
-            _monthView = v;
-            _selectedDay = null;
-          }),
-        ),
-        const SizedBox(width: AppSpacing.s2),
-        IconButton(onPressed: _load, icon: const Icon(Icons.refresh_outlined, size: 20)),
-      ],
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(_error!, style: TeacherWebUi.webBody(context)),
-                      const SizedBox(height: AppSpacing.s5),
-                      TeacherRetryButton(onPressed: _load),
-                    ],
-                  ),
-                )
-              : _monthView
-                  ? _MonthBody(
-                      displayedMonth: _displayedMonth,
-                      selectedDay: _selectedDay,
-                      events: _events,
-                      onPrevMonth: _prevMonth,
-                      onNextMonth: _nextMonth,
-                      onDaySelected: (d) => setState(() => _selectedDay = d),
-                      eventsForDay: _eventsForDay,
+    return BlocBuilder<TeacherCalendarBloc, TeacherCalendarState>(
+      builder: (context, state) {
+        final loading = state.status == TeacherCalendarStatus.loading;
+        final error = state.status == TeacherCalendarStatus.error ? state.errorMessage : null;
+        final useListScroll = !loading && error == null && !state.monthView;
+
+        return TeacherPageScaffold(
+          scrollable: !useListScroll,
+          title: l10n.teacherNavCalendar,
+          breadcrumbs: [
+            TeacherBreadcrumb(label: l10n.teacherNavDashboard, location: TeacherDashboardPage.routePath),
+            TeacherBreadcrumb(label: l10n.teacherNavCalendar),
+          ],
+          actions: [
+            TextButton(
+              onPressed: () => context.read<TeacherCalendarBloc>().add(const TeacherCalendarGoToToday()),
+              child: Text(l10n.teacherCalendarToday),
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            _ViewToggle(
+              monthView: state.monthView,
+              onChanged: (v) => context.read<TeacherCalendarBloc>().add(TeacherCalendarViewModeChanged(v)),
+            ),
+            const SizedBox(width: AppSpacing.s2),
+            IconButton(
+              onPressed: () => context.read<TeacherCalendarBloc>().add(const TeacherCalendarLoadRequested()),
+              icon: const Icon(Icons.refresh_outlined, size: 20),
+            ),
+          ],
+          body: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(error, style: TeacherWebUi.webBody(context)),
+                          const SizedBox(height: AppSpacing.s5),
+                          TeacherRetryButton(
+                            onPressed: () =>
+                                context.read<TeacherCalendarBloc>().add(const TeacherCalendarLoadRequested()),
+                          ),
+                        ],
+                      ),
                     )
-                  : _ListBody(grouped: _eventsGroupedByDate()),
+                  : state.monthView
+                      ? _MonthBody(
+                          displayedMonth: state.displayedMonth,
+                          selectedDay: state.selectedDay,
+                          events: state.events,
+                          onPrevMonth: () => context.read<TeacherCalendarBloc>().add(const TeacherCalendarPrevMonth()),
+                          onNextMonth: () => context.read<TeacherCalendarBloc>().add(const TeacherCalendarNextMonth()),
+                          onDaySelected: (d) =>
+                              context.read<TeacherCalendarBloc>().add(TeacherCalendarDaySelected(d)),
+                          eventsForDay: (day) => _eventsForDay(day, state.events),
+                        )
+                      : _ListBody(grouped: _eventsGroupedByDate(state.events)),
+        );
+      },
     );
   }
 }
@@ -301,7 +259,6 @@ class _CalendarGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final firstDay = DateTime(displayedMonth.year, displayedMonth.month, 1);
-    // weekday: Mon=1...Sun=7, we want Mon=0 offset
     final startOffset = (firstDay.weekday - 1) % 7;
     final daysInMonth = DateUtils.getDaysInMonth(displayedMonth.year, displayedMonth.month);
     final totalCells = ((startOffset + daysInMonth) / 7).ceil() * 7;
@@ -312,7 +269,6 @@ class _CalendarGrid extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Month navigation header
           Row(
             children: [
               IconButton(
@@ -338,7 +294,6 @@ class _CalendarGrid extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s3),
-          // Weekday headers
           Row(
             children: _weekdays
                 .map((d) => Expanded(
@@ -356,7 +311,6 @@ class _CalendarGrid extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: AppSpacing.s2),
-          // Day cells
           for (var row = 0; row < totalCells ~/ 7; row++) ...[
             Row(
               children: List.generate(7, (col) {
@@ -425,7 +379,7 @@ class _DayNumber extends StatelessWidget {
         width: 22,
         height: 22,
         alignment: Alignment.center,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           color: AppColors.accent,
           shape: BoxShape.circle,
         ),
@@ -494,8 +448,6 @@ class _EventDots extends StatelessWidget {
   }
 }
 
-// ── Day event panel (shown below grid when day tapped) ───────────────────────
-
 class _DayEventPanel extends StatelessWidget {
   const _DayEventPanel({required this.day, required this.events});
 
@@ -524,8 +476,6 @@ class _DayEventPanel extends StatelessWidget {
     );
   }
 }
-
-// ── List view body ─────────────────────────────────────────────────────────────
 
 class _ListBody extends StatelessWidget {
   const _ListBody({required this.grouped});
@@ -596,8 +546,6 @@ class _ListBody extends StatelessWidget {
     );
   }
 }
-
-// ── Individual event tile ──────────────────────────────────────────────────────
 
 class _EventTile extends StatelessWidget {
   const _EventTile({required this.event});

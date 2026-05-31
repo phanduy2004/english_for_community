@@ -206,8 +206,11 @@ class TeacherExamRemoteDatasource {
     return r.data;
   }
 
-  Future<dynamic> releaseExamResults(String attemptId) async {
-    final r = await dio.post('teacher/exams/attempts/$attemptId/release-results');
+  Future<dynamic> releaseExamResults(String attemptId, {String? resultsDetailLevel}) async {
+    final r = await dio.post(
+      'teacher/exams/attempts/$attemptId/release-results',
+      data: resultsDetailLevel != null ? {'resultsDetailLevel': resultsDetailLevel} : null,
+    );
     return r.data;
   }
 
@@ -273,8 +276,11 @@ class TeacherExamRemoteDatasource {
     );
   }
 
-  Future<dynamic> submitExamAttempt(String attemptId) async {
-    final r = await dio.post('exams/attempts/$attemptId/submit');
+  Future<dynamic> submitExamAttempt(String attemptId, {bool force = false}) async {
+    final r = await dio.post(
+      'exams/attempts/$attemptId/submit',
+      data: force ? {'force': true} : null,
+    );
     return r.data;
   }
 
@@ -402,9 +408,17 @@ class TeacherExamRemoteDatasource {
     return (r.data as List<dynamic>?) ?? [];
   }
 
-  Future<dynamic> addCoTeacher(String classroomId, String email) async {
-    final r = await dio.post('classrooms/$classroomId/co-teachers', data: {'email': email});
+  Future<dynamic> addCoTeacher(String classroomId, String username) async {
+    final r = await dio.post('classrooms/$classroomId/co-teachers', data: {'username': username.trim()});
     return r.data;
+  }
+
+  Future<List<dynamic>> searchTeachersForCoTeacher(String query, {int limit = 10}) async {
+    final r = await dio.get(
+      'classrooms/teachers/search',
+      queryParameters: {'q': query.trim(), 'limit': limit},
+    );
+    return (r.data as List<dynamic>?) ?? [];
   }
 
   Future<dynamic> removeCoTeacher(String classroomId, String userId) async {

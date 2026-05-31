@@ -1,9 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../core/get_it/get_it.dart';
-import '../../../../core/repository/admin_repository.dart'; // Đảm bảo bạn đã có AdminRepository
-import '../../../../core/entity/user_entity.dart'; // Hoặc model User của bạn
-import '../activity_history_page.dart'; // Import constants màu sắc
+import '../../../../core/repository/admin_repository.dart';
+import '../../../../core/entity/user_entity.dart';
+import '../activity_history_page.dart';
 
 class UserSearchSheet extends StatefulWidget {
   const UserSearchSheet({super.key});
@@ -78,7 +79,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
       );
 
       result.fold(
-            (failure) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(failure.message))),
+            (failure) => AppCornerToast.show(context, failure.message, error: true),
             (response) {
           setState(() {
             _users.addAll(response.data);

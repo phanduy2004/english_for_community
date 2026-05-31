@@ -1,8 +1,10 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_filter.dart';
 import 'package:english_for_community/feature/teacher/bloc/exams_list/teacher_exams_list_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -19,20 +21,11 @@ import 'package:english_for_community/feature/teacher/teacher_skills_exam_draft_
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-enum _ExamStatusFilter { all, draft, published, archived }
-
-class TeacherExamsListPage extends StatefulWidget {
+class TeacherExamsListPage extends StatelessWidget {
   const TeacherExamsListPage({super.key});
 
   static const String routePath = '/teacher/exams';
   static const String routeName = 'TeacherExamsListPage';
-
-  @override
-  State<TeacherExamsListPage> createState() => _TeacherExamsListPageState();
-}
-
-class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
-  _ExamStatusFilter _filter = _ExamStatusFilter.all;
 
   void _reload(BuildContext context) {
     context.read<TeacherExamsListBloc>().add(const TeacherExamsListLoadRequested());
@@ -54,17 +47,6 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
     return ok == true;
   }
 
-  List<dynamic> _filteredExams(List<dynamic> exams) {
-    if (_filter == _ExamStatusFilter.all) return exams;
-    final want = switch (_filter) {
-      _ExamStatusFilter.draft => 'draft',
-      _ExamStatusFilter.published => 'published',
-      _ExamStatusFilter.archived => 'archived',
-      _ => '',
-    };
-    return exams.where((raw) => (Map<String, dynamic>.from(raw as Map)['status'] as String?) == want).toList();
-  }
-
   String _examId(Map<String, dynamic> m) => (m['id'] ?? m['_id'])?.toString() ?? '';
 
   bool _isSkillsExam(Map<String, dynamic> m) {
@@ -79,7 +61,7 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
     final r = await getIt<TeacherExamRepository>().createExamDraft(buildTeacherSkillsExamDraftPayload(l10n));
     if (!context.mounted) return;
     r.fold(
-      (f) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(f.message))),
+      (f) => AppCornerToast.show(context, f.message, error: true),
       (d) {
         final m = Map<String, dynamic>.from(d as Map);
         final id = _examId(m);
@@ -99,7 +81,7 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
         listenWhen: (p, c) => c.errorMessage != null && p.errorMessage != c.errorMessage,
         listener: (context, state) {
           if (state.errorMessage != null) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
         },
         builder: (context, state) => _buildScaffold(context, l10n, state),
@@ -110,7 +92,7 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
   Widget _buildScaffold(BuildContext context, dynamic l10n, TeacherExamsListState state) {
     final loading = state.status == TeacherExamsListStatus.loading;
     final error = state.status == TeacherExamsListStatus.error ? state.errorMessage : null;
-    final exams = _filteredExams(state.exams);
+    final exams = state.visibleExams;
 
     return TeacherPageScaffold(
       scrollable: false,
@@ -156,7 +138,7 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
           if (exams.isEmpty) {
             return Column(
               children: [
-                _buildFilterBar(context, l10n),
+                _buildFilterBar(context, l10n, state),
                 const SizedBox(height: AppSpacing.s5),
                 Expanded(
                   child: TeacherEmptyCard(
@@ -177,7 +159,7 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
                 if (index == 0) {
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.s4),
-                    child: _buildFilterBar(context, l10n),
+                    child: _buildFilterBar(context, l10n, state),
                   );
                 }
                 final m = Map<String, dynamic>.from(exams[index - 1] as Map);
@@ -303,30 +285,32 @@ class _TeacherExamsListPageState extends State<TeacherExamsListPage> {
     );
   }
 
-  Widget _buildFilterBar(BuildContext context, dynamic l10n) {
+  Widget _buildFilterBar(BuildContext context, dynamic l10n, TeacherExamsListState state) {
+    final bloc = context.read<TeacherExamsListBloc>();
+    final f = state.statusFilter;
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         TeacherFilterChip(
           label: l10n.teacherExamsFilterAll,
-          selected: _filter == _ExamStatusFilter.all,
-          onSelected: () => setState(() => _filter = _ExamStatusFilter.all),
+          selected: f == TeacherExamsListStatusFilter.all,
+          onSelected: () => bloc.add(const TeacherExamsListFilterChanged(TeacherExamsListStatusFilter.all)),
         ),
         TeacherFilterChip(
           label: l10n.teacherExamsFilterDraft,
-          selected: _filter == _ExamStatusFilter.draft,
-          onSelected: () => setState(() => _filter = _ExamStatusFilter.draft),
+          selected: f == TeacherExamsListStatusFilter.draft,
+          onSelected: () => bloc.add(const TeacherExamsListFilterChanged(TeacherExamsListStatusFilter.draft)),
         ),
         TeacherFilterChip(
           label: l10n.teacherExamsFilterPublished,
-          selected: _filter == _ExamStatusFilter.published,
-          onSelected: () => setState(() => _filter = _ExamStatusFilter.published),
+          selected: f == TeacherExamsListStatusFilter.published,
+          onSelected: () => bloc.add(const TeacherExamsListFilterChanged(TeacherExamsListStatusFilter.published)),
         ),
         TeacherFilterChip(
           label: l10n.teacherExamsFilterArchived,
-          selected: _filter == _ExamStatusFilter.archived,
-          onSelected: () => setState(() => _filter = _ExamStatusFilter.archived),
+          selected: f == TeacherExamsListStatusFilter.archived,
+          onSelected: () => bloc.add(const TeacherExamsListFilterChanged(TeacherExamsListStatusFilter.archived)),
         ),
       ],
     );

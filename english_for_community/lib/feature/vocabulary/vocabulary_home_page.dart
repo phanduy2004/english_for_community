@@ -10,6 +10,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/repository/dictionary_repository.dart';
 import '../../core/router/app_router.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -65,11 +66,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
       final result = await _dictionaryRepository.searchWord(headword, limit: 1);
       result.fold(
         (failure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(context.l10n.vocabErrorWithMessage(failure.message)),
-            ),
-          );
+          AppCornerToast.show(context, context.l10n.vocabErrorWithMessage(failure.message), error: true);
         },
         (entries) {
           if (entries.isNotEmpty && entries.first.headword == headword) {
@@ -79,19 +76,13 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
                   .then((_) => _loadData());
             }
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.l10n.vocabNoDetailsForWord(headword)),
-              ),
-            );
+            AppCornerToast.show(context, context.l10n.vocabNoDetailsForWord(headword), error: true);
           }
         },
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(context.l10n.vocabErrorWithMessage(e.toString()))),
-        );
+        AppCornerToast.show(context, context.l10n.vocabErrorWithMessage(e.toString()), error: true);
       }
     }
   }

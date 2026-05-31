@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../core/entity/user_entity.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -243,9 +244,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
           context.pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.l10n.profileUpdatedSuccess)),
-          );
+          AppCornerToast.show(context, context.l10n.profileUpdatedSuccess);
         }
       },
       builder: (context, state) {
@@ -581,12 +580,7 @@ class _ProfileFormField extends StatelessWidget {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(context.l10n.copiedToClipboard),
-                        duration: const Duration(seconds: 1),
-                      ),
-                    );
+                    AppCornerToast.show(context, context.l10n.copiedToClipboard);
                   }
                 },
               ),

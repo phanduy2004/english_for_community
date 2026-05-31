@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import UserDailyProgress from "../models/UserDailyProgress.js";
 import bcrypt from "bcrypt";
+import { touchDailyStreak } from '../services/gamificationService.js';
 const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
 
 // 🔥 API ADMIN: Lấy chi tiết User + Thống kê học tập
@@ -154,6 +155,9 @@ export const getPublicProfile = async (req, res) => {
 // Get user profile
 export const getProfile = async (req, res) => {
   try {
+    // Ghi nhận streak khi user mở app / đăng nhập (1 lần/ngày theo timezone).
+    await touchDailyStreak(req.user._id);
+
     const user = await User.findById(req.user._id).lean();
 
     if (!user) {

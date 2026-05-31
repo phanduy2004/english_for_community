@@ -1,15 +1,18 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart' show AppRadius, AppSpacing;
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_filter.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_state.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_grading_hub_context_header.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_release_results_dialog.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_attempt_grade_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_grading_hub_labels.dart';
 import 'package:flutter/material.dart';
@@ -17,18 +20,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-enum TeacherGradingHubFilter {
-  all,
-  inProgress,
-  submitted,
-  pendingManual,
-  finalized,
-  released,
-  partial,
-}
-
 /// Loads and displays student attempts for one assignment (grading hub).
-class TeacherAssignmentGradingHubView extends StatefulWidget {
+class TeacherAssignmentGradingHubView extends StatelessWidget {
   const TeacherAssignmentGradingHubView({
     super.key,
     required this.assignmentId,
@@ -48,17 +41,56 @@ class TeacherAssignmentGradingHubView extends StatefulWidget {
   final String? examTitleHint;
 
   @override
-  State<TeacherAssignmentGradingHubView> createState() => _TeacherAssignmentGradingHubViewState();
+  Widget build(BuildContext context) {
+    final hub = BlocConsumer<TeacherGradingHubBloc, TeacherGradingHubState>(
+      listenWhen: (p, c) => c.errorMessage != null && p.errorMessage != c.errorMessage,
+      listener: (context, state) {
+        if (state.errorMessage != null) {
+          AppCornerToast.show(context, state.errorMessage!, error: true);
+        }
+      },
+      builder: (context, state) => _TeacherAssignmentGradingHubBody(
+        assignmentId: assignmentId,
+        scrollController: scrollController,
+        padding: padding,
+        showPageHeader: showPageHeader,
+        examTitleHint: examTitleHint,
+        state: state,
+      ),
+    );
+
+    if (useParentBloc) return hub;
+
+    return BlocProvider(
+      create: (_) => getIt<TeacherGradingHubBloc>(param1: assignmentId)
+        ..add(const TeacherGradingHubLoadRequested()),
+      child: hub,
+    );
+  }
 }
 
-class _TeacherAssignmentGradingHubViewState extends State<TeacherAssignmentGradingHubView> {
-  TeacherGradingHubFilter _filter = TeacherGradingHubFilter.all;
+class _TeacherAssignmentGradingHubBody extends StatelessWidget {
+  const _TeacherAssignmentGradingHubBody({
+    required this.assignmentId,
+    required this.state,
+    this.scrollController,
+    this.padding,
+    this.showPageHeader = true,
+    this.examTitleHint,
+  });
 
-  void _reload() {
+  final String assignmentId;
+  final TeacherGradingHubState state;
+  final ScrollController? scrollController;
+  final EdgeInsetsGeometry? padding;
+  final bool showPageHeader;
+  final String? examTitleHint;
+
+  void _reload(BuildContext context) {
     context.read<TeacherGradingHubBloc>().add(const TeacherGradingHubLoadRequested());
   }
 
-  String? _formatDate(dynamic raw) {
+  String? _formatDate(BuildContext context, dynamic raw) {
     if (raw == null) return null;
     final dt = DateTime.tryParse(raw.toString());
     if (dt == null) return null;
@@ -84,40 +116,12 @@ class _TeacherAssignmentGradingHubViewState extends State<TeacherAssignmentGradi
     return null;
   }
 
-  bool _matchesFilter(Map<String, dynamic> m) {
-    final status = m['status'] as String? ?? '';
-    final gs = m['gradingState'] as String? ?? '';
-    final released = m['resultsReleased'] == true;
-    final meta = m['meta'];
-    final completeness = meta is Map ? meta['submitCompleteness'] as String? : null;
-
-    switch (_filter) {
-      case TeacherGradingHubFilter.all:
-        return true;
-      case TeacherGradingHubFilter.inProgress:
-        return status == 'in_progress';
-      case TeacherGradingHubFilter.submitted:
-        return status == 'submitted';
-      case TeacherGradingHubFilter.pendingManual:
-        return gs == 'pending_manual' || gs == 'pending_ai';
-      case TeacherGradingHubFilter.finalized:
-        return gs == 'finalized' && !released;
-      case TeacherGradingHubFilter.released:
-        return released;
-      case TeacherGradingHubFilter.partial:
-        return completeness == 'partial';
-    }
-  }
-
-  List<Map<String, dynamic>> _visibleAttempts(List<Map<String, dynamic>> attempts) =>
-      attempts.where(_matchesFilter).toList();
-
   Widget _filterChip(BuildContext context, String label, TeacherGradingHubFilter f) {
-    final selected = _filter == f;
+    final selected = state.filter == f;
     return FilterChip(
       label: Text(label, style: TeacherWebUi.webCaption(context)),
       selected: selected,
-      onSelected: (_) => setState(() => _filter = f),
+      onSelected: (_) => context.read<TeacherGradingHubBloc>().add(TeacherGradingHubFilterChanged(f)),
       selectedColor: AppColors.primaryTint,
       checkmarkColor: AppColors.primary,
       side: BorderSide(color: selected ? AppColors.primary : AppColors.outline),
@@ -128,28 +132,8 @@ class _TeacherAssignmentGradingHubViewState extends State<TeacherAssignmentGradi
 
   @override
   Widget build(BuildContext context) {
-    final hub = BlocConsumer<TeacherGradingHubBloc, TeacherGradingHubState>(
-      listenWhen: (p, c) => c.errorMessage != null && p.errorMessage != c.errorMessage,
-      listener: (context, state) {
-        if (state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-        }
-      },
-      builder: (context, state) => _buildContent(context, state),
-    );
-
-    if (widget.useParentBloc) return hub;
-
-    return BlocProvider(
-      create: (_) => getIt<TeacherGradingHubBloc>(param1: widget.assignmentId)
-        ..add(const TeacherGradingHubLoadRequested()),
-      child: hub,
-    );
-  }
-
-  Widget _buildContent(BuildContext context, TeacherGradingHubState state) {
     final l10n = context.l10n;
-    final pad = widget.padding ?? TeacherWebUi.pageScrollPadding(context);
+    final pad = padding ?? TeacherWebUi.pageScrollPadding(context);
 
     if (state.status == TeacherGradingHubStatus.loading) {
       return const Center(child: CircularProgressIndicator());
@@ -167,101 +151,133 @@ class _TeacherAssignmentGradingHubViewState extends State<TeacherAssignmentGradi
                 style: TeacherWebUi.webBody(context),
               ),
               const SizedBox(height: 12),
-              TeacherRetryButton(onPressed: _reload),
+              TeacherRetryButton(onPressed: () => _reload(context)),
             ],
           ),
         ),
       );
     }
 
-    final visibleAttempts = _visibleAttempts(state.attempts);
+    final visibleAttempts = state.visibleAttempts;
     final classroomId = state.assignment?['classroomId'] as String?;
 
     return RefreshIndicator(
-      onRefresh: () async => _reload(),
-      child: ListView(
-        controller: widget.scrollController,
-        padding: pad,
-        children: [
-          if (widget.showPageHeader) ...[
-            Text(
-              (state.assignment?['examTitle'] as String?)?.trim() ??
-                  widget.examTitleHint?.trim() ??
-                  l10n.teacherExamUntitled,
-              style: TeacherWebUi.webPageTitle(context),
-            ),
-            const SizedBox(height: AppSpacing.s3),
-          ],
-          TeacherGradingHubContextHeader(
-            assignment: state.assignment,
-            stats: state.stats,
-            onClassroomTap: classroomId != null && classroomId.isNotEmpty
-                ? () => context.push('${TeacherClassroomDetailPage.routePath}/$classroomId')
-                : null,
-          ),
-          const SizedBox(height: AppSpacing.s5),
-          Text(l10n.teacherGradingStudentAttemptsTitle, style: TeacherWebUi.sectionTitle(context)),
-          const SizedBox(height: AppSpacing.s3),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _filterChip(context, l10n.teacherGradingHubFilterAll, TeacherGradingHubFilter.all),
-              _filterChip(context, l10n.teacherGradingHubFilterInProgress, TeacherGradingHubFilter.inProgress),
-              _filterChip(context, l10n.teacherGradingHubFilterSubmitted, TeacherGradingHubFilter.submitted),
-              _filterChip(context, l10n.teacherGradingHubFilterPendingManual, TeacherGradingHubFilter.pendingManual),
-              _filterChip(context, l10n.teacherGradingHubFilterFinalized, TeacherGradingHubFilter.finalized),
-              _filterChip(context, l10n.teacherGradingHubFilterReleased, TeacherGradingHubFilter.released),
-              _filterChip(context, l10n.teacherGradingHubFilterPartial, TeacherGradingHubFilter.partial),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.s5),
-          if (visibleAttempts.isEmpty)
-            AppCard(
-              variant: AppCardVariant.outline,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
-                child: Column(
+      onRefresh: () async => _reload(context),
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverPadding(
+            padding: pad,
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                if (showPageHeader) ...[
+                  Text(
+                    (state.assignment?['examTitle'] as String?)?.trim() ??
+                        examTitleHint?.trim() ??
+                        l10n.teacherExamUntitled,
+                    style: TeacherWebUi.webPageTitle(context),
+                  ),
+                  const SizedBox(height: AppSpacing.s3),
+                ],
+                TeacherGradingHubContextHeader(
+                  assignment: state.assignment,
+                  stats: state.stats,
+                  onClassroomTap: classroomId != null && classroomId.isNotEmpty
+                      ? () => context.push('${TeacherClassroomDetailPage.routePath}/$classroomId')
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                Text(l10n.teacherGradingStudentAttemptsTitle, style: TeacherWebUi.sectionTitle(context)),
+                const SizedBox(height: AppSpacing.s3),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
                   children: [
-                    Icon(Icons.assignment_ind_outlined, size: 40, color: AppColors.textMuted),
-                    const SizedBox(height: 12),
-                    Text(
-                      l10n.teacherGradingHubEmpty,
-                      textAlign: TextAlign.center,
-                      style: TeacherWebUi.webBody(context),
+                    _filterChip(context, l10n.teacherGradingHubFilterAll, TeacherGradingHubFilter.all),
+                    _filterChip(context, l10n.teacherGradingHubFilterInProgress, TeacherGradingHubFilter.inProgress),
+                    _filterChip(context, l10n.teacherGradingHubFilterSubmitted, TeacherGradingHubFilter.submitted),
+                    _filterChip(
+                      context,
+                      l10n.teacherGradingHubFilterPendingManual,
+                      TeacherGradingHubFilter.pendingManual,
                     ),
+                    _filterChip(context, l10n.teacherGradingHubFilterFinalized, TeacherGradingHubFilter.finalized),
+                    _filterChip(context, l10n.teacherGradingHubFilterReleased, TeacherGradingHubFilter.released),
+                    _filterChip(context, l10n.teacherGradingHubFilterPartial, TeacherGradingHubFilter.partial),
                   ],
+                ),
+                const SizedBox(height: AppSpacing.s5),
+              ]),
+            ),
+          ),
+          if (visibleAttempts.isEmpty)
+            SliverPadding(
+              padding: pad,
+              sliver: SliverToBoxAdapter(
+                child: AppCard(
+                  variant: AppCardVariant.outline,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                    child: Column(
+                      children: [
+                        Icon(Icons.assignment_ind_outlined, size: 40, color: AppColors.textMuted),
+                        const SizedBox(height: 12),
+                        Text(
+                          l10n.teacherGradingHubEmpty,
+                          textAlign: TextAlign.center,
+                          style: TeacherWebUi.webBody(context),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             )
           else
-            ...visibleAttempts.map(
-              (m) => TeacherGradingAttemptCard(
-                attempt: m,
-                studentLabel: _studentLabel(m),
-                studentEmail: _studentEmail(m),
-                submittedLabel: _formatDate(m['submittedAt']),
-                startedLabel: _formatDate(m['startedAt']),
-                onOpen: () {
-                  final id = m['id'] as String? ?? '';
-                  if (id.isEmpty) return;
-                  context.push(TeacherExamAttemptGradePage.location(widget.assignmentId, id));
-                },
-                onAi: () {
-                  final id = m['id'] as String? ?? '';
-                  if (id.isNotEmpty) {
-                    context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.teacherExamRunAi)));
-                  }
-                },
-                onRelease: () {
-                  final id = m['id'] as String? ?? '';
-                  if (id.isNotEmpty) {
-                    context.read<TeacherGradingHubBloc>().add(TeacherGradingHubReleaseRequested(id));
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(SnackBar(content: Text(l10n.teacherExamReleaseResults)));
-                  }
-                },
+            SliverPadding(
+              padding: pad,
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final m = visibleAttempts[index];
+                    return TeacherGradingAttemptCard(
+                      attempt: m,
+                      studentLabel: _studentLabel(m),
+                      studentEmail: _studentEmail(m),
+                      submittedLabel: _formatDate(context, m['submittedAt']),
+                      startedLabel: _formatDate(context, m['startedAt']),
+                      onOpen: () {
+                        final id = m['id'] as String? ?? '';
+                        if (id.isEmpty) return;
+                        context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
+                      },
+                      onAi: () {
+                        final id = m['id'] as String? ?? '';
+                        if (id.isNotEmpty) {
+                          context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
+                          AppCornerToast.show(context, l10n.teacherExamRunAi);
+                        }
+                      },
+                      onRelease: () async {
+                        final id = m['id'] as String? ?? '';
+                        if (id.isEmpty) return;
+                        final cfg = state.assignment?['config'];
+                        final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;
+                        final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
+                        final detail = await TeacherReleaseResultsDialog.show(
+                          context,
+                          initialDetailLevel: initial,
+                        );
+                        if (detail == null || !context.mounted) return;
+                        context.read<TeacherGradingHubBloc>().add(
+                              TeacherGradingHubReleaseRequested(id, resultsDetailLevel: detail),
+                            );
+                        AppCornerToast.show(context, l10n.teacherExamReleaseResults);
+                      },
+                    );
+                  },
+                  childCount: visibleAttempts.length,
+                ),
               ),
             ),
         ],
@@ -513,3 +529,4 @@ class TeacherGradingAttemptCard extends StatelessWidget {
     );
   }
 }
+

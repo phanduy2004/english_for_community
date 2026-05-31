@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/feature/admin/layout/admin_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skill_palette.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
@@ -98,7 +98,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       body: BlocConsumer<AdminBloc, AdminState>(
         listener: (context, state) {
           if (state.status == AdminStatus.error && state.errorMessage != null) {
-            AdminCornerToast.show(context, state.errorMessage!, error: true);
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
           if (state.status == AdminStatus.success) {
             _scrollToEnd();

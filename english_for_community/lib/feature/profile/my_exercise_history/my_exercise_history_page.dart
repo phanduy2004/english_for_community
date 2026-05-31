@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../core/get_it/get_it.dart';
 import '../../../core/locale/l10n_context.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -140,9 +141,7 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
           if (state.status == MyExerciseHistoryStatus.error &&
               state.errorMessage != null &&
               state.items.isNotEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.errorMessage!), backgroundColor: AppColors.danger),
-            );
+            AppCornerToast.show(context, state.errorMessage!, error: true);
           }
         },
         builder: (context, state) {

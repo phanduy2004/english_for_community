@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_filter.dart';
 import 'package:equatable/equatable.dart';
 
 enum TeacherGradingHubStatus { initial, loading, success, error }
@@ -12,6 +13,8 @@ class TeacherGradingHubState extends Equatable {
     this.batchAiRunning = false,
     this.batchOpsRunning = false,
     this.attemptMutationId,
+    this.filter = TeacherGradingHubFilter.all,
+    this.visibleAttempts = const [],
   });
 
   final TeacherGradingHubStatus status;
@@ -22,6 +25,8 @@ class TeacherGradingHubState extends Equatable {
   final bool batchAiRunning;
   final bool batchOpsRunning;
   final String? attemptMutationId;
+  final TeacherGradingHubFilter filter;
+  final List<Map<String, dynamic>> visibleAttempts;
 
   factory TeacherGradingHubState.initial() =>
       const TeacherGradingHubState(status: TeacherGradingHubStatus.initial);
@@ -35,6 +40,8 @@ class TeacherGradingHubState extends Equatable {
     bool? batchAiRunning,
     bool? batchOpsRunning,
     String? attemptMutationId,
+    TeacherGradingHubFilter? filter,
+    List<Map<String, dynamic>>? visibleAttempts,
     bool clearAttemptMutation = false,
     bool clearError = false,
   }) {
@@ -48,6 +55,8 @@ class TeacherGradingHubState extends Equatable {
       batchOpsRunning: batchOpsRunning ?? this.batchOpsRunning,
       attemptMutationId:
           clearAttemptMutation ? null : (attemptMutationId ?? this.attemptMutationId),
+      filter: filter ?? this.filter,
+      visibleAttempts: visibleAttempts ?? this.visibleAttempts,
     );
   }
 
@@ -61,5 +70,7 @@ class TeacherGradingHubState extends Equatable {
         batchAiRunning,
         batchOpsRunning,
         attemptMutationId,
+        filter,
+        visibleAttempts,
       ];
 }

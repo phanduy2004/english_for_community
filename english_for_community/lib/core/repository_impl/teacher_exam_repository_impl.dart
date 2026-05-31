@@ -413,9 +413,9 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> submitExamAttempt(String attemptId) async {
+  Future<Either<Failure, dynamic>> submitExamAttempt(String attemptId, {bool force = false}) async {
     try {
-      return Right(await remote.submitExamAttempt(attemptId));
+      return Right(await remote.submitExamAttempt(attemptId, force: force));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {
@@ -631,9 +631,15 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> releaseExamResults(String attemptId) async {
+  Future<Either<Failure, dynamic>> releaseExamResults(
+    String attemptId, {
+    String? resultsDetailLevel,
+  }) async {
     try {
-      return Right(await remote.releaseExamResults(attemptId));
+      return Right(await remote.releaseExamResults(
+        attemptId,
+        resultsDetailLevel: resultsDetailLevel,
+      ));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {
@@ -875,9 +881,20 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> addCoTeacher(String classroomId, String email) async {
+  Future<Either<Failure, dynamic>> addCoTeacher(String classroomId, String username) async {
     try {
-      return Right(await remote.addCoTeacher(classroomId, email));
+      return Right(await remote.addCoTeacher(classroomId, username));
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _dioMsg(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<dynamic>>> searchTeachersForCoTeacher(String query) async {
+    try {
+      return Right(await remote.searchTeachersForCoTeacher(query));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {

@@ -12,7 +12,7 @@ class ApiConfig {
   static const String _renderUrl = "https://english-for-community.onrender.com";
 
   // 🏠 Server Local (Máy tính của bạn) - Thay đổi IP này theo máy bạn
-  static const String _localLanIp = "192.168.130.87";
+  static const String _localLanIp = "192.168.1.45";
   static const int _localPort = 3000;
 
   // ============================================================
@@ -34,19 +34,45 @@ class ApiConfig {
   // ============================================================
 
   /// Android emulator → host machine is [emulatorHost] (10.0.2.2), not LAN IP.
+  /// LDPlayer / BlueStacks / MEmu: luôn dùng IP LAN PC — 10.0.2.2 thường không hoạt động.
   static bool _androidUsesEmulatorHost = false;
+
+  static bool _isThirdPartyAndroidEmulator(AndroidDeviceInfo info) {
+    final blob = [
+      info.manufacturer,
+      info.brand,
+      info.model,
+      info.product,
+      info.device,
+      info.hardware,
+      info.fingerprint,
+    ].join(' ').toLowerCase();
+    return blob.contains('ldplayer') ||
+        blob.contains('ldplay') ||
+        blob.contains('dnplayer') ||
+        blob.contains('changwan') ||
+        blob.contains('bluestacks') ||
+        blob.contains('memu') ||
+        blob.contains('nox');
+  }
 
   /// Gọi trong `main()` trước `setup()` để nhận diện máy ảo / máy thật.
   static Future<void> init() async {
     if (kIsWeb || !_useLocal || !Platform.isAndroid) return;
     try {
       final android = await DeviceInfoPlugin().androidInfo;
-      _androidUsesEmulatorHost = !android.isPhysicalDevice;
+      final thirdPartyEmu = _isThirdPartyAndroidEmulator(android);
+      // AVD: 10.0.2.2 → host PC. LDPlayer & co.: IP LAN (cùng mạng với PC).
+      _androidUsesEmulatorHost =
+          !android.isPhysicalDevice && !thirdPartyEmu;
       if (kDebugMode) {
-        debugPrint(
-          '[ApiConfig] Android ${android.isPhysicalDevice ? "device" : "emulator"} '
-          '→ ${_androidUsesEmulatorHost ? "10.0.2.2" : _localLanIp}:$_localPort',
-        );
+        final host = _androidUsesEmulatorHost ? '10.0.2.2' : _localLanIp;
+        final kind = thirdPartyEmu
+            ? 'LDPlayer/third-party emulator'
+            : android.isPhysicalDevice
+                ? 'device'
+                : 'AVD emulator';
+        debugPrint('[ApiConfig] Android $kind → $host:$_localPort');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -67,7 +93,7 @@ class ApiConfig {
       return 'http://localhost:$_localPort/';
     }
 
-    // 2. Android: emulator → 10.0.2.2 (host PC); máy thật → IP LAN
+    // 2. Android: AVD → 10.0.2.2; LDPlayer / máy thật → IP LAN PC
     if (Platform.isAndroid) {
       return _androidUsesEmulatorHost
           ? 'http://10.0.2.2:$_localPort/'

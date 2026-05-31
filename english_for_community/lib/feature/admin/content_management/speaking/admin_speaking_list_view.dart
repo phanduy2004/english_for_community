@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/datasource/admin_remote_datasource.dart';
 import '../../../../../core/get_it/get_it.dart';
+import '../../../../../core/ui/widget/app_corner_toast.dart';
 import '../content_widgets.dart';
 import 'bloc/admin_speaking_bloc.dart';
 import 'bloc/admin_speaking_event.dart';
@@ -117,9 +118,7 @@ class _SpeakingListBody extends StatelessWidget {
                                 if (!context.mounted) return;
                                 Navigator.pop(ctx);
                                 context.read<AdminSpeakingBloc>().add(GetAdminSpeakingListEvent(page: 1, limit: 9999));
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Speaking set restored')),
-                                );
+                                AppCornerToast.show(context, 'Speaking set restored');
                               },
                               child: const Text('Restore'),
                             ),

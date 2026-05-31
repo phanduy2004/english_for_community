@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../dashboard_home/bloc/admin_bloc.dart';
 import '../../dashboard_home/bloc/admin_event.dart';
 
@@ -159,9 +160,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
         ElevatedButton(
           onPressed: () {
             if (_reasonController.text.trim().isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please enter a reason before confirming ban.')),
-              );
+              AppCornerToast.show(context, 'Please enter a reason before confirming ban.', error: true);
               return;
             }
 

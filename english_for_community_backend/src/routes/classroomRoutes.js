@@ -13,6 +13,12 @@ router.get('/enrolled', authenticate, classroomController.listMyEnrolledClassroo
 
 router.post('/', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.createClassroom);
 router.get('/mine', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.listMyClassroomsAsTeacher);
+router.get(
+  '/teachers/search',
+  authenticate,
+  requirePermissions(Permission.TEACHER_CLASSROOM_MEMBERS_MANAGE),
+  classroomController.searchTeachersForCoTeacher
+);
 router.get('/:id', authenticate, classroomController.getClassroom);
 router.patch('/:id', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.updateClassroom);
 router.post('/:id/archive', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.archiveClassroom);

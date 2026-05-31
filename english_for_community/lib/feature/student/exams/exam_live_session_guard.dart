@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/api/token_storage.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -78,9 +79,7 @@ class ExamLiveSessionGuard {
     _handled = true;
     unbind();
     getIt<SocketService>().clearExamRealtimeContext();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.examSessionKickedByTeacher)),
-    );
+    AppCornerToast.show(context, context.l10n.examSessionKickedByTeacher, error: true);
     exitLiveExamFlow(context);
   }
 
@@ -105,9 +104,7 @@ class ExamLiveSessionGuard {
     _handled = true;
     unbind();
     getIt<SocketService>().clearExamRealtimeContext();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.examSessionEndedByTeacher)),
-    );
+    AppCornerToast.show(context, context.l10n.examSessionEndedByTeacher, error: true);
     exitLiveExamFlow(context);
   }
 

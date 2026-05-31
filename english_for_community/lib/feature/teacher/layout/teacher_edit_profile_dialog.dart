@@ -7,7 +7,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -72,7 +72,7 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
   }
 
   void _toast(String message, {bool error = false}) {
-    TeacherCornerToast.show(context, message, error: error);
+    AppCornerToast.show(context, message, error: error);
   }
 
   Future<void> _pickImage() async {
@@ -144,7 +144,7 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
       listener: (context, state) {
         if (!_awaitingSaveResult) return;
         if (state.status == UserStatus.success && _isDirty) {
-          TeacherCornerToast.show(context, t.profileUpdatedSuccess);
+          AppCornerToast.show(context, t.profileUpdatedSuccess);
           Navigator.pop(context);
           setState(() {
             _awaitingSaveResult = false;

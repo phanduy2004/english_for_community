@@ -175,6 +175,25 @@ abstract final class TeacherWebUi {
   }
 
   /// Segmented control: nền chưa chọn đồng nhất (`surfaceCard`), đã chọn `primaryTint` + chữ `primary`.
+  /// Custom choice tiles (assign exam, classroom picker) dùng cùng pattern — xem [choiceTileDecoration].
+  static BoxDecoration choiceTileDecoration({required bool selected}) => BoxDecoration(
+        color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: selected ? AppColors.primary : AppColors.outline,
+          width: selected ? 1.5 : 1,
+        ),
+      );
+
+  static Color choiceTileTitleColor({required bool selected}) =>
+      selected ? AppColors.primary : AppColors.textPrimary;
+
+  static Color choiceTileIconColor({required bool selected}) =>
+      selected ? AppColors.primary : AppColors.textMuted;
+
+  static Color choiceTileIconBoxColor({required bool selected}) =>
+      selected ? AppColors.primaryStrong : AppColors.surfaceSubtle;
+
   /// Icon cùng chiều cao với [compactFilledStyle] trong page header / toolbar.
   static ButtonStyle compactHeaderIconStyle() => IconButton.styleFrom(
         minimumSize: const Size(buttonHeightPrimary, buttonHeightPrimary),
@@ -186,35 +205,47 @@ abstract final class TeacherWebUi {
 
   static ButtonStyle compactFilledStyle(BuildContext context) => FilledButton.styleFrom(
         minimumSize: const Size(0, buttonHeightPrimary),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        textStyle: webLabel(context).copyWith(
-          fontSize: AppTypography.webLabel,
-          fontWeight: FontWeight.w600,
-          height: 1.2,
-        ),
+        maximumSize: Size(double.infinity, buttonHeightPrimary),
+        padding: _compactButtonPadding,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: _compactButtonShape,
+        textStyle: _compactButtonText(context),
       );
 
   static ButtonStyle compactOutlinedStyle(BuildContext context) => OutlinedButton.styleFrom(
         minimumSize: const Size(0, buttonHeightPrimary),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        textStyle: webBody(context).copyWith(
-          fontSize: AppTypography.webBody,
-          fontWeight: FontWeight.w500,
-          height: 1.2,
-        ),
+        maximumSize: Size(double.infinity, buttonHeightPrimary),
+        padding: _compactButtonPadding,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: _compactButtonShape,
+        side: const BorderSide(color: AppColors.outline),
+        textStyle: _compactButtonText(context),
       );
 
   /// Destructive outlined — end session, remove member, etc.
   static ButtonStyle compactDangerOutlinedStyle(BuildContext context) => OutlinedButton.styleFrom(
         minimumSize: const Size(0, buttonHeightPrimary),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        maximumSize: Size(double.infinity, buttonHeightPrimary),
+        padding: _compactButtonPadding,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        shape: _compactButtonShape,
         foregroundColor: AppColors.danger,
         side: const BorderSide(color: AppColors.danger),
-        textStyle: webBody(context).copyWith(
-          fontSize: AppTypography.webBody,
-          fontWeight: FontWeight.w600,
-          height: 1.2,
-        ),
+        textStyle: _compactButtonText(context),
+      );
+
+  static const EdgeInsets _compactButtonPadding = EdgeInsets.symmetric(horizontal: 12);
+  static const RoundedRectangleBorder _compactButtonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(8)),
+  );
+
+  static TextStyle _compactButtonText(BuildContext context) => webLabel(context).copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        height: 1.0,
       );
 
   static ButtonStyle segmentedControlStyle(BuildContext context) {

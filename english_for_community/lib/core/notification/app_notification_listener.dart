@@ -1,10 +1,10 @@
 import 'dart:convert';
 
 import 'package:english_for_community/core/entity/notification_entity.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/notification/local_notification_service.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
-import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
@@ -37,18 +37,10 @@ class _AppNotificationListenerState extends State<AppNotificationListener> {
   void _showForegroundBanner(String title, String body) {
     final ctx = rootNavigatorKey.currentContext;
     if (ctx == null) return;
-    ScaffoldMessenger.of(ctx).clearSnackBars();
-    ScaffoldMessenger.of(ctx).showSnackBar(
-      SnackBar(
-        content: Text(
-          body.isEmpty ? title : '$title\n$body',
-          maxLines: 3,
-          overflow: TextOverflow.ellipsis,
-        ),
-        duration: const Duration(seconds: 5),
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.primary,
-      ),
+    AppCornerToast.show(
+      ctx,
+      body.isEmpty ? title : '$title\n$body',
+      duration: const Duration(seconds: 5),
     );
   }
 

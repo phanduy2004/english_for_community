@@ -13,6 +13,7 @@ import '../../core/entity/reading/reading_feedback_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/ui/widget/app_corner_toast.dart';
 import '../../core/repository/reading_repository.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_spacing.dart';
@@ -32,6 +33,7 @@ class ReadingDetailPage extends StatelessWidget {
   final VoidCallback? onPartComplete;
   final Map<String, int>? initialSelectedAnswers;
   final void Function(Map<String, int> answers, int totalQuestions)? onExamAnswersChanged;
+  final bool examReviewMode;
 
   const ReadingDetailPage({
     super.key,
@@ -42,6 +44,7 @@ class ReadingDetailPage extends StatelessWidget {
     this.onPartComplete,
     this.initialSelectedAnswers,
     this.onExamAnswersChanged,
+    this.examReviewMode = false,
   });
 
   @override
@@ -66,6 +69,7 @@ class ReadingDetailPage extends StatelessWidget {
         onPartComplete: onPartComplete,
         initialSelectedAnswers: initialSelectedAnswers,
         onExamAnswersChanged: onExamAnswersChanged,
+        examReviewMode: examReviewMode,
       ),
     );
   }
@@ -82,6 +86,7 @@ class _ReadingDetailView extends StatefulWidget {
   final VoidCallback? onPartComplete;
   final Map<String, int>? initialSelectedAnswers;
   final void Function(Map<String, int> answers, int totalQuestions)? onExamAnswersChanged;
+  final bool examReviewMode;
 
   const _ReadingDetailView({
     required this.reading,
@@ -91,6 +96,7 @@ class _ReadingDetailView extends StatefulWidget {
     this.onPartComplete,
     this.initialSelectedAnswers,
     this.onExamAnswersChanged,
+    this.examReviewMode = false,
   });
 
   @override
@@ -132,6 +138,18 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     }
   }
 
+  @override
+  void didUpdateWidget(covariant _ReadingDetailView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final next = widget.initialSelectedAnswers;
+    if (next == null || next == oldWidget.initialSelectedAnswers) return;
+    setState(() {
+      _selectedAnswers
+        ..clear()
+        ..addAll(next);
+    });
+  }
+
   void _startTimer() {
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -144,12 +162,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         if (mounted) {
           final currentState = context.read<ReadingAttemptBloc>().state;
           if (currentState.status == AttemptStatus.initial || currentState.status == AttemptStatus.error) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(context.l10n.quizTimeUpSubmitting),
-                backgroundColor: Colors.orange,
-              ),
-            );
+            AppCornerToast.show(context, context.l10n.quizTimeUpSubmitting, error: true);
             _submitQuiz(context);
           }
         }
@@ -228,15 +241,12 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           }
           if (widget.embedded) {
             widget.onPartComplete?.call();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  context.l10n.readingQuizResultSummary(
-                    result?.correctCount ?? 0,
-                    result?.totalQuestions ?? 0,
-                    (result?.score ?? 0).round(),
-                  ),
-                ),
+            AppCornerToast.show(
+              context,
+              context.l10n.readingQuizResultSummary(
+                result?.correctCount ?? 0,
+                result?.totalQuestions ?? 0,
+                (result?.score ?? 0).round(),
               ),
             );
           } else {
@@ -288,22 +298,19 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           }
         }
         else if (state.status == AttemptStatus.error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage ?? context.l10n.readingSubmissionFailed),
-              backgroundColor: Colors.red,
-            ),
-          );
+          AppCornerToast.show(context, state.errorMessage ?? context.l10n.readingSubmissionFailed, error: true);
         }
       },
       builder: (context, state) {
         final bool isLoading = state.status == AttemptStatus.loading;
         final bool examPractice = widget.embedded && widget.onExamAnswersChanged != null;
-        final bool isSubmitted = examPractice
-            ? false
-            : state.status == AttemptStatus.review ||
-                state.status == AttemptStatus.success ||
-                _isReviewMode;
+        final bool isSubmitted = widget.examReviewMode
+            ? true
+            : examPractice
+                ? false
+                : state.status == AttemptStatus.review ||
+                    state.status == AttemptStatus.success ||
+                    _isReviewMode;
 
         final bool isSubmitting = isLoading && !_isReviewMode;
         final t = context.l10n;
@@ -555,7 +562,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     return ListView.separated(
       padding: StudentMobileUi.pagePadding,
       itemCount: questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.sectionGap),
+      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.exerciseSectionGap),
       itemBuilder: (context, index) {
         return _buildQuestionCard(questions[index], index, isSubmitted);
       },
@@ -574,7 +581,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.all(AppSpacing.s5),
+            padding: StudentMobileUi.exerciseCardPadding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -584,7 +591,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                       ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500)
                       : StudentMobileUi.caption(context),
                 ),
-                const SizedBox(height: AppSpacing.s3),
+                const SizedBox(height: AppSpacing.s2),
                 Text(
                   question.questionText,
                   style: compact
@@ -606,7 +613,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.s5, 0, AppSpacing.s5, AppSpacing.s5),
+            padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
             child: Column(
               children: List.generate(question.options.length, (optionIndex) {
                 final optionText = question.options[optionIndex];
@@ -623,7 +630,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                   index: optionIndex,
                   text: optionText,
                   subtitle: sub,
-                  selected: !isSubmitted && isSelected,
+                  selected: isSelected,
                   showReviewCorrect: isSubmitted && isCorrect,
                   showReviewWrong: isSubmitted && isSelected && !isCorrect,
                   onTap: isSubmitted

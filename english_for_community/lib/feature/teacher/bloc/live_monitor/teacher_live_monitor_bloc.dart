@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
+import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_derived.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,6 +71,26 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
   void Function(Map<String, dynamic>)? _onLiveProgress;
   void Function(Map<String, dynamic>)? _onLiveScreen;
 
+  void _emitStudents(
+    List<Map<String, dynamic>> students,
+    Emitter<TeacherLiveMonitorState> emit, {
+    Map<String, dynamic>? summary,
+    TeacherLiveMonitorStatus? status,
+    bool clearError = false,
+  }) {
+    final enriched = students.map(enrichLiveMonitorStudentRow).toList();
+    final nextSummary = summary ?? summaryFromLiveMonitorStudents(enriched);
+    emit(state.copyWith(
+      status: status ?? state.status,
+      students: enriched,
+      summary: nextSummary,
+      visibleStudents: filterLiveMonitorStudents(enriched, state.filter),
+      studentsByUserId: indexLiveMonitorStudents(enriched),
+      dataRevision: state.dataRevision + 1,
+      clearError: clearError,
+    ));
+  }
+
   void _ingestSnapshot(Map<String, dynamic> data, Emitter<TeacherLiveMonitorState> emit) {
     final raw = data['students'];
     final students = raw is List
@@ -77,35 +98,14 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
         : <Map<String, dynamic>>[];
     final summary = data['summary'] is Map
         ? Map<String, dynamic>.from(data['summary'] as Map)
-        : <String, dynamic>{};
-    emit(state.copyWith(
-      status: TeacherLiveMonitorStatus.success,
-      students: students,
+        : null;
+    _emitStudents(
+      students,
+      emit,
       summary: summary,
+      status: TeacherLiveMonitorStatus.success,
       clearError: true,
-    ));
-  }
-
-  Map<String, dynamic> _summaryFromStudents(List<Map<String, dynamic>> students) {
-    final total = students.length;
-    final inProgress = students.where((s) => s['status'] == 'in_progress').length;
-    final submitted = students
-        .where((s) => ['submitted', 'expired', 'void'].contains(s['status']))
-        .length;
-    final flagged = students
-        .where((s) => s['integrityRiskLevel'] == 'high' || s['integrityRiskLevel'] == 'medium')
-        .length;
-    final avg = total == 0
-        ? 0.0
-        : students.fold<double>(0, (sum, s) => sum + ((s['progressPercent'] as num?)?.toDouble() ?? 0)) /
-            total;
-    return {
-      'total': total,
-      'inProgress': inProgress,
-      'submitted': submitted,
-      'flagged': flagged,
-      'avgProgressPercent': (avg * 10).round() / 10,
-    };
+    );
   }
 
   Map<String, dynamic> _mergeStudentLiveRow(
@@ -156,20 +156,25 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
     TeacherLiveMonitorProgressUpdated event,
     Emitter<TeacherLiveMonitorState> emit,
   ) {
+    if (!liveMonitorPatchAffectsRosterUi(event.payload)) return;
+
     final userId = event.payload['userId']?.toString();
     if (userId == null || userId.isEmpty) return;
 
     final list = List<Map<String, dynamic>>.from(state.students);
     final idx = list.indexWhere((s) => s['userId']?.toString() == userId);
+    final merged = idx >= 0
+        ? _mergeStudentLiveRow(list[idx], event.payload)
+        : Map<String, dynamic>.from(event.payload);
+
+    if (idx >= 0 && !liveMonitorRowVisualChanged(list[idx], merged)) return;
+
     if (idx >= 0) {
-      list[idx] = _mergeStudentLiveRow(list[idx], event.payload);
+      list[idx] = merged;
     } else {
-      list.add(Map<String, dynamic>.from(event.payload));
+      list.add(merged);
     }
-    emit(state.copyWith(
-      students: list,
-      summary: _summaryFromStudents(list),
-    ));
+    _emitStudents(list, emit);
   }
 
   Future<void> _onRefresh(
@@ -184,7 +189,12 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
     TeacherLiveMonitorFilterChanged event,
     Emitter<TeacherLiveMonitorState> emit,
   ) {
-    emit(state.copyWith(filter: event.filter));
+    if (event.filter == state.filter) return;
+    emit(state.copyWith(
+      filter: event.filter,
+      visibleStudents: filterLiveMonitorStudents(state.students, event.filter),
+      dataRevision: state.dataRevision + 1,
+    ));
   }
 
   void _onStopped(
@@ -210,4 +220,20 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
     _detachLiveListeners();
     return super.close();
   }
+}
+
+/// Skips rebuild when only filter changes vs student data (use [TeacherLiveMonitorState.dataRevision]).
+bool teacherLiveMonitorListBuildWhen(
+  TeacherLiveMonitorState previous,
+  TeacherLiveMonitorState current,
+) {
+  return previous.dataRevision != current.dataRevision;
+}
+
+bool teacherLiveMonitorSummaryBuildWhen(
+  TeacherLiveMonitorState previous,
+  TeacherLiveMonitorState current,
+) {
+  return previous.dataRevision != current.dataRevision ||
+      previous.filter != current.filter;
 }

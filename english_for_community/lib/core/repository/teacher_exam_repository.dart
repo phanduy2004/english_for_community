@@ -60,12 +60,12 @@ abstract class TeacherExamRepository {
   Future<Either<Failure, dynamic>> abandonExamAttempt(String attemptId);
   Future<Either<Failure, dynamic>> runAiGradingDraft(String attemptId);
   Future<Either<Failure, dynamic>> patchManualGrade(String attemptId, Map<String, dynamic> body);
-  Future<Either<Failure, dynamic>> releaseExamResults(String attemptId);
+  Future<Either<Failure, dynamic>> releaseExamResults(String attemptId, {String? resultsDetailLevel});
   Future<Either<Failure, dynamic>> finalizeExamAttempt(String attemptId);
   Future<Either<Failure, dynamic>> runAiGradingBatch(String assignmentId);
   Future<Either<Failure, dynamic>> patchExamAttempt(String attemptId, Map<String, dynamic> answers);
   Future<Either<Failure, void>> syncExamAttemptLiveView(String attemptId, Map<String, dynamic> liveView);
-  Future<Either<Failure, dynamic>> submitExamAttempt(String attemptId);
+  Future<Either<Failure, dynamic>> submitExamAttempt(String attemptId, {bool force = false});
   Future<Either<Failure, dynamic>> getExamAttempt(String attemptId);
 
   Future<Either<Failure, dynamic>> duplicateExam(String examId);
@@ -93,7 +93,8 @@ abstract class TeacherExamRepository {
     int? copyPasteDelta,
   });
   Future<Either<Failure, List<dynamic>>> listClassroomActivity(String classroomId);
-  Future<Either<Failure, dynamic>> addCoTeacher(String classroomId, String email);
+  Future<Either<Failure, dynamic>> addCoTeacher(String classroomId, String username);
+  Future<Either<Failure, List<dynamic>>> searchTeachersForCoTeacher(String query);
   Future<Either<Failure, dynamic>> removeCoTeacher(String classroomId, String userId);
   Future<Either<Failure, Map<String, dynamic>>> getIntegrationsStatus();
   Future<Either<Failure, dynamic>> linkGoogleClassroom(String classroomId, Map<String, dynamic> body);
