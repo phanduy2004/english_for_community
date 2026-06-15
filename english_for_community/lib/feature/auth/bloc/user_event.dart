@@ -65,6 +65,7 @@ class SignUpEvent extends UserEvent {
   final String username;
   final String? phone;
   final DateTime? dateOfBirth;
+  final String accountType;
 
   SignUpEvent({
     required this.email,
@@ -73,6 +74,7 @@ class SignUpEvent extends UserEvent {
     required this.username,
     this.phone,
     this.dateOfBirth,
+    this.accountType = 'student',
   });
 }
 class ResendOtpEvent extends UserEvent {

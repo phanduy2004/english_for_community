@@ -1,4 +1,9 @@
 import { notificationService } from '../services/notificationService.js';
+import { notificationActionService } from '../services/notificationActionService.js';
+
+function getStatusCode(err) {
+  return err.statusCode || 500;
+}
 
 const getNotifications = async (req, res) => {
   try {
@@ -43,4 +48,15 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-export const notificationController = { getNotifications, markAsRead, markAllAsRead };
+const respond = async (req, res) => {
+  try {
+    const userId = req.user._id?.toString?.() ?? req.user.id?.toString?.();
+    const { action } = req.body || {};
+    const result = await notificationActionService.respond(userId, req.params.id, action);
+    return res.status(200).json(result);
+  } catch (error) {
+    return res.status(getStatusCode(error)).json({ message: error.message });
+  }
+};
+
+export const notificationController = { getNotifications, markAsRead, markAllAsRead, respond };

@@ -1,10 +1,12 @@
 /**
- * Seed teacher Đồ Đàng Hoàng + classrooms + 5 skills exams + assignments + attempts
- * for Schedule & Analytics testing.
+ * Seed giáo viên Đồ Đàng Hoàng + lớp học + đề kiểm tra + bài giao + bài nộp.
+ * Dữ liệu đặt tên theo quy ước trường THPT (xem classroomNaming.js).
  *
  * Run: npm run seed:teacher-hoangdong
+ * Reset toàn bộ lớp/đề: npm run seed:reset-classroom
  * Requires MONGO_URI in .env
  */
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
@@ -20,8 +22,12 @@ import Reading from '../models/Reading.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import { buildIntegratedScores, computeFinal } from '../services/examIntegratedScoring.js';
 import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
+import { CLASSROOM_TEMPLATES, examTitle, assignmentWindowLabel } from './classroomNaming.js';
+import { purgeClassroomDomain } from './purgeClassroomDomain.js';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-const SEED_TAG = '[SEED:HoangDong]';
+const STUDENT_SCHOOL_DOMAIN = 'thptchuyene4c.edu.vn';
 const TEACHER_EMAIL = process.env.HOANGDONG_TEACHER_EMAIL || 'hoangdong.teacher@e4c.dev';
 const TEACHER_PASSWORD = process.env.HOANGDONG_TEACHER_PASSWORD || 'Teacher@123456';
 const TEACHER_USERNAME = process.env.HOANGDONG_TEACHER_USERNAME || 'hoangdong_teacher';
@@ -205,7 +211,7 @@ function inlineListeningAnswers(listeningDoc, accuracy = 0.82) {
   const list = listeningDoc?.cues || [];
   for (let i = 0; i < list.length; i += 1) {
     const expected = list[i]?.text != null ? String(list[i].text).trim() : '';
-    cues[String(i)] = Math.random() < accuracy ? expected : 'seed wrong';
+    cues[String(i)] = Math.random() < accuracy ? expected : expected.slice(0, Math.max(1, expected.length - 2));
   }
   return { completed: true, listeningCues: cues };
 }
@@ -250,62 +256,63 @@ function examSnapshotFromDoc(exam) {
 
 const EXAM_BLUEPRINTS = [
   {
-    title: `${SEED_TAG} Kiểm tra Nghe + Đọc + Ngữ pháp`,
-    description: 'Dictation listening, reading MCQ, grammar block — good for auto-graded analytics.',
+    title: examTitle({ kind: 'quick', unit: 5, skillsLabel: 'Nghe chép & Ngữ pháp' }),
+    description:
+      'Kiểm tra 15 phút sau Unit 5: nghe điền từ và 4 câu trắc nghiệm ngữ pháp (thì hiện tại hoàn thành, câu điều kiện).',
     skills: ['listening', 'reading'],
     grammarCount: 4,
   },
   {
-    title: `${SEED_TAG} Luyện Viết + Nói`,
-    description: 'Writing essay + speaking — manual grading backlog for analytics.',
+    title: examTitle({ kind: 'homework', unit: 8, skillsLabel: 'Writing & Speaking' }),
+    description: 'Bài tập về nhà tuần 8: viết luận ý kiến và ghi âm phần nói — GV chấm tay.',
     skills: ['writing', 'speaking'],
     grammarCount: 0,
     fixedWritingPrompt: {
-      title: 'Opinion essay',
-      text: 'Some people believe technology makes life easier. Others think it creates stress. Discuss both views and give your opinion.',
+      title: 'Opinion essay — Unit 8',
+      text: 'Some people believe technology makes life easier. Others think it creates stress. Discuss both views and give your opinion. (180–220 words)',
       taskType: 'Essay',
       level: 'B2',
     },
   },
   {
-    title: `${SEED_TAG} Giữa kỳ — Nghe Đọc Viết + Grammar`,
-    description: 'Four components without speaking.',
+    title: examTitle({ kind: 'midterm', index: 1, skillsLabel: 'Nghe · Đọc · Viết' }),
+    description: 'Kiểm tra giữa học kỳ 2 — đề số 1: nghe chép, đọc hiểu, viết thư và ngữ pháp.',
     skills: ['listening', 'reading', 'writing'],
     grammarCount: 3,
     fixedWritingPrompt: {
       title: 'Formal letter',
-      text: 'Write a letter to your school principal suggesting one improvement to the English program.',
+      text: 'Write a letter (120–150 words) to your school principal suggesting one improvement to the English program.',
       taskType: 'Letter',
       level: 'B1',
     },
   },
   {
-    title: `${SEED_TAG} Đọc hiểu + Viết tóm tắt`,
-    description: 'Reading comprehension and short writing only.',
+    title: examTitle({ kind: 'weekly', unit: 6, skillsLabel: 'Reading & Summary' }),
+    description: 'Ôn cuối tuần 6: đọc hiểu trắc nghiệm và viết tóm tắt đoạn văn.',
     skills: ['reading', 'writing'],
     grammarCount: 0,
     fixedWritingPrompt: {
-      title: 'Summary',
+      title: 'Summary writing',
       text: 'Summarize the main idea of the reading passage in 80–120 words.',
       taskType: 'Summary',
       level: 'B1',
     },
   },
   {
-    title: `${SEED_TAG} Ôn tập 4 kỹ năng (Nghe Đọc Viết Nói)`,
-    description: 'Full skills mix for calendar + score distribution.',
+    title: examTitle({ kind: 'weekly', unit: 9, skillsLabel: '4 kỹ năng' }),
+    description: 'Bài tổng hợp cuối tuần 9: nghe, đọc, viết, nói — ôn trước mock test.',
     skills: ['listening', 'reading', 'writing', 'speaking'],
     grammarCount: 2,
     fixedWritingPrompt: {
-      title: 'Story',
+      title: 'Short story',
       text: 'Write a short story (150 words) that includes the words: journey, surprise, friend.',
       taskType: 'Story',
       level: 'A2',
     },
   },
   {
-    title: `${SEED_TAG} Nghe hiểu + Đọc (Listening Comprehension)`,
-    description: 'Demo exam for Listening Comprehension (MCQ + audio) + Reading. Tests the new listening_comp section type.',
+    title: examTitle({ kind: 'mock', index: 2, skillsLabel: 'Nghe hiểu MCQ & Đọc' }),
+    description: 'Mock lần 2: nghe hiểu trắc nghiệm theo audio + đọc hiểu (cấu trúc đề thi).',
     skills: ['listening_comp', 'reading'],
     grammarCount: 0,
   },
@@ -356,22 +363,36 @@ function assignmentPlans(examIndex) {
   return [base[a], base[(a + 1) % base.length], base[b]];
 }
 
+/** Ghi danh theo lớp — sĩ số chồng lấn giống trường thật (học sinh chọn thêm lớp nâng cao). */
+const ENROLLMENT_BY_CLASS = [
+  [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+  [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+];
+
+const WRITING_DRAFTS = [
+  'In my opinion, technology helps students learn English more flexibly through apps and online listening practice. However, spending too much time on social media reduces concentration. Schools should guide students to use devices wisely.',
+  'I believe both views about technology are partly true. It makes daily tasks easier and gives access to many learning resources. Yet it can create stress when people compare themselves online or stay up too late.',
+  'Dear Principal, I am writing to suggest adding a weekly English speaking club. Many students in our class want more chances to practice pronunciation outside regular lessons. Thank you for considering this idea.',
+  'The passage mainly discusses how small daily habits improve language skills. The author recommends reading for fifteen minutes and reviewing vocabulary before bed. In summary, consistency matters more than long study sessions.',
+  'Last summer my friend and I took a journey to the coast. The biggest surprise was finding an old lighthouse we had never seen on maps. That trip taught us that friendship grows when we explore together.',
+];
+
 const STUDENT_PROFILES = [
-  { fullName: 'Nguyễn Minh An', email: 'seed.hd.student01@e4c.dev', username: 'seed_hd_s01' },
-  { fullName: 'Trần Thu Hà', email: 'seed.hd.student02@e4c.dev', username: 'seed_hd_s02' },
-  { fullName: 'Lê Quốc Bảo', email: 'seed.hd.student03@e4c.dev', username: 'seed_hd_s03' },
-  { fullName: 'Phạm Ngọc Linh', email: 'seed.hd.student04@e4c.dev', username: 'seed_hd_s04' },
-  { fullName: 'Hoàng Văn Đức', email: 'seed.hd.student05@e4c.dev', username: 'seed_hd_s05' },
-  { fullName: 'Vũ Thị Mai', email: 'seed.hd.student06@e4c.dev', username: 'seed_hd_s06' },
-  { fullName: 'Đặng Hữu Phúc', email: 'seed.hd.student07@e4c.dev', username: 'seed_hd_s07' },
-  { fullName: 'Bùi Thảo My', email: 'seed.hd.student08@e4c.dev', username: 'seed_hd_s08' },
-  { fullName: 'Ngô Kiên Cường', email: 'seed.hd.student09@e4c.dev', username: 'seed_hd_s09' },
-  { fullName: 'Dương Lan Chi', email: 'seed.hd.student10@e4c.dev', username: 'seed_hd_s10' },
-  { fullName: 'Lý Gia Hân', email: 'seed.hd.student11@e4c.dev', username: 'seed_hd_s11' },
-  { fullName: 'Mai Hoàng Nam', email: 'seed.hd.student12@e4c.dev', username: 'seed_hd_s12' },
-  { fullName: 'Tôn Nhật Minh', email: 'seed.hd.student13@e4c.dev', username: 'seed_hd_s13' },
-  { fullName: 'Chu Bảo Trân', email: 'seed.hd.student14@e4c.dev', username: 'seed_hd_s14' },
-  { fullName: 'Phan Đức Anh', email: 'seed.hd.student15@e4c.dev', username: 'seed_hd_s15' },
+  { fullName: 'Nguyễn Minh An', email: `minhan.nguyen@${STUDENT_SCHOOL_DOMAIN}`, username: 'minhan.nguyen' },
+  { fullName: 'Trần Thu Hà', email: `thuha.tran@${STUDENT_SCHOOL_DOMAIN}`, username: 'thuha.tran' },
+  { fullName: 'Lê Quốc Bảo', email: `quocbao.le@${STUDENT_SCHOOL_DOMAIN}`, username: 'quocbao.le' },
+  { fullName: 'Phạm Ngọc Linh', email: `ngoclinh.pham@${STUDENT_SCHOOL_DOMAIN}`, username: 'ngoclinh.pham' },
+  { fullName: 'Hoàng Văn Đức', email: `vanduc.hoang@${STUDENT_SCHOOL_DOMAIN}`, username: 'vanduc.hoang' },
+  { fullName: 'Vũ Thị Mai', email: `thimai.vu@${STUDENT_SCHOOL_DOMAIN}`, username: 'thimai.vu' },
+  { fullName: 'Đặng Hữu Phúc', email: `huuphuc.dang@${STUDENT_SCHOOL_DOMAIN}`, username: 'huuphuc.dang' },
+  { fullName: 'Bùi Thảo My', email: `thaomy.bui@${STUDENT_SCHOOL_DOMAIN}`, username: 'thaomy.bui' },
+  { fullName: 'Ngô Kiên Cường', email: `kiencuong.ngo@${STUDENT_SCHOOL_DOMAIN}`, username: 'kiencuong.ngo' },
+  { fullName: 'Dương Lan Chi', email: `lanchi.duong@${STUDENT_SCHOOL_DOMAIN}`, username: 'lanchi.duong' },
+  { fullName: 'Lý Gia Hân', email: `gihan.ly@${STUDENT_SCHOOL_DOMAIN}`, username: 'gihan.ly' },
+  { fullName: 'Mai Hoàng Nam', email: `hoangnam.mai@${STUDENT_SCHOOL_DOMAIN}`, username: 'hoangnam.mai' },
+  { fullName: 'Tôn Nhật Minh', email: `nhatminh.ton@${STUDENT_SCHOOL_DOMAIN}`, username: 'nhatminh.ton' },
+  { fullName: 'Chu Bảo Trân', email: `baotran.chu@${STUDENT_SCHOOL_DOMAIN}`, username: 'baotran.chu' },
+  { fullName: 'Phan Đức Anh', email: `ducanh.phan@${STUDENT_SCHOOL_DOMAIN}`, username: 'ducanh.phan' },
 ];
 
 async function upsertTeacher() {
@@ -411,28 +432,20 @@ async function upsertTeacher() {
   return user;
 }
 
-async function cleanupTeacherSeedData(teacherId) {
-  const exams = await Exam.find({ teacherId, title: { $regex: '^\\[SEED:HoangDong\\]' } }).select('_id');
-  const examIds = exams.map((e) => e._id);
-  if (examIds.length === 0) return;
-
-  const assignments = await ExamAssignment.find({ examId: { $in: examIds } }).select('_id');
-  const assignmentIds = assignments.map((a) => a._id);
-
-  if (assignmentIds.length) {
-    const delAttempts = await ExamAttempt.deleteMany({ assignmentId: { $in: assignmentIds } });
-    console.log(`🧹 Removed ${delAttempts.deletedCount} seed attempts`);
-    const delAssign = await ExamAssignment.deleteMany({ _id: { $in: assignmentIds } });
-    console.log(`🧹 Removed ${delAssign.deletedCount} seed assignments`);
-  }
-  const delExams = await Exam.deleteMany({ _id: { $in: examIds } });
-  console.log(`🧹 Removed ${delExams.deletedCount} seed exams`);
+/** Xóa tài khoản học sinh demo cũ (email seed.hd.*) sau khi reset lớp học. */
+export async function retireLegacyDemoStudents() {
+  const r = await User.deleteMany({
+    role: 'user',
+    $or: [{ email: /^seed\.hd\.student/i }, { username: /^seed_hd_s/i }],
+  });
+  if (r.deletedCount) console.log(`🧹 Retired ${r.deletedCount} legacy demo student account(s)`);
+  return r.deletedCount;
 }
 
 async function upsertClassrooms(teacherId) {
   const specs = [
-    { name: `${SEED_TAG} Lớp 10A — Sáng`, description: 'Khối 10 buổi sáng — seed analytics' },
-    { name: `${SEED_TAG} Lớp 11B — Nâng cao`, description: 'Khối 11 luyện thi — seed schedule' },
+    CLASSROOM_TEMPLATES.homeroomMorning('10', 'A1'),
+    CLASSROOM_TEMPLATES.advanced('11B', 'Nâng cao'),
   ];
 
   const out = [];
@@ -449,6 +462,8 @@ async function upsertClassrooms(teacherId) {
       });
       console.log(`✅ Classroom: ${spec.name} (code ${room.inviteCode})`);
     } else {
+      room.description = spec.description;
+      await room.save();
       console.log(`↪ Classroom exists: ${spec.name} (code ${room.inviteCode})`);
     }
     out.push(room);
@@ -495,8 +510,17 @@ async function upsertStudents() {
 
 async function enrollStudents(classrooms, students) {
   let added = 0;
-  for (const room of classrooms) {
-    for (const s of students) {
+  const byClassroomId = new Map();
+
+  for (let ci = 0; ci < classrooms.length; ci += 1) {
+    const room = classrooms[ci];
+    const indices = ENROLLMENT_BY_CLASS[ci] || students.map((_, i) => i);
+    const roomStudents = [];
+
+    for (const idx of indices) {
+      const s = students[idx];
+      if (!s) continue;
+      roomStudents.push(s);
       const exists = await ClassroomMember.findOne({
         classroomId: room._id,
         userId: s._id,
@@ -507,12 +531,16 @@ async function enrollStudents(classrooms, students) {
           userId: s._id,
           roleInClass: 'student',
           status: 'active',
+          joinedAt: daysFromNow(-45 - idx, 7, 30),
         });
         added += 1;
       }
     }
+    byClassroomId.set(String(room._id), roomStudents);
+    console.log(`   ↪ ${room.name}: ${roomStudents.length} học sinh`);
   }
-  console.log(`✅ Enrolled students (${added} new memberships)`);
+  console.log(`✅ Ghi danh (${added} thành viên mới)`);
+  return byClassroomId;
 }
 
 async function loadCmsResources() {
@@ -637,10 +665,10 @@ function buildAttemptAnswers(exam, cms, studentIndex, options = {}) {
     } else if (skill === 'writing') {
       answers[sid] = {
         completed: true,
-        writingDraft: `Student ${studentIndex + 1} essay draft for seed testing. Technology helps learning when used wisely. (word count ~45)`,
+        writingDraft: WRITING_DRAFTS[studentIndex % WRITING_DRAFTS.length],
       };
     } else if (skill === 'speaking') {
-      answers[sid] = { completed: true, speakingNote: 'Seed speaking placeholder' };
+      answers[sid] = { completed: true, speakingNote: 'Đã nộp bản ghi âm read-aloud (~2 phút)' };
     }
   }
   return answers;
@@ -761,7 +789,7 @@ async function createAttemptsForAssignment(assignment, exam, students, cms) {
   return { created, inProgress };
 }
 
-async function run() {
+async function run({ purgeFirst = false } = {}) {
   const uri = getMongoUri();
   if (!uri) {
     console.error('❌ Missing MONGO_URI in .env');
@@ -771,12 +799,18 @@ async function run() {
   await mongoose.connect(uri);
   console.log(`🔌 Connected to MongoDB (${getMongoUriForLog(uri)})\n`);
 
+  if (purgeFirst || process.env.SEED_PURGE_CLASSROOM === '1') {
+    console.log('⚠️  Purging classroom domain before seed...\n');
+    await purgeClassroomDomain();
+    await retireLegacyDemoStudents();
+    console.log('');
+  }
+
   const teacher = await upsertTeacher();
-  await cleanupTeacherSeedData(teacher._id);
 
   const classrooms = await upsertClassrooms(teacher._id);
   const students = await upsertStudents();
-  await enrollStudents(classrooms, students);
+  const enrollmentByRoom = await enrollStudents(classrooms, students);
 
   const cms = await loadCmsResources();
 
@@ -821,16 +855,17 @@ async function run() {
         });
         totalAssignments += 1;
 
+        const roomStudents = enrollmentByRoom.get(String(room._id)) || students;
         const { created, inProgress } = await createAttemptsForAssignment(
           assignment,
           exam,
-          students,
+          roomStudents,
           cms
         );
         totalSubmitted += created;
         totalInProgress += inProgress;
         console.log(
-          `   📌 ${plan.label} → ${room.name}: ${created} submitted, ${inProgress} in progress`
+          `   📌 ${assignmentWindowLabel(plan.label)} → ${room.name}: ${created} đã nộp, ${inProgress} đang làm`
         );
       }
     }
@@ -844,7 +879,7 @@ async function run() {
   for (const c of classrooms) {
     console.log(`  - ${c.name} | invite: ${c.inviteCode}`);
   }
-  console.log(`Students:    ${students.length} (password Student@123456)`);
+  console.log(`Students:    ${students.length} (password Student@123456, @${STUDENT_SCHOOL_DOMAIN})`);
   console.log(`Exams:       ${exams.length}`);
   console.log(`Assignments: ${totalAssignments}`);
   console.log(`Attempts:    ${totalSubmitted} submitted, ${totalInProgress} in progress`);
@@ -855,7 +890,15 @@ async function run() {
   process.exit(0);
 }
 
-run().catch((e) => {
-  console.error('❌ seedTeacherHoangDongData failed:', e);
-  process.exit(1);
-});
+const isMain =
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMain) {
+  run({ purgeFirst: process.argv.includes('--purge') }).catch((e) => {
+    console.error('❌ seedTeacherHoangDongData failed:', e);
+    process.exit(1);
+  });
+}
+
+export { run as runHoangDongSeed };

@@ -421,7 +421,7 @@ async function scoreWritingSection(sec, attempt, ctx) {
         : 0;
 
   if (!text.length) {
-    return skillEntry('writing', null, null, null, 'pending_manual', null, { wordCount: 0 });
+    return skillEntry('writing', 0, null, null, 'finalized', 'auto_empty', { wordCount: 0 });
   }
 
   return skillEntry('writing', null, null, null, 'pending_manual', null, {

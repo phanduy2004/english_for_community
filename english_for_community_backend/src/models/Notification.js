@@ -24,6 +24,10 @@ const notificationSchema = new mongoose.Schema({
       'EXAM_SESSION_LIVE',
       'EXAM_SUBMISSION_RECEIVED',
       'EXAM_RESULTS_RELEASED',
+      'CO_TEACHER_INVITE',
+      'CO_TEACHER_INVITE_ACCEPTED',
+      'CO_TEACHER_INVITE_DECLINED',
+      'CO_TEACHER_REMOVED',
     ],
     required: true
   },

@@ -58,6 +58,15 @@ export const startPublicExamAttempt = async (req, res) => {
   }
 };
 
+export const joinPublicExamSession = async (req, res) => {
+  try {
+    const doc = await examSessionService.joinPublicByToken(req.user._id, req.params.token);
+    return res.status(200).json(doc);
+  } catch (error) {
+    return res.status(getStatusCode(error)).json({ message: error.message });
+  }
+};
+
 export const joinExamSession = async (req, res) => {
   try {
     const doc = await examSessionService.joinSession(req.user._id, req.params.sessionId);

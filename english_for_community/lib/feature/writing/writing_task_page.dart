@@ -1,6 +1,7 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // Đảm bảo import đúng các file entity/bloc của dự án bạn
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
@@ -158,27 +159,14 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   Timer? _savedStatusTicker;
   DateTime? _lastAutoSavedAt;
   String _lastAutoSavedContent = '';
-  bool _isProgrammaticEdit = false;
-  TextEditingValue _lastEditingValue = const TextEditingValue();
-  final List<TextEditingValue> _undoStack = <TextEditingValue>[];
-  final List<TextEditingValue> _redoStack = <TextEditingValue>[];
 
   @override
   void initState() {
     super.initState();
     _taskType = widget.initialTaskType;
     _writingStopwatch = Stopwatch()..start();
-    _lastEditingValue = _text.value;
 
     _text.addListener(() {
-      if (!_isProgrammaticEdit && _text.value != _lastEditingValue) {
-        _undoStack.add(_lastEditingValue);
-        if (_undoStack.length > 120) {
-          _undoStack.removeAt(0);
-        }
-        _redoStack.clear();
-        _lastEditingValue = _text.value;
-      }
       final t = _text.text;
       setState(() {
         _wordCount = t.trim().isEmpty ? 0 : t.trim().split(RegExp(r'\s+')).length;
@@ -202,11 +190,8 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     final t = draft?.trim() ?? '';
     if (t.isEmpty) return;
     if (_text.text.trim() == t) return;
-    _isProgrammaticEdit = true;
     _text.text = t;
-    _isProgrammaticEdit = false;
     _wordCount = t.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
-    _lastEditingValue = _text.value;
   }
 
   @override
@@ -362,53 +347,6 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     });
   }
 
-  void _insertAtCursor(String insertion) {
-    final value = _text.value;
-    final selection = value.selection;
-    if (!selection.isValid) {
-      _applyEditingValue(
-        TextEditingValue(
-          text: value.text + insertion,
-          selection: TextSelection.collapsed(offset: value.text.length + insertion.length),
-        ),
-      );
-      return;
-    }
-    final start = selection.start;
-    final end = selection.end;
-    final newText = value.text.replaceRange(start, end, insertion);
-    final newOffset = start + insertion.length;
-    _applyEditingValue(
-      TextEditingValue(
-        text: newText,
-        selection: TextSelection.collapsed(offset: newOffset),
-      ),
-    );
-  }
-
-  void _applyEditingValue(TextEditingValue next) {
-    _isProgrammaticEdit = true;
-    _text.value = next;
-    _lastEditingValue = next;
-    _isProgrammaticEdit = false;
-  }
-
-  void _undo() {
-    if (_undoStack.isEmpty) return;
-    final current = _text.value;
-    final prev = _undoStack.removeLast();
-    _redoStack.add(current);
-    _applyEditingValue(prev);
-  }
-
-  void _redo() {
-    if (_redoStack.isEmpty) return;
-    final current = _text.value;
-    final next = _redoStack.removeLast();
-    _undoStack.add(current);
-    _applyEditingValue(next);
-  }
-
   void _showResumeConflictDialog(BuildContext context, String serverTaskType, String submissionId, String oldContent) {
     if (_hasShownResumeDialog) return;
     _hasShownResumeDialog = true;
@@ -505,9 +443,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             if (state.status == WritingTaskStatus.promptReady && state.submission != null) {
               final examDraft = widget.initialExamDraft?.trim() ?? '';
               if (widget.examPracticeMode && examDraft.isNotEmpty && _text.text.isEmpty) {
-                _isProgrammaticEdit = true;
                 _text.text = examDraft;
-                _isProgrammaticEdit = false;
                 _wordCount = examDraft.trim().isEmpty ? 0 : examDraft.trim().split(RegExp(r'\s+')).length;
                 widget.onEmbeddedDraftChanged?.call(examDraft);
               }
@@ -559,7 +495,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
           },
           builder: (context, state) {
             if (state.status == WritingTaskStatus.loading) {
-              return const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary));
+              return const Center(child: AppLoadingIndicator.center(color: AppColors.primary));
             }
             if (state.submission == null) {
               return Center(child: Text(context.l10n.writingPreparingTask, style: const TextStyle(color: AppColors.textSecondary)));
@@ -600,17 +536,6 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                               controller: _text,
                               focusNode: _focusNode,
                               readOnly: isSubmitting || widget.readOnlyReview,
-                            ),
-                            if (!widget.readOnlyReview)
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                              child: _EditorQuickToolbar(
-                                onUndo: _undoStack.isEmpty ? null : _undo,
-                                onRedo: _redoStack.isEmpty ? null : _redo,
-                                onInsertPeriod: () => _insertAtCursor('. '),
-                                onInsertComma: () => _insertAtCursor(', '),
-                                onInsertNewLine: () => _insertAtCursor('\n'),
-                              ),
                             ),
 
                             // C. Spacer
@@ -836,85 +761,6 @@ class _ClassicBottomBar extends StatelessWidget {
           loading: busy,
         ),
       ],
-    );
-  }
-}
-
-class _EditorQuickToolbar extends StatelessWidget {
-  final VoidCallback? onUndo;
-  final VoidCallback? onRedo;
-  final VoidCallback onInsertPeriod;
-  final VoidCallback onInsertComma;
-  final VoidCallback onInsertNewLine;
-
-  const _EditorQuickToolbar({
-    required this.onUndo,
-    required this.onRedo,
-    required this.onInsertPeriod,
-    required this.onInsertComma,
-    required this.onInsertNewLine,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          _QuickToolButton(icon: Icons.undo_rounded, label: 'Undo', onTap: onUndo),
-          const SizedBox(width: 8),
-          _QuickToolButton(icon: Icons.redo_rounded, label: 'Redo', onTap: onRedo),
-          const SizedBox(width: 8),
-          _QuickTextButton(text: '. ', onTap: onInsertPeriod),
-          const SizedBox(width: 8),
-          _QuickTextButton(text: ', ', onTap: onInsertComma),
-          const SizedBox(width: 8),
-          _QuickTextButton(text: 'New line', onTap: onInsertNewLine),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickToolButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-
-  const _QuickToolButton({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: enabled ? AppColors.outline : AppColors.outlineMuted),
-        foregroundColor: enabled ? AppColors.textPrimary : AppColors.textMuted,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      ),
-      icon: Icon(icon, size: 16),
-      label: Text(label, style: const TextStyle(fontSize: 12)),
-    );
-  }
-}
-
-class _QuickTextButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onTap;
-
-  const _QuickTextButton({required this.text, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: AppColors.outline),
-        foregroundColor: AppColors.textPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      ),
-      child: Text(text, style: const TextStyle(fontSize: 12)),
     );
   }
 }

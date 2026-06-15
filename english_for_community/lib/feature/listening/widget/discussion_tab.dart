@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_color.dart';
@@ -112,7 +113,7 @@ class _DiscussionTabState extends State<DiscussionTab> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (widget.isLoading) return const Center(child: CircularProgressIndicator());
+    if (widget.isLoading) return const Center(child: AppLoadingIndicator.center());
 
     final organized = _organizeComments(widget.comments);
 

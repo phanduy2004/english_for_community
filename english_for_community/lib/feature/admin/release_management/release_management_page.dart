@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
@@ -622,7 +623,7 @@ class _ReleaseListSection extends StatelessWidget {
         title: 'Danh sách release',
         child: Padding(
           padding: EdgeInsets.all(40),
-          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          child: Center(child: AppLoadingIndicator.center()),
         ),
       );
     }

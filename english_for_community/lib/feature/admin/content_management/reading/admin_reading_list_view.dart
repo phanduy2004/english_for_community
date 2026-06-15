@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -125,7 +126,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
               builder: (context, state) {
                 if (state.status == AdminReadingStatus.loading &&
                     state.readings.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: AppLoadingIndicator.center());
                 }
 
                 if (state.status == AdminReadingStatus.failure &&
@@ -276,7 +277,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedReadings(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(

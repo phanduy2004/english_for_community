@@ -11,9 +11,9 @@ import '../../../core/theme/app_skill_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/ui/interactive/scale_pressable.dart';
+import '../../../core/ui/motion/app_loading_indicator.dart';
 import '../../../core/ui/student_mobile_ui.dart';
 import '../../../core/ui/widget/app_card.dart';
-import '../../../core/ui/widget/app_skeleton.dart';
 import '../../admin/submission_managerment/activity_detail_page.dart';
 import '../../admin/submission_managerment/model/activity_model.dart';
 import 'my_exercise_history_bloc.dart';
@@ -231,7 +231,7 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
         (state.status == MyExerciseHistoryStatus.loading ||
             state.status == MyExerciseHistoryStatus.initial);
     if (loadingEmpty) {
-      return const ExerciseHistoryListSkeleton();
+      return StudentMobileUi.pageLoading();
     }
     if (state.status == MyExerciseHistoryStatus.error && state.items.isEmpty) {
       return Center(
@@ -262,7 +262,10 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
       separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.cardGap),
       itemBuilder: (context, index) {
         if (index >= state.items.length) {
-          return const LoadMoreSkeletonBar();
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.s5),
+            child: Center(child: AppLoadingIndicator.center()),
+          );
         }
         final item = state.items[index];
         return _UserHistoryCard(

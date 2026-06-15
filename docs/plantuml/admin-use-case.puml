@@ -1,0 +1,48 @@
+@startuml E4C_Admin_UseCase
+' 2.4.1.4 Phía Quản trị viên
+
+left to right direction
+skinparam shadowing false
+
+actor "Admin" as Admin
+
+Admin --> (Quản lý người dùng)
+Admin --> (Quản lý nội dung học tập)
+Admin --> (Xử lý báo cáo người dùng)
+Admin --> (Duyệt đơn giáo viên)
+Admin --> (Giám sát hoạt động hệ thống)
+Admin --> (Quản lý phát hành ứng dụng)
+
+(Xem danh sách user) ..> (Quản lý người dùng) : <<extend>>
+(Ban hoặc gỡ ban user) ..> (Quản lý người dùng) : <<extend>>
+(Xóa mềm và khôi phục user) ..> (Quản lý người dùng) : <<extend>>
+(Đổi role user teacher admin) ..> (Quản lý người dùng) : <<extend>>
+(Xem chi tiết user) ..> (Quản lý người dùng) : <<extend>>
+
+(CRUD Listening dictation) ..> (Quản lý nội dung học tập) : <<extend>>
+(CRUD Listening comprehension) ..> (Quản lý nội dung học tập) : <<extend>>
+(CRUD Reading) ..> (Quản lý nội dung học tập) : <<extend>>
+(CRUD Speaking set) ..> (Quản lý nội dung học tập) : <<extend>>
+(CRUD Writing topic) ..> (Quản lý nội dung học tập) : <<extend>>
+(Duyệt và rollback version writing) ..> (Quản lý nội dung học tập) : <<extend>>
+(Khôi phục nội dung đã xóa) ..> (Quản lý nội dung học tập) : <<extend>>
+
+(Xem danh sách báo cáo) ..> (Xử lý báo cáo người dùng) : <<extend>>
+(Cập nhật trạng thái báo cáo) ..> (Xử lý báo cáo người dùng) : <<extend>>
+(Xử lý hàng loạt báo cáo) ..> (Xử lý báo cáo người dùng) : <<extend>>
+
+(Phê duyệt đơn giáo viên) ..> (Duyệt đơn giáo viên) : <<extend>>
+(Từ chối đơn giáo viên) ..> (Duyệt đơn giáo viên) : <<extend>>
+
+(Dashboard thống kê) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+(Xem lịch sử hoạt động học viên) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+(Hàng đợi moderation) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+(Audit log) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+(Export CSV) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+(Theo dõi user online) ..> (Giám sát hoạt động hệ thống) : <<extend>>
+
+(Duyệt bản release) ..> (Quản lý phát hành ứng dụng) : <<extend>>
+(Lên lịch và publish) ..> (Quản lý phát hành ứng dụng) : <<extend>>
+(Rollback phiên bản) ..> (Quản lý phát hành ứng dụng) : <<extend>>
+
+@enduml

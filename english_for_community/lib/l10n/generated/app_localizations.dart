@@ -308,6 +308,12 @@ abstract class AppLocalizations {
   /// **'Home'**
   String get navHome;
 
+  /// No description provided for @navMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get navMessages;
+
   /// No description provided for @navProgress.
   ///
   /// In en, this message translates to:
@@ -319,6 +325,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile'**
   String get navProfile;
+
+  /// No description provided for @studentChatHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Classroom group chats'**
+  String get studentChatHubSubtitle;
+
+  /// No description provided for @studentChatHubSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search classes…'**
+  String get studentChatHubSearchHint;
+
+  /// No description provided for @studentChatHubFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get studentChatHubFilterAll;
+
+  /// No description provided for @studentChatHubFilterUnread.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get studentChatHubFilterUnread;
 
   /// No description provided for @loginWelcomeBack.
   ///
@@ -1574,6 +1604,30 @@ abstract class AppLocalizations {
   /// **'Fill in the details to start your journey.'**
   String get registerHeroSubtitle;
 
+  /// No description provided for @registerAccountTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Account type'**
+  String get registerAccountTypeLabel;
+
+  /// No description provided for @registerAccountTypeStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get registerAccountTypeStudent;
+
+  /// No description provided for @registerAccountTypeTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get registerAccountTypeTeacher;
+
+  /// No description provided for @registerAccountTypeTeacherHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher accounts need admin approval before you can create classes.'**
+  String get registerAccountTypeTeacherHint;
+
   /// No description provided for @labelFullName.
   ///
   /// In en, this message translates to:
@@ -1999,6 +2053,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You will receive notifications here.'**
   String get notificationsEmptyBody;
+
+  /// No description provided for @notificationAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get notificationAccept;
+
+  /// No description provided for @notificationDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get notificationDecline;
+
+  /// No description provided for @notificationInviteAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite accepted'**
+  String get notificationInviteAccepted;
+
+  /// No description provided for @notificationInviteDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite declined'**
+  String get notificationInviteDeclined;
+
+  /// No description provided for @notificationJoinApproved.
+  ///
+  /// In en, this message translates to:
+  /// **'Join request approved'**
+  String get notificationJoinApproved;
+
+  /// No description provided for @notificationJoinDeclined.
+  ///
+  /// In en, this message translates to:
+  /// **'Join request declined'**
+  String get notificationJoinDeclined;
 
   /// No description provided for @aiAssistantEmptyPrompt.
   ///
@@ -4262,6 +4352,36 @@ abstract class AppLocalizations {
   /// **'Copy invite code'**
   String get copyInviteCode;
 
+  /// No description provided for @teacherExamSessionShareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What to send students'**
+  String get teacherExamSessionShareTitle;
+
+  /// No description provided for @teacherExamSessionShareClassroom.
+  ///
+  /// In en, this message translates to:
+  /// **'Students open their class, tap this assignment, then Enter waiting room. They do not paste any code here.'**
+  String get teacherExamSessionShareClassroom;
+
+  /// No description provided for @teacherExamSessionSharePublic.
+  ///
+  /// In en, this message translates to:
+  /// **'Students open Public exam join and paste the join code below (not the room label or session link).'**
+  String get teacherExamSessionSharePublic;
+
+  /// No description provided for @teacherExamSessionSharePublicCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy public join code'**
+  String get teacherExamSessionSharePublicCopy;
+
+  /// No description provided for @teacherExamSessionRoomCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Room label (shown in lobby only — not used to join)'**
+  String get teacherExamSessionRoomCodeHint;
+
   /// No description provided for @adminTeacherApplicationsTitle.
   ///
   /// In en, this message translates to:
@@ -4315,6 +4435,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join with invite code'**
   String get studentJoinClassTitle;
+
+  /// No description provided for @studentUnifiedJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get studentUnifiedJoinTitle;
+
+  /// No description provided for @studentUnifiedJoinSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste any code or link — the app detects the type and opens the right place.'**
+  String get studentUnifiedJoinSubtitle;
+
+  /// No description provided for @studentUnifiedJoinHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Class code · class link · public exam · live session link…'**
+  String get studentUnifiedJoinHint;
+
+  /// No description provided for @studentUnifiedJoinButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get studentUnifiedJoinButton;
+
+  /// No description provided for @studentJoinInputInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not recognize that code. Check with your teacher and try again.'**
+  String get studentJoinInputInvalid;
+
+  /// No description provided for @studentJoinDetectedClass.
+  ///
+  /// In en, this message translates to:
+  /// **'Class invite detected — joining…'**
+  String get studentJoinDetectedClass;
+
+  /// No description provided for @studentJoinDetectedSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Live session detected — opening waiting room…'**
+  String get studentJoinDetectedSession;
+
+  /// No description provided for @studentJoinDetectedPublicExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Public exam detected — opening…'**
+  String get studentJoinDetectedPublicExam;
 
   /// No description provided for @studentJoinClassSubtitle.
   ///
@@ -4868,6 +5036,24 @@ abstract class AppLocalizations {
   /// **'Share this token with students. They paste it in “Join public exam” (or your shared instructions).'**
   String get teacherAssignmentPublicTokenBody;
 
+  /// No description provided for @teacherAssignmentPublicRealtimeNextSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'A live waiting room was created automatically. Open the live console to monitor students, then start the exam when everyone is ready.'**
+  String get teacherAssignmentPublicRealtimeNextSteps;
+
+  /// No description provided for @teacherAssignmentOpenLiveConsole.
+  ///
+  /// In en, this message translates to:
+  /// **'Open live console'**
+  String get teacherAssignmentOpenLiveConsole;
+
+  /// No description provided for @examPublicNoLiveSession.
+  ///
+  /// In en, this message translates to:
+  /// **'The teacher has not opened a live room yet. Try again shortly.'**
+  String get examPublicNoLiveSession;
+
   /// No description provided for @dashboardPublicCopyToken.
   ///
   /// In en, this message translates to:
@@ -4979,7 +5165,7 @@ abstract class AppLocalizations {
   /// No description provided for @studentJoinClassByTokenHint.
   ///
   /// In en, this message translates to:
-  /// **'Paste the long token from your teacher’s class link'**
+  /// **'Paste the long token from your teacher’s class link (not a live exam session link)'**
   String get studentJoinClassByTokenHint;
 
   /// No description provided for @studentJoinClassByTokenButton.
@@ -4987,6 +5173,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Join with link'**
   String get studentJoinClassByTokenButton;
+
+  /// No description provided for @studentJoinClassOpeningExamLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'That is a live exam link — opening the waiting room…'**
+  String get studentJoinClassOpeningExamLobby;
+
+  /// No description provided for @studentJoinClassUsePublicExamLink.
+  ///
+  /// In en, this message translates to:
+  /// **'That is a public exam join code. Use «Join via public link» below.'**
+  String get studentJoinClassUsePublicExamLink;
 
   /// No description provided for @studentExamsHubTitle.
   ///
@@ -5439,6 +5637,24 @@ abstract class AppLocalizations {
   /// **'Paste the token from your teacher'**
   String get examJoinByLinkHint;
 
+  /// No description provided for @examJoinByLinkHintDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the long join code from your teacher (about 36 characters). Do not paste a /student/exam-session/ link here.'**
+  String get examJoinByLinkHintDetail;
+
+  /// No description provided for @examJoinWrongSessionLink.
+  ///
+  /// In en, this message translates to:
+  /// **'That looks like a live session link, not a public join code. Ask your teacher for the join token shown when the assignment was created.'**
+  String get examJoinWrongSessionLink;
+
+  /// No description provided for @examJoinInvalidToken.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not read a join code. Paste only the token from your teacher.'**
+  String get examJoinInvalidToken;
+
   /// No description provided for @examJoinPreview.
   ///
   /// In en, this message translates to:
@@ -5529,11 +5745,53 @@ abstract class AppLocalizations {
   /// **'Overview'**
   String get teacherDashboardOverview;
 
+  /// No description provided for @teacherDashboardWorkZoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s focus'**
+  String get teacherDashboardWorkZoneTitle;
+
+  /// No description provided for @teacherDashboardWorkZoneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Grading queue and live rooms side by side — tap a KPI above to jump here.'**
+  String get teacherDashboardWorkZoneSubtitle;
+
+  /// No description provided for @teacherDashboardQuickActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick actions'**
+  String get teacherDashboardQuickActionsTitle;
+
+  /// No description provided for @teacherDashboardAssignmentHubSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Search, filter, and open assignment hubs.'**
+  String get teacherDashboardAssignmentHubSubtitle;
+
+  /// No description provided for @teacherDashboardPendingJoinsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pending joins'**
+  String teacherDashboardPendingJoinsCount(int count);
+
+  /// No description provided for @teacherDashboardDueSoonCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} due soon'**
+  String teacherDashboardDueSoonCount(int count);
+
   /// No description provided for @teacherDashboardStatClasses.
   ///
   /// In en, this message translates to:
   /// **'Classes'**
   String get teacherDashboardStatClasses;
+
+  /// No description provided for @teacherDashboardStatStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get teacherDashboardStatStudents;
 
   /// No description provided for @teacherDashboardStatAssignments.
   ///
@@ -5762,6 +6020,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Class: {name}'**
   String teacherDashboardClassLabel(String name);
+
+  /// No description provided for @teacherInboxPublicAssignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Public assignment'**
+  String get teacherInboxPublicAssignment;
+
+  /// No description provided for @teacherInboxItemCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String teacherInboxItemCount(int count);
 
   /// No description provided for @teacherDashboardOpenConsole.
   ///
@@ -7229,6 +7499,144 @@ abstract class AppLocalizations {
   /// **'View assignment'**
   String get teacherCalendarGoToAssignment;
 
+  /// No description provided for @teacherCalendarPageSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Deadlines, live sessions, and assignment windows.'**
+  String get teacherCalendarPageSubtitle;
+
+  /// No description provided for @teacherCalendarViewWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get teacherCalendarViewWeek;
+
+  /// No description provided for @teacherCalendarKpiDueWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Due this week'**
+  String get teacherCalendarKpiDueWeek;
+
+  /// No description provided for @teacherCalendarKpiOpens.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening'**
+  String get teacherCalendarKpiOpens;
+
+  /// No description provided for @teacherCalendarKpiLive.
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get teacherCalendarKpiLive;
+
+  /// No description provided for @teacherCalendarKpiTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total events'**
+  String get teacherCalendarKpiTotal;
+
+  /// No description provided for @teacherCalendarLegendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Legend'**
+  String get teacherCalendarLegendTitle;
+
+  /// No description provided for @teacherCalendarSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search assignments…'**
+  String get teacherCalendarSearchHint;
+
+  /// No description provided for @teacherCalendarFilterClassroomLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Class'**
+  String get teacherCalendarFilterClassroomLabel;
+
+  /// No description provided for @teacherCalendarFilterClassroomAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All classes'**
+  String get teacherCalendarFilterClassroomAll;
+
+  /// No description provided for @teacherCalendarFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All types'**
+  String get teacherCalendarFilterAll;
+
+  /// No description provided for @teacherCalendarAgendaTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Agenda'**
+  String get teacherCalendarAgendaTitle;
+
+  /// No description provided for @teacherCalendarGroupsOnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} assignment groups'**
+  String teacherCalendarGroupsOnDay(int count);
+
+  /// No description provided for @teacherCalendarSectionToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get teacherCalendarSectionToday;
+
+  /// No description provided for @teacherCalendarSectionUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get teacherCalendarSectionUpcoming;
+
+  /// No description provided for @teacherCalendarSectionPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get teacherCalendarSectionPast;
+
+  /// No description provided for @teacherCalendarRelativeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get teacherCalendarRelativeNow;
+
+  /// No description provided for @teacherCalendarRelativeOverdueDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} days overdue'**
+  String teacherCalendarRelativeOverdueDays(int count);
+
+  /// No description provided for @teacherCalendarRelativeOverdueHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} hours overdue'**
+  String teacherCalendarRelativeOverdueHours(int count);
+
+  /// No description provided for @teacherCalendarRelativeOverdueMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min overdue'**
+  String teacherCalendarRelativeOverdueMinutes(int count);
+
+  /// No description provided for @teacherCalendarRelativeInDays.
+  ///
+  /// In en, this message translates to:
+  /// **'In {count} days'**
+  String teacherCalendarRelativeInDays(int count);
+
+  /// No description provided for @teacherCalendarRelativeInHours.
+  ///
+  /// In en, this message translates to:
+  /// **'In {count} hours'**
+  String teacherCalendarRelativeInHours(int count);
+
+  /// No description provided for @teacherCalendarRelativeInMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'In {count} min'**
+  String teacherCalendarRelativeInMinutes(int count);
+
   /// No description provided for @teacherDashboardActionItems.
   ///
   /// In en, this message translates to:
@@ -7570,6 +7978,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Co-teacher added'**
   String get teacherCoTeacherAdded;
+
+  /// No description provided for @teacherCoTeacherInviteSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation sent'**
+  String get teacherCoTeacherInviteSent;
+
+  /// No description provided for @teacherCoTeacherPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get teacherCoTeacherPending;
 
   /// No description provided for @teacherCoTeacherRemoved.
   ///
@@ -9280,6 +9700,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Practice mode has no schedule — students can access this assignment at any time.'**
   String get teacherAssignmentEditPracticeNote;
+
+  /// No description provided for @chatMediaDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading file…'**
+  String get chatMediaDownloading;
+
+  /// No description provided for @chatMediaDownloadDone.
+  ///
+  /// In en, this message translates to:
+  /// **'File downloaded'**
+  String get chatMediaDownloadDone;
+
+  /// No description provided for @chatMediaDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not download file'**
+  String get chatMediaDownloadFailed;
+
+  /// No description provided for @chatMediaVideoLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load video'**
+  String get chatMediaVideoLoadFailed;
 }
 
 class _AppLocalizationsDelegate

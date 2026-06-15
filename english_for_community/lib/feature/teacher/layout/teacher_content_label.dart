@@ -2,7 +2,7 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:flutter/material.dart';
 
-/// Parses labels like `[SEED:HoangDong] Lớp 11B — Nâng cao`.
+/// Parses optional bracket tags; strips `[SEED:…]` from display (legacy seed data).
 class ParsedTaggedLabel {
   const ParsedTaggedLabel({
     required this.raw,
@@ -25,6 +25,10 @@ class ParsedTaggedLabel {
     if (tagMatch != null) {
       tag = tagMatch.group(1)?.trim();
       rest = rest.substring(tagMatch.end).trim();
+      final tagKey = tag?.toUpperCase() ?? '';
+      if (tagKey.startsWith('SEED:')) {
+        tag = null;
+      }
     }
 
     String title = rest;

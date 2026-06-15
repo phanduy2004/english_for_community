@@ -72,6 +72,27 @@ abstract final class TeacherWebUi {
         boxShadow: cardShadow,
       );
 
+  /// Flat workspace panel — border only, no shadow (Linear / Stripe lists).
+  static BoxDecoration panelDecoration({Color? bg}) => BoxDecoration(
+        color: bg ?? AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline, width: 1),
+      );
+
+  /// Inline text action in data tables (Open, Grade, Copy…).
+  static ButtonStyle linkActionStyle(BuildContext context) => TextButton.styleFrom(
+        foregroundColor: AppColors.textPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        textStyle: webLabel(context).copyWith(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          decoration: TextDecoration.underline,
+          decorationColor: AppColors.outline,
+        ),
+      );
+
   /// Page title (dashboard greeting, console title) — 16 / 600.
   static TextStyle webPageTitle(BuildContext context) =>
       AppTypography.webTextTheme.headlineMedium!;

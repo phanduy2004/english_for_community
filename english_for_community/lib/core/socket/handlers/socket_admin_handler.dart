@@ -4,11 +4,10 @@ extension SocketAdminHandler on SocketService {
 
   void joinAdminRoom() {
     if (!_isInitialized) init();
-
+    _pendingAdminJoin = true;
     if (isConnected) {
       _socket.emit('admin_join');
-    } else {
-      _socket.onConnect((_) => _socket.emit('admin_join'));
+      _pendingAdminJoin = false;
     }
   }
 

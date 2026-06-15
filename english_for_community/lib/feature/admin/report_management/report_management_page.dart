@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
@@ -132,7 +133,7 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
                 final reportsList = state.reports?.data ?? [];
 
                 if (state.status == AdminStatus.loading && reportsList.isEmpty) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                  return const Center(child: AppLoadingIndicator.center());
                 }
 
                 if (reportsList.isEmpty) {

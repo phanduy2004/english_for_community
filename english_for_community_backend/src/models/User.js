@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String, unique: true, sparse: true },
   password: { type: String, required: true },
 
-  avatarUrl: { type: String, default: 'https://github.com/shadcn.png' },
+  avatarUrl: { type: String, default: '' },
   fullName: { type: String, required: true },
   username: { type: String, required: true },
   role: {

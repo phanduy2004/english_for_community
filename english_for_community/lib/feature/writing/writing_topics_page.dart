@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -259,7 +260,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
               builder: (context, state) {
                 if (state.status == WritingStatus.loading) {
                   return const SliverFillRemaining(
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: Center(child: AppLoadingIndicator.center()),
                   );
                 }
                 if (state.status == WritingStatus.error) {

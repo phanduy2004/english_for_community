@@ -76,10 +76,10 @@ export const teacherGradebookService = {
     const members = await ClassroomMember.find({
       classroomId,
       status: 'active',
+      roleInClass: 'student',
     }).populate('userId', 'fullName email username');
 
     const assignments = await ExamAssignment.find({
-      teacherId,
       audience: 'classroom',
       classroomId,
       mode: { $ne: 'practice' },

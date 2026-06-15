@@ -93,7 +93,14 @@ export const examGradingService = {
       const sid = String(sec.sectionId || '').trim();
       if (!sid) continue;
       const text = await resolveWritingTextForSection(sec, attempt);
-      if (!text.length) continue;
+      if (!text.length) {
+        skillOverrides[sid] = {
+          score: 0,
+          gradingSource: 'auto_empty',
+          note: 'No writing submitted',
+        };
+        continue;
+      }
 
       const taskType = writingTaskTypeFromSection(sec);
       const fp = sec.fixedWritingPrompt || sec.fixedPrompt;
@@ -114,10 +121,6 @@ export const examGradingService = {
         aiDraftScore: score10,
         note: `AI (IELTS ${feedback.overall})`,
       };
-    }
-
-    if (Object.keys(skillOverrides).length === 0) {
-      throw httpError(400, 'No writing content to grade');
     }
 
     const updated = patchIntegratedSkillScores(attempt.scores || {}, skillOverrides);

@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -136,7 +137,7 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
     final pad = padding ?? TeacherWebUi.pageScrollPadding(context);
 
     if (state.status == TeacherGradingHubStatus.loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator.center());
     }
     if (state.status == TeacherGradingHubStatus.error) {
       return Center(
@@ -240,47 +241,84 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final m = visibleAttempts[index];
-                    return TeacherGradingAttemptCard(
-                      attempt: m,
-                      studentLabel: _studentLabel(m),
-                      studentEmail: _studentEmail(m),
-                      submittedLabel: _formatDate(context, m['submittedAt']),
-                      startedLabel: _formatDate(context, m['startedAt']),
-                      onOpen: () {
-                        final id = m['id'] as String? ?? '';
-                        if (id.isEmpty) return;
-                        context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
-                      },
-                      onAi: () {
-                        final id = m['id'] as String? ?? '';
-                        if (id.isNotEmpty) {
-                          context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
-                          AppCornerToast.show(context, l10n.teacherExamRunAi);
-                        }
-                      },
-                      onRelease: () async {
-                        final id = m['id'] as String? ?? '';
-                        if (id.isEmpty) return;
-                        final cfg = state.assignment?['config'];
-                        final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;
-                        final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
-                        final detail = await TeacherReleaseResultsDialog.show(
-                          context,
-                          initialDetailLevel: initial,
-                        );
-                        if (detail == null || !context.mounted) return;
-                        context.read<TeacherGradingHubBloc>().add(
-                              TeacherGradingHubReleaseRequested(id, resultsDetailLevel: detail),
-                            );
-                        AppCornerToast.show(context, l10n.teacherExamReleaseResults);
-                      },
+                    // RepaintBoundary isolates each card's paint layer so scrolling
+                    // past one card does not repaint the rest of the list.
+                    return RepaintBoundary(
+                      child: TeacherGradingAttemptCard(
+                        attempt: m,
+                        studentLabel: _studentLabel(m),
+                        studentEmail: _studentEmail(m),
+                        submittedLabel: _formatDate(context, m['submittedAt']),
+                        startedLabel: _formatDate(context, m['startedAt']),
+                        onOpen: () {
+                          final id = m['id'] as String? ?? '';
+                          if (id.isEmpty) return;
+                          context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
+                        },
+                        onAi: () {
+                          final id = m['id'] as String? ?? '';
+                          if (id.isNotEmpty) {
+                            context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
+                            AppCornerToast.show(context, l10n.teacherExamRunAi);
+                          }
+                        },
+                        onRelease: () async {
+                          final id = m['id'] as String? ?? '';
+                          if (id.isEmpty) return;
+                          final cfg = state.assignment?['config'];
+                          final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;
+                          final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
+                          final detail = await TeacherReleaseResultsDialog.show(
+                            context,
+                            initialDetailLevel: initial,
+                          );
+                          if (detail == null || !context.mounted) return;
+                          context.read<TeacherGradingHubBloc>().add(
+                                TeacherGradingHubReleaseRequested(id, resultsDetailLevel: detail),
+                              );
+                          AppCornerToast.show(context, l10n.teacherExamReleaseResults);
+                        },
+                      ),
                     );
                   },
                   childCount: visibleAttempts.length,
+                  addRepaintBoundaries: false,
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// Pill badge used in grading cards — extracted to a standalone widget so Flutter
+/// can cache/skip its build when the parent rebuilds with the same inputs.
+class _GradingPill extends StatelessWidget {
+  const _GradingPill({
+    required this.label,
+    required this.color,
+    this.alpha = 0.1,
+  });
+
+  final String label;
+  final Color color;
+  final double alpha;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: alpha),
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(
+          label,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
+        ),
       ),
     );
   }
@@ -489,32 +527,8 @@ class TeacherGradingAttemptCard extends StatelessWidget {
     return AppColors.primary;
   }
 
-  Widget _statusPill(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
-      ),
-    );
-  }
-
-  Widget _badge(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
-    );
-  }
+  Widget _statusPill(String label, Color color) => _GradingPill(label: label, color: color);
+  Widget _badge(String label, Color color) => _GradingPill(label: label, color: color, alpha: 0.12);
 
   Widget _metaRow(IconData icon, String text) {
     return Padding(

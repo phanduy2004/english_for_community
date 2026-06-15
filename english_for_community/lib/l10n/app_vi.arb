@@ -35,8 +35,13 @@
   "languageVietnamese": "Tiếng Việt",
   "appLanguageFootnote": "Ngôn ngữ giao diện (lưu trên thiết bị)",
   "navHome": "Trang chủ",
+  "navMessages": "Tin nhắn",
   "navProgress": "Tiến độ",
   "navProfile": "Hồ sơ",
+  "studentChatHubSubtitle": "Nhóm chat các lớp bạn tham gia",
+  "studentChatHubSearchHint": "Tìm lớp học…",
+  "studentChatHubFilterAll": "Tất cả",
+  "studentChatHubFilterUnread": "Chưa đọc",
   "loginWelcomeBack": "Chào mừng trở lại!",
   "loginSubtitle": "Nhập thông tin để tiếp tục.",
   "labelEmail": "Email",
@@ -251,6 +256,10 @@
   "unknownLevel": "Không rõ",
   "registerHeroTitle": "Tạo tài khoản",
   "registerHeroSubtitle": "Điền thông tin để bắt đầu học.",
+  "registerAccountTypeLabel": "Loại tài khoản",
+  "registerAccountTypeStudent": "Học sinh",
+  "registerAccountTypeTeacher": "Giáo viên",
+  "registerAccountTypeTeacherHint": "Tài khoản giáo viên cần được quản trị duyệt trước khi tạo lớp.",
   "labelFullName": "Họ và tên *",
   "hintFullName": "Nguyễn Văn A",
   "labelUsername": "Tên đăng nhập *",
@@ -322,6 +331,12 @@
   "timeHoursAgo": "{n} giờ trước",
   "notificationsEmptyTitle": "Chưa có thông báo",
   "notificationsEmptyBody": "Thông báo sẽ hiển thị tại đây.",
+  "notificationAccept": "Chấp nhận",
+  "notificationDecline": "Từ chối",
+  "notificationInviteAccepted": "Đã chấp nhận lời mời",
+  "notificationInviteDeclined": "Đã từ chối lời mời",
+  "notificationJoinApproved": "Đã duyệt yêu cầu vào lớp",
+  "notificationJoinDeclined": "Đã từ chối yêu cầu vào lớp",
   "aiAssistantEmptyPrompt": "Hỏi mình bất cứ điều gì về tiến độ học của bạn.",
   "aiChatPlaceholder": "Nhập câu hỏi…",
   "listeningChooseSubtitle": "Chọn cách luyện tai hôm nay.",
@@ -903,6 +918,11 @@
   "teacherPickExamToAssign": "Chọn đề đã xuất bản",
   "teacherNoPublishedExams": "Chưa có đề đã xuất bản. Hãy xuất bản đề trong mục Đề thi của tôi trước.",
   "copyInviteCode": "Sao chép mã mời",
+  "teacherExamSessionShareTitle": "Gửi gì cho học sinh",
+  "teacherExamSessionShareClassroom": "Học sinh vào Lớp học → bài tập này → Vào phòng chờ. Không cần dán mã ở đây.",
+  "teacherExamSessionSharePublic": "Học sinh mở Tham gia bài thi công khai và dán mã bên dưới (không phải mã phòng hay link session).",
+  "teacherExamSessionSharePublicCopy": "Sao chép mã tham gia công khai",
+  "teacherExamSessionRoomCodeHint": "Nhãn phòng (chỉ hiển thị trong lobby — không dùng để vào bài)",
   "adminTeacherApplicationsTitle": "Đơn xin làm giáo viên",
   "adminTeacherApplicationsSubtitle": "Xem và duyệt đơn chờ",
   "adminTeacherApplicationsEmpty": "Không có đơn ở trạng thái này.",
@@ -912,6 +932,14 @@
   "studentClassesTitle": "Lớp của tôi",
   "studentClassesSubtitle": "Mở từng lớp để xem đúng bài tập của lớp đó.",
   "studentJoinClassTitle": "Tham gia bằng mã mời",
+  "studentUnifiedJoinTitle": "Tham gia",
+  "studentUnifiedJoinSubtitle": "Dán mã hoặc link — app tự nhận loại và mở đúng chỗ.",
+  "studentUnifiedJoinHint": "Mã lớp · link lớp · bài thi công khai · phòng thi live…",
+  "studentUnifiedJoinButton": "Tham gia",
+  "studentJoinInputInvalid": "Không nhận dạng được mã. Kiểm tra lại hoặc hỏi giáo viên.",
+  "studentJoinDetectedClass": "Nhận mã lớp — đang tham gia…",
+  "studentJoinDetectedSession": "Nhận phòng thi live — đang mở phòng chờ…",
+  "studentJoinDetectedPublicExam": "Nhận bài thi công khai — đang mở…",
   "studentJoinClassSubtitle": "Nhập mã giáo viên gửi. Bài tập sẽ hiển thị bên trong từng lớp.",
   "studentInviteCodeLabel": "Mã mời",
   "studentJoinClassButton": "Vào lớp",
@@ -1048,6 +1076,9 @@
   "teacherAssignmentPublicExpiresHint": "Chọn hết hạn (tuỳ chọn)",
   "teacherAssignmentPublicTokenTitle": "Mã tham gia công khai",
   "teacherAssignmentPublicTokenBody": "Gửi mã này cho học sinh. Họ dán vào mục “Tham gia bài thi công khai”.",
+  "teacherAssignmentPublicRealtimeNextSteps": "Phòng chờ trực tiếp đã được tạo tự động. Mở bảng điều khiển live để giám sát học sinh, rồi bắt đầu bài khi sẵn sàng.",
+  "teacherAssignmentOpenLiveConsole": "Mở bảng live",
+  "examPublicNoLiveSession": "Giáo viên chưa mở phòng live. Vui lòng thử lại sau.",
   "dashboardPublicCopyToken": "Sao chép mã",
   "dashboardPublicTokenCopied": "Đã sao chép mã",
   "dashboardPublicRotateLink": "Link mới",
@@ -1066,8 +1097,10 @@
   "homeQuickMyClasses": "Lớp học",
   "homeQuickPublicExam": "Bài thi công khai",
   "studentJoinClassByTokenLabel": "Mã từ link mời",
-  "studentJoinClassByTokenHint": "Dán mã dài từ link lớp giáo viên gửi",
+  "studentJoinClassByTokenHint": "Dán mã dài từ link lớp giáo viên gửi (không phải link phòng thi live)",
   "studentJoinClassByTokenButton": "Tham gia bằng link",
+  "studentJoinClassOpeningExamLobby": "Đây là link phòng thi — đang mở phòng chờ…",
+  "studentJoinClassUsePublicExamLink": "Đây là mã bài thi công khai. Dùng mục «Tham gia bằng liên kết công khai» bên dưới.",
   "studentExamsHubTitle": "Tham gia bài thi công khai",
   "studentExamsHubSubtitle": "Bài trong lớp nằm trong từng lớp. Màn hình này chỉ khi bạn có mã bài thi công khai từ giáo viên.",
   "studentExamTimeRemainingHM": "{hours}g {minutes}p",
@@ -1166,6 +1199,9 @@
   "examSessionEndedByTeacher": "Giáo viên đã kết thúc phiên thi. Bài làm của bạn đã được lưu.",
   "examJoinByLinkTitle": "Tham gia bằng liên kết công khai",
   "examJoinByLinkHint": "Dán mã từ giáo viên",
+  "examJoinByLinkHintDetail": "Dùng mã tham gia dài mà giáo viên gửi (khoảng 36 ký tự). Không dán link /student/exam-session/ vào đây.",
+  "examJoinWrongSessionLink": "Đây là link phòng live, không phải mã tham gia công khai. Hãy xin giáo viên mã token hiển thị khi tạo bài giao.",
+  "examJoinInvalidToken": "Không đọc được mã tham gia. Chỉ dán mã token giáo viên đã gửi.",
   "examJoinPreview": "Xem trước",
   "examJoinStart": "Bắt đầu làm bài",
   "examSessionRoomCode": "Mã phòng",
@@ -1181,7 +1217,14 @@
   "teacherNoAssignments": "Chưa có bài giao.",
   "teacherDashboardSubtitle": "Lớp, đề và chấm điểm trong một không gian gọn gàng.",
   "teacherDashboardOverview": "Tổng quan",
+  "teacherDashboardWorkZoneTitle": "Việc cần làm hôm nay",
+  "teacherDashboardWorkZoneSubtitle": "Hàng chờ chấm bài và phòng trực tiếp — bấm KPI phía trên để cuộn tới đây.",
+  "teacherDashboardQuickActionsTitle": "Thao tác nhanh",
+  "teacherDashboardAssignmentHubSubtitle": "Tìm, lọc và mở hub bài giao.",
+  "teacherDashboardPendingJoinsCount": "{count} yêu cầu vào lớp",
+  "teacherDashboardDueSoonCount": "{count} sắp đến hạn",
   "teacherDashboardStatClasses": "Lớp học",
+  "teacherDashboardStatStudents": "Học sinh",
   "teacherDashboardStatAssignments": "Bài đã giao",
   "teacherDashboardStatLiveModes": "Phòng trực tiếp",
   "teacherDashboardStatDraftExams": "Đề nháp",
@@ -1259,6 +1302,13 @@
   "@teacherDashboardClassLabel": {
     "placeholders": {
       "name": {"type": "String"}
+    }
+  },
+  "teacherInboxPublicAssignment": "Bài giao công khai",
+  "teacherInboxItemCount": "{count, plural, =1{1 mục} other{{count} mục}}",
+  "@teacherInboxItemCount": {
+    "placeholders": {
+      "count": {"type": "int"}
     }
   },
   "teacherDashboardOpenConsole": "Mở phòng thi",
@@ -1554,6 +1604,50 @@
   "teacherCalendarToday": "Hôm nay",
   "teacherCalendarNoDayEvents": "Không có sự kiện ngày này.",
   "teacherCalendarGoToAssignment": "Xem bài giao",
+  "teacherCalendarPageSubtitle": "Hạn nộp, phòng trực tiếp và khung thời gian bài giao.",
+  "teacherCalendarViewWeek": "Tuần",
+  "teacherCalendarKpiDueWeek": "Hạn tuần này",
+  "teacherCalendarKpiOpens": "Sắp mở",
+  "teacherCalendarKpiLive": "Trực tiếp",
+  "teacherCalendarKpiTotal": "Tổng sự kiện",
+  "teacherCalendarLegendTitle": "Chú thích",
+  "teacherCalendarSearchHint": "Tìm bài giao…",
+  "teacherCalendarFilterClassroomLabel": "Lớp",
+  "teacherCalendarFilterClassroomAll": "Tất cả lớp",
+  "teacherCalendarFilterAll": "Tất cả",
+  "teacherCalendarAgendaTitle": "Lịch trình",
+  "teacherCalendarGroupsOnDay": "{count} nhóm bài giao",
+  "@teacherCalendarGroupsOnDay": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarSectionToday": "Hôm nay",
+  "teacherCalendarSectionUpcoming": "Sắp tới",
+  "teacherCalendarSectionPast": "Đã qua",
+  "teacherCalendarRelativeNow": "Bây giờ",
+  "teacherCalendarRelativeOverdueDays": "Quá hạn {count} ngày",
+  "@teacherCalendarRelativeOverdueDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeOverdueHours": "Quá hạn {count} giờ",
+  "@teacherCalendarRelativeOverdueHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeOverdueMinutes": "Quá hạn {count} phút",
+  "@teacherCalendarRelativeOverdueMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInDays": "Còn {count} ngày",
+  "@teacherCalendarRelativeInDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInHours": "Còn {count} giờ",
+  "@teacherCalendarRelativeInHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInMinutes": "Còn {count} phút",
+  "@teacherCalendarRelativeInMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "teacherDashboardActionItems": "Cần xử lý",
   "teacherDashboardPendingJoins": "Chờ duyệt vào lớp",
   "teacherDashboardDueSoon": "Sắp đến hạn",
@@ -1611,6 +1705,8 @@
   "teacherInviteTokenHint": "Gửi token này để học sinh tham gia bằng invite link",
   "copyInviteToken": "Sao chép token",
   "teacherCoTeacherAdded": "Đã thêm giáo viên phụ",
+  "teacherCoTeacherInviteSent": "Đã gửi lời mời",
+  "teacherCoTeacherPending": "Chờ duyệt",
   "teacherCoTeacherRemoved": "Đã gỡ giáo viên phụ",
   "teacherIntegrationsTitle": "Tích hợp",
   "teacherGoogleClassroomLink": "Liên kết Google Classroom",
@@ -1984,5 +2080,9 @@
   "@examCardRealtimeLobbyOpens": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "teacherAssignmentEditPracticeNote": "Chế độ luyện tập không có lịch — học sinh có thể làm bài bất cứ lúc nào."
+  "teacherAssignmentEditPracticeNote": "Chế độ luyện tập không có lịch — học sinh có thể làm bài bất cứ lúc nào.",
+  "chatMediaDownloading": "Đang tải file…",
+  "chatMediaDownloadDone": "Đã tải file",
+  "chatMediaDownloadFailed": "Không thể tải file",
+  "chatMediaVideoLoadFailed": "Không thể phát video"
 }

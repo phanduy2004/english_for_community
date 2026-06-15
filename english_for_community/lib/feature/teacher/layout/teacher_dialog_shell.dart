@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -162,9 +163,7 @@ class TeacherDialogFooterActions extends StatelessWidget {
             style: primaryStyle,
             child: primaryLoading
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    child: const AppLoadingIndicator.button(color: Colors.white),
                   )
                 : Text(primaryLabel),
           ),

@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -154,7 +155,7 @@ class _TeacherExamEditorView extends StatelessWidget {
             ],
           ],
           body: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: AppLoadingIndicator.center())
               : error != null
                   ? Center(child: Text(error, style: ExamSystemUi.captionSecondary))
                   : ListView(

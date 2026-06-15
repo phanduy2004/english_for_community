@@ -49,6 +49,15 @@ async function getGradingQueue(teacherId, limit = 15) {
       },
     },
     { $unwind: { path: '$exam', preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: 'classrooms',
+        localField: 'assignment.classroomId',
+        foreignField: '_id',
+        as: 'classroom',
+      },
+    },
+    { $unwind: { path: '$classroom', preserveNullAndEmptyArrays: true } },
     { $sort: { submittedAt: -1 } },
     { $limit: limit },
     {
@@ -57,6 +66,7 @@ async function getGradingQueue(teacherId, limit = 15) {
         attemptId: { $toString: '$_id' },
         assignmentId: { $toString: '$assignmentId' },
         assignmentTitle: { $ifNull: ['$exam.title', 'Exam'] },
+        classroomName: { $ifNull: ['$classroom.name', ''] },
         studentLabel: {
           $let: {
             vars: {

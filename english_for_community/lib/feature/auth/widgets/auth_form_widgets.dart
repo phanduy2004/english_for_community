@@ -83,6 +83,8 @@ class AuthTextField extends StatelessWidget {
     this.onTap,
     this.keyboardType,
     this.onSubmitted,
+    this.focusNode,
+    this.onChanged,
   });
 
   final TextEditingController controller;
@@ -96,15 +98,19 @@ class AuthTextField extends StatelessWidget {
   final VoidCallback? onTap;
   final TextInputType? keyboardType;
   final ValueChanged<String>? onSubmitted;
+  final FocusNode? focusNode;
+  final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
     final field = TextField(
       controller: controller,
+      focusNode: focusNode,
       obscureText: obscureText,
       enabled: enabled,
       readOnly: readOnly,
       onTap: onTap,
+      onChanged: onChanged,
       keyboardType: keyboardType,
       onSubmitted: onSubmitted,
       style: context.bodyStyle,

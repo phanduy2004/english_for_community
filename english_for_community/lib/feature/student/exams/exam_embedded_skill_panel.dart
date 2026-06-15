@@ -1,7 +1,10 @@
 import 'package:english_for_community/core/entity/listening_entity.dart';
+import 'package:english_for_community/core/entity/reading/reading_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/repository/listening_repository.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
@@ -21,6 +24,7 @@ import 'package:english_for_community/feature/student/exams/exam_embedded_listen
 import 'package:english_for_community/feature/student/exams/exam_embedded_speaking_review_panel.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_writing_review_panel.dart';
+import 'package:english_for_community/feature/student/exams/exam_section_tag.dart';
 import 'package:english_for_community/feature/writing/writing_task_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -85,6 +89,10 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
   String? _error;
   int _resourceIndex = 0;
   dynamic _payload;
+  /// Global cue index offset per resource (dictation, multi-resource sections).
+  final Map<int, int> _dictationCueOffsets = {};
+
+  bool get _canSwitchResources => !widget.locked || widget.reviewMode;
 
   @override
   void initState() {
@@ -95,13 +103,34 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
   @override
   void didUpdateWidget(covariant ExamEmbeddedSkillPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.skill != widget.skill ||
+    final structuralChange = oldWidget.skill != widget.skill ||
         oldWidget.resources.length != widget.resources.length ||
-        oldWidget.listeningType != widget.listeningType ||
-        _currentResourceId(oldWidget) != _currentResourceId(widget)) {
+        oldWidget.listeningType != widget.listeningType;
+    if (structuralChange) {
+      _resourceIndex = 0;
+      _dictationCueOffsets.clear();
+      _loadCurrent();
+      return;
+    }
+    if (_resourceIndex >= widget.resources.length) {
       _resourceIndex = 0;
       _loadCurrent();
+      return;
     }
+    final oldId = _resourceIdAt(oldWidget, _resourceIndex);
+    final newId = _resourceIdAt(widget, _resourceIndex);
+    if (oldId != newId) {
+      _resourceIndex = 0;
+      _dictationCueOffsets.clear();
+      _loadCurrent();
+    }
+  }
+
+  String _resourceIdAt(ExamEmbeddedSkillPanel panel, int index) {
+    if (panel.resources.isEmpty) return '';
+    final idx = index.clamp(0, panel.resources.length - 1);
+    final raw = panel.resources[idx]['id'] ?? panel.resources[idx]['_id'];
+    return raw?.toString().trim() ?? '';
   }
 
   String _currentResourceId([ExamEmbeddedSkillPanel? w]) {
@@ -110,6 +139,70 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
     final idx = _resourceIndex.clamp(0, panel.resources.length - 1);
     final raw = panel.resources[idx]['id'] ?? panel.resources[idx]['_id'];
     return raw?.toString().trim() ?? '';
+  }
+
+  SkillColorSet? _skillAccent() {
+    switch (widget.skill) {
+      case 'reading':
+        return AppSkillColors.reading;
+      case 'listening':
+        return AppSkillColors.listening;
+      case 'writing':
+        return AppSkillColors.writing;
+      case 'speaking':
+        return AppSkillColors.speaking;
+      default:
+        return null;
+    }
+  }
+
+  Future<void> _ensureDictationCueOffsets() async {
+    if (widget.skill != 'listening' ||
+        widget.listeningType == 'comprehension' ||
+        widget.resources.length <= 1) {
+      _dictationCueOffsets[0] = 0;
+      return;
+    }
+    var offset = 0;
+    for (var i = 0; i < widget.resources.length; i++) {
+      _dictationCueOffsets[i] = offset;
+      final rid = _resourceIdAt(widget, i);
+      if (rid.isEmpty) continue;
+      final r = await getIt<ListeningRepository>().getListeningById(rid);
+      offset += r.fold((_) => 0, (entity) => entity.cues.length);
+    }
+  }
+
+  int _dictationCueOffsetForCurrent() => _dictationCueOffsets[_resourceIndex] ?? 0;
+
+  Map<String, int>? _filteredReadingAnswers() {
+    final all = widget.initialReadingAnswers;
+    if (all == null || all.isEmpty) return null;
+    final reading = _payload;
+    if (reading is! ReadingEntity) return all;
+    final ids = reading.questions.map((q) => q.id).toSet();
+    final out = <String, int>{};
+    for (final e in all.entries) {
+      if (ids.contains(e.key)) out[e.key] = e.value;
+    }
+    return out.isEmpty ? null : out;
+  }
+
+  void _onListeningDictationProgress(
+    Map<String, String> localCueTexts,
+    int savedCount,
+    int totalCount,
+  ) {
+    final handler = widget.onListeningProgress;
+    if (handler == null) return;
+    final offset = _dictationCueOffsetForCurrent();
+    final global = <String, String>{};
+    localCueTexts.forEach((k, v) {
+      final local = int.tryParse(k);
+      if (local == null || v.trim().isEmpty) return;
+      global['${local + offset}'] = v.trim();
+    });
+    handler(global, savedCount, totalCount);
   }
 
   Future<void> _loadCurrent() async {
@@ -135,6 +228,8 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           if (mounted) setState(() { _loading = false; _payload = null; });
           return;
         }
+        await _ensureDictationCueOffsets();
+        if (!mounted) return;
         final r = await getIt<ListeningRepository>().getListeningById(id);
         if (!mounted) return;
         r.fold(
@@ -239,16 +334,32 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           );
         }
         if (readOnly && entity is ListeningEntity) {
+          final cueOffset = _dictationCueOffsetForCurrent();
+          final localCues = <String, String>{};
+          widget.initialListeningCueTexts?.forEach((k, v) {
+            final globalIdx = int.tryParse(k);
+            if (globalIdx == null || v.trim().isEmpty) return;
+            final localIdx = globalIdx - cueOffset;
+            if (localIdx >= 0 && localIdx < entity.cues.length) {
+              localCues['$localIdx'] = v.trim();
+            }
+          });
           return ExamEmbeddedListeningDictationReviewPanel(
             key: ValueKey('exam_listen_review_$listenId'),
             listening: entity,
-            userCueTextsByIndex: widget.initialListeningCueTexts ?? {},
+            userCueTextsByIndex: localCues,
           );
         }
+        final cueOffset = _dictationCueOffsetForCurrent();
+        final cueCount = entity is ListeningEntity ? entity.cues.length : 0;
         final initialCueTexts = <int, String>{};
         widget.initialListeningCueTexts?.forEach((k, v) {
-          final idx = int.tryParse(k);
-          if (idx != null && v.trim().isNotEmpty) initialCueTexts[idx] = v.trim();
+          final globalIdx = int.tryParse(k);
+          if (globalIdx == null || v.trim().isEmpty) return;
+          final localIdx = globalIdx - cueOffset;
+          if (localIdx >= 0 && localIdx < cueCount) {
+            initialCueTexts[localIdx] = v.trim();
+          }
         });
         return BlocProvider(
           key: ValueKey('exam_listen_$listenId'),
@@ -267,7 +378,9 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
             examPracticeMode: true,
             readOnlyReview: readOnly,
             onPartComplete: _onExerciseFinished,
-            onExamListeningProgress: widget.onListeningProgress,
+            onExamListeningProgress: widget.onListeningProgress == null
+                ? null
+                : _onListeningDictationProgress,
           ),
         );
       case 'speaking':
@@ -294,7 +407,7 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           isRetake: true,
           embedded: true,
           disableTimer: true,
-          initialSelectedAnswers: widget.initialReadingAnswers,
+          initialSelectedAnswers: _filteredReadingAnswers(),
           onExamAnswersChanged: widget.onReadingAnswersChanged,
           examReviewMode: widget.reviewMode,
         );
@@ -396,28 +509,31 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
             if (resources.length > 1) ...[
               const SizedBox(height: 10),
               e4cHorizontalScroll(
-                child: SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: resources.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 8),
-                    itemBuilder: (context, i) {
-                      final title = resources[i]['title'] as String? ?? '${i + 1}';
-                      final selected = i == _resourceIndex;
-                      return ChoiceChip(
-                        label: Text(title, overflow: TextOverflow.ellipsis, style: ExamSystemUi.embeddedCaptionStyle),
-                        labelStyle: ExamSystemUi.embeddedCaptionStyle,
-                        selected: selected,
-                        onSelected: widget.locked
-                            ? null
-                            : (v) {
-                                if (!v || i == _resourceIndex) return;
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < resources.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Builder(
+                          builder: (context) {
+                            final title = resources[i]['title'] as String? ?? '${i + 1}';
+                            final selected = i == _resourceIndex;
+                            return ExamResourcePickerChip(
+                              label: title,
+                              selected: selected,
+                              enabled: _canSwitchResources,
+                              skillAccent: _skillAccent(),
+                              onTap: () {
+                                if (!_canSwitchResources || i == _resourceIndex) return;
                                 setState(() => _resourceIndex = i);
                                 _loadCurrent();
                               },
-                      );
-                    },
+                            );
+                          },
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
@@ -427,7 +543,7 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
             if (_loading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
+                child: Center(child: AppLoadingIndicator.center()),
               )
             else if (_error != null)
               AppCard(

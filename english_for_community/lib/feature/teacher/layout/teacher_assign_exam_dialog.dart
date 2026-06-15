@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -8,9 +9,11 @@ import 'package:english_for_community/feature/teacher/layout/teacher_content_lab
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_realtime_schedule_section.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/feature/teacher/teacher_exam_session_console_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// Assign a published exam to a class or public link — `docs/ui-ux-system/14-teacher-dialogs.md`.
@@ -280,13 +283,18 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         AppCornerToast.show(context, l10n.teacherAssignmentCreated);
         if (_audience == 'public_link' && d is Map) {
           final pj = d['publicJoin'];
+          final assignmentId = (d['id'] ?? d['_id'])?.toString() ?? '';
+          final isRealtime = _mode == 'realtime';
           if (pj is Map && (pj['token'] as String?)?.isNotEmpty == true) {
             final tok = pj['token'] as String;
             await showDialog<void>(
               context: context,
               builder: (ctx) => AlertDialog(
                 title: Text(l10n.teacherAssignmentPublicTokenTitle),
-                content: SelectableText('${l10n.teacherAssignmentPublicTokenBody}\n\n$tok'),
+                content: SelectableText(
+                  '${l10n.teacherAssignmentPublicTokenBody}\n\n$tok'
+                  '${isRealtime ? '\n\n${l10n.teacherAssignmentPublicRealtimeNextSteps}' : ''}',
+                ),
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -296,7 +304,16 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
                     },
                     child: Text(l10n.dashboardPublicCopyToken),
                   ),
-                  FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.ok)),
+                  if (isRealtime && assignmentId.isNotEmpty)
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.push('${TeacherExamSessionConsolePage.routePath}/$assignmentId');
+                      },
+                      child: Text(l10n.teacherAssignmentOpenLiveConsole),
+                    )
+                  else
+                    FilledButton(onPressed: () => Navigator.pop(ctx), child: Text(l10n.ok)),
                 ],
               ),
             );
@@ -1015,7 +1032,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         body: const Center(
           child: Padding(
             padding: EdgeInsets.all(32),
-            child: CircularProgressIndicator(strokeWidth: 2),
+            child: AppLoadingIndicator(strokeWidth: 2),
           ),
         ),
       );

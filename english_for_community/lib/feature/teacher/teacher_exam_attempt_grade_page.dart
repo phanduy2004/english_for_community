@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -1285,7 +1286,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
                     ? SizedBox(
                         width: mobile ? 18 : 16,
                         height: mobile ? 18 : 16,
-                        child: const CircularProgressIndicator(strokeWidth: 2),
+                        child: const AppLoadingIndicator(strokeWidth: 2),
                       )
                     : Icon(Icons.smart_toy_outlined, size: mobile ? 18 : 16),
                 label: Text(
@@ -1396,7 +1397,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
             TeacherBreadcrumb(label: l10n.teacherGradingDetailTitle),
           ],
           body: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: AppLoadingIndicator.center())
               : error != null
                   ? Center(
                       child: Padding(

@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -7,6 +8,8 @@ import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
+import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
+import 'package:english_for_community/feature/auth/bloc/user_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/apply/teacher_apply_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/apply/teacher_apply_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/apply/teacher_apply_state.dart';
@@ -128,6 +131,7 @@ class _TeacherApplyPageState extends State<TeacherApplyPage> {
         listener: (context, state) {
           if (state.status == TeacherApplyStatus.submitted) {
             AppCornerToast.show(context, l10n.teacherApplySubmitted);
+            context.read<UserBloc>().add(GetProfileEvent());
           } else if (state.errorMessage != null) {
             AppCornerToast.show(context, state.errorMessage!, error: true);
           }
@@ -169,7 +173,7 @@ class _TeacherApplyPageState extends State<TeacherApplyPage> {
                         child: ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: maxW),
                           child: loading
-                              ? const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator()))
+                              ? const Padding(padding: EdgeInsets.all(48), child: Center(child: AppLoadingIndicator.center()))
                               : Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [
@@ -225,7 +229,7 @@ class _TeacherApplyPageState extends State<TeacherApplyPage> {
                                                         ? const SizedBox(
                                                             height: 18,
                                                             width: 18,
-                                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                                            child: AppLoadingIndicator(strokeWidth: 2),
                                                           )
                                                         : Text(l10n.teacherApplySubmit),
                                                   ),

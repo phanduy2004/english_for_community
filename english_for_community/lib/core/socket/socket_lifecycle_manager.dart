@@ -6,6 +6,7 @@ import 'package:get_it/get_it.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_state.dart';
 import '../../feature/auth/bloc/user_event.dart';
+import '../../feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import '../utils/global_keys.dart';
 import '../../l10n/generated/app_localizations.dart';
 
@@ -124,12 +125,20 @@ class _SocketLifecycleManagerState extends State<SocketLifecycleManager> {
           print("🌐 [Global Socket] User Authenticated");
           GetIt.I<SocketService>().userLogin(state.userEntity!.id);
 
+          registerClassroomChatDockController();
+          final dock = GetIt.I<ClassroomChatDockController>();
+          dock.detachInboxSocket();
+          dock.attachInboxSocket();
+          dock.refreshInboxBadge();
+
           // Setup Ban listener
           _setupForceLogoutListener();
         }
         // On Logout
         else if (state.status == UserStatus.unauthenticated) {
           print("🔌 [Global Socket] User Logout -> Disconnect");
+          registerClassroomChatDockController();
+          GetIt.I<ClassroomChatDockController>().detachInboxSocket();
           GetIt.I<SocketService>().disconnect();
         }
       },

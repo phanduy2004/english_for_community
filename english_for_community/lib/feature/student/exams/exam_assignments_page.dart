@@ -4,11 +4,10 @@ import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/feature/student/classes/my_classes_hub_page.dart';
-import 'package:english_for_community/feature/student/exams/public_exam_join_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// Hub for **public** exams by link. Class assignments live under [MyClassesHubPage].
+/// Hub for exams — class assignments and unified join live under [MyClassesHubPage].
 class ExamAssignmentsPage extends StatelessWidget {
   const ExamAssignmentsPage({super.key});
 
@@ -23,19 +22,13 @@ class ExamAssignmentsPage extends StatelessWidget {
       appBar: StudentMobileUi.appBar(
         context,
         title: l10n.studentExamsHubTitle,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.link_outlined, size: 20),
-            tooltip: l10n.examJoinByLinkTitle,
-            onPressed: () => context.push(PublicExamJoinPage.routePath),
-          ),
-        ],
       ),
       body: ListView(
         padding: StudentMobileUi.pagePadding,
         children: [
           StudentMobileUi.skillAccentCard(
             skill: SkillType.speaking,
+            onTap: () => context.push(MyClassesHubPage.routePath),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -52,44 +45,20 @@ class ExamAssignmentsPage extends StatelessWidget {
                     Icon(Icons.chevron_right_rounded, size: 18, color: AppSkillColors.speaking.color),
                   ],
                 ),
+                const SizedBox(height: AppSpacing.s3),
+                Text(
+                  l10n.studentUnifiedJoinSubtitle,
+                  style: StudentMobileUi.caption(context).copyWith(height: 1.4),
+                ),
                 const SizedBox(height: AppSpacing.s5),
                 FilledButton.icon(
                   onPressed: () => context.push(MyClassesHubPage.routePath),
                   icon: const Icon(Icons.class_outlined, size: 20),
-                  label: Text(l10n.studentExamsGoToClasses),
+                  label: Text(l10n.studentUnifiedJoinButton),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: AppColors.onPrimary,
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: StudentMobileUi.sectionGap),
-          StudentMobileUi.skillAccentCard(
-            skill: SkillType.reading,
-            onTap: () => context.push(PublicExamJoinPage.routePath),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    StudentMobileUi.skillIconBox(Icons.public, size: 40, skill: SkillType.reading),
-                    const SizedBox(width: AppSpacing.s4),
-                    Expanded(
-                      child: Text(
-                        l10n.examJoinByLinkTitle,
-                        style: StudentMobileUi.cardTitle(context),
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded, size: 18, color: AppSkillColors.reading.color),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.s5),
-                OutlinedButton.icon(
-                  onPressed: () => context.push(PublicExamJoinPage.routePath),
-                  icon: Icon(Icons.arrow_forward_rounded, size: 18, color: AppSkillColors.reading.color),
-                  label: Text(l10n.studentClassPublicJoin),
                 ),
               ],
             ),

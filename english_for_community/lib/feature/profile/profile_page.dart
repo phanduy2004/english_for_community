@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
@@ -276,7 +277,7 @@ class _ProfilePageState extends State<ProfilePage> {
         if (state.status == UserStatus.loading && state.userEntity == null) {
           return const Scaffold(
             backgroundColor: AppColors.surface,
-            body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+            body: Center(child: AppLoadingIndicator.center(color: AppColors.primary)),
           );
         }
 

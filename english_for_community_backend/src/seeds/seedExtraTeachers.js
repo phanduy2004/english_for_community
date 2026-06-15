@@ -16,7 +16,6 @@ import { getMongoUri, getMongoUriForLog } from '../lib/mongoUri.js';
 
 dotenv.config();
 
-const SEED_TAG = '[SEED:Teacher]';
 const TEACHER_PASSWORD = process.env.EXTRA_TEACHER_PASSWORD || 'Teacher@123456';
 
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -161,7 +160,7 @@ async function upsertTeacher(spec, hashedPassword) {
 }
 
 async function upsertClassroom(teacherId, spec) {
-  const name = `${SEED_TAG} ${spec.classroom.name}`;
+  const name = spec.classroom.name;
   let room = await Classroom.findOne({ teacherId, name });
   if (!room) {
     room = await Classroom.create({
@@ -174,6 +173,7 @@ async function upsertClassroom(teacherId, spec) {
     });
     console.log(`   ✅ Classroom: ${name} (invite ${room.inviteCode})`);
   } else {
+    if (room.name !== name) room.name = name;
     room.description = spec.classroom.description;
     await room.save();
     console.log(`   ↪ Classroom exists: ${name} (invite ${room.inviteCode})`);
@@ -190,11 +190,11 @@ async function linkSampleCoTeacher(coTeacherUser) {
   }
   const room = await Classroom.findOne({
     teacherId: owner._id,
-    name: { $regex: /Lớp 10A/i },
+    name: { $regex: /^10A1 — Ca sáng/i },
     archived: false,
   });
   if (!room) {
-    console.log('↪ Skip co-teacher demo: classroom Lớp 10A not found');
+    console.log('↪ Skip co-teacher demo: classroom 10A1 — Ca sáng · HK2 not found');
     return;
   }
 
@@ -260,7 +260,7 @@ async function run() {
     console.log(`  Invite:    ${classroom.inviteCode}`);
     console.log('');
   }
-  console.log('Co-teacher test: login Hoàng Đông → Lớp 10A → Settings → Teaching team');
+  console.log('Co-teacher test: login Hoàng Đông → 10A1 — Ca sáng · HK2 → Settings → Teaching team');
   console.log('Add co-teacher test: search username e.g. phammt_teacher, trannl_teacher');
   console.log('=========================================\n');
 

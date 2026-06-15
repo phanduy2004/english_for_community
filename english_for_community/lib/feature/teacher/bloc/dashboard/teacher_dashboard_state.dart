@@ -11,6 +11,7 @@ class TeacherGradingQueueItem extends Equatable {
     required this.studentLabel,
     required this.gradingState,
     required this.resultsReleased,
+    this.classroomName,
     this.submittedAt,
   });
 
@@ -20,11 +21,20 @@ class TeacherGradingQueueItem extends Equatable {
   final String studentLabel;
   final String gradingState;
   final bool resultsReleased;
+  final String? classroomName;
   final DateTime? submittedAt;
 
   @override
-  List<Object?> get props =>
-      [attemptId, assignmentId, assignmentTitle, studentLabel, gradingState, resultsReleased, submittedAt];
+  List<Object?> get props => [
+        attemptId,
+        assignmentId,
+        assignmentTitle,
+        studentLabel,
+        gradingState,
+        resultsReleased,
+        classroomName,
+        submittedAt,
+      ];
 }
 
 class TeacherDashboardState extends Equatable {

@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:english_for_community/core/datasource/notification_remote_datasource.dart';
-import 'package:english_for_community/core/entity/notification_entity.dart';
 import 'package:english_for_community/core/model/either.dart';
 import 'package:english_for_community/core/model/failure.dart';
 import 'package:english_for_community/core/repository/notification_repository.dart';
+import 'package:english_for_community/core/utils/notification_json_parse.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationRepositoryImpl implements NotificationRepository {
   final NotificationRemoteDataSource dataSource;
@@ -14,18 +15,12 @@ class NotificationRepositoryImpl implements NotificationRepository {
   Future<Either<Failure, Map<String, dynamic>>> getNotifications(int page) async {
     try {
       final res = await dataSource.getNotifications(page);
+      final parsed = await compute(parseNotificationPage, res);
 
-      // Parse dữ liệu từ API response
-      final List data = res['data'];
-      final items = data.map((e) => NotificationEntity.fromJson(e)).toList();
-      final int unreadCount = res['unreadCount'] ?? 0;
-      final bool hasMore = res['pagination']['hasMore'] ?? false;
-
-      // Trả về map kết quả để Bloc xử lý
       return Right({
-        'items': items,
-        'unreadCount': unreadCount,
-        'hasMore': hasMore,
+        'items': parsed.items,
+        'unreadCount': parsed.unreadCount,
+        'hasMore': parsed.hasMore,
       });
     } on DioException catch (e) {
       // Sử dụng ServerFailure hoặc class Failure tương ứng trong project của bạn
@@ -40,6 +35,21 @@ class NotificationRepositoryImpl implements NotificationRepository {
     try {
       await dataSource.markAsRead(id);
       return  Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, Map<String, dynamic>>> respondToNotification(
+    String id,
+    String action,
+  ) async {
+    try {
+      final res = await dataSource.respond(id, action);
+      return Right(res);
     } on DioException catch (e) {
       return Left(ServerFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {

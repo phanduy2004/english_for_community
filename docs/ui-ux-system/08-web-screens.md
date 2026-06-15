@@ -19,15 +19,22 @@
 
 ### A1. Teacher dashboard (route gốc)
 
+> **Spec đầy đủ v4:** [`17-teacher-dashboard-layout.md`](17-teacher-dashboard-layout.md)
+
 **Mục tiêu:** giáo viên thấy ngay điều cần làm hôm nay.
 
-**Layout (v3 compact):**
-- Page header: `web.pageTitle` 16/600 + meta `web.caption` + actions 32px (`compactFilled` / `compactOutlined`).
-- Hàng 1: KPI grid 4 cột — số `web.kpi` 15/600, label `web.caption`, icon 32×32, card padding 12×8.
-- Hàng 2: 2 cột (chiều cao cố định — không kéo dài trang).
-  - Trái: `Cần chấm` — tối đa **5** card gần nhất; badge số lượng; footer `+N bài` / **Xem tất cả** → dialog cuộn danh sách đầy đủ.
-  - Phải: `Phòng trực tiếp` — carousel ngang (~200px), gợi ý vuốt ngang; từ **4** phòng trở lên có **Xem tất cả** → dialog danh sách dọc.
-- Hàng 3: full-width `Lớp của tôi` — card grid lớp 3 cột.
+**Layout (v4 — ưu tiên work zone):**
+- Page header: `web.pageTitle` 16/600 + subtitle workspace (`teacherDashboardSubtitle`) + meta giờ + actions 32px.
+- Hàng 1: **KPI 4 cột** — Cần xử lý · Live · Lớp · Bài giao (bấm scroll tới section).
+- Hàng 2 (optional): **Attention strip** — chip cảnh báo pending join / due soon / grading (vàng nhạt).
+- Hàng 3: **Quick actions** — chip ngang (+Đề · Ngân hàng · Lịch · Tạo lớp · Apply).
+- Hàng 4: **Work zone 340h** — 2 panel (`TeacherDashboardPanel`):
+  - Trái: `Cần chấm` — preview 5 + dialog «Xem tất cả».
+  - Phải: `Phòng trực tiếp` — carousel ngang ~200h + dialog từ 4 phòng.
+- Hàng 5: **Lớp của tôi** — grid tile (`TeacherDashboardClassroomTile`).
+- Hàng 6: **Bài giao** — panel có search + filter + list card hub.
+
+**Legacy v3 (deprecated):** 6 KPI, shortcuts 3 card, action items card dài — **không** dùng cho implementation mới.
 
 ### A2. Classroom detail
 

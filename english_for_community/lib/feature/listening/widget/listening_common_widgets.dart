@@ -1,7 +1,9 @@
-﻿import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
+import 'package:english_for_community/feature/student/exams/exam_section_tag.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
@@ -303,6 +305,7 @@ class CueSelector extends StatelessWidget {
   final int selectedIndex;
   final Set<int> completedIdx;
   final Function(int) onSelect;
+  final SkillColorSet? skillAccent;
 
   const CueSelector({
     super.key,
@@ -310,6 +313,7 @@ class CueSelector extends StatelessWidget {
     required this.selectedIndex,
     required this.completedIdx,
     required this.onSelect,
+    this.skillAccent,
   });
 
   @override
@@ -326,49 +330,16 @@ class CueSelector extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           padding: const EdgeInsets.symmetric(horizontal: 4),
           itemBuilder: (context, i) {
-          final isSel = i == selectedIndex;
-          final isDone = completedIdx.contains(i);
-
-          return GestureDetector(
-            onTap: () => onSelect(i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOut,
-              width: 40,
-              decoration: BoxDecoration(
-                color: isSel
-                    ? Theme.of(context).primaryColor
-                    : (isDone ? AppColors.successBg : AppColors.surfaceCard),
-                border: Border.all(
-                  color: isSel
-                      ? Theme.of(context).primaryColor
-                      : (isDone ? AppColors.success.withValues(alpha: 0.5) : AppColors.outline),
-                  width: isSel ? 2 : 1,
-                ),
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: isSel ? [
-                  BoxShadow(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2)
-                  )
-                ] : null,
-              ),
-              child: Center(
-                child: Text(
-                  '${i + 1}',
-                  style: TextStyle(
-                    color: isSel
-                        ? AppColors.onPrimary
-                        : (isDone ? AppColors.success : AppColors.textPrimary),
-                    fontWeight: isSel || isDone ? FontWeight.bold : FontWeight.normal,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
+            return ExamNavNumberChip(
+              number: i + 1,
+              selected: i == selectedIndex,
+              done: completedIdx.contains(i) && i != selectedIndex,
+              skillAccent: skillAccent,
+              size: 36,
+              radius: 8,
+              onTap: () => onSelect(i),
+            );
+          },
         ),
       ),
     );

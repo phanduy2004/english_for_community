@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_dashboard_layout.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:flutter/material.dart';
@@ -10,8 +11,8 @@ const int kTeacherDashboardGradingPreviewCount = 5;
 const int kTeacherDashboardLiveViewAllThreshold = 4;
 const double kTeacherDashboardLiveStripHeight = 200;
 
-class TeacherDashboardSectionHeader extends StatelessWidget {
-  const TeacherDashboardSectionHeader({
+class TeacherDashboardQueueHeader extends StatelessWidget {
+  const TeacherDashboardQueueHeader({
     super.key,
     required this.title,
     this.count,
@@ -102,14 +103,11 @@ class TeacherDashboardGradingQueuePanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ...List.generate(previewCount, (i) {
-          return Padding(
-            padding: EdgeInsets.only(bottom: i < previewCount - 1 ? AppSpacing.s3 : 0),
-            child: itemBuilder(context, i),
-          );
-        }),
+        TeacherDashboardDividedList(
+          children: List.generate(previewCount, (i) => itemBuilder(context, i)),
+        ),
         if (hidden > 0) ...[
-          const SizedBox(height: AppSpacing.s3),
+          const Divider(height: 1, color: AppColors.outlineMuted),
           _QueueMoreFooter(
             label: context.l10n.teacherDashboardQueueMoreHidden(hidden),
             onTap: onViewAllTap,
@@ -133,35 +131,24 @@ class _QueueMoreFooter extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.primaryTint.withValues(alpha: 0.35),
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: AppColors.outlineMuted),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        hoverColor: AppColors.surfaceSubtle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: 10),
           child: Row(
             children: [
-              const Icon(Icons.unfold_more_rounded, size: 18, color: AppColors.primary),
-              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   label,
-                  style: TeacherWebUi.webBody(context).copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.primaryDark,
-                  ),
+                  style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w500),
                 ),
               ),
               if (onTap != null)
                 Text(
                   l10n.teacherDashboardViewAllQueueShort,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primary,
-                      ),
+                  style: TeacherWebUi.webLabel(context).copyWith(
+                    decoration: TextDecoration.underline,
+                    decorationColor: AppColors.outline,
+                  ),
                 ),
             ],
           ),

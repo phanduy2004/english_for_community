@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/reading/reading_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
@@ -192,7 +193,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
     if (_readingLoading[readingId] == true) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        child: Center(child: AppLoadingIndicator.center()),
       );
     }
 

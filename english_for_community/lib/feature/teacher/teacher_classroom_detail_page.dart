@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:english_for_community/core/ui/motion/app_motion.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -19,6 +21,7 @@ import 'package:english_for_community/feature/teacher/teacher_exam_session_conso
 import 'package:english_for_community/feature/teacher/bloc/classroom/teacher_classroom_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/classroom/teacher_classroom_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/classroom/teacher_classroom_state.dart';
+import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/teacher/teacher_gradebook_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -41,9 +44,13 @@ class TeacherClassroomDetailPage extends StatefulWidget {
 
 class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
     with SingleTickerProviderStateMixin {
+  static const int _tabActivity = 3;
+
   final _editName = TextEditingController();
   final _editDesc = TextEditingController();
   late TabController _tabs;
+  int _visibleTabIndex = 0;
+  bool _activityPrimed = false;
   /// Context under [BlocProvider] — State's own [context] is above the bloc.
   BuildContext? _blocCtx;
 
@@ -51,6 +58,31 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
   void initState() {
     super.initState();
     _tabs = TabController(length: 5, vsync: this);
+    _tabs.addListener(_onTabIndexSettled);
+  }
+
+  void _onTabIndexSettled() {
+    if (_tabs.indexIsChanging) return;
+    final idx = _tabs.index;
+    if (idx != _visibleTabIndex) {
+      setState(() => _visibleTabIndex = idx);
+    }
+    if (idx == _tabActivity && !_activityPrimed) {
+      _activityPrimed = true;
+      _blocCtx?.read<TeacherClassroomBloc>().add(const TeacherClassroomActivityReloadRequested());
+    }
+  }
+
+  bool _pageBuildWhen(TeacherClassroomState prev, TeacherClassroomState curr) {
+    if (prev.status != curr.status) return true;
+    if (prev.errorMessage != curr.errorMessage) return true;
+    if (prev.classroom != curr.classroom) return true;
+    if (prev.assignments != curr.assignments) return true;
+    if (prev.members != curr.members) return true;
+    if (prev.assignmentSegment != curr.assignmentSegment) return true;
+    if (prev.settingsSaving != curr.settingsSaving) return true;
+    // Activity rows reload inside [_ActivityTab] — skip parent rebuild.
+    return false;
   }
 
   TeacherClassroomBloc get _bloc {
@@ -65,6 +97,7 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
 
   @override
   void dispose() {
+    _tabs.removeListener(_onTabIndexSettled);
     _tabs.dispose();
     _editName.dispose();
     _editDesc.dispose();
@@ -342,6 +375,7 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
           _blocCtx = context;
           return _buildPage(context, state);
         },
+        buildWhen: _pageBuildWhen,
       ),
     );
   }
@@ -377,6 +411,20 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
           color: AppColors.textSecondary,
           tooltip: l10n.retry,
         ),
+        IconButton(
+          style: TeacherWebUi.compactHeaderIconStyle(),
+          icon: const Icon(Icons.chat_outlined, size: 18),
+          color: AppColors.primary,
+          tooltip: 'Nhóm chat lớp học',
+          onPressed: loading
+              ? null
+              : () {
+                  getIt<ClassroomChatDockController>().openChat(
+                    classroomId: widget.classroomId,
+                    classroomName: className,
+                  );
+                },
+        ),
         TeacherFilledButton(
           label: l10n.teacherAssignExamToClass,
           icon: Icons.add,
@@ -384,7 +432,7 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
         ),
       ],
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator.center())
           : error != null
               ? Center(
                   child: Padding(
@@ -404,82 +452,145 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                   children: [
                     _ClassroomTabBar(controller: _tabs, l10n: l10n),
                     Expanded(
-                      child: TabBarView(
-                        controller: _tabs,
+                      child: _ClassroomTabStack(
+                        index: _visibleTabIndex,
                         children: [
-                          _OverviewTab(
-                            activeCount: _activeAssignmentsFrom(assignments).length,
-                            historyCount: _historyAssignmentsFrom(assignments).length,
-                            pendingMembers: _memberCount(data, 'memberCountPending'),
-                            activeMembers: activeMembers,
-                            recentAssignments: _activeAssignmentsFrom(assignments).take(3).toList(),
-                            description: (data?['description'] as String?)?.trim() ?? '',
-                            inviteCode: (data?['inviteCode'] as String?) ?? '',
-                            createdAt: _formatDate(context, data?['createdAt']),
-                            updatedAt: _formatDate(context, data?['updatedAt']),
-                            onCopyInvite: _copyInviteCode,
-                            onRefresh: () async => _reload(silent: true),
-                            onViewAllAssignments: () => _tabs.animateTo(1),
-                            onAssignExam: _openAssignExamPicker,
-                            onOpenAssignment: _openStudentAttempts,
-                            onManageSession: _openSession,
-                            onOpenGradebook: () => context.push(
-                              TeacherGradebookPage.routePath(widget.classroomId),
+                          RepaintBoundary(
+                            key: const ValueKey('classroom_tab_overview'),
+                            child: _OverviewTab(
+                              activeCount: _activeAssignmentsFrom(assignments).length,
+                              historyCount: _historyAssignmentsFrom(assignments).length,
+                              pendingMembers: _memberCount(data, 'memberCountPending'),
+                              activeMembers: activeMembers,
+                              recentAssignments: _activeAssignmentsFrom(assignments).take(3).toList(),
+                              description: (data?['description'] as String?)?.trim() ?? '',
+                              inviteCode: (data?['inviteCode'] as String?) ?? '',
+                              createdAt: _formatDate(context, data?['createdAt']),
+                              updatedAt: _formatDate(context, data?['updatedAt']),
+                              onCopyInvite: _copyInviteCode,
+                              onRefresh: () async => _reload(silent: true),
+                              onViewAllAssignments: () => _tabs.animateTo(1),
+                              onAssignExam: _openAssignExamPicker,
+                              onOpenAssignment: _openStudentAttempts,
+                              onManageSession: _openSession,
+                              onOpenGradebook: () => context.push(
+                                TeacherGradebookPage.routePath(widget.classroomId),
+                              ),
+                              onCloseAssignment: (m) => _confirmCloseAssignment(context, m),
+                              onDeleteAssignment: (m) => _confirmDeleteAssignment(context, m),
                             ),
-                            onCloseAssignment: (m) => _confirmCloseAssignment(context, m),
-                            onDeleteAssignment: (m) => _confirmDeleteAssignment(context, m),
                           ),
-                          _AssignmentsTab(
-                            active: _activeAssignmentsFrom(assignments),
-                            history: _historyAssignmentsFrom(assignments),
-                            segment: state.assignmentSegment,
-                            onSegmentChanged: (i) => _bloc.add(TeacherClassroomAssignmentSegmentChanged(i)),
-                            onAssignExam: _openAssignExamPicker,
-                            onOpenAssignment: _openStudentAttempts,
-                            onManageSession: _openSession,
-                            onRefresh: () async => _reload(silent: true),
-                            onCloseAssignment: (m) => _confirmCloseAssignment(context, m),
-                            onDeleteAssignment: (m) => _confirmDeleteAssignment(context, m),
+                          RepaintBoundary(
+                            key: const ValueKey('classroom_tab_assignments'),
+                            child: _AssignmentsTab(
+                              active: _activeAssignmentsFrom(assignments),
+                              history: _historyAssignmentsFrom(assignments),
+                              segment: state.assignmentSegment,
+                              onSegmentChanged: (i) => _bloc.add(TeacherClassroomAssignmentSegmentChanged(i)),
+                              onAssignExam: _openAssignExamPicker,
+                              onOpenAssignment: _openStudentAttempts,
+                              onManageSession: _openSession,
+                              onRefresh: () async => _reload(silent: true),
+                              onCloseAssignment: (m) => _confirmCloseAssignment(context, m),
+                              onDeleteAssignment: (m) => _confirmDeleteAssignment(context, m),
+                            ),
                           ),
-                          _MembersTab(
-                            members: members,
-                            inviteCode: (data?['inviteCode'] as String?) ?? '',
-                            onApprove: _approveMember,
-                            onReject: _rejectMember,
-                            onRemove: _removeMember,
-                            onCopyInvite: _copyInviteCode,
-                            onRefresh: () async => _reload(silent: true),
+                          RepaintBoundary(
+                            key: const ValueKey('classroom_tab_members'),
+                            child: _MembersTab(
+                              members: members,
+                              inviteCode: (data?['inviteCode'] as String?) ?? '',
+                              onApprove: _approveMember,
+                              onReject: _rejectMember,
+                              onRemove: _removeMember,
+                              onCopyInvite: _copyInviteCode,
+                              onRefresh: () async => _reload(silent: true),
+                            ),
                           ),
-                          _ActivityTab(classroomId: widget.classroomId),
-                          _SettingsTab(
-                            nameController: _editName,
-                            descriptionController: _editDesc,
-                            policy: policy,
-                            inviteCode: (data?['inviteCode'] as String?) ?? '',
-                            inviteToken: (data?['inviteToken'] as String?) ?? '',
-                            classroomId: widget.classroomId,
-                            primaryTeacher: data?['teacherId'],
-                            members: members,
-                            activeMemberCount: activeMembers,
-                            pendingMemberCount: _memberCount(data, 'memberCountPending'),
-                            assignmentCount: assignments.length,
-                            integrations: data?['integrations'],
-                            archived: data?['archived'] == true,
-                            createdAt: _formatDate(context, data?['createdAt']),
-                            updatedAt: _formatDate(context, data?['updatedAt']),
-                            onCopyInvite: _copyInviteCode,
-                            onCopyInviteToken: _copyInviteToken,
-                            onSave: _saveClassroomSettings,
-                            onRotateInvite: _rotateClassInvite,
-                            onArchive: _archiveClassroom,
-                            saving: state.settingsSaving,
-                            onRefresh: () async => _reload(silent: true),
+                          RepaintBoundary(
+                            key: const ValueKey('classroom_tab_activity'),
+                            child: _ActivityTab(classroomId: widget.classroomId),
+                          ),
+                          RepaintBoundary(
+                            key: const ValueKey('classroom_tab_settings'),
+                            child: _SettingsTab(
+                              nameController: _editName,
+                              descriptionController: _editDesc,
+                              policy: policy,
+                              inviteCode: (data?['inviteCode'] as String?) ?? '',
+                              inviteToken: (data?['inviteToken'] as String?) ?? '',
+                              classroomId: widget.classroomId,
+                              primaryTeacher: data?['teacherId'],
+                              members: members,
+                              activeMemberCount: activeMembers,
+                              pendingMemberCount: _memberCount(data, 'memberCountPending'),
+                              assignmentCount: assignments.length,
+                              integrations: data?['integrations'],
+                              archived: data?['archived'] == true,
+                              createdAt: _formatDate(context, data?['createdAt']),
+                              updatedAt: _formatDate(context, data?['updatedAt']),
+                              onCopyInvite: _copyInviteCode,
+                              onCopyInviteToken: _copyInviteToken,
+                              onSave: _saveClassroomSettings,
+                              onRotateInvite: _rotateClassInvite,
+                              onArchive: _archiveClassroom,
+                              saving: state.settingsSaving,
+                              onRefresh: () async => _reload(silent: true),
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
                 ),
+    );
+  }
+}
+
+class _ClassroomTabStack extends StatefulWidget {
+  const _ClassroomTabStack({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_ClassroomTabStack> createState() => _ClassroomTabStackState();
+}
+
+class _ClassroomTabStackState extends State<_ClassroomTabStack> with SingleTickerProviderStateMixin {
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(vsync: this, duration: AppMotion.fast, value: 1);
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOutCubic);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ClassroomTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      _fadeCtrl.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: IndexedStack(
+        index: widget.index,
+        sizing: StackFit.expand,
+        children: widget.children,
+      ),
     );
   }
 }
@@ -502,6 +613,8 @@ class _ClassroomTabBar extends StatelessWidget {
           controller: controller,
           isScrollable: true,
           tabAlignment: TabAlignment.start,
+          splashFactory: NoSplash.splashFactory,
+          overlayColor: const WidgetStatePropertyAll(Colors.transparent),
           labelColor: AppColors.primaryDark,
           unselectedLabelColor: AppColors.textSecondary,
           indicatorColor: AppColors.primary,
@@ -1299,12 +1412,6 @@ class _ActivityTab extends StatefulWidget {
 }
 
 class _ActivityTabState extends State<_ActivityTab> {
-  @override
-  void initState() {
-    super.initState();
-    context.read<TeacherClassroomBloc>().add(const TeacherClassroomActivityReloadRequested());
-  }
-
   Future<void> _reload() async {
     context.read<TeacherClassroomBloc>().add(const TeacherClassroomActivityReloadRequested());
   }
@@ -1315,7 +1422,7 @@ class _ActivityTabState extends State<_ActivityTab> {
     return BlocBuilder<TeacherClassroomBloc, TeacherClassroomState>(
       builder: (context, state) {
         if (state.activityReloading && state.activityRows.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoadingIndicator.center());
         }
         if (state.activityRows.isEmpty) {
           return RefreshIndicator(
@@ -1419,25 +1526,32 @@ class _SettingsTabState extends State<_SettingsTab> {
   bool _searching = false;
   String? _addingTeacherId;
   late List<Map<String, dynamic>> _coTeacherMembers;
+  late List<Map<String, dynamic>> _pendingCoTeacherMembers;
 
   @override
   void initState() {
     super.initState();
-    _coTeacherMembers = _coTeachersFrom(widget.members);
+    _coTeacherMembers = _coTeachersFrom(widget.members, activeOnly: true);
+    _pendingCoTeacherMembers = _coTeachersFrom(widget.members, activeOnly: false);
   }
 
   @override
   void didUpdateWidget(covariant _SettingsTab oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.members != widget.members) {
-      _coTeacherMembers = _coTeachersFrom(widget.members);
+      _coTeacherMembers = _coTeachersFrom(widget.members, activeOnly: true);
+    _pendingCoTeacherMembers = _coTeachersFrom(widget.members, activeOnly: false);
     }
   }
 
-  List<Map<String, dynamic>> _coTeachersFrom(List<dynamic> members) {
+  List<Map<String, dynamic>> _coTeachersFrom(List<dynamic> members, {required bool activeOnly}) {
     return members
         .map((raw) => Map<String, dynamic>.from(raw as Map))
-        .where((m) => m['roleInClass'] == 'co_teacher' && m['status'] == 'active')
+        .where((m) {
+          if (m['roleInClass'] != 'co_teacher') return false;
+          final status = m['status']?.toString();
+          return activeOnly ? status == 'active' : status == 'pending';
+        })
         .toList();
   }
 
@@ -1450,7 +1564,10 @@ class _SettingsTabState extends State<_SettingsTab> {
   }
 
   Set<String> get _coTeacherUserIds {
-    return _coTeacherMembers.map(_memberUserId).where((id) => id.isNotEmpty).toSet();
+    return {
+      ..._coTeacherMembers.map(_memberUserId),
+      ..._pendingCoTeacherMembers.map(_memberUserId),
+    }.where((id) => id.isNotEmpty).toSet();
   }
 
   String _memberUserId(Map<String, dynamic> m) {
@@ -1528,7 +1645,7 @@ class _SettingsTabState extends State<_SettingsTab> {
   Map<String, dynamic> _memberFromTeacherSearch(Map<String, dynamic> teacher) {
     return {
       'roleInClass': 'co_teacher',
-      'status': 'active',
+      'status': 'pending',
       'userId': teacher,
     };
   }
@@ -1560,15 +1677,26 @@ class _SettingsTabState extends State<_SettingsTab> {
       (member) {
         final added = _normalizeAddedMember(member, teacher);
         final addedId = _memberUserId(added);
+        final isPending = (added['status']?.toString() ?? '') == 'pending';
         setState(() {
-          _coTeacherMembers = [
-            ..._coTeacherMembers.where((m) => _memberUserId(m) != addedId),
-            added,
-          ];
+          if (isPending) {
+            _pendingCoTeacherMembers = [
+              ..._pendingCoTeacherMembers.where((m) => _memberUserId(m) != addedId),
+              added,
+            ];
+          } else {
+            _coTeacherMembers = [
+              ..._coTeacherMembers.where((m) => _memberUserId(m) != addedId),
+              added,
+            ];
+          }
           _searchResults = _searchResults.where((u) => u['id']?.toString() != teacherId).toList();
           _coUsername.clear();
         });
-        AppCornerToast.show(context, l10n.teacherCoTeacherAdded);
+        AppCornerToast.show(
+          context,
+          isPending ? l10n.teacherCoTeacherInviteSent : l10n.teacherCoTeacherAdded,
+        );
         widget.onRefresh();
       },
     );
@@ -1597,6 +1725,8 @@ class _SettingsTabState extends State<_SettingsTab> {
       (_) {
         setState(() {
           _coTeacherMembers = _coTeacherMembers.where((m) => _memberUserId(m) != uid).toList();
+          _pendingCoTeacherMembers =
+              _pendingCoTeacherMembers.where((m) => _memberUserId(m) != uid).toList();
         });
         AppCornerToast.show(context, l10n.teacherCoTeacherRemoved);
         widget.onRefresh();
@@ -1682,7 +1812,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                                 ? const SizedBox(
                                     height: 18,
                                     width: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: AppLoadingIndicator(strokeWidth: 2),
                                   )
                                 : Text(l10n.teacherClassSaveSettings),
                           ),
@@ -1712,7 +1842,31 @@ class _SettingsTabState extends State<_SettingsTab> {
                       const SizedBox(height: AppSpacing.s6),
                       Text(l10n.teacherCoTeacherListTitle, style: TeacherWebUi.webCaption(context)),
                       const SizedBox(height: AppSpacing.s3),
-                      if (_coTeacherMembers.isEmpty)
+                      if (_pendingCoTeacherMembers.isNotEmpty)
+                        ..._pendingCoTeacherMembers.map((m) {
+                          final user = m['userId'] is Map
+                              ? Map<String, dynamic>.from(m['userId'] as Map)
+                              : null;
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: AppSpacing.s3),
+                            child: _TeacherPersonTile(
+                              name: _userDisplayName(user),
+                              username: _userUsername(user),
+                              email: _userEmail(user),
+                              avatarUrl: user?['avatarUrl'] as String?,
+                              initial: _userInitial(user),
+                              badge: l10n.teacherCoTeacherPending,
+                              badgeColor: AppColors.warning,
+                              trailing: IconButton(
+                                tooltip: l10n.teacherCoTeacherRemove,
+                                icon: const Icon(Icons.person_remove_outlined, size: 20),
+                                color: AppColors.danger,
+                                onPressed: () => _removeCoTeacher(m),
+                              ),
+                            ),
+                          );
+                        }),
+                      if (_coTeacherMembers.isEmpty && _pendingCoTeacherMembers.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
                           child: Text(l10n.teacherCoTeacherNone, style: TeacherWebUi.metaMuted),
@@ -1752,9 +1906,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                               ? const Padding(
                                   padding: EdgeInsets.all(12),
                                   child: SizedBox(
-                                    width: 18,
-                                    height: 18,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: const AppLoadingIndicator.button(),
                                   ),
                                 )
                               : (_coUsername.text.isNotEmpty
@@ -2064,7 +2216,7 @@ class _CoTeacherSearchResultRow extends StatelessWidget {
               height: 28,
               child: Padding(
                 padding: EdgeInsets.all(4),
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: AppLoadingIndicator(strokeWidth: 2),
               ),
             )
           else

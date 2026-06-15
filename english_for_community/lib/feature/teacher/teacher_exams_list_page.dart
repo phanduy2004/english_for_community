@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -120,7 +121,7 @@ class TeacherExamsListPage extends StatelessWidget {
           if (loading) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: 80),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: AppLoadingIndicator.center()),
             );
           }
           if (error != null) {

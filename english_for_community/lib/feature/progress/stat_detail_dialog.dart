@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/progress_summary_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
@@ -192,7 +193,7 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.s8),
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: AppLoadingIndicator(color: AppColors.primary),
         ),
       );
     }

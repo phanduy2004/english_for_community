@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,7 +13,7 @@ import 'package:english_for_community/core/repository/reading_repository.dart';
 import 'package:english_for_community/core/repository/speaking_repository.dart';
 import 'package:english_for_community/core/repository/writing_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/speaking/speaking_hub_page.dart';
 import 'package:english_for_community/feature/teacher/bloc/integrated_exam_editor/teacher_integrated_exam_editor_constants.dart';
@@ -207,74 +208,66 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     }
   }
 
-  SkillColorSet _skillAccentColors(String skill) {
-    switch (skill) {
-      case 'listening':
-        return AppSkillColors.listening;
-      case 'speaking':
-        return AppSkillColors.speaking;
-      case 'reading':
-        return AppSkillColors.reading;
-      case 'writing':
-        return AppSkillColors.writing;
-      default:
-        return SkillColorSet(
-          color: AppColors.primary,
-          tint: AppColors.primaryTint,
-          dark: AppColors.primary,
-        );
-    }
-  }
-
   Widget _buildSkillHeaderIcon(String skill) {
-    final accent = _skillAccentColors(skill);
     return Container(
-      width: 40,
-      height: 40,
+      width: 32,
+      height: 32,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: accent.tint,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accent.color.withValues(alpha: 0.28)),
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.outlineMuted),
       ),
-      child: Icon(_skillIcon(skill), size: 22, color: accent.color),
+      child: Icon(_skillIcon(skill), size: 18, color: AppColors.textSecondary),
     );
   }
 
-  /// Skill-tinted CTA — right-aligned in skill cards (exam editor).
+  Widget _neutralHintBox(String message, {IconData icon = Icons.info_outline}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.outlineMuted),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(message, style: TeacherWebUi.webCaption(context)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _compactSectionSwitch({
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+  }) {
+    return Transform.scale(
+      scale: 0.88,
+      child: Switch.adaptive(value: value, onChanged: onChanged),
+    );
+  }
+
+  Widget? _publishHintBanner(String message) => _neutralHintBox(message);
+
+  /// Neutral add-exercise CTA (no per-skill tint).
   Widget _buildAddExerciseAction({
-    required String skill,
     required VoidCallback onPressed,
   }) {
-    final accent = _skillAccentColors(skill);
     final l10n = context.l10n;
     return Align(
-      alignment: Alignment.centerRight,
-      child: FilledButton.icon(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        style: TeacherWebUi.compactOutlinedStyle(context),
         onPressed: onPressed,
-        icon: Icon(Icons.add_rounded, size: 18, color: accent.dark),
-        label: Text(
-          l10n.teacherExamSkillsAddExercise,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: accent.dark,
-            height: 1.2,
-          ),
-        ),
-        style: FilledButton.styleFrom(
-          backgroundColor: accent.tint,
-          foregroundColor: accent.dark,
-          elevation: 0,
-          shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          minimumSize: const Size(0, TeacherWebUi.buttonHeightPrimary),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-            side: BorderSide(color: accent.color.withValues(alpha: 0.4)),
-          ),
-        ),
+        icon: const Icon(Icons.add_rounded, size: 16),
+        label: Text(l10n.teacherExamSkillsAddExercise),
       ),
     );
   }
@@ -508,37 +501,33 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     }
     final l10n = context.l10n;
     return Material(
-      elevation: 6,
+      elevation: 4,
       color: AppColors.surfaceCard,
-      shadowColor: Colors.black26,
+      shadowColor: Colors.black12,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s3),
           child: Row(
             children: [
               Expanded(
                 child: Text(
                   _displayTitle(l10n),
-                  style: ExamSystemUi.captionSecondary,
+                  style: TeacherWebUi.webCaption(context),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
               OutlinedButton(
+                style: TeacherWebUi.compactOutlinedStyle(context),
                 onPressed: _saveDraft,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(l10n.teacherExamSaveDraft),
-                ),
+                child: Text(l10n.teacherExamSaveDraft),
               ),
               if (_s.examStatus == 'draft') ...[
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.s2),
                 FilledButton(
+                  style: TeacherWebUi.compactFilledStyle(context),
                   onPressed: _publish,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(l10n.teacherExamPublish),
-                  ),
+                  child: Text(l10n.teacherExamPublish),
                 ),
               ],
             ],
@@ -555,7 +544,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       children: [
         for (var i = 0; i < children.length; i++)
           Padding(
-            padding: EdgeInsets.only(bottom: i == children.length - 1 ? 0 : 12),
+            padding: EdgeInsets.only(bottom: i == children.length - 1 ? 0 : AppSpacing.s3),
             child: children[i],
           ),
       ],
@@ -743,12 +732,13 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                     height: 24,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryTint,
+                      color: AppColors.surfaceSubtle,
                       borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppColors.outlineMuted),
                     ),
                     child: Text(
                       '$index',
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+                      style: TeacherWebUi.webCaption(ctx).copyWith(fontWeight: FontWeight.w600),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -774,7 +764,8 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerRight,
-                child: FilledButton.tonal(
+                child: OutlinedButton(
+                  style: TeacherWebUi.compactOutlinedStyle(ctx),
                   onPressed: () => Navigator.pop(ctx, prompt),
                   child: Text(ctx.l10n.teacherExamWritingSelectThisPrompt),
                 ),
@@ -968,15 +959,16 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 12),
-        const Divider(height: 1),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.s3),
         Row(
           children: [
-            const Icon(Icons.assignment_outlined, size: 18, color: AppColors.textSecondary),
-            const SizedBox(width: 8),
+            const Icon(Icons.assignment_outlined, size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: 6),
             Expanded(
-              child: Text(l10n.teacherExamWritingPromptSectionTitle, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600)),
+              child: Text(
+                l10n.teacherExamWritingPromptSectionTitle,
+                style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
             if (prompt != null && draft)
               IconButton(
@@ -1014,42 +1006,34 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     final text = (prompt['text'] as String?)?.trim() ?? '';
     final taskType = (prompt['taskType'] as String?)?.trim() ?? '';
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.s3),
       decoration: BoxDecoration(
-        color: AppColors.primaryTint,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.18)),
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primaryDark),
+              const Icon(Icons.article_outlined, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   title.isNotEmpty ? title : context.l10n.teacherExamWritingCustomPrompt,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                  style: TeacherWebUi.listTitle(context),
                 ),
               ),
               if (taskType.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceCard,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.outline),
-                  ),
-                  child: Text(taskType, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                ),
+                Text(taskType, style: TeacherWebUi.webCaption(context)),
             ],
           ),
           if (text.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               text,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.5),
+              style: TeacherWebUi.webBody(context),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
@@ -1063,27 +1047,8 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceSubtle,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppColors.outlineMuted),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, size: 16, color: AppColors.info),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  l10n.teacherExamWritingPromptEmptyHint,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
+        _neutralHintBox(l10n.teacherExamWritingPromptEmptyHint),
+        const SizedBox(height: AppSpacing.s3),
         Builder(
           builder: (context) {
             final titleReady = _s.title.trim().isNotEmpty;
@@ -1101,7 +1066,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: AppLoadingIndicator(strokeWidth: 2),
                                 ),
                               ),
                             )
@@ -1139,26 +1104,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
   }
 
   Widget _buildPromptMissingWarning(AppLocalizations l10n) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.warning_amber_outlined, size: 16, color: AppColors.warning),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              l10n.teacherExamWritingPromptNotSet,
-              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
+    return _neutralHintBox(l10n.teacherExamWritingPromptNotSet);
   }
 
   Widget _buildSkillCard(String skill) {
@@ -1174,39 +1120,32 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         : <Map<String, dynamic>>[];
     final totalListeningCount = resources.length + listeningCompRes.length;
 
-    return Material(
-      color: AppColors.surfaceCard,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: on ? AppColors.outline : AppColors.outlineMuted),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return DecoratedBox(
+      decoration: TeacherWebUi.cardDecoration(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 16, 14, 16),
+        padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _buildSkillHeaderIcon(skill),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_skillLabel(skill), style: ExamSystemUi.listTitle(context)),
-                      const SizedBox(height: 2),
+                      Text(_skillLabel(skill), style: TeacherWebUi.listTitle(context)),
                       if (on && (skill != 'listening' ? resources.isNotEmpty : totalListeningCount > 0))
                         Text(
                           '${skill == 'listening' ? totalListeningCount : resources.length} ${l10n.teacherExamSkillsExercisesSelected}',
-                          style: ExamSystemUi.captionMuted,
+                          style: TeacherWebUi.webCaption(context),
                         ),
                     ],
                   ),
                 ),
-                Switch.adaptive(
+                _compactSectionSwitch(
                   value: on,
                   onChanged: _s.examStatus == 'draft'
                       ? (v) => _bloc.add(TeacherIntegratedExamEditorSkillIncludedChanged(skill: skill, included: v))
@@ -1215,35 +1154,28 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
               ],
             ),
             if (on) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s3),
               if (!_skillMeetsPublishRequirement(skill))
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Text(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s3),
+                  child: _publishHintBanner(
                     skill == 'writing'
                         ? l10n.teacherExamWritingPublishNeedPrompt
                         : skill == 'speaking'
                             ? l10n.teacherExamSpeakingExerciseRequired
                             : l10n.teacherExamPublishPickEachIncludedSkill,
-                    style: ExamSystemUi.captionSecondary.copyWith(color: AppColors.chartTrend),
                   ),
                 ),
               if (skill == 'listening')
                 _buildListeningBody(sec, canEdit)
               else ...[
-                // Exercise list
                 for (var i = 0; i < resources.length; i++) ...[
-                  if (i > 0) const SizedBox(height: 4),
+                  if (i > 0) const SizedBox(height: AppSpacing.s2),
                   _buildResourceRow(skill: skill, idx: i, res: resources[i], draft: canEdit),
                 ],
                 if (canEdit) ...[
-                  const SizedBox(height: 12),
-                  _buildAddExerciseAction(
-                    skill: skill,
-                    onPressed: () => _pickAt(skill),
-                  ),
+                  const SizedBox(height: AppSpacing.s3),
+                  _buildAddExerciseAction(onPressed: () => _pickAt(skill)),
                 ],
               ],
               if (skill == 'writing') _buildWritingPromptSubSection(canEdit),
@@ -1270,9 +1202,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           canEdit: canEdit,
           subType: 'dictation',
         ),
-        const SizedBox(height: 12),
-        const Divider(height: 1),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.s3),
         _buildListeningSubTypeSection(
           label: l10n.teacherExamListeningTypeComprehension,
           icon: Icons.headphones_outlined,
@@ -1301,16 +1231,15 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           children: [
             Icon(icon, size: 14, color: AppColors.textSecondary),
             const SizedBox(width: 6),
-            Text(label,
-                style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
+            Text(label, style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600)),
           ],
         ),
         const SizedBox(height: 2),
-        Text(hint, style: ExamSystemUi.captionMuted),
+        Text(hint, style: TeacherWebUi.webCaption(context)),
         if (resources.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.s2),
           for (var i = 0; i < resources.length; i++) ...[
-            if (i > 0) const SizedBox(height: 4),
+            if (i > 0) const SizedBox(height: AppSpacing.s2),
             _buildResourceRow(
               skill: 'listening',
               idx: i,
@@ -1321,11 +1250,8 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           ],
         ],
         if (canEdit) ...[
-          const SizedBox(height: 10),
-          _buildAddExerciseAction(
-            skill: 'listening',
-            onPressed: () => _pickListeningSubType(subType),
-          ),
+          const SizedBox(height: AppSpacing.s2),
+          _buildAddExerciseAction(onPressed: () => _pickListeningSubType(subType)),
         ],
       ],
     );
@@ -1463,48 +1389,45 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     final title = res['title'] as String? ?? '';
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceSubtle,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.outlineMuted),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 22,
-            height: 22,
+            width: 20,
+            height: 20,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(5),
-              border: Border.all(color: AppColors.outline),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.outlineMuted),
             ),
             child: Text(
               '${idx + 1}',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
+              style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               title.isEmpty ? '—' : title,
-              style: ExamSystemUi.captionSecondary,
-              maxLines: 2,
+              style: TeacherWebUi.webBody(context),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (draft) ...[
-            const SizedBox(width: 4),
-            InkWell(
-              onTap: () => _removeResource(skill, idx, listeningSubType: listeningSubType),
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(Icons.close, size: 16, color: AppColors.textSecondary),
-              ),
+          if (draft)
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+              onPressed: () => _removeResource(skill, idx, listeningSubType: listeningSubType),
+              icon: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
             ),
-          ],
         ],
       ),
     );
@@ -1730,40 +1653,45 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
   Widget _grammarPanel() {
     final l10n = context.l10n;
     final on = _s.grammarIncluded;
-    return Material(
-      color: AppColors.surfaceCard,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: on ? AppColors.outline : AppColors.outlineMuted),
-      ),
-      clipBehavior: Clip.antiAlias,
+    final subtitle = on && _s.grammarItems.isNotEmpty
+        ? l10n.teacherExamGrammarQuestionCount(_s.grammarItems.length)
+        : (on ? l10n.teacherExamGrammarHint : null);
+
+    return DecoratedBox(
+      decoration: TeacherWebUi.cardDecoration(),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 18, 14, 8),
+        padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(Icons.spellcheck_outlined, size: 26, color: AppColors.textSecondary),
-                const SizedBox(width: 12),
+                Container(
+                  width: 32,
+                  height: 32,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.outlineMuted),
+                  ),
+                  child: const Icon(Icons.spellcheck_outlined, size: 18, color: AppColors.textSecondary),
+                ),
+                const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.teacherExamGrammarTitle, style: ExamSystemUi.listTitle(context)),
-                      const SizedBox(height: 2),
-                      Text(
-                        on && _s.grammarItems.isNotEmpty
-                            ? l10n.teacherExamGrammarQuestionCount(_s.grammarItems.length)
-                            : l10n.teacherExamGrammarIncludeSubtitle,
-                        style: ExamSystemUi.captionMuted,
-                      ),
+                      Text(l10n.teacherExamGrammarTitle, style: TeacherWebUi.listTitle(context)),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(subtitle, style: TeacherWebUi.webCaption(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ],
                     ],
                   ),
                 ),
-                Switch.adaptive(
+                _compactSectionSwitch(
                   value: on,
                   onChanged: _s.canEditSkillContent
                       ? (v) {
@@ -1777,118 +1705,87 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
               ],
             ),
             if (on) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.s3),
               Row(
                 children: [
-                  Expanded(
-                    child: Text(l10n.teacherExamGrammarHint, style: ExamSystemUi.captionSecondary),
-                  ),
                   if (_s.canEditSkillContent) ...[
-                    IconButton(
+                    OutlinedButton.icon(
+                      style: TeacherWebUi.compactOutlinedStyle(context),
                       onPressed: _showImportFormatDialog,
-                      icon: const Icon(Icons.upload_file_outlined, size: 20),
-                      tooltip: l10n.teacherExamGrammarImport,
-                      color: AppColors.textSecondary,
+                      icon: const Icon(Icons.upload_file_outlined, size: 16),
+                      label: Text(l10n.teacherExamGrammarImport),
                     ),
-                    FilledButton.tonalIcon(
+                    const SizedBox(width: AppSpacing.s2),
+                    FilledButton.icon(
+                      style: TeacherWebUi.compactFilledStyle(context),
                       onPressed: () => _openGrammarEditor(),
-                      icon: const Icon(Icons.add_outlined, size: 20),
+                      icon: const Icon(Icons.add_outlined, size: 16),
                       label: Text(l10n.teacherExamGrammarAdd),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 12),
-            ],
-            if (!on)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 4, 6, 16),
-                child: Text(l10n.teacherExamGrammarIncludeSubtitle, style: ExamSystemUi.captionMuted),
-              )
-            else if (_s.grammarItems.isEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 8, 0, 20),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 18, color: AppColors.textMuted),
-                    const SizedBox(width: 8),
-                    Expanded(child: Text(l10n.teacherExamSkillsNoGrammarYet, style: ExamSystemUi.captionSecondary)),
-                  ],
-                ),
-              )
-            else if (on)
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _s.grammarItems.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
-                itemBuilder: (context, index) {
+              if (_s.grammarItems.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: AppSpacing.s3),
+                  child: _neutralHintBox(l10n.teacherExamSkillsNoGrammarYet),
+                )
+              else ...[
+                const SizedBox(height: AppSpacing.s3),
+                ...List.generate(_s.grammarItems.length, (index) {
                   final it = _s.grammarItems[index];
                   final kind = '${it['kind'] ?? ''}';
-                  return Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _s.examStatus == 'draft' ? () => _openGrammarEditor(editIndex: index) : null,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(
-                              width: 36,
-                              child: Text(
-                                '${index + 1}.',
-                                style: ExamSystemUi.captionMuted,
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Chip(
-                                      label: Text(_grammarKindLabel(kind), style: const TextStyle(fontSize: 12)),
-                                      visualDensity: VisualDensity.compact,
-                                      padding: EdgeInsets.zero,
-                                      side: const BorderSide(color: AppColors.outlineMuted),
-                                      backgroundColor: AppColors.surface,
-                                    ),
+                  return Column(
+                    children: [
+                      if (index > 0) const Divider(height: 1, color: AppColors.outlineMuted),
+                      Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: _s.examStatus == 'draft' ? () => _openGrammarEditor(editIndex: index) : null,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s2),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  child: Text('${index + 1}.', style: TeacherWebUi.webCaption(context)),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(_grammarKindLabel(kind), style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _grammarPreview(it),
+                                        style: TeacherWebUi.webBody(context),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _grammarPreview(it),
-                                    style: ExamSystemUi.captionSecondary,
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
+                                ),
+                                Text('${it['points'] ?? 1}pt', style: TeacherWebUi.webCaption(context)),
+                                if (_s.examStatus == 'draft')
+                                  IconButton(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                    tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
+                                    onPressed: () => _removeGrammarAt(index),
+                                    icon: const Icon(Icons.close, size: 16, color: AppColors.textMuted),
                                   ),
-                                ],
-                              ),
+                              ],
                             ),
-                            Chip(
-                              label: Text('${it['points'] ?? 1}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-                              visualDensity: VisualDensity.compact,
-                              padding: EdgeInsets.zero,
-                              side: const BorderSide(color: AppColors.outline),
-                              backgroundColor: AppColors.surface,
-                            ),
-                            if (_s.examStatus == 'draft')
-                              IconButton(
-                                tooltip: MaterialLocalizations.of(context).deleteButtonTooltip,
-                                onPressed: () => _removeGrammarAt(index),
-                                icon: const Icon(Icons.delete_outline, size: 22),
-                                color: AppColors.textSecondary,
-                              ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   );
-                },
-              ),
-            const SizedBox(height: 8),
+                }),
+              ],
+            ],
           ],
         ),
       ),
@@ -1952,7 +1849,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         children: [
           Expanded(
             child: loading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: AppLoadingIndicator.center())
                 : state.errorMessage != null
                     ? Center(
                         child: Padding(
@@ -1972,53 +1869,41 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                               children: [
                                 if (state.examStatus != 'draft')
                                   Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        color: AppColors.warning.withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
-                                      ),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                        child: Text(l10n.teacherExamReadOnlyPublished, style: ExamSystemUi.captionSecondary),
-                                      ),
-                                    ),
+                                    padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                                    child: _neutralHintBox(l10n.teacherExamReadOnlyPublished),
                                   ),
                                 Text(
                                   l10n.teacherExamTitleLabel,
-                                  style: ExamSystemUi.captionMuted,
+                                  style: TeacherWebUi.webTableHead(context),
                                 ),
-                                const SizedBox(height: 6),
+                                const SizedBox(height: AppSpacing.s2),
                                 TextField(
                                   controller: _titleController,
                                   onChanged: (v) => _bloc.add(TeacherIntegratedExamEditorTitleChanged(v)),
                                   enabled: state.examStatus == 'draft',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w500),
-                                  decoration: InputDecoration(
+                                  style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+                                  decoration: TeacherWebUi.formInputDecoration(
+                                    context,
                                     hintText: l10n.teacherExamTitleHint,
-                                    filled: true,
-                                    fillColor: AppColors.surfaceCard,
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                                    enabledBorder: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      borderSide: const BorderSide(color: AppColors.outline),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                                   ),
                                 ),
-                                const SizedBox(height: 32),
+                                const SizedBox(height: AppSpacing.s5),
                                 _grammarPanel(),
-                                const SizedBox(height: 36),
-                                Text(l10n.teacherExamSkillsPartsTitle, style: ExamSystemUi.sectionTitle(context)),
-                                const SizedBox(height: 20),
+                                const SizedBox(height: AppSpacing.s5),
+                                Text(l10n.teacherExamSkillsPartsTitle, style: TeacherWebUi.sectionTitle(context)),
+                                const SizedBox(height: AppSpacing.s2),
+                                Text(
+                                  l10n.teacherExamPublishPickEachIncludedSkill,
+                                  style: TeacherWebUi.webCaption(context),
+                                ),
+                                const SizedBox(height: AppSpacing.s3),
                                 _skillsRegion(),
                               ],
                             );
                           }
 
                           final scroll = SingleChildScrollView(
-                            padding: EdgeInsets.fromLTRB(hPad, 24, hPad, _useWebLayout() ? 100 : 28),
+                            padding: EdgeInsets.fromLTRB(hPad, AppSpacing.s4, hPad, _useWebLayout() ? 88 : AppSpacing.s5),
                             child: showEditor ? mainColumn() : SizedBox(width: maxW, child: mainColumn()),
                           );
 
@@ -2163,7 +2048,7 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoadingIndicator.center());
         }
         final allItems = snap.data ?? [];
         final available = allItems.where((it) => !widget.alreadySelectedIds.contains(it.id)).toList();
@@ -2271,14 +2156,9 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
                   final items = available.where((it) => _selected.contains(it.id)).toList();
                   widget.onConfirmMulti?.call(items);
                 },
-                icon: const Icon(Icons.check, size: 18),
+                style: TeacherWebUi.compactFilledStyle(context),
+                icon: const Icon(Icons.check, size: 16),
                 label: Text(l10n.teacherExamPickerAddSelected(_selected.length)),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
               ),
             ],
           ],

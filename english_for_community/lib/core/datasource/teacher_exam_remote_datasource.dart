@@ -234,6 +234,11 @@ class TeacherExamRemoteDatasource {
     return r.data;
   }
 
+  Future<dynamic> joinPublicExamSession(String token) async {
+    final r = await dio.post('exams/public/$token/join');
+    return r.data;
+  }
+
   Future<dynamic> joinExamSession(String sessionId) async {
     final r = await dio.post('exams/sessions/$sessionId/join');
     return r.data;

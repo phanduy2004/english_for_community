@@ -43,14 +43,12 @@ extension SocketUserHandler on SocketService {
         _socket.emit('user_logout', userId);
         _socket.disconnect();
       }
+      _socket.dispose();
     } catch (e) {
       print('⚠️ Error during disconnect: $e');
     } finally {
       _isInitialized = false;
-      _currentUserId = null;
-      _pendingUserId = null;
-      _examAccessToken = null;
-      _currentExamSessionId = null;
+      _resetSocketSessionState();
     }
   }
 }

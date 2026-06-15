@@ -1,19 +1,35 @@
-# Tài khoản seed — Giáo viên Đồ Đàng Hoàng & 15 học sinh
+# Tài khoản demo — Giáo viên Đồ Đàng Hoàng & 15 học sinh
 
-> Dữ liệu tạo bởi `npm run seed:teacher-hoangdong` (backend).  
-> Dùng để test **Schedule**, **Analytics**, giao bài, chấm điểm.
+> Dữ liệu lớp học / đề kiểm tra tạo bởi `npm run seed:reset-classroom` (backend).  
+> Đặt tên theo quy ước trường THPT — không dùng tiền tố `seed_*` trên UI.
 
-**Chạy lại seed:**
+**Reset & seed lại (xóa hết lớp, đề, bài giao, bài nộp):**
 
 ```bash
 cd english_for_community_backend
-npm run seed:listening-comp    # tạo CMS ListeningComprehension (cần chạy 1 lần trước)
-npm run seed:teacher-hoangdong
-npm run seed:extra-teachers   # thêm 5 giáo viên phụ (co-teacher, search username)
-npm run seed:student-app    # Home, Progress, History + Admin activity (xem seed-student-app-accounts.md)
+npm run seed:listening-comp    # CMS ListeningComprehension (chạy 1 lần nếu chưa có)
+npm run seed:reset-classroom   # purge + Hoàng Đông + 5 giáo viên phụ
+npm run seed:student-app       # Home, Progress, History (xem seed-student-app-accounts.md)
 ```
 
-Hoặc một lệnh: `npm run seed:full-demo` (admin + listening-comp + hoangdong + student-app).
+Hoặc một lệnh: `npm run seed:full-demo` (admin + listening-comp + reset-classroom + student-app).
+
+Chỉ xóa dữ liệu lớp (không seed): `npm run seed:purge-classroom`
+
+---
+
+## Quy ước đặt tên
+
+
+| Loại          | Mẫu                             | Ví dụ                                    |
+| ------------- | ------------------------------- | ---------------------------------------- |
+| Lớp chủ nhiệm | `{Khối}{Lớp} — Ca sáng · HK2`   | `10A1 — Ca sáng · HK2`                   |
+| Lớp nâng cao  | `{Khối} — {Nhóm} · HK2`         | `11B — Nâng cao · HK2`                   |
+| KT nhanh      | `KT 15' · Unit {n} — {Kỹ năng}` | `KT 15' · Unit 5 — Nghe chép & Ngữ pháp` |
+| Giữa kỳ       | `Giữa HK2 · Đề {n} — {Kỹ năng}` | `Giữa HK2 · Đề 1 — Nghe · Đọc · Viết`    |
+| BTVN          | `BTVN · Tuần {n} — {Kỹ năng}`   | `BTVN · Tuần 8 — Writing & Speaking`     |
+| Mock          | `Mock lần {n} — {Kỹ năng}`      | `Mock lần 2 — Nghe hiểu MCQ & Đọc`       |
+
 
 ---
 
@@ -25,7 +41,7 @@ Hoặc một lệnh: `npm run seed:full-demo` (admin + listening-comp + hoangdon
 | Họ tên    | Đồ Đàng Hoàng                   |
 | Email     | `hoangdong.teacher@e4c.dev`     |
 | Username  | `hoangdong_teacher`             |
-| Mật khẩu  | `Teacher@123456`                |
+| Mật khẩu  | Teacher@123456                  |
 | Role      | `teacher`                       |
 | Đăng nhập | App / Web → khu vực **Teacher** |
 
@@ -34,81 +50,79 @@ Hoặc một lệnh: `npm run seed:full-demo` (admin + listening-comp + hoangdon
 
 ## 1b. Giáo viên bổ sung (`npm run seed:extra-teachers`)
 
-Mật khẩu chung: **`Teacher@123456`**
+Mật khẩu chung: `**Teacher@123456`**
 
-| Họ tên | Email | Username | Lớp mẫu |
-| --- | --- | --- | --- |
-| Trần Ngọc Lan | `seed.teacher.trannl@e4c.dev` | `trannl_teacher` | Lớp 9/3 — Giao tiếp hàng ngày |
-| Phạm Minh Tuấn | `seed.teacher.phammt@e4c.dev` | `phammt_teacher` | IELTS Foundation — Khóa T5/2026 |
-| Lê Thị Hương | `seed.teacher.lethi@e4c.dev` | `lethi_huong` | Lớp 12A1 — Luyện đề THPTQG |
-| Võ Quốc Khánh | `seed.teacher.voqk@e4c.dev` | `voqk_teacher` | English Club — THPT Chuyên |
-| Nguyễn Bích Thảo | `seed.teacher.nguyenbt@e4c.dev` | `nguyenbt_teacher` | Starter English — Khối 6 |
 
-> **Co-teacher demo:** Sau khi chạy cả `seed:teacher-hoangdong` và `seed:extra-teachers`, **Lê Thị Hương** được gắn sẵn làm giáo viên phụ lớp **10A** của Hoàng Đông. Các giáo viên khác dùng để test **search username** khi thêm co-teacher.
+| Họ tên           | Email                           | Username           | Lớp mẫu                         |
+| ---------------- | ------------------------------- | ------------------ | ------------------------------- |
+| Trần Ngọc Lan    | `seed.teacher.trannl@e4c.dev`   | `trannl_teacher`   | Lớp 9/3 — Giao tiếp hàng ngày   |
+| Phạm Minh Tuấn   | `seed.teacher.phammt@e4c.dev`   | `phammt_teacher`   | IELTS Foundation — Khóa T5/2026 |
+| Lê Thị Hương     | `seed.teacher.lethi@e4c.dev`    | `lethi_huong`      | Lớp 12A1 — Luyện đề THPTQG      |
+| Võ Quốc Khánh    | `seed.teacher.voqk@e4c.dev`     | `voqk_teacher`     | English Club — THPT Chuyên      |
+| Nguyễn Bích Thảo | `seed.teacher.nguyenbt@e4c.dev` | `nguyenbt_teacher` | Starter English — Khối 6        |
 
+
+> **Co-teacher demo:** Sau `seed:reset-classroom`, **Lê Thị Hương** được gắn sẵn làm GV phụ lớp **10A1 — Ca sáng · HK2** của Hoàng Đông.
 
 ---
 
 ## 2. Lớp học (của giáo viên trên)
 
 
-| Tên lớp                               | Mã mời (invite) | Ghi chú                                                    |
-| ------------------------------------- | --------------- | ---------------------------------------------------------- |
-| `[SEED:HoangDong] Lớp 10A — Sáng`     | `KH4EZS`        | Lần seed gần nhất (Atlas) — xem log `invite:` nếu seed lại |
-| `[SEED:HoangDong] Lớp 11B — Nâng cao` | `2H4ZNH`        | Học sinh seed đã được ghi danh sẵn cả 2 lớp                |
+| Tên lớp                | Ghi chú                             |
+| ---------------------- | ----------------------------------- |
+| `10A1 — Ca sáng · HK2` | 12 học sinh — lớp chủ nhiệm khối 10 |
+| `11B — Nâng cao · HK2` | 12 học sinh (9 em học cả 2 lớp)     |
 
 
-> Nếu xóa lớp trong DB rồi seed lại, **mã mời có thể đổi** — xem dòng `invite:` trong log console khi chạy seed.
+> Mã mời (invite) sinh ngẫu nhiên mỗi lần seed — xem dòng `invite:` / `code` trong log console.
 
 ---
 
 ## 3. Học sinh (15 tài khoản)
 
-Student@12345
+Mật khẩu chung: `**Student@123456`** — email domain `@thptchuyene4c.edu.vn`
 
-> ⚠️ **Không nhầm với `seedAdmin.js`:** `user1@gmail.com` … `user8@gmail.com` / mật khẩu `123456` là user demo cũ, **không** map với `seed.hd.student01@e4c.dev`.
+> ⚠️ Tài khoản cũ `seed.hd.student01@e4c.dev` … bị xóa khi chạy `seed:reset-classroom`.
 
 
-| STT | Họ tên         | Email                       | Username      |
-| --- | -------------- | --------------------------- | ------------- |
-| 1   | Nguyễn Minh An | `seed.hd.student01@e4c.dev` | `seed_hd_s01` |
-| 2   | Trần Thu Hà    | `seed.hd.student02@e4c.dev` | `seed_hd_s02` |
-| 3   | Lê Quốc Bảo    | `seed.hd.student03@e4c.dev` | `seed_hd_s03` |
-| 4   | Phạm Ngọc Linh | `seed.hd.student04@e4c.dev` | `seed_hd_s04` |
-| 5   | Hoàng Văn Đức  | `seed.hd.student05@e4c.dev` | `seed_hd_s05` |
-| 6   | Vũ Thị Mai     | `seed.hd.student06@e4c.dev` | `seed_hd_s06` |
-| 7   | Đặng Hữu Phúc  | `seed.hd.student07@e4c.dev` | `seed_hd_s07` |
-| 8   | Bùi Thảo My    | `seed.hd.student08@e4c.dev` | `seed_hd_s08` |
-| 9   | Ngô Kiên Cường | `seed.hd.student09@e4c.dev` | `seed_hd_s09` |
-| 10  | Dương Lan Chi  | `seed.hd.student10@e4c.dev` | `seed_hd_s10` |
-| 11  | Lý Gia Hân     | `seed.hd.student11@e4c.dev` | `seed_hd_s11` |
-| 12  | Mai Hoàng Nam  | `seed.hd.student12@e4c.dev` | `seed_hd_s12` |
-| 13  | Tôn Nhật Minh  | `seed.hd.student13@e4c.dev` | `seed_hd_s13` |
-| 14  | Chu Bảo Trân   | `seed.hd.student14@e4c.dev` | `seed_hd_s14` |
-| 15  | Phan Đức Anh   | `seed.hd.student15@e4c.dev` | `seed_hd_s15` |
+| STT | Họ tên         | Email                                | Username        |
+| --- | -------------- | ------------------------------------ | --------------- |
+| 1   | Nguyễn Minh An | `minhan.nguyen@thptchuyene4c.edu.vn` | `minhan.nguyen` |
+| 2   | Trần Thu Hà    | `thuha.tran@thptchuyene4c.edu.vn`    | `thuha.tran`    |
+| 3   | Lê Quốc Bảo    | `quocbao.le@thptchuyene4c.edu.vn`    | `quocbao.le`    |
+| 4   | Phạm Ngọc Linh | `ngoclinh.pham@thptchuyene4c.edu.vn` | `ngoclinh.pham` |
+| 5   | Hoàng Văn Đức  | `vanduc.hoang@thptchuyene4c.edu.vn`  | `vanduc.hoang`  |
+| 6   | Vũ Thị Mai     | `thimai.vu@thptchuyene4c.edu.vn`     | `thimai.vu`     |
+| 7   | Đặng Hữu Phúc  | `huuphuc.dang@thptchuyene4c.edu.vn`  | `huuphuc.dang`  |
+| 8   | Bùi Thảo My    | `thaomy.bui@thptchuyene4c.edu.vn`    | `thaomy.bui`    |
+| 9   | Ngô Kiên Cường | `kiencuong.ngo@thptchuyene4c.edu.vn` | `kiencuong.ngo` |
+| 10  | Dương Lan Chi  | `lanchi.duong@thptchuyene4c.edu.vn`  | `lanchi.duong`  |
+| 11  | Lý Gia Hân     | `gihan.ly@thptchuyene4c.edu.vn`      | `gihan.ly`      |
+| 12  | Mai Hoàng Nam  | `hoangnam.mai@thptchuyene4c.edu.vn`  | `hoangnam.mai`  |
+| 13  | Tôn Nhật Minh  | `nhatminh.ton@thptchuyene4c.edu.vn`  | `nhatminh.ton`  |
+| 14  | Chu Bảo Trân   | `baotran.chu@thptchuyene4c.edu.vn`   | `baotran.chu`   |
+| 15  | Phan Đức Anh   | `ducanh.phan@thptchuyene4c.edu.vn`   | `ducanh.phan`   |
 
 
 ---
 
-## 4. Đề kiểm tra seed (tham khảo)
-
-Tất cả đề có tiền tố `[SEED:HoangDong]` trong tiêu đề:
+## 4. Đề kiểm tra (mẫu tên)
 
 
-| Đề                                            | Kỹ năng                           |
-| --------------------------------------------- | --------------------------------- |
-| Kiểm tra Nghe + Đọc + Ngữ pháp                | Nghe, Đọc, Grammar                |
-| Luyện Viết + Nói                              | Viết, Nói                         |
-| Giữa kỳ — Nghe Đọc Viết + Grammar             | Nghe, Đọc, Viết, Grammar          |
-| Đọc hiểu + Viết tóm tắt                       | Đọc, Viết                         |
-| Ôn tập 4 kỹ năng (Nghe Đọc Viết Nói)          | Nghe, Đọc, Viết, Nói, Grammar     |
-| **Nghe hiểu + Đọc (Listening Comprehension)** | **Nghe (comprehension MCQ), Đọc** |
+| Đề                                        | Kỹ năng                       |
+| ----------------------------------------- | ----------------------------- |
+| KT 15' · Unit 5 — Nghe chép & Ngữ pháp    | Nghe, Đọc, Grammar            |
+| BTVN · Tuần 8 — Writing & Speaking        | Viết, Nói                     |
+| Giữa HK2 · Đề 1 — Nghe · Đọc · Viết       | Nghe, Đọc, Viết, Grammar      |
+| Ôn cuối tuần · Tuần 6 — Reading & Summary | Đọc, Viết                     |
+| Ôn cuối tuần · Tuần 9 — 4 kỹ năng         | Nghe, Đọc, Viết, Nói, Grammar |
+| Mock lần 2 — Nghe hiểu MCQ & Đọc          | Nghe (comprehension), Đọc     |
 
 
-Kèm **15 bài giao** và **151 bài nộp + 9 đang làm** (một phần chờ chấm) để xem **Lịch** & **Phân tích**.
+Mỗi đề có 2–3 **bài giao** theo lịch (đã đóng / vừa nộp / đang mở / sắp mở) + bài nộp đa dạng trạng thái chấm.
 
-> **CMS:** Nếu log có `No Listening/Reading in DB`, các section Nghe/Đọc trên đề seed là `no_content` cho đến khi admin thêm bài CMS trên cùng DB (Atlas).
-> **Listening Comprehension:** Đề `[SEED:HoangDong] Nghe hiểu + Đọc` cần `ListeningComprehension` CMS — chạy `npm run seed:listening-comp` trước rồi mới seed HoangDong.
+> **Listening Comprehension:** chạy `npm run seed:listening-comp` trước reset nếu DB chưa có CMS nghe hiểu.
 
 ---
 

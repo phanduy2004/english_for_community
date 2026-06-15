@@ -7,102 +7,133 @@ In-app notifications + push (FCM) + realtime (Socket.IO) for classroom and exam 
 | Channel | When | Implementation |
 |---------|------|----------------|
 | **In-app inbox** | Always | `Notification` MongoDB + `GET /api/notifications` |
-| **Realtime (Socket)** | App open + logged in | `user_login` → join room `{userId}` → `new_notification` → `NotificationBloc` |
-| **Push (trượt)** | Device has FCM token | `notificationService.createNotification` → FCM multicast |
-| **Local banner** | App foreground (mobile) | `LocalNotificationService.showInstantNotification` |
-| **Web banner** | App foreground (web) | `SnackBar` in `AppNotificationListener` (no FCM/local plugin) |
-
-### Socket flow (required for realtime)
-
-```
-Teacher POST /teacher/exams/assignments (audience=classroom)
-  → teacherExamAssignmentService.create
-  → notifyStudentsExamAssigned (active ClassroomMember students)
-  → notificationService.createNotification (each student)
-       → MongoDB save
-       → io.to(studentUserId).emit('new_notification', plain JSON)
-  → Student app: SocketService.userLogin(studentId) already called
-       → AppNotificationListener hears event → inbox + banner
-```
-
-**Student must be logged in** with socket connected (`SocketLifecycleManager` + `AppNotificationListener`).  
-Backend log when assigning: `📢 [Notify] EXAM_ASSIGNED → N student(s)` and `⚡ [Socket] new_notification → room …`.
-
-If `N = 0`: student not `active` in `ClassroomMember` for that `classroomId`, or wrong class selected.
+| **Realtime (Socket)** | App open + logged in | `user_login` → room `{userId}` → `new_notification` → `NotificationBloc` |
+| **Push (FCM)** | Device has FCM token | `notificationService.createNotification` → FCM multicast |
+| **Local push banner** | App foreground (student mobile) | `LocalNotificationService.showInstantNotification` |
+| **In-app inbox** | Tap bell icon | `NotificationDialog` + `NotificationBloc` |
+| **Web banner** | App foreground (web only) | Corner toast in `AppNotificationListener` |
+| **Action feedback (student mobile)** | Save/submit/errors | Full-width bottom `SnackBar` via `AppCornerToast` |
 
 ## Notification types (enum)
 
+### Classroom & team
+
+| Type | Recipient | Trigger | In-app Accept/Decline |
+|------|-----------|---------|------------------------|
+| `CLASSROOM_JOIN_REQUEST` | Primary teacher (owner) | Student requests join (`approval_required`) | **Yes** — `POST /api/notifications/:id/respond` |
+| `CLASSROOM_JOIN_APPROVED` | Student | Teacher approves (UI or notification) | No |
+| `CLASSROOM_JOIN_REJECTED` | Student | Teacher rejects | No |
+| `CO_TEACHER_INVITE` | Invited teacher | Owner adds co-teacher (**pending** until accept) | **Yes** |
+| `CO_TEACHER_INVITE_ACCEPTED` | Owner | Co-teacher accepts invite | No (info) |
+| `CO_TEACHER_INVITE_DECLINED` | Owner | Co-teacher declines | No (info) |
+| `CO_TEACHER_REMOVED` | Co-teacher | Owner removes them from class | No (info) |
+
+### Exams
+
+| Type | Recipient | Trigger | Actions |
+|------|-----------|---------|---------|
+| `EXAM_ASSIGNED` | Active students in class | Teacher creates classroom assignment | Tap → classroom |
+| `EXAM_ASSIGNMENT_UPDATED` | Same | Teacher patches assignment window/config | Tap → classroom |
+| `EXAM_ASSIGNMENT_CLOSED` | Same | Teacher closes assignment | Tap → classroom |
+| `EXAM_SESSION_LIVE` | Students (live session) | Teacher starts realtime session | Tap → session lobby |
+| `EXAM_SUBMISSION_RECEIVED` | Assignment `teacherId` (owner) | Student submits attempt | Tap → grading hub |
+| `EXAM_RESULTS_RELEASED` | Student | Results released / auto after submit | Tap → exam run |
+
+### Learning / social (legacy)
+
 | Type | Recipient | Trigger |
 |------|-----------|---------|
-| `CLASSROOM_JOIN_REQUEST` | Teacher | Student requests join (`approval_required`) |
-| `CLASSROOM_JOIN_APPROVED` | Student | Teacher approves member |
-| `CLASSROOM_JOIN_REJECTED` | Student | Teacher rejects pending member |
-| `EXAM_ASSIGNED` | Active students in class | Teacher creates classroom assignment |
-| `EXAM_ASSIGNMENT_UPDATED` | Same | Teacher patches assignment config (due/window) |
-| `EXAM_ASSIGNMENT_CLOSED` | Same | Teacher closes assignment |
-| `EXAM_SESSION_LIVE` | Students joined live session | Teacher starts realtime session |
-| `EXAM_SUBMISSION_RECEIVED` | Assignment owner (teacher) | Student submits attempt |
-| `EXAM_RESULTS_RELEASED` | Student | Results released (`releaseResults` or auto `after_submit`) |
+| `COMMENT_REPLY` | Cue author | Reply on listening cue |
+| `COMMENT_REACTION` | Comment author | Reaction on cue comment |
+| `DAILY_REMINDER` | User | Cron / smart notification job |
+| `SYSTEM_ANNOUNCEMENT` | User | Admin / system |
 
-Legacy types unchanged: `COMMENT_REPLY`, `COMMENT_REACTION`, `DAILY_REMINDER`, `SYSTEM_ANNOUNCEMENT`.
+## Actionable notifications API
 
-## Payload (`data`)
+```http
+POST /api/notifications/:id/respond
+Authorization: Bearer …
+Content-Type: application/json
 
-Flexible object (MongoDB `Mixed`). Common fields:
+{ "action": "accept" | "decline" }
+```
+
+Supported types: `CO_TEACHER_INVITE`, `CLASSROOM_JOIN_REQUEST`.
+
+Payload `data` fields:
 
 ```json
 {
-  "classroomId": "ObjectId string",
-  "assignmentId": "ObjectId string",
-  "attemptId": "ObjectId string",
-  "sessionId": "ObjectId string",
-  "examTitle": "Midterm Reading",
-  "classroomName": "Lớp 10A",
-  "studentName": "Nguyễn Văn A"
+  "actionable": true,
+  "actionStatus": "pending | accepted | declined",
+  "classroomId": "...",
+  "memberId": "...",
+  "studentId": "...",
+  "studentName": "..."
 }
 ```
 
-Flutter navigation uses `type` on the notification entity (top-level), not only inside `data`.
+Flutter: notification list shows **Chấp nhận / Từ chối** when `actionable` + `actionStatus` pending (`NotificationEntity.supportsInAppResponse`).
+
+## Co-teacher flow (new)
+
+1. Owner searches username → **Add** → `ClassroomMember` created with `roleInClass: co_teacher`, `status: pending`.
+2. Invited teacher receives `CO_TEACHER_INVITE` (socket + FCM + inbox).
+3. **Accept** → `status: active`, class appears in My classrooms, owner gets `CO_TEACHER_INVITE_ACCEPTED`.
+4. **Decline** → member `removed`, owner gets `CO_TEACHER_INVITE_DECLINED`.
+5. Owner Settings shows pending row with badge **Đang chờ**.
+
+> Co-teachers already `active` in DB before this change stay active (no re-invite).
 
 ## Deep links (Flutter)
 
 | Type | Route |
 |------|-------|
-| `EXAM_ASSIGNED`, `EXAM_ASSIGNMENT_*` | `StudentClassroomDetailPage` `/student/classroom/:classroomId` |
-| `EXAM_RESULTS_RELEASED` | `ExamRunnerPage` `/student/exam-run/:attemptId` |
-| `EXAM_SESSION_LIVE` | `ExamSessionLobbyPage` `/student/exam-session/:sessionId` |
-| `CLASSROOM_JOIN_APPROVED` | `MyClassesHubPage` or classroom detail |
-| `CLASSROOM_JOIN_REQUEST`, `EXAM_SUBMISSION_RECEIVED` | `TeacherClassroomDetailPage` or `TeacherExamGradingPage` |
+| `EXAM_ASSIGNED`, `EXAM_ASSIGNMENT_*` | `StudentClassroomDetailPage` |
+| `EXAM_RESULTS_RELEASED` | `ExamRunnerPage` |
+| `EXAM_SESSION_LIVE` | `ExamSessionLobbyPage` |
+| `CLASSROOM_JOIN_*`, `CO_TEACHER_*` | `TeacherClassroomDetailPage` |
+| `EXAM_SUBMISSION_RECEIVED` | `TeacherExamGradingPage` |
 
 Handler: `lib/core/notification/notification_navigation.dart`.
 
-## Backend hooks
+## Backend hooks (implemented)
 
-| Service | Method | Notification |
-|---------|--------|--------------|
-| `teacherExamAssignmentService` | `create` | `EXAM_ASSIGNED` (classroom audience) |
-| `teacherExamAssignmentService` | `patchAssignment` | `EXAM_ASSIGNMENT_UPDATED` |
-| `teacherExamAssignmentService` | `closeAssignment` | `EXAM_ASSIGNMENT_CLOSED` |
-| `examAttemptService` | `afterAttemptActivity` | `EXAM_SUBMISSION_RECEIVED`, `EXAM_RESULTS_RELEASED` (if auto-release) |
-| `examGradingService` | `releaseResults` | `EXAM_RESULTS_RELEASED` (if newly released) |
-| `examSessionService` | `startSession` | `EXAM_SESSION_LIVE` |
+| Service | Event | Notification |
+|---------|-------|--------------|
+| `classroomService` | `_joinClassroom` (pending) | `CLASSROOM_JOIN_REQUEST` (+ `studentId`) |
 | `classroomService` | `approveMember` / `rejectMember` | `CLASSROOM_JOIN_APPROVED` / `REJECTED` |
+| `classroomService` | `addCoTeacher` | `CO_TEACHER_INVITE` |
+| `classroomService` | `removeCoTeacher` | `CO_TEACHER_REMOVED` |
+| `notificationActionService` | `respond` accept/decline | Updates member + resolves notification |
+| `teacherExamAssignmentService` | create / patch / close | `EXAM_ASSIGNED` / `UPDATED` / `CLOSED` |
+| `examAttemptService` | submit | `EXAM_SUBMISSION_RECEIVED`, optional `EXAM_RESULTS_RELEASED` |
+| `examGradingService` | `releaseResults` | `EXAM_RESULTS_RELEASED` |
+| `examSessionService` | `startSession` | `EXAM_SESSION_LIVE` |
+| `listeningController` | reply / reaction | `COMMENT_REPLY` / `COMMENT_REACTION` |
+| `smartNotificationJob` | cron | `DAILY_REMINDER`, vocab reminders |
 
-Helper: `src/services/teacherNotificationHelper.js`.
+Helper: `src/services/teacherNotificationHelper.js`  
+Actions: `src/services/notificationActionService.js`
 
-## Testing (HoangDong seed)
+## Gaps / roadmap (chưa có)
 
-1. Login teacher `hoangdong.teacher@e4c.dev` / `Teacher@123456`.
-2. Create or duplicate a classroom assignment → login student `seed.hd.student01@e4c.dev` → open Notifications on Home.
-3. Student submits exam → teacher sees `EXAM_SUBMISSION_RECEIVED`.
-4. Teacher **Release results** (or practice/auto policy) → student sees `EXAM_RESULTS_RELEASED`; tap opens exam run view.
-5. Approve pending join → student sees `CLASSROOM_JOIN_APPROVED`.
+| Feature | Ghi chú |
+|---------|---------|
+| **Co-teacher exam fan-out** | `EXAM_ASSIGNED`, `EXAM_SUBMISSION_RECEIVED` chỉ gửi owner (`teacherId`), chưa gửi GV phụ active |
+| **Join request → co-teacher** | Chỉ GVCN nhận `CLASSROOM_JOIN_REQUEST`; GV phụ active chưa nhận bản sao |
+| **Open join** | Học sinh vào `open` policy không tạo thông báo (đúng nghiệp vụ) |
+| ~~Teacher application approved~~ | **Không dùng** — GV được `role: teacher` khi đăng ký hoặc gửi đơn (tự kích hoạt) |
+| **Report / admin moderation** | Report được xử lý — chưa push reporter |
+| **Writing graded manually** | Chấm tay xong — có thể thiếu notification nếu không đi qua `releaseResults` |
+| **Due-date reminders** | Cron nhắc hạn bài tập — P1 |
+| **Notification preferences** | Tắt từng loại — P2 |
+| **Digest** | Gộp nhiều tin — P2 |
 
-Ensure `MONGO_URI` points to the same DB as the running API (`localhost:3000` or Render).
+## Testing
 
-## Out of scope (P1+)
+1. Owner adds co-teacher → login invited teacher → Notifications → Accept → mở được lớp.
+2. Student join `approval_required` class → teacher notification → Accept/Decline.
+3. Assign exam → students receive `EXAM_ASSIGNED` (socket log `📢 [Notify]`).
 
-- Due-date cron reminders
-- Notification preferences per user
-- Batching/digest (“3 new assignments”)
-- Co-teacher fan-out
+Scripts: `npm run test:notifications` (HoangDong seed).

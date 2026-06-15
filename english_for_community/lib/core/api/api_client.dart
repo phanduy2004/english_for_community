@@ -31,11 +31,12 @@ class ApiClient {
     if (kDebugMode) {
       dio.interceptors.add(PrettyDioLogger(
         request: true,
-        requestBody: true,
-        requestHeader: true,
-        responseBody: true,
-        responseHeader: true,
-        compact: false,
+        requestBody: false,
+        requestHeader: false,
+        responseBody: false,
+        responseHeader: false,
+        compact: true,
+        maxWidth: 120,
         // Skip binary bodies (xlsx, images, …) — logging them as UTF-8 crashes Flutter.
         filter: (options, args) =>
             !args.isResponse || !args.hasUint8ListData,

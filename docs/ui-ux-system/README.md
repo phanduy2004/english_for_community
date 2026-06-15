@@ -35,12 +35,14 @@
 | [`14-teacher-dialogs.md`](14-teacher-dialogs.md) | **Dialog giáo viên:** shell, account hub, edit profile, password, picker |
 | [`15-mobile-smart-patterns.md`](15-mobile-smart-patterns.md) | **Mobile patterns thông minh:** micro-interactions, haptic, bottom sheet, carousel, gamification, badge, transitions, coachmark, offline, dark mode prep |
 | [`16-teacher-live-participant-status.md`](16-teacher-live-participant-status.md) | **Live session:** chip trạng thái HS (lobby + đang làm / đã nộp) — Session control & Live monitor |
+| [`17-teacher-dashboard-layout.md`](17-teacher-dashboard-layout.md) | **Dashboard giáo viên v5:** KPI + stats panels, inbox tách route |
+| [`../flutter-coding-structure.md`](../flutter-coding-structure.md) | **Cấu trúc code Flutter** — import widget, file map, checklist tránh lỗi compile |
 
 ## Cách dùng tài liệu
 
 - **Đang sửa một màn hình** → đọc `02` (token), `03/04` (mobile) hoặc `06/07` (web), rồi `05/08` cho spec màn cụ thể.
 - **Tạo component mới** → bắt buộc đọc `02` + `04` (mobile) hoặc `07` (web), thêm tham chiếu vào `11` khi commit.
-- **AI agent (Cursor/Codex)** → đọc trước `12` mỗi lần làm task UI; không bao giờ đặt giá trị màu/size hardcode khi đã có token.
+- **AI agent (Cursor/Codex)** → đọc trước `12` mỗi lần làm task UI; đọc [`flutter-coding-structure.md`](../flutter-coding-structure.md) khi thêm file/import widget teacher.
 
 ## Quy ước cập nhật
 

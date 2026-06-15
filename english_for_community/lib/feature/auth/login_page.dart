@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/router/app_router.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
-import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/ui/student_mobile_ui.dart';
@@ -16,6 +16,7 @@ import 'bloc/user_bloc.dart';
 import 'bloc/user_state.dart';
 import 'bloc/user_event.dart';
 import 'widgets/auth_form_widgets.dart';
+import 'widgets/login_rive_mascot.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,7 +30,10 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passFocus = FocusNode();
 
+  LoginRiveInputs? _riveInputs;
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
@@ -37,6 +41,32 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     _loadUserCredentials();
+    _emailFocus.addListener(_syncRiveFromFocus);
+    _passFocus.addListener(_syncRiveFromFocus);
+    _emailController.addListener(_syncRiveFromText);
+  }
+
+  void _syncRiveFromFocus() {
+    final rive = _riveInputs;
+    if (rive == null) return;
+    if (_passFocus.hasFocus) {
+      rive.passwordActive(focused: true, obscure: _obscurePassword);
+    } else if (_emailFocus.hasFocus) {
+      rive.emailActive(
+        focused: true,
+        textLength: _emailController.text.length,
+      );
+    } else {
+      rive.idle();
+    }
+  }
+
+  void _syncRiveFromText() {
+    if (_riveInputs == null || !_emailFocus.hasFocus) return;
+    _riveInputs!.emailActive(
+      focused: true,
+      textLength: _emailController.text.length,
+    );
   }
 
   Future<void> _loadUserCredentials() async {
@@ -61,6 +91,11 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _emailFocus.removeListener(_syncRiveFromFocus);
+    _passFocus.removeListener(_syncRiveFromFocus);
+    _emailController.removeListener(_syncRiveFromText);
+    _emailFocus.dispose();
+    _passFocus.dispose();
     _emailController.dispose();
     _passController.dispose();
     super.dispose();
@@ -92,7 +127,11 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
-        if (state.status == UserStatus.error && state.errorMessage != null) {
+        if (state.status == UserStatus.success && state.userEntity != null) {
+          _riveInputs?.loginSuccess();
+        } else if (state.status == UserStatus.error &&
+            state.errorMessage != null) {
+          _riveInputs?.loginFailed();
           showAuthFeedbackDialog(
             context,
             title: context.l10n.loginFailed,
@@ -117,15 +156,14 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          const SizedBox(height: AppSpacing.s9),
-                          Center(
-                            child: StudentMobileUi.skillIconBox(
-                              Icons.auto_stories_rounded,
-                              size: 64,
-                              skill: SkillType.reading,
-                            ),
+                          const SizedBox(height: AppSpacing.s6),
+                          AuthLoginRiveMascot(
+                            onReady: (inputs) {
+                              _riveInputs = inputs;
+                              _syncRiveFromFocus();
+                            },
                           ),
-                          const SizedBox(height: AppSpacing.s7),
+                          const SizedBox(height: AppSpacing.s5),
                           Text(
                             context.l10n.loginWelcomeBack,
                             textAlign: TextAlign.center,
@@ -151,16 +189,19 @@ class _LoginPageState extends State<LoginPage> {
                                 const SizedBox(height: AppSpacing.s3),
                                 AuthTextField(
                                   controller: _emailController,
+                                  focusNode: _emailFocus,
                                   hintText: context.l10n.hintLoginEmailOrUsername,
                                   keyboardType: TextInputType.emailAddress,
                                   prefixIcon: Icons.email_outlined,
                                   enabled: !isLoading,
+                                  onChanged: (_) => _syncRiveFromText(),
                                 ),
                                 const SizedBox(height: AppSpacing.s5),
                                 AuthFieldLabel(context.l10n.labelPassword),
                                 const SizedBox(height: AppSpacing.s3),
                                 AuthTextField(
                                   controller: _passController,
+                                  focusNode: _passFocus,
                                   hintText: context.l10n.hintPassword,
                                   prefixIcon: Icons.lock_outline,
                                   obscureText: _obscurePassword,
@@ -173,9 +214,17 @@ class _LoginPageState extends State<LoginPage> {
                                       size: 18,
                                       color: AppColors.textSecondary,
                                     ),
-                                    onPressed: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
-                                    ),
+                                    onPressed: () {
+                                      setState(
+                                        () => _obscurePassword = !_obscurePassword,
+                                      );
+                                      if (_passFocus.hasFocus) {
+                                        _riveInputs?.passwordActive(
+                                          focused: true,
+                                          obscure: _obscurePassword,
+                                        );
+                                      }
+                                    },
                                   ),
                                   onSubmitted: (_) =>
                                       _onSignIn(isLoading: isLoading),
@@ -239,13 +288,8 @@ class _LoginPageState extends State<LoginPage> {
                                       : () => _onSignIn(isLoading: isLoading),
                                   style: AuthFormUi.primaryButtonStyle(),
                                   child: isLoading
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: AppColors.onPrimary,
-                                          ),
+                                      ? const AppLoadingIndicator.button(
+                                          color: AppColors.onPrimary,
                                         )
                                       : Text(context.l10n.signIn),
                                 ),

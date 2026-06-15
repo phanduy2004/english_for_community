@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -142,7 +143,7 @@ class _ReportDialogState extends State<ReportDialog> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onPrimary),
+                        child: AppLoadingIndicator(strokeWidth: 2, color: AppColors.onPrimary),
                       )
                     : Text(t.submitReport),
               ),

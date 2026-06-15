@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -225,7 +226,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onPrimary),
+                    child: AppLoadingIndicator(strokeWidth: 2, color: AppColors.onPrimary),
                   )
                 : Text(t.saveChanges, style: AppTypography.label()),
           ),
@@ -256,7 +257,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           backgroundColor: AppColors.surface,
           appBar: _buildAppBar(context, t, canSave, isLoading),
           body: _profile == null
-              ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+              ? const Center(child: AppLoadingIndicator.center(color: AppColors.primary))
               : Form(
                   key: _formKey,
                   child: ListView(

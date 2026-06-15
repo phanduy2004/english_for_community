@@ -230,6 +230,27 @@ export const initSocket = (httpServer) => {
       await cleanupExamLeave(sid, socket.examUserId);
     });
 
+    // ── Classroom Group Chat ───────────────────────────────────────────────────
+    socket.on('classroom_chat_join', ({ classroomId } = {}) => {
+      if (!classroomId || !socket.userId) return;
+      socket.join(`classroom_chat_${classroomId}`);
+    });
+
+    socket.on('classroom_chat_leave', ({ classroomId } = {}) => {
+      if (!classroomId) return;
+      socket.leave(`classroom_chat_${classroomId}`);
+    });
+
+    socket.on('classroom_chat_typing', ({ classroomId, isTyping } = {}) => {
+      if (!classroomId || !socket.userId) return;
+      socket.to(`classroom_chat_${classroomId}`).emit('classroom_typing', {
+        classroomId: String(classroomId),
+        userId: String(socket.userId),
+        isTyping: isTyping === true,
+      });
+    });
+    // ─────────────────────────────────────────────────────────────────────────
+
     socket.on('disconnect', async (reason) => {
       console.log(`❌ Disconnected: ${socket.id} | Reason: ${reason}`);
 

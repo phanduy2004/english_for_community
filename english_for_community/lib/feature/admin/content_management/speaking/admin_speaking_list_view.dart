@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/datasource/admin_remote_datasource.dart';
@@ -99,7 +100,7 @@ class _SpeakingListBody extends StatelessWidget {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: adminRemote.getDeletedSpeakingSets(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -164,7 +165,7 @@ class _SpeakingListBody extends StatelessWidget {
       body: BlocBuilder<AdminSpeakingBloc, AdminSpeakingState>(
         builder: (context, state) {
           if (state.status == AdminSpeakingStatus.loading && state.speakingSets.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: AppLoadingIndicator.center());
           }
           if (state.status == AdminSpeakingStatus.failure && state.speakingSets.isEmpty) {
             return Center(

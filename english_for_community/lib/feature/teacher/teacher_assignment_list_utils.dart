@@ -22,6 +22,14 @@ class TeacherAssignmentListUtils {
     return st == 'lobby' || st == 'live';
   }
 
+  static String? classroomNameFromAssignment(Map<String, dynamic> m) {
+    final c = m['classroomId'];
+    if (c is Map) return (c['name'] as String?)?.trim();
+    final direct = m['classroomName'] as String?;
+    if (direct != null && direct.trim().isNotEmpty) return direct.trim();
+    return null;
+  }
+
   static String? classroomIdFromAssignment(Map<String, dynamic> m) {
     final c = m['classroomId'];
     if (c is Map) return (c['id'] ?? c['_id'])?.toString();

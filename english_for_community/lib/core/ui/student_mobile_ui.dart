@@ -6,6 +6,10 @@ import '../theme/app_skill_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'interactive/scale_pressable.dart';
+import 'motion/app_lottie_preset.dart';
+import 'motion/app_lottie_view.dart';
+import 'motion/app_loading_indicator.dart';
+import 'motion/app_motion.dart';
 import 'widget/app_card.dart';
 
 /// Mobile UI helpers for student screens — `docs/ui-ux-system/03`, `04`, `05`, `15`.
@@ -110,6 +114,7 @@ abstract final class StudentMobileUi {
     String? ctaLabel,
     VoidCallback? onCta,
     SkillType? skill,
+    AppLottiePreset? lottie,
   }) {
     final iconColor = skill != null
         ? AppSkillColors.of(skill).color
@@ -118,6 +123,20 @@ abstract final class StudentMobileUi {
         ? AppSkillColors.of(skill).tint
         : AppColors.surfaceSubtle;
     final bodyStyle = StudentMobileUi.body(context);
+    final iconFallback = Container(
+      width: 56,
+      height: 56,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: iconBg,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: (skill != null ? AppSkillColors.of(skill).color : AppColors.outline)
+              .withValues(alpha: 0.25),
+        ),
+      ),
+      child: Icon(icon, size: 28, color: iconColor),
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         final bottomInset = MediaQuery.paddingOf(context).bottom;
@@ -137,26 +156,20 @@ abstract final class StudentMobileUi {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: (skill != null
-                              ? AppSkillColors.of(skill).color
-                              : AppColors.outline)
-                          .withValues(alpha: 0.25),
-                    ),
-                  ),
-                  child: Icon(icon, size: 28, color: iconColor),
-                ),
+                if (lottie != null)
+                  AppLottieView(
+                    preset: lottie,
+                    size: AppMotion.emptyLottieSize,
+                    fallback: iconFallback,
+                  )
+                else
+                  iconFallback,
                 const SizedBox(height: AppSpacing.s5),
                 Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
-                const SizedBox(height: AppSpacing.s3),
-                Text(body, style: bodyStyle, textAlign: TextAlign.center),
+                if (body.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.s3),
+                  Text(body, style: bodyStyle, textAlign: TextAlign.center),
+                ],
                 if (ctaLabel != null && onCta != null) ...[
                   const SizedBox(height: AppSpacing.s5),
                   FilledButton(onPressed: onCta, child: Text(ctaLabel)),
@@ -167,6 +180,11 @@ abstract final class StudentMobileUi {
         );
       },
     );
+  }
+
+  /// Centered page loading — Lottie on mobile, optional tint via [color].
+  static Widget pageLoading({Color? color}) {
+    return Center(child: AppLoadingIndicator.center(color: color));
   }
 
   static Widget errorBanner({

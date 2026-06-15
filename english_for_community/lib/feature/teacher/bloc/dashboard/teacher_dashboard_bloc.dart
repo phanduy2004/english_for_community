@@ -184,6 +184,7 @@ class TeacherDashboardBloc extends Bloc<TeacherDashboardEvent, TeacherDashboardS
               : 'Student',
           gradingState: m['gradingState'] as String? ?? '',
           resultsReleased: m['resultsReleased'] == true,
+          classroomName: (m['classroomName'] as String?)?.trim(),
           submittedAt: _parseDate(m['submittedAt']),
         ),
       );

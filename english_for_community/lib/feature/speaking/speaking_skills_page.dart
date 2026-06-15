@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:english_for_community/core/entity/speaking/sentence_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_attempt_entity.dart';
@@ -480,7 +481,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
             final compact = widget.embedded;
             final examCompact = _examCompact;
             if (state.status == LessonStatus.loading || _set == null) {
-              return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+              return const Center(child: AppLoadingIndicator.center());
             }
 
             return Column(
@@ -717,7 +718,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
       child: (isSubmitting || micBusy)
           ? Padding(
               padding: EdgeInsets.all(micSize * 0.32),
-              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+              child: const AppLoadingIndicator(color: Colors.white, strokeWidth: 2.5),
             )
           : Icon(
               isRecording ? Icons.stop_rounded : Icons.mic_rounded,

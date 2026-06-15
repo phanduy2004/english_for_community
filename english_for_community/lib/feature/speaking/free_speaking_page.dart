@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -429,7 +430,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const CircularProgressIndicator(),
+              const AppLoadingIndicator.center(),
               const SizedBox(height: 16),
               Text(t.freeSpeakingLoadingConfig, style: StudentMobileUi.body(context).copyWith(color: T.AppColors.textMuted)),
             ],
@@ -500,7 +501,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isConnecting)
-                SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 1.5, color: T.AppColors.textMuted))
+                SizedBox(width: 8, height: 8, child: AppLoadingIndicator(strokeWidth: 1.5, color: T.AppColors.textMuted))
               else
                 Container(
                   width: 8, height: 8,
@@ -652,7 +653,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                           child: isConnecting
                               ? const SizedBox(
                               height: 24, width: 24,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)
+                              child: AppLoadingIndicator(color: Colors.white, strokeWidth: 2.5)
                           )
                               : Icon(
                             (!isConnected)
@@ -904,7 +905,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                         SizedBox(
                           height: 14,
                           width: 14,
-                          child: CircularProgressIndicator(
+                          child: AppLoadingIndicator(
                             strokeWidth: 2,
                             color: isUser ? Colors.white70 : T.AppColors.primary,
                           ),

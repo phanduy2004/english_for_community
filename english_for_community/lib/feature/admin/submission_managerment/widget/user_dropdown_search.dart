@@ -1,5 +1,6 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import '../../../../core/get_it/get_it.dart';
 import '../../../../core/repository/admin_repository.dart';
 import '../../../../core/entity/user_entity.dart';
@@ -200,7 +201,7 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
             itemCount: _users.length + (_hasMore ? 1 : 0),
             itemBuilder: (context, index) {
               if (index == _users.length) {
-                return const Center(child: Padding(padding: EdgeInsets.all(8), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))));
+                return const Center(child: Padding(padding: EdgeInsets.all(8), child: SizedBox(width: 16, height: 16, child: AppLoadingIndicator(strokeWidth: 2))));
               }
               final user = _users[index];
               return MenuItemButton(

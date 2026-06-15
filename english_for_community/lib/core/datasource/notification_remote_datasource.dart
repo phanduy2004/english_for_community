@@ -23,4 +23,9 @@ class NotificationRemoteDataSource {
     // PATCH /api/notifications/read-all
     await dio.patch('/$_endpoint/read-all');
   }
+
+  Future<Map<String, dynamic>> respond(String id, String action) async {
+    final res = await dio.post('/$_endpoint/$id/respond', data: {'action': action});
+    return Map<String, dynamic>.from(res.data as Map);
+  }
 }

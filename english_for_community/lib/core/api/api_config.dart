@@ -11,23 +11,33 @@ class ApiConfig {
   // ☁️ Server Render (Online)
   static const String _renderUrl = "https://english-for-community.onrender.com";
 
-  // 🏠 Server Local (Máy tính của bạn) - Thay đổi IP này theo máy bạn
-  static const String _localLanIp = "192.168.1.45";
+  // 🏠 Server Local (Máy tính của bạn)
+  // LDPlayer / máy Android thật: dùng IPv4 Wi‑Fi/Ethernet (cmd: ipconfig → dòng IPv4, thường 192.168.x.x).
+  // Không dùng IP VMware/Hyper-V (192.168.163.x, 192.168.62.x).
+  static const String _localLanIp = "192.168.1.40";
   static const int _localPort = 3000;
 
   // ============================================================
-  // 2. CÔNG TẮC CHUYỂN ĐỔI (CHỌN 1 TRONG 2 CÁCH DƯỚI ĐÂY)
+  // 2. CÔNG TẮC CHUYỂN ĐỔI (CHỌN 1 TRONG 3 CÁCH)
   // ============================================================
 
-  /// 👉 CÁCH 1: CHỈNH TAY (Khuyên dùng khi Dev)
-  /// - true: Dùng Local (192.168...) để code cho nhanh.
-  /// - false: Dùng Server Render (https...) để test giống người dùng thật.
-  static const bool _useLocal = true;
+  /// ☁️ Luôn dùng server Render — bật khi deploy / test trên production.
+  /// Tắt (`false`) khi dev backend local trên máy (`npm run dev`).
+  static const bool _forceProductionApi = false;
 
-  /// 👉 CÁCH 2: TỰ ĐỘNG (Nâng cao)
-  /// Nếu đang chạy Debug (F5) thì dùng Local, còn Build ra file APK thì tự dùng Server.
-  /// Muốn dùng cách này thì mở comment dòng dưới và đóng dòng trên lại.
-  // static const bool _useLocal = kDebugMode;
+  /// 👉 CÁCH 1: Tự động theo build mode (khi [_forceProductionApi] = false)
+  /// - Debug (F5): Local — nhanh khi code.
+  /// - Release (APK/IPA): Render.
+  // static const bool _useLocalManual = kDebugMode;
+
+  /// 👉 CÁCH 2: Chỉnh tay (khi [_forceProductionApi] = false)
+  // static const bool _useLocalManual = true;  // local
+  // static const bool _useLocalManual = false; // Render
+
+  static bool get _useLocal {
+    if (_forceProductionApi) return false;
+    return kDebugMode;
+  }
 
   // ============================================================
   // 3. LOGIC XỬ LÝ (Không cần sửa gì ở dưới này)
@@ -66,13 +76,18 @@ class ApiConfig {
       _androidUsesEmulatorHost =
           !android.isPhysicalDevice && !thirdPartyEmu;
       if (kDebugMode) {
-        final host = _androidUsesEmulatorHost ? '10.0.2.2' : _localLanIp;
-        final kind = thirdPartyEmu
-            ? 'LDPlayer/third-party emulator'
-            : android.isPhysicalDevice
-                ? 'device'
-                : 'AVD emulator';
-        debugPrint('[ApiConfig] Android $kind → $host:$_localPort');
+        if (_useLocal) {
+          final host = _androidUsesEmulatorHost ? '10.0.2.2' : _localLanIp;
+          final kind = thirdPartyEmu
+              ? 'LDPlayer/third-party emulator'
+              : android.isPhysicalDevice
+                  ? 'device'
+                  : 'AVD emulator';
+          debugPrint('[ApiConfig] Android $kind → $host:$_localPort');
+        } else {
+          final mode = _forceProductionApi ? 'Render (forced)' : 'Render (release)';
+          debugPrint('[ApiConfig] API target: $mode → $Base_URL');
+        }
       }
     } catch (e) {
       if (kDebugMode) {

@@ -9,6 +9,12 @@ const classroomSchema = new mongoose.Schema(
     inviteCode: { type: String, required: true, unique: true, index: true },
     inviteToken: { type: String, required: true, unique: true, index: true },
     joinPolicy: { type: String, enum: ['open', 'approval_required'], default: 'open' },
+    /** Tin nhắn ghim trong nhóm chat (chỉ GV chủ lớp). */
+    pinnedMessageId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ClassroomMessage',
+      default: null,
+    },
     archived: { type: Boolean, default: false, index: true },
     settings: {
       type: new mongoose.Schema(

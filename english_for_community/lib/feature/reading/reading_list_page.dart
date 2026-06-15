@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/locale/l10n_context.dart';
@@ -120,7 +121,7 @@ class _ReadingListPageState extends State<ReadingListPage> {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
                           child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: AppLoadingIndicator.center(),
                           ),
                         );
                       }

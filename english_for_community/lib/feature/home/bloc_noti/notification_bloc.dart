@@ -15,6 +15,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     on<NotificationLoadMore>(_onLoadMore);
     on<NotificationMarkRead>(_onMarkRead);
     on<NotificationMarkAllRead>(_onMarkAllRead);
+    on<NotificationItemResolved>(_onItemResolved);
     on<NotificationIncomingReceived>(_onIncomingReceived);
   }
 
@@ -23,11 +24,14 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
       NotificationLoadStarted event,
       Emitter<NotificationState> emit,
       ) async {
-    if (!event.isRefresh) {
-      emit(state.copyWith(status: NotificationStatus.loading));
-    }
+    emit(state.copyWith(
+      status: NotificationStatus.loading,
+      errorMessage: null,
+      notifications: event.isRefresh ? state.notifications : const [],
+      page: 1,
+      hasReachedMax: false,
+    ));
 
-    // Reset về trang 1
     final result = await repository.getNotifications(1);
 
     result.fold(
@@ -129,7 +133,24 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     await repository.markAllAsRead();
   }
 
-  /// 5. Nhận Socket Realtime
+  /// 5. Cập nhật tin sau respond thành công
+  void _onItemResolved(
+    NotificationItemResolved event,
+    Emitter<NotificationState> emit,
+  ) {
+    final index = state.notifications.indexWhere((e) => e.id == event.notificationId);
+    if (index == -1) return;
+    final item = state.notifications[index];
+    final data = Map<String, dynamic>.from(item.data ?? {});
+    data['actionStatus'] = event.actionStatus;
+    data['actionable'] = false;
+    final updatedList = List<NotificationEntity>.from(state.notifications);
+    updatedList[index] = item.copyWith(isRead: true, data: data);
+    final newCount = item.isRead ? state.unreadCount : (state.unreadCount - 1).clamp(0, 999);
+    emit(state.copyWith(notifications: updatedList, unreadCount: newCount));
+  }
+
+  /// 6. Nhận Socket Realtime
   void _onIncomingReceived(
       NotificationIncomingReceived event,
       Emitter<NotificationState> emit,

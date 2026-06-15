@@ -62,6 +62,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String fullName,
     String? phone,
     DateTime? dateOfBirth,
+    String accountType = 'student',
   }) async {
     try {
       await authRemoteDatasource.register(
@@ -71,6 +72,7 @@ class AuthRepositoryImpl implements AuthRepository {
         fullName: fullName,
         phone: phone,
         dateOfBirth: dateOfBirth,
+        accountType: accountType,
       );
       return Right(null);
     } on DioException catch (e) {

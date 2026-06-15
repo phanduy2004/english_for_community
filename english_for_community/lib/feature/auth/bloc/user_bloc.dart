@@ -211,6 +211,7 @@ class UserBloc extends Bloc<UserEvent, UserState> {
       fullName: event.fullName,
       phone: event.phone,
       dateOfBirth: event.dateOfBirth,
+      accountType: event.accountType,
     );
 
     result.fold(

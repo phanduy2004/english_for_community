@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
@@ -147,7 +148,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.s7),
                   child: const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary),
+                    child: AppLoadingIndicator.center(color: AppColors.primary),
                   ),
                 ),
               );
@@ -234,9 +235,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
               if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
-                return const Center(
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                );
+                return StudentMobileUi.pageLoading(color: AppColors.primary);
               }
               if (state.status == ProgressStatus.error) {
                 return _buildErrorUI(context, state.errorMessage, t);
@@ -491,7 +490,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     if (state.leaderboardStatus == LeaderboardStatus.loading) {
       return const Padding(
         padding: EdgeInsets.all(AppSpacing.s6),
-        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        child: Center(child: AppLoadingIndicator.center(color: AppColors.primary)),
       );
     }
 

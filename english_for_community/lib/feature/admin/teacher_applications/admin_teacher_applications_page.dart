@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/admin_teacher_application_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -106,7 +107,7 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
         ),
       ],
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator.center())
           : _error != null
               ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
               : _items.isEmpty

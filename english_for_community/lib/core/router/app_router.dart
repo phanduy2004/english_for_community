@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'package:english_for_community/feature/admin/content_management/listening_comp/admin_listening_comp_list_page.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +29,7 @@ import '../../feature/listening_comp/bloc/listening_comp_bloc.dart';
 import '../../feature/listening_comp/listening_comp_list_page.dart';
 import '../../feature/listening_comp/listening_comp_page.dart';
 import '../get_it/get_it.dart';
+import '../router/app_page_transitions.dart';
 import '../utils/global_keys.dart';
 import '../sqflite/dict_db.dart';
 
@@ -46,6 +48,7 @@ import '../../feature/admin/release_management/release_management_page.dart';
 // 👇 IMPORT CÁC PAGE QUẢN LÝ NỘI DUNG MỚI
 import '../../feature/admin/content_management/content_dashboard_page.dart';
 import '../../feature/home/home_page.dart';
+import '../../feature/home/notifications_page.dart';
 import '../../feature/profile/my_exercise_history/my_exercise_history_page.dart';
 import '../../feature/profile/profile_page.dart';
 import '../../feature/profile/edit_profile_page.dart';
@@ -89,6 +92,8 @@ import '../../feature/teacher/teacher_exam_attempt_grade_page.dart';
 import '../../feature/teacher/teacher_gradebook_page.dart';
 import '../../feature/teacher/teacher_analytics_page.dart';
 import '../../feature/teacher/teacher_calendar_page.dart';
+import '../../feature/teacher/teacher_dashboard_inbox_builder.dart';
+import '../../feature/teacher/teacher_inbox_page.dart';
 import '../../feature/teacher/layout/teacher_shell.dart';
 import '../../feature/student/classes/my_classes_hub_page.dart';
 import '../../feature/student/classes/student_classroom_detail_page.dart';
@@ -97,7 +102,7 @@ import '../../feature/student/exams/exam_runner_page.dart';
 import '../../feature/student/exams/public_exam_join_page.dart';
 import '../../feature/student/exams/exam_session_lobby_page.dart';
 import '../../feature/admin/teacher_applications/admin_teacher_applications_page.dart';
-
+import '../../feature/classroom_chat/classroom_chat_page.dart';
 // Route Constants
 const String kReadingDetailRouteName = 'reading-detail';
 const String kDictDetailRouteName = 'dict-detail';
@@ -111,7 +116,7 @@ class SplashPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+      body: Center(child: AppLoadingIndicator.center()),
     );
   }
 }
@@ -380,6 +385,11 @@ class AppRouter {
         builder: (context, state) => const HomePage(),
       ),
       GoRoute(
+        path: NotificationsPage.routePath,
+        name: NotificationsPage.routeName,
+        builder: (context, state) => const NotificationsPage(),
+      ),
+      GoRoute(
         path: '/profile',
         name: 'ProfilePage',
         builder: (context, state) => const ProfilePage(),
@@ -394,109 +404,214 @@ class AppRouter {
         name: TeacherApplyPage.routeName,
         builder: (context, state) => const TeacherApplyPage(),
       ),
-      ShellRoute(
-        builder: (context, state, child) => TeacherShell(child: child),
-        routes: [
-          GoRoute(
-            path: TeacherDashboardPage.routePath,
-            name: TeacherDashboardPage.routeName,
-            builder: (context, state) => const TeacherDashboardPage(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            TeacherShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'classroom/:classroomId',
-                name: TeacherClassroomDetailPage.routeName,
-                builder: (context, state) => TeacherClassroomDetailPage(
-                  classroomId: state.pathParameters['classroomId'] ?? '',
+                path: TeacherDashboardPage.routePath,
+                name: TeacherDashboardPage.routeName,
+                pageBuilder: (context, state) => AppPageTransitions.build(
+                  state: state,
+                  child: const TeacherDashboardPage(),
                 ),
                 routes: [
                   GoRoute(
-                    path: 'gradebook',
-                    name: TeacherGradebookPage.routeName,
-                    builder: (context, state) => TeacherGradebookPage(
-                      classroomId: state.pathParameters['classroomId'] ?? '',
+                    path: 'classroom/:classroomId',
+                    name: TeacherClassroomDetailPage.routeName,
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherClassroomDetailPage(
+                        classroomId: state.pathParameters['classroomId'] ?? '',
+                      ),
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'gradebook',
+                        name: TeacherGradebookPage.routeName,
+                        pageBuilder: (context, state) => AppPageTransitions.build(
+                          state: state,
+                          transition: AppRouteTransition.push,
+                          child: TeacherGradebookPage(
+                            classroomId: state.pathParameters['classroomId'] ?? '',
+                          ),
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'chat',
+                        name: ClassroomChatPage.routeName,
+                        pageBuilder: (context, state) {
+                          final classroomId = state.pathParameters['classroomId'] ?? '';
+                          final extra = state.extra as Map<String, dynamic>?;
+                          final name = extra?['classroomName'] as String? ?? 'Nhóm lớp học';
+                          final userId = extra?['currentUserId'] as String? ?? '';
+                          return AppPageTransitions.build(
+                            state: state,
+                            transition: AppRouteTransition.push,
+                            child: ClassroomChatPage(
+                              classroomId: classroomId,
+                              classroomName: name,
+                              currentUserId: userId,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: TeacherInboxPage.routePath,
+                    name: TeacherInboxPage.routeName,
+                    pageBuilder: (context, state) {
+                      final raw = state.uri.queryParameters['filter'];
+                      final filter = TeacherInboxFilter.values.asNameMap()[raw] ?? TeacherInboxFilter.all;
+                      return AppPageTransitions.build(
+                        state: state,
+                        transition: AppRouteTransition.push,
+                        child: TeacherInboxPage(initialFilter: filter),
+                      );
+                    },
+                  ),
+                  GoRoute(
+                    path: 'exam-grading/:assignmentId/attempt/:attemptId',
+                    name: TeacherExamAttemptGradePage.routeName,
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherExamAttemptGradePage(
+                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                        attemptId: state.pathParameters['attemptId'] ?? '',
+                      ),
                     ),
                   ),
-                ],
-              ),
-              GoRoute(
-                path: 'calendar',
-                name: TeacherCalendarPage.routeName,
-                builder: (context, state) => const TeacherCalendarPage(),
-              ),
-              GoRoute(
-                path: 'analytics',
-                name: TeacherAnalyticsPage.routeName,
-                builder: (context, state) => const TeacherAnalyticsPage(),
-              ),
-              GoRoute(
-                path: 'exams',
-                name: TeacherExamsListPage.routeName,
-                builder: (context, state) => const TeacherExamsListPage(),
-                routes: [
                   GoRoute(
-                    path: ':examId/edit',
-                    name: TeacherExamEditorPage.routeName,
-                    builder: (context, state) => TeacherExamEditorPage(
-                      examId: state.pathParameters['examId'] ?? '',
+                    path: 'exam-console/:assignmentId',
+                    name: TeacherExamSessionConsolePage.routeName,
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherExamSessionConsolePage(
+                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                      ),
                     ),
                   ),
                   GoRoute(
-                    path: ':examId/integrated-edit',
-                    name: 'TeacherIntegratedExamEditorPage',
-                    builder: (context, state) => TeacherIntegratedExamEditorPage(
-                      examId: state.pathParameters['examId'] ?? '',
+                    path: 'exam-grading/:assignmentId',
+                    name: TeacherExamGradingPage.routeName,
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherExamGradingPage(
+                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                      ),
                     ),
                   ),
                   GoRoute(
-                    path: ':examId/assign',
-                    name: 'TeacherAssignmentWizardPage',
-                    builder: (context, state) {
-                      final extra = state.extra;
-                      String? initialClassroomId;
-                      if (extra is Map<String, dynamic>) {
-                        initialClassroomId = extra['initialClassroomId'] as String?;
+                    path: 'content/:type/new',
+                    name: 'TeacherContentNewRoute',
+                    pageBuilder: (context, state) {
+                      final type = state.pathParameters['type'];
+                      final Widget page;
+                      if (type == 'reading') {
+                        page = ReadingEditorPage();
+                      } else if (type == 'listening') {
+                        page = ListeningEditorPage();
+                      } else if (type == 'speaking') {
+                        page = SpeakingEditorPage();
+                      } else if (type == 'writing') {
+                        page = WritingTopicEditorPage();
+                      } else {
+                        page = Scaffold(body: Center(child: Text('Unknown content type: $type')));
                       }
-                      return TeacherAssignmentWizardPage(
-                        examId: state.pathParameters['examId'] ?? '',
-                        initialClassroomId: initialClassroomId,
+                      return AppPageTransitions.build(
+                        state: state,
+                        transition: AppRouteTransition.push,
+                        child: page,
                       );
                     },
                   ),
                 ],
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
               GoRoute(
-                path: 'exam-grading/:assignmentId/attempt/:attemptId',
-                name: TeacherExamAttemptGradePage.routeName,
-                builder: (context, state) => TeacherExamAttemptGradePage(
-                  assignmentId: state.pathParameters['assignmentId'] ?? '',
-                  attemptId: state.pathParameters['attemptId'] ?? '',
+                path: TeacherExamsListPage.routePath,
+                name: TeacherExamsListPage.routeName,
+                pageBuilder: (context, state) => AppPageTransitions.build(
+                  state: state,
+                  child: const TeacherExamsListPage(),
+                ),
+                routes: [
+                  GoRoute(
+                    path: ':examId/edit',
+                    name: TeacherExamEditorPage.routeName,
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherExamEditorPage(
+                        examId: state.pathParameters['examId'] ?? '',
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':examId/integrated-edit',
+                    name: 'TeacherIntegratedExamEditorPage',
+                    pageBuilder: (context, state) => AppPageTransitions.build(
+                      state: state,
+                      transition: AppRouteTransition.push,
+                      child: TeacherIntegratedExamEditorPage(
+                        examId: state.pathParameters['examId'] ?? '',
+                      ),
+                    ),
+                  ),
+                  GoRoute(
+                    path: ':examId/assign',
+                    name: 'TeacherAssignmentWizardPage',
+                    pageBuilder: (context, state) {
+                      final extra = state.extra;
+                      String? initialClassroomId;
+                      if (extra is Map<String, dynamic>) {
+                        initialClassroomId = extra['initialClassroomId'] as String?;
+                      }
+                      return AppPageTransitions.build(
+                        state: state,
+                        transition: AppRouteTransition.push,
+                        child: TeacherAssignmentWizardPage(
+                          examId: state.pathParameters['examId'] ?? '',
+                          initialClassroomId: initialClassroomId,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: TeacherCalendarPage.routePath,
+                name: TeacherCalendarPage.routeName,
+                pageBuilder: (context, state) => AppPageTransitions.build(
+                  state: state,
+                  child: const TeacherCalendarPage(),
                 ),
               ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
               GoRoute(
-                path: 'exam-console/:assignmentId',
-                name: TeacherExamSessionConsolePage.routeName,
-                builder: (context, state) => TeacherExamSessionConsolePage(
-                  assignmentId: state.pathParameters['assignmentId'] ?? '',
+                path: TeacherAnalyticsPage.routePath,
+                name: TeacherAnalyticsPage.routeName,
+                pageBuilder: (context, state) => AppPageTransitions.build(
+                  state: state,
+                  child: const TeacherAnalyticsPage(),
                 ),
-              ),
-              GoRoute(
-                path: 'exam-grading/:assignmentId',
-                name: TeacherExamGradingPage.routeName,
-                builder: (context, state) => TeacherExamGradingPage(
-                  assignmentId: state.pathParameters['assignmentId'] ?? '',
-                ),
-              ),
-              GoRoute(
-                path: 'content/:type/new',
-                name: 'TeacherContentNewRoute',
-                builder: (context, state) {
-                  final type = state.pathParameters['type'];
-                  if (type == 'reading') return ReadingEditorPage();
-                  if (type == 'listening') return ListeningEditorPage();
-                  if (type == 'speaking') return SpeakingEditorPage();
-                  if (type == 'writing') return WritingTopicEditorPage();
-                  return Scaffold(body: Center(child: Text('Unknown content type: $type')));
-                },
               ),
             ],
           ),
@@ -506,6 +621,35 @@ class AppRouter {
         path: MyClassesHubPage.routePath,
         name: MyClassesHubPage.routeName,
         builder: (context, state) => const MyClassesHubPage(),
+      ),
+      GoRoute(
+        path: '/student/classroom/:classroomId/chat',
+        name: ClassroomChatPage.studentRouteName,
+        pageBuilder: (context, state) {
+          final classroomId = state.pathParameters['classroomId'] ?? '';
+          final extra = state.extra;
+          var classroomName = 'Nhóm lớp học';
+          var currentUserId = getIt<UserBloc>().state.userEntity?.id ?? '';
+          String? coverImageUrl;
+          if (extra is Map<String, dynamic>) {
+            classroomName = extra['classroomName'] as String? ?? classroomName;
+            final fromExtra = extra['currentUserId'] as String?;
+            if (fromExtra != null && fromExtra.isNotEmpty) {
+              currentUserId = fromExtra;
+            }
+            coverImageUrl = extra['coverImageUrl'] as String?;
+          }
+          return AppPageTransitions.build(
+            state: state,
+            transition: AppRouteTransition.push,
+            child: ClassroomChatPage(
+              classroomId: classroomId,
+              classroomName: classroomName,
+              currentUserId: currentUserId,
+              coverImageUrl: coverImageUrl,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '${StudentClassroomDetailPage.routePath}/:classroomId',

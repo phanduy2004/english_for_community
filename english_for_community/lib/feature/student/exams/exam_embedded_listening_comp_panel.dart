@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/listening_comp_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/listening_comp_repository.dart';
@@ -138,7 +139,7 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: CircularProgressIndicator()),
+        child: Center(child: AppLoadingIndicator.center()),
       );
     }
 
