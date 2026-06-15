@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -293,7 +294,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
             }
           },
           builder: (context, state) {
-            if (state.status == CueStatus.loading) return const Center(child: CircularProgressIndicator());
+            if (state.status == CueStatus.loading) return const Center(child: AppLoadingIndicator.center());
             if (state.status == CueStatus.error) {
               return Center(child: Text(state.errorMessage ?? context.l10n.commonError));
             }
@@ -343,6 +344,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                     count: state.cues.length,
                     selectedIndex: state.selectedIndex,
                     completedIdx: state.completedIdx,
+                    skillAccent: widget.examPracticeMode ? AppSkillColors.listening : null,
                     onSelect: (i) => context.read<CueBloc>().add(SelectCueByIndex(i)),
                   ),
                   const SizedBox(height: 16),
@@ -372,6 +374,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                     count: state.cues.length,
                     selectedIndex: state.selectedIndex,
                     completedIdx: state.completedIdx,
+                    skillAccent: widget.examPracticeMode ? AppSkillColors.listening : null,
                     onSelect: (i) => context.read<CueBloc>().add(SelectCueByIndex(i)),
                   ),
                   const SizedBox(height: 24),

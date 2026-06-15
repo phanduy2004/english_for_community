@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -202,7 +203,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
         body: BlocBuilder<AdminSpeakingBloc, AdminSpeakingState>(
           builder: (context, state) {
             if (state.status == AdminSpeakingStatus.loading && widget.id != null && !_isDataLoaded) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: AppLoadingIndicator.center());
             }
 
             return SingleChildScrollView(

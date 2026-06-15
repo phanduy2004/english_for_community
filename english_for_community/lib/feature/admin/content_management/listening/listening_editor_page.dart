@@ -1,4 +1,5 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -330,7 +331,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
         body: BlocBuilder<AdminListeningBloc, AdminListeningState>(
           builder: (context, state) {
             if (state.status == AdminListeningStatus.loading && (_isLoadingDetail || (cues.isEmpty && widget.id != null))) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: AppLoadingIndicator.center());
             }
 
             return SingleChildScrollView(

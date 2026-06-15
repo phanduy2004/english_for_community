@@ -55,8 +55,13 @@
   "languageVietnamese": "Vietnamese",
   "appLanguageFootnote": "Interface language (saved on this device)",
   "navHome": "Home",
+  "navMessages": "Messages",
   "navProgress": "Progress",
   "navProfile": "Profile",
+  "studentChatHubSubtitle": "Classroom group chats",
+  "studentChatHubSearchHint": "Search classes…",
+  "studentChatHubFilterAll": "All",
+  "studentChatHubFilterUnread": "Unread",
   "loginWelcomeBack": "Welcome Back!",
   "loginSubtitle": "Enter your details to continue.",
   "labelEmail": "Email",
@@ -330,6 +335,10 @@
   "unknownLevel": "Unknown",
   "registerHeroTitle": "Create Your Account",
   "registerHeroSubtitle": "Fill in the details to start your journey.",
+  "registerAccountTypeLabel": "Account type",
+  "registerAccountTypeStudent": "Student",
+  "registerAccountTypeTeacher": "Teacher",
+  "registerAccountTypeTeacherHint": "Teacher accounts need admin approval before you can create classes.",
   "labelFullName": "Full Name *",
   "hintFullName": "John Doe",
   "labelUsername": "Username *",
@@ -427,6 +436,12 @@
   },
   "notificationsEmptyTitle": "No notifications yet",
   "notificationsEmptyBody": "You will receive notifications here.",
+  "notificationAccept": "Accept",
+  "notificationDecline": "Decline",
+  "notificationInviteAccepted": "Invite accepted",
+  "notificationInviteDeclined": "Invite declined",
+  "notificationJoinApproved": "Join request approved",
+  "notificationJoinDeclined": "Join request declined",
   "aiAssistantEmptyPrompt": "Ask me anything about your learning progress.",
   "aiChatPlaceholder": "Type a question…",
   "listeningChooseSubtitle": "Choose how you want to train your ear today.",
@@ -1008,6 +1023,11 @@
   "teacherPickExamToAssign": "Choose a published exam",
   "teacherNoPublishedExams": "No published exams yet. Publish an exam under My exams first.",
   "copyInviteCode": "Copy invite code",
+  "teacherExamSessionShareTitle": "What to send students",
+  "teacherExamSessionShareClassroom": "Students open their class, tap this assignment, then Enter waiting room. They do not paste any code here.",
+  "teacherExamSessionSharePublic": "Students open Public exam join and paste the join code below (not the room label or session link).",
+  "teacherExamSessionSharePublicCopy": "Copy public join code",
+  "teacherExamSessionRoomCodeHint": "Room label (shown in lobby only — not used to join)",
   "adminTeacherApplicationsTitle": "Teacher applications",
   "adminTeacherApplicationsSubtitle": "Review pending requests",
   "adminTeacherApplicationsEmpty": "No applications in this state.",
@@ -1017,6 +1037,14 @@
   "studentClassesTitle": "My classes",
   "studentClassesSubtitle": "Open a class to see only assignments from that class.",
   "studentJoinClassTitle": "Join with invite code",
+  "studentUnifiedJoinTitle": "Join",
+  "studentUnifiedJoinSubtitle": "Paste any code or link — the app detects the type and opens the right place.",
+  "studentUnifiedJoinHint": "Class code · class link · public exam · live session link…",
+  "studentUnifiedJoinButton": "Join",
+  "studentJoinInputInvalid": "Could not recognize that code. Check with your teacher and try again.",
+  "studentJoinDetectedClass": "Class invite detected — joining…",
+  "studentJoinDetectedSession": "Live session detected — opening waiting room…",
+  "studentJoinDetectedPublicExam": "Public exam detected — opening…",
   "studentJoinClassSubtitle": "Use the code from your teacher. Assignments will appear inside each class.",
   "studentInviteCodeLabel": "Invite code",
   "studentJoinClassButton": "Join",
@@ -1153,6 +1181,9 @@
   "teacherAssignmentPublicExpiresHint": "Pick expiry (optional)",
   "teacherAssignmentPublicTokenTitle": "Public join token",
   "teacherAssignmentPublicTokenBody": "Share this token with students. They paste it in “Join public exam” (or your shared instructions).",
+  "teacherAssignmentPublicRealtimeNextSteps": "A live waiting room was created automatically. Open the live console to monitor students, then start the exam when everyone is ready.",
+  "teacherAssignmentOpenLiveConsole": "Open live console",
+  "examPublicNoLiveSession": "The teacher has not opened a live room yet. Try again shortly.",
   "dashboardPublicCopyToken": "Copy token",
   "dashboardPublicTokenCopied": "Token copied",
   "dashboardPublicRotateLink": "New link",
@@ -1171,8 +1202,10 @@
   "homeQuickMyClasses": "Classes",
   "homeQuickPublicExam": "Public exam",
   "studentJoinClassByTokenLabel": "Invite link token",
-  "studentJoinClassByTokenHint": "Paste the long token from your teacher’s class link",
+  "studentJoinClassByTokenHint": "Paste the long token from your teacher’s class link (not a live exam session link)",
   "studentJoinClassByTokenButton": "Join with link",
+  "studentJoinClassOpeningExamLobby": "That is a live exam link — opening the waiting room…",
+  "studentJoinClassUsePublicExamLink": "That is a public exam join code. Use «Join via public link» below.",
   "studentExamsHubTitle": "Public exam join",
   "studentExamsHubSubtitle": "Class assignments stay inside each class. Use this screen only when you have a public exam token from your teacher.",
   "studentExamTimeRemainingHM": "{hours}h {minutes}m",
@@ -1326,6 +1359,9 @@
   "examSessionEndedByTeacher": "The teacher ended this live session. Your answers were saved.",
   "examJoinByLinkTitle": "Join with public link",
   "examJoinByLinkHint": "Paste the token from your teacher",
+  "examJoinByLinkHintDetail": "Use the long join code from your teacher (about 36 characters). Do not paste a /student/exam-session/ link here.",
+  "examJoinWrongSessionLink": "That looks like a live session link, not a public join code. Ask your teacher for the join token shown when the assignment was created.",
+  "examJoinInvalidToken": "Could not read a join code. Paste only the token from your teacher.",
   "examJoinPreview": "Preview",
   "examJoinStart": "Start exam",
   "examSessionRoomCode": "Room code",
@@ -1341,7 +1377,24 @@
   "teacherNoAssignments": "No assignments yet.",
   "teacherDashboardSubtitle": "Classes, exams, and grading in one calm workspace.",
   "teacherDashboardOverview": "Overview",
+  "teacherDashboardWorkZoneTitle": "Today's focus",
+  "teacherDashboardWorkZoneSubtitle": "Grading queue and live rooms side by side — tap a KPI above to jump here.",
+  "teacherDashboardQuickActionsTitle": "Quick actions",
+  "teacherDashboardAssignmentHubSubtitle": "Search, filter, and open assignment hubs.",
+  "teacherDashboardPendingJoinsCount": "{count} pending joins",
+  "@teacherDashboardPendingJoinsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherDashboardDueSoonCount": "{count} due soon",
+  "@teacherDashboardDueSoonCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "teacherDashboardStatClasses": "Classes",
+  "teacherDashboardStatStudents": "Students",
   "teacherDashboardStatAssignments": "Assignments",
   "teacherDashboardStatLiveModes": "Live mode",
   "teacherDashboardStatDraftExams": "Draft exams",
@@ -1422,6 +1475,13 @@
   "@teacherDashboardClassLabel": {
     "placeholders": {
       "name": {"type": "String"}
+    }
+  },
+  "teacherInboxPublicAssignment": "Public assignment",
+  "teacherInboxItemCount": "{count, plural, =1{1 item} other{{count} items}}",
+  "@teacherInboxItemCount": {
+    "placeholders": {
+      "count": {"type": "int"}
     }
   },
   "teacherDashboardOpenConsole": "Open console",
@@ -1778,6 +1838,50 @@
   "teacherCalendarToday": "Today",
   "teacherCalendarNoDayEvents": "No events on this day.",
   "teacherCalendarGoToAssignment": "View assignment",
+  "teacherCalendarPageSubtitle": "Deadlines, live sessions, and assignment windows.",
+  "teacherCalendarViewWeek": "Week",
+  "teacherCalendarKpiDueWeek": "Due this week",
+  "teacherCalendarKpiOpens": "Opening",
+  "teacherCalendarKpiLive": "Live",
+  "teacherCalendarKpiTotal": "Total events",
+  "teacherCalendarLegendTitle": "Legend",
+  "teacherCalendarSearchHint": "Search assignments…",
+  "teacherCalendarFilterClassroomLabel": "Class",
+  "teacherCalendarFilterClassroomAll": "All classes",
+  "teacherCalendarFilterAll": "All types",
+  "teacherCalendarAgendaTitle": "Agenda",
+  "teacherCalendarGroupsOnDay": "{count} assignment groups",
+  "@teacherCalendarGroupsOnDay": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarSectionToday": "Today",
+  "teacherCalendarSectionUpcoming": "Upcoming",
+  "teacherCalendarSectionPast": "Past",
+  "teacherCalendarRelativeNow": "Now",
+  "teacherCalendarRelativeOverdueDays": "{count} days overdue",
+  "@teacherCalendarRelativeOverdueDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeOverdueHours": "{count} hours overdue",
+  "@teacherCalendarRelativeOverdueHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeOverdueMinutes": "{count} min overdue",
+  "@teacherCalendarRelativeOverdueMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInDays": "In {count} days",
+  "@teacherCalendarRelativeInDays": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInHours": "In {count} hours",
+  "@teacherCalendarRelativeInHours": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherCalendarRelativeInMinutes": "In {count} min",
+  "@teacherCalendarRelativeInMinutes": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "teacherDashboardActionItems": "Needs attention",
   "teacherDashboardPendingJoins": "Pending join requests",
   "teacherDashboardDueSoon": "Due soon",
@@ -1844,6 +1948,8 @@
   "teacherInviteTokenHint": "Share this token for students to join via invite link",
   "copyInviteToken": "Copy invite token",
   "teacherCoTeacherAdded": "Co-teacher added",
+  "teacherCoTeacherInviteSent": "Invitation sent",
+  "teacherCoTeacherPending": "Pending",
   "teacherCoTeacherRemoved": "Co-teacher removed",
   "teacherIntegrationsTitle": "Integrations",
   "teacherGoogleClassroomLink": "Link Google Classroom course",
@@ -2221,5 +2327,9 @@
   "@examCardRealtimeLobbyOpens": {
     "placeholders": { "date": { "type": "String" } }
   },
-  "teacherAssignmentEditPracticeNote": "Practice mode has no schedule — students can access this assignment at any time."
+  "teacherAssignmentEditPracticeNote": "Practice mode has no schedule — students can access this assignment at any time.",
+  "chatMediaDownloading": "Downloading file…",
+  "chatMediaDownloadDone": "File downloaded",
+  "chatMediaDownloadFailed": "Could not download file",
+  "chatMediaVideoLoadFailed": "Could not load video"
 }

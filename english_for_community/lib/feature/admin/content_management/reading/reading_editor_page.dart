@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -248,7 +249,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                 if (state.status == AdminReadingStatus.loading) {
                   return const Center(child: Padding(
                     padding: EdgeInsets.only(right: 16),
-                    child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: const AppLoadingIndicator.button(),
                   ));
                 }
                 return TextButton(
@@ -265,7 +266,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         body: BlocBuilder<AdminReadingBloc, AdminReadingState>(
           builder: (context, state) {
             if (state.status == AdminReadingStatus.loading && widget.id != null && questions.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: AppLoadingIndicator.center());
             }
 
             return SingleChildScrollView(

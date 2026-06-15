@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -36,6 +37,7 @@ class _RegisterPageState extends State<RegisterPage> {
   DateTime? _selectedDate;
   bool _obscurePass = true;
   bool _obscureConfirm = true;
+  String _accountType = 'student';
 
   @override
   void dispose() {
@@ -117,6 +119,7 @@ class _RegisterPageState extends State<RegisterPage> {
           username: username,
           phone: phone.isNotEmpty ? phone : null,
           dateOfBirth: _selectedDate,
+          accountType: _accountType,
         ));
   }
 
@@ -190,6 +193,36 @@ class _RegisterPageState extends State<RegisterPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        AuthFieldLabel(t.registerAccountTypeLabel),
+                        const SizedBox(height: AppSpacing.s3),
+                        SegmentedButton<String>(
+                          segments: [
+                            ButtonSegment(
+                              value: 'student',
+                              label: Text(t.registerAccountTypeStudent),
+                              icon: const Icon(Icons.school_outlined, size: 18),
+                            ),
+                            ButtonSegment(
+                              value: 'teacher',
+                              label: Text(t.registerAccountTypeTeacher),
+                              icon: const Icon(Icons.co_present_outlined, size: 18),
+                            ),
+                          ],
+                          selected: {_accountType},
+                          onSelectionChanged: isLoading
+                              ? null
+                              : (s) => setState(() => _accountType = s.first),
+                        ),
+                        if (_accountType == 'teacher') ...[
+                          const SizedBox(height: AppSpacing.s4),
+                          Text(
+                            t.registerAccountTypeTeacherHint,
+                            style: StudentMobileUi.caption(context).copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: AppSpacing.s5),
                         AuthFieldLabel(t.labelFullName),
                         const SizedBox(height: AppSpacing.s3),
                         AuthTextField(
@@ -310,7 +343,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(
+                                  child: AppLoadingIndicator(
                                     strokeWidth: 2,
                                     color: AppColors.onPrimary,
                                   ),

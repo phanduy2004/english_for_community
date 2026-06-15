@@ -165,3 +165,19 @@
 
 - 32 cao; mỗi nút 32×32; active bg `primaryTint` fg `primaryDark`.
 - Có select rows-per-page (10/20/50/100).
+
+## 17. Teacher dashboard (v4)
+
+> Layout đầy đủ: [`17-teacher-dashboard-layout.md`](17-teacher-dashboard-layout.md).
+
+| Component | Mô tả |
+|-----------|--------|
+| `TeacherDashboardPanel` | Section card có title/subtitle/trailing; `fillHeight` = 340h work zone |
+| `TeacherDashboardAttentionStrip` | Chip cảnh báo vàng — pending join, due, grading |
+| `TeacherDashboardQuickActions` | Chip ngang scroll; 1 chip `filled` primary |
+| `TeacherDashboardClassroomTile` | Tile lớp trong grid — icon, tên, HS, mã mời + copy |
+| `TeacherDashboardSectionHeader` | Title + count badge + «Xem tất cả» |
+| `TeacherDashboardGradingQueuePanel` | Preview ≤5 + footer `+N` |
+| `TeacherDashboardLiveStripPanel` | Carousel ngang trong khung viền |
+
+**Quy tắc:** KPI dashboard **4 ô**; draft/published không nằm KPI; work zone **luôn** chiều cao cố định trước assignment hub.

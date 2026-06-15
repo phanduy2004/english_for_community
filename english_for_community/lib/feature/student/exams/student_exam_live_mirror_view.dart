@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/reading/reading_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
@@ -601,7 +602,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
             const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: AppLoadingIndicator(strokeWidth: 2),
             ),
             const SizedBox(width: 12),
           ],
@@ -692,7 +693,7 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
     if (_loading) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        child: Center(child: AppLoadingIndicator.center()),
       );
     }
     if (_error != null) {

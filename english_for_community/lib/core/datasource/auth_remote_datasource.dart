@@ -62,6 +62,7 @@ class AuthRemoteDatasource {
     required String fullName,
     String? phone,
     DateTime? dateOfBirth,
+    String accountType = 'student',
   }) async {
     await dio.post('auth/register', data: {
       'username': username,
@@ -70,6 +71,7 @@ class AuthRemoteDatasource {
       'fullName': fullName,
       'phone': phone,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'accountType': accountType,
     });
   }
 

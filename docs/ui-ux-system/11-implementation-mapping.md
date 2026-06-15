@@ -189,6 +189,23 @@ abstract final class AppMotion {
 | Grading hub labels (mode/format/schedule) | `teacher_grading_hub_labels.dart` |
 | Grading hub page | `teacher_exam_grading_page.dart` + `teacher_assignment_grading_hub_view.dart` |
 
+## 5.2 Teacher dashboard v4 (`17-teacher-dashboard-layout.md`)
+
+| Doc | Flutter |
+|-----|---------|
+| Dashboard page | `lib/feature/teacher/teacher_dashboard_page.dart` |
+| Dashboard body (stats-only) | `lib/feature/teacher/teacher_dashboard_overview.dart` |
+| Inbox / action queue page | `lib/feature/teacher/teacher_inbox_page.dart` |
+| Inbox entry builder | `lib/feature/teacher/teacher_dashboard_inbox_builder.dart` |
+| Layout primitives | `lib/feature/teacher/layout/teacher_dashboard_layout.dart` |
+| Queue / live panels (dialog) | `lib/feature/teacher/layout/teacher_dashboard_queue_panel.dart` |
+| **KPI grid** | `lib/feature/teacher/layout/teacher_page_scaffold.dart` → `TeacherKpiGrid` |
+| **KPI card** | `lib/feature/teacher/layout/teacher_widgets.dart` → `TeacherKpiCard` |
+| Dashboard BLoC | `lib/feature/teacher/bloc/dashboard/teacher_dashboard_bloc.dart` |
+| Grading queue item type | `lib/feature/teacher/bloc/dashboard/teacher_dashboard_state.dart` → `TeacherGradingQueueItem` |
+
+> **Import:** file dùng cả grid + card cần **hai** import: `teacher_page_scaffold.dart` và `teacher_widgets.dart`. Xem [`flutter-coding-structure.md`](../flutter-coding-structure.md) §3.
+
 ## 6. Lint / guardrail tự động
 
 Đề xuất bổ sung `dart_code_metrics` rules:

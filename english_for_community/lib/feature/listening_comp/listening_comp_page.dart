@@ -1,7 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:just_audio/just_audio.dart' as ja;
@@ -335,7 +336,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         if (isLoading) {
           return const Scaffold(
             backgroundColor: AppColors.surface,
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: AppLoadingIndicator.center()),
           );
         }
 
@@ -571,7 +572,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                   child: SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF15803D)),
+                    child: AppLoadingIndicator(strokeWidth: 2, color: Color(0xFF15803D)),
                   ),
                 ),
               Text(

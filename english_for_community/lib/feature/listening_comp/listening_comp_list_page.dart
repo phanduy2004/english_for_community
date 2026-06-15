@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -124,7 +125,7 @@ class _ListeningCompListPageState extends State<ListeningCompListPage> {
                         return const Padding(
                           padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
                           child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: AppLoadingIndicator.center(),
                           ),
                         );
                       }

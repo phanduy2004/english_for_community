@@ -446,6 +446,17 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
+  Future<Either<Failure, dynamic>> joinPublicExamSession(String publicToken) async {
+    try {
+      return Right(await remote.joinPublicExamSession(publicToken.trim()));
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _dioMsg(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, dynamic>> previewPublicExam(String publicToken) async {
     try {
       return Right(await remote.previewPublicExam(publicToken.trim()));

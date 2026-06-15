@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_event.dart';
@@ -40,7 +41,10 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
+    // Scaffold header only rebuilds when assignment metadata changes, not on
+    // every attempt-list or filter state change (which is more frequent).
     return BlocBuilder<TeacherGradingHubBloc, TeacherGradingHubState>(
+      buildWhen: (prev, curr) => prev.assignment != curr.assignment,
       builder: (context, state) {
         final assignment = state.assignment;
         final examTitle = (assignment?['examTitle'] as String?)?.trim();
@@ -73,13 +77,12 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
           maxWidth: TeacherWebUi.contentMaxTable,
           scrollable: false,
           actions: [
-            if (state.assignment != null)
+            if (assignment != null)
               Builder(
                 builder: (ctx) => IconButton(
                   tooltip: ctx.l10n.teacherAssignmentEditTooltip,
                   icon: const Icon(Icons.edit_calendar_outlined),
                   onPressed: () async {
-                    final assignment = state.assignment!;
                     final id =
                         (assignment['id'] ?? assignment['_id'])?.toString() ??
                             '';
@@ -98,7 +101,16 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
                   },
                 ),
               ),
-            ...gradingHubBatchActions(context, state, assignmentId: assignmentId),
+            // Batch actions need the full state (attempts list), use a nested builder.
+            BlocBuilder<TeacherGradingHubBloc, TeacherGradingHubState>(
+              buildWhen: (prev, curr) =>
+                  prev.visibleAttempts != curr.visibleAttempts ||
+                  prev.status != curr.status,
+              builder: (ctx, s) => Row(
+                mainAxisSize: MainAxisSize.min,
+                children: gradingHubBatchActions(ctx, s, assignmentId: assignmentId),
+              ),
+            ),
           ],
           body: TeacherAssignmentGradingHubView(
             assignmentId: assignmentId,
@@ -119,7 +131,7 @@ List<Widget> gradingHubBatchActions(
   final l10n = context.l10n;
   if (state.batchAiRunning || state.batchOpsRunning) {
     return const [
-      SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+      SizedBox(child: const AppLoadingIndicator.button()),
     ];
   }
   final canExport =

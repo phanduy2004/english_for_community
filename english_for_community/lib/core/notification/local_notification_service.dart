@@ -11,6 +11,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../utils/global_keys.dart';
 import 'notification_navigation.dart';
+import '../../feature/home/notifications_page.dart';
 
 class LocalNotificationService {
   // Singleton Pattern
@@ -79,15 +80,24 @@ class LocalNotificationService {
     AndroidNotificationDetails(
       'social_channel',
       'Social Interactions',
-      channelDescription: 'Notifications for replies and reactions',
+      channelDescription: 'Notifications for replies, exams, and classroom updates',
       importance: Importance.max,
       priority: Priority.high,
       color: Color(0xFF2E7D32),
       icon: '@mipmap/ic_launcher',
     );
 
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
+    const DarwinNotificationDetails iosPlatformChannelSpecifics =
+    DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+      iOS: iosPlatformChannelSpecifics,
+    );
 
     await _flutterLocalNotificationsPlugin.show(
       id,
@@ -105,9 +115,13 @@ class LocalNotificationService {
 
     try {
       final data = Map<String, dynamic>.from(jsonDecode(payload) as Map);
-      navigateFromNotification(GoRouter.of(context), data: data);
+      final router = GoRouter.of(context);
+      if (!navigateFromNotification(router, data: data)) {
+        router.push(NotificationsPage.routePath);
+      }
     } catch (e) {
       print('⚠️ Notification payload parse error: $e');
+      GoRouter.of(context).push(NotificationsPage.routePath);
     }
   }
 

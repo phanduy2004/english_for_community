@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_event.dart';
@@ -57,7 +58,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
             ),
           ],
           body: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: AppLoadingIndicator.center())
               : error != null
                   ? Center(
                       child: Column(

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:english_for_community/core/entity/user_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -161,7 +162,7 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
             return AdminDialogShell(
               title: t.editProfileTitle,
               icon: Icons.person_outline,
-              body: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              body: const Center(child: AppLoadingIndicator.center()),
             );
           }
 

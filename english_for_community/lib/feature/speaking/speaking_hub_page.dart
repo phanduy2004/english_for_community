@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -157,7 +158,7 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
                 if (state.status == SpeakingStatus.loading) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
-                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                    child: Center(child: AppLoadingIndicator.center()),
                   );
                 }
                 if (state.status == SpeakingStatus.error) {

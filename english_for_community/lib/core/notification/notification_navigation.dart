@@ -31,6 +31,9 @@ bool navigateFromNotification(GoRouter router, {NotificationEntity? item, Map<St
 
     switch (type) {
       case 'CLASSROOM_JOIN_REQUEST':
+      case 'CO_TEACHER_INVITE':
+      case 'CO_TEACHER_INVITE_ACCEPTED':
+      case 'CO_TEACHER_INVITE_DECLINED':
         final cid = payload['classroomId']?.toString();
         if (cid != null && cid.isNotEmpty) {
           router.push('${TeacherClassroomDetailPage.routePath}/$cid');

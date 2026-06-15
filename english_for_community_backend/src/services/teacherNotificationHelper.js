@@ -53,7 +53,101 @@ export async function notifyClassroomJoinRequest({
     data: {
       type: 'CLASSROOM_JOIN_REQUEST',
       classroomId: String(classroomId),
+      studentId: String(studentId),
+      studentName: studentName || '',
+      actionable: true,
+      actionStatus: 'pending',
       url: `/teacher/classroom/${classroomId}`,
+    },
+  });
+}
+
+export async function notifyCoTeacherInvite({
+  coTeacherId,
+  ownerId,
+  classroomId,
+  classroomName,
+  memberId,
+  ownerName,
+}) {
+  if (!coTeacherId) return null;
+  return createNotification({
+    recipientId: coTeacherId,
+    senderId: ownerId,
+    type: 'CO_TEACHER_INVITE',
+    title: 'Co-teacher invitation',
+    message: `${ownerName || 'A teacher'} invited you to co-teach ${classroomName || 'a class'}`,
+    data: {
+      type: 'CO_TEACHER_INVITE',
+      classroomId: String(classroomId),
+      memberId: String(memberId),
+      classroomName: classroomName || '',
+      actionable: true,
+      actionStatus: 'pending',
+      url: `/teacher/classroom/${classroomId}`,
+    },
+  });
+}
+
+export async function notifyCoTeacherInviteAccepted({
+  ownerId,
+  coTeacherId,
+  classroomId,
+  classroomName,
+}) {
+  if (!ownerId) return null;
+  const name = await studentDisplayName(coTeacherId);
+  return createNotification({
+    recipientId: ownerId,
+    senderId: coTeacherId,
+    type: 'CO_TEACHER_INVITE_ACCEPTED',
+    title: 'Co-teacher joined',
+    message: `${name} accepted your invitation to ${classroomName || 'the class'}`,
+    data: {
+      type: 'CO_TEACHER_INVITE_ACCEPTED',
+      classroomId: String(classroomId),
+      url: `/teacher/classroom/${classroomId}`,
+    },
+  });
+}
+
+export async function notifyCoTeacherInviteDeclined({
+  ownerId,
+  coTeacherId,
+  classroomId,
+  classroomName,
+}) {
+  if (!ownerId) return null;
+  const name = await studentDisplayName(coTeacherId);
+  return createNotification({
+    recipientId: ownerId,
+    senderId: coTeacherId,
+    type: 'CO_TEACHER_INVITE_DECLINED',
+    title: 'Invitation declined',
+    message: `${name} declined to co-teach ${classroomName || 'the class'}`,
+    data: {
+      type: 'CO_TEACHER_INVITE_DECLINED',
+      classroomId: String(classroomId),
+    },
+  });
+}
+
+export async function notifyCoTeacherRemoved({
+  coTeacherId,
+  ownerId,
+  classroomId,
+  classroomName,
+}) {
+  if (!coTeacherId) return null;
+  return createNotification({
+    recipientId: coTeacherId,
+    senderId: ownerId,
+    type: 'CO_TEACHER_REMOVED',
+    title: 'Removed from class',
+    message: `You were removed as co-teacher from ${classroomName || 'a class'}`,
+    data: {
+      type: 'CO_TEACHER_REMOVED',
+      classroomId: String(classroomId),
     },
   });
 }

@@ -12,6 +12,7 @@ import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_account_menu.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
+import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock.dart';
 import 'package:english_for_community/feature/teacher/teacher_analytics_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_calendar_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
@@ -22,9 +23,9 @@ import 'package:go_router/go_router.dart';
 
 /// Web shell: sidebar + sticky top bar wrapping teacher routes.
 class TeacherShell extends StatefulWidget {
-  const TeacherShell({super.key, required this.child});
+  const TeacherShell({super.key, required this.navigationShell});
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<TeacherShell> createState() => _TeacherShellState();
@@ -38,40 +39,43 @@ class _TeacherShellState extends State<TeacherShell> {
     return LayoutBuilder(
       builder: (context, c) {
         if (c.maxWidth < TeacherWebUi.minFallbackWidth) {
-          return _TeacherMobileShell(child: widget.child);
+          return _TeacherMobileShell(navigationShell: widget.navigationShell);
         }
         final effectiveCollapsed = _collapsed || c.maxWidth < TeacherWebUi.sidebarExpandedMinWidth;
         final sidebarW = effectiveCollapsed ? TeacherWebUi.sidebarCollapsedWidth : TeacherWebUi.sidebarWidth;
-        return Scaffold(
-          backgroundColor: AppColors.surface,
-          body: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _TeacherSidebar(
-                collapsed: effectiveCollapsed,
-                width: sidebarW,
-                onToggle: () => setState(() => _collapsed = !_collapsed),
-              ),
-              Expanded(
-                child: Column(
-                  children: [
-                    _TeacherTopBar(
-                      collapsed: effectiveCollapsed,
-                      onToggleSidebar: () => setState(() => _collapsed = !_collapsed),
-                    ),
-                    Expanded(
-                      child: WorkspaceLayoutScope(
-                        useWebDensity: true,
-                        child: Theme(
-                          data: AppTheme.mergeWorkspaceWeb(context),
-                          child: widget.child,
+        return ClassroomChatDock(
+          child: Scaffold(
+            backgroundColor: AppColors.surface,
+            body: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _TeacherSidebar(
+                  collapsed: effectiveCollapsed,
+                  width: sidebarW,
+                  onToggle: () => setState(() => _collapsed = !_collapsed),
+                  navigationShell: widget.navigationShell,
+                ),
+                Expanded(
+                  child: Column(
+                    children: [
+                      _TeacherTopBar(
+                        collapsed: effectiveCollapsed,
+                        onToggleSidebar: () => setState(() => _collapsed = !_collapsed),
+                      ),
+                      Expanded(
+                        child: WorkspaceLayoutScope(
+                          useWebDensity: true,
+                          child: Theme(
+                            data: AppTheme.mergeWorkspaceWeb(context),
+                            child: widget.navigationShell,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -81,16 +85,18 @@ class _TeacherShellState extends State<TeacherShell> {
 
 /// Teacher hub on phone / narrow tablet — bottom nav + mobile density.
 class _TeacherMobileShell extends StatelessWidget {
-  const _TeacherMobileShell({required this.child});
+  const _TeacherMobileShell({required this.navigationShell});
 
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  static int _indexForPath(String path) {
+  static int branchIndexForPath(String path) {
     if (path.startsWith(TeacherExamsListPage.routePath)) return 1;
     if (path.startsWith(TeacherCalendarPage.routePath)) return 2;
     if (path.startsWith(TeacherAnalyticsPage.routePath)) return 3;
     return 0;
   }
+
+  static int _indexForPath(String path) => branchIndexForPath(path);
 
   static const _roots = [
     TeacherDashboardPage.routePath,
@@ -125,14 +131,19 @@ class _TeacherMobileShell extends StatelessWidget {
           : null,
       body: WorkspaceLayoutScope(
         useWebDensity: false,
-        child: child,
+        child: navigationShell,
       ),
       bottomNavigationBar: showNav
           ? NavigationBar(
               selectedIndex: index,
               height: 60,
               onDestinationSelected: (i) {
-                if (i >= 0 && i < _roots.length) context.go(_roots[i]);
+                if (i >= 0 && i < _roots.length) {
+                  navigationShell.goBranch(
+                    i,
+                    initialLocation: i == navigationShell.currentIndex,
+                  );
+                }
               },
               destinations: [
                 NavigationDestination(
@@ -174,11 +185,15 @@ class _TeacherSidebar extends StatelessWidget {
     required this.collapsed,
     required this.width,
     required this.onToggle,
+    required this.navigationShell,
   });
 
   final bool collapsed;
   final double width;
   final VoidCallback onToggle;
+  final StatefulNavigationShell navigationShell;
+
+  static int branchIndexForPath(String path) => _TeacherMobileShell.branchIndexForPath(path);
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +313,13 @@ class _TeacherSidebar extends StatelessWidget {
                     item: item,
                     selected: selected,
                     collapsed: collapsed,
-                    onTap: () => context.go(item.path),
+                    onTap: () {
+                      final branch = branchIndexForPath(item.path);
+                      navigationShell.goBranch(
+                        branch,
+                        initialLocation: branch == navigationShell.currentIndex,
+                      );
+                    },
                   );
                 }).toList(),
               ),
@@ -487,6 +508,7 @@ class _TeacherTopBar extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           Expanded(child: _RouteContextLabel()),
+          const ClassroomChatDockButton(),
           BlocBuilder<NotificationBloc, NotificationState>(
             bloc: getIt<NotificationBloc>(),
             builder: (context, state) {

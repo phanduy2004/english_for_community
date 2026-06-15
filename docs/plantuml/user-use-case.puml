@@ -1,0 +1,76 @@
+@startuml E4C_User_UseCase
+' 2.4.1.2 Phía Người dùng — https://www.planttext.com/
+
+left to right direction
+skinparam shadowing false
+
+actor "User" as User
+
+User --> (Đăng nhập)
+User --> (Xem dữ liệu hoạt động ở DashboardHome)
+User --> (Trợ lý AI)
+User --> (Quản lý tài khoản)
+User --> (Xem kết quả quá trình học)
+User --> (Luyện tập nói)
+User --> (Luyện tập từ vựng)
+User --> (Luyện tập kĩ năng đọc)
+User --> (Luyện tập kĩ năng viết)
+User --> (Luyện tập kĩ năng nghe)
+User --> (Tham gia lớp học)
+User --> (Làm bài thi)
+User --> (Quản lý thông báo)
+User --> (Báo cáo sự cố)
+User --> (Nộp đơn trở thành giáo viên)
+
+(Quên mật khẩu) ..> (Đăng nhập) : <<extend>>
+(Đăng ký tài khoản) ..> (Đăng nhập) : <<extend>>
+(Đăng nhập bằng Google) ..> (Đăng nhập) : <<extend>>
+
+(Thiết lập nhắc nhở và mục tiêu) ..> (Quản lý tài khoản) : <<extend>>
+(Đổi mật khẩu) ..> (Quản lý tài khoản) : <<extend>>
+(Sửa đổi thông tin cá nhân) ..> (Quản lý tài khoản) : <<extend>>
+(Xóa tài khoản) ..> (Quản lý tài khoản) : <<extend>>
+
+(Xem lịch sử học bài) ..> (Xem kết quả quá trình học) : <<extend>>
+(Xem thông tin user trong leaderboard) ..> (Xem kết quả quá trình học) : <<extend>>
+(Xem chi tiết thống kê kỹ năng) ..> (Xem kết quả quá trình học) : <<extend>>
+
+(Làm bài nói read-aloud) ..> (Luyện tập nói) : <<extend>>
+(Luyện nói tự do VAPI) ..> (Luyện tập nói) : <<extend>>
+(Tra từ vựng trong bài nói) ..> (Luyện tập nói) : <<extend>>
+
+(Tra từ điển) ..> (Luyện tập từ vựng) : <<extend>>
+(Lưu và học từ mới) ..> (Luyện tập từ vựng) : <<extend>>
+(Ôn tập từ SRS) ..> (Luyện tập từ vựng) : <<extend>>
+
+(Đọc bài và làm câu hỏi) ..> (Luyện tập kĩ năng đọc) : <<extend>>
+(Nộp bài đọc và xem AI feedback) ..> (Luyện tập kĩ năng đọc) : <<extend>>
+
+(Chọn chủ đề writing) ..> (Luyện tập kĩ năng viết) : <<extend>>
+(Lưu nháp bài viết) ..> (Luyện tập kĩ năng viết) : <<extend>>
+(Nộp bài viết để AI chấm) ..> (Luyện tập kĩ năng viết) : <<extend>>
+(Xem lịch sử bài viết) ..> (Luyện tập kĩ năng viết) : <<extend>>
+
+(Luyện nghe chép chính tả) ..> (Luyện tập kĩ năng nghe) : <<extend>>
+(Luyện nghe hiểu MCQ) ..> (Luyện tập kĩ năng nghe) : <<extend>>
+(Làm và nộp bài nghe) ..> (Luyện tập kĩ năng nghe) : <<extend>>
+(Bình luận cue bài nghe) ..> (Luyện tập kĩ năng nghe) : <<extend>>
+
+(Tham gia lớp bằng mã mời) ..> (Tham gia lớp học) : <<extend>>
+(Tham gia lớp bằng link token) ..> (Tham gia lớp học) : <<extend>>
+(Xem danh sách lớp đã ghi danh) ..> (Tham gia lớp học) : <<extend>>
+
+(Làm bài thi được giao) ..> (Làm bài thi) : <<extend>>
+(Tham gia phiên thi realtime) ..> (Làm bài thi) : <<extend>>
+(Tham gia thi qua link công khai) ..> (Làm bài thi) : <<extend>>
+(Xem kết quả bài thi) ..> (Làm bài thi) : <<extend>>
+
+(Đọc thông báo) ..> (Quản lý thông báo) : <<extend>>
+(Phản hồi lời mời co-teacher) ..> (Quản lý thông báo) : <<extend>>
+
+(Gửi báo cáo kèm ảnh) ..> (Báo cáo sự cố) : <<extend>>
+
+(Xem trạng thái đơn) ..> (Nộp đơn trở thành giáo viên) : <<extend>>
+(Rút đơn) ..> (Nộp đơn trở thành giáo viên) : <<extend>>
+
+@enduml

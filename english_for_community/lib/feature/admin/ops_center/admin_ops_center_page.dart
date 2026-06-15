@@ -1,4 +1,5 @@
-﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
@@ -623,7 +624,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
               title: 'Moderation Queue',
               onRefresh: _loadQueue,
               child: _loadingQueue
-                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: AppLoadingIndicator.center()))
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -840,7 +841,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
               title: 'Roles & Permissions',
               onRefresh: _loadPermissions,
               child: _loadingPerms
-                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
+                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: AppLoadingIndicator.center()))
                   : permissionRows.isEmpty
                       ? const Padding(
                           padding: EdgeInsets.all(20),

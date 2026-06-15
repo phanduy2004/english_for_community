@@ -123,10 +123,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get navHome => 'Trang chủ';
 
   @override
+  String get navMessages => 'Tin nhắn';
+
+  @override
   String get navProgress => 'Tiến độ';
 
   @override
   String get navProfile => 'Hồ sơ';
+
+  @override
+  String get studentChatHubSubtitle => 'Nhóm chat các lớp bạn tham gia';
+
+  @override
+  String get studentChatHubSearchHint => 'Tìm lớp học…';
+
+  @override
+  String get studentChatHubFilterAll => 'Tất cả';
+
+  @override
+  String get studentChatHubFilterUnread => 'Chưa đọc';
 
   @override
   String get loginWelcomeBack => 'Chào mừng trở lại!';
@@ -793,6 +808,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get registerHeroSubtitle => 'Điền thông tin để bắt đầu học.';
 
   @override
+  String get registerAccountTypeLabel => 'Loại tài khoản';
+
+  @override
+  String get registerAccountTypeStudent => 'Học sinh';
+
+  @override
+  String get registerAccountTypeTeacher => 'Giáo viên';
+
+  @override
+  String get registerAccountTypeTeacherHint =>
+      'Tài khoản giáo viên cần được quản trị duyệt trước khi tạo lớp.';
+
+  @override
   String get labelFullName => 'Họ và tên *';
 
   @override
@@ -1014,6 +1042,24 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get notificationsEmptyBody => 'Thông báo sẽ hiển thị tại đây.';
+
+  @override
+  String get notificationAccept => 'Chấp nhận';
+
+  @override
+  String get notificationDecline => 'Từ chối';
+
+  @override
+  String get notificationInviteAccepted => 'Đã chấp nhận lời mời';
+
+  @override
+  String get notificationInviteDeclined => 'Đã từ chối lời mời';
+
+  @override
+  String get notificationJoinApproved => 'Đã duyệt yêu cầu vào lớp';
+
+  @override
+  String get notificationJoinDeclined => 'Đã từ chối yêu cầu vào lớp';
 
   @override
   String get aiAssistantEmptyPrompt =>
@@ -2248,6 +2294,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get copyInviteCode => 'Sao chép mã mời';
 
   @override
+  String get teacherExamSessionShareTitle => 'Gửi gì cho học sinh';
+
+  @override
+  String get teacherExamSessionShareClassroom =>
+      'Học sinh vào Lớp học → bài tập này → Vào phòng chờ. Không cần dán mã ở đây.';
+
+  @override
+  String get teacherExamSessionSharePublic =>
+      'Học sinh mở Tham gia bài thi công khai và dán mã bên dưới (không phải mã phòng hay link session).';
+
+  @override
+  String get teacherExamSessionSharePublicCopy =>
+      'Sao chép mã tham gia công khai';
+
+  @override
+  String get teacherExamSessionRoomCodeHint =>
+      'Nhãn phòng (chỉ hiển thị trong lobby — không dùng để vào bài)';
+
+  @override
   String get adminTeacherApplicationsTitle => 'Đơn xin làm giáo viên';
 
   @override
@@ -2274,6 +2339,35 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studentJoinClassTitle => 'Tham gia bằng mã mời';
+
+  @override
+  String get studentUnifiedJoinTitle => 'Tham gia';
+
+  @override
+  String get studentUnifiedJoinSubtitle =>
+      'Dán mã hoặc link — app tự nhận loại và mở đúng chỗ.';
+
+  @override
+  String get studentUnifiedJoinHint =>
+      'Mã lớp · link lớp · bài thi công khai · phòng thi live…';
+
+  @override
+  String get studentUnifiedJoinButton => 'Tham gia';
+
+  @override
+  String get studentJoinInputInvalid =>
+      'Không nhận dạng được mã. Kiểm tra lại hoặc hỏi giáo viên.';
+
+  @override
+  String get studentJoinDetectedClass => 'Nhận mã lớp — đang tham gia…';
+
+  @override
+  String get studentJoinDetectedSession =>
+      'Nhận phòng thi live — đang mở phòng chờ…';
+
+  @override
+  String get studentJoinDetectedPublicExam =>
+      'Nhận bài thi công khai — đang mở…';
 
   @override
   String get studentJoinClassSubtitle =>
@@ -2606,6 +2700,17 @@ class AppLocalizationsVi extends AppLocalizations {
       'Gửi mã này cho học sinh. Họ dán vào mục “Tham gia bài thi công khai”.';
 
   @override
+  String get teacherAssignmentPublicRealtimeNextSteps =>
+      'Phòng chờ trực tiếp đã được tạo tự động. Mở bảng điều khiển live để giám sát học sinh, rồi bắt đầu bài khi sẵn sàng.';
+
+  @override
+  String get teacherAssignmentOpenLiveConsole => 'Mở bảng live';
+
+  @override
+  String get examPublicNoLiveSession =>
+      'Giáo viên chưa mở phòng live. Vui lòng thử lại sau.';
+
+  @override
   String get dashboardPublicCopyToken => 'Sao chép mã';
 
   @override
@@ -2666,10 +2771,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studentJoinClassByTokenHint =>
-      'Dán mã dài từ link lớp giáo viên gửi';
+      'Dán mã dài từ link lớp giáo viên gửi (không phải link phòng thi live)';
 
   @override
   String get studentJoinClassByTokenButton => 'Tham gia bằng link';
+
+  @override
+  String get studentJoinClassOpeningExamLobby =>
+      'Đây là link phòng thi — đang mở phòng chờ…';
+
+  @override
+  String get studentJoinClassUsePublicExamLink =>
+      'Đây là mã bài thi công khai. Dùng mục «Tham gia bằng liên kết công khai» bên dưới.';
 
   @override
   String get studentExamsHubTitle => 'Tham gia bài thi công khai';
@@ -2940,6 +3053,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get examJoinByLinkHint => 'Dán mã từ giáo viên';
 
   @override
+  String get examJoinByLinkHintDetail =>
+      'Dùng mã tham gia dài mà giáo viên gửi (khoảng 36 ký tự). Không dán link /student/exam-session/ vào đây.';
+
+  @override
+  String get examJoinWrongSessionLink =>
+      'Đây là link phòng live, không phải mã tham gia công khai. Hãy xin giáo viên mã token hiển thị khi tạo bài giao.';
+
+  @override
+  String get examJoinInvalidToken =>
+      'Không đọc được mã tham gia. Chỉ dán mã token giáo viên đã gửi.';
+
+  @override
   String get examJoinPreview => 'Xem trước';
 
   @override
@@ -2990,7 +3115,34 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherDashboardOverview => 'Tổng quan';
 
   @override
+  String get teacherDashboardWorkZoneTitle => 'Việc cần làm hôm nay';
+
+  @override
+  String get teacherDashboardWorkZoneSubtitle =>
+      'Hàng chờ chấm bài và phòng trực tiếp — bấm KPI phía trên để cuộn tới đây.';
+
+  @override
+  String get teacherDashboardQuickActionsTitle => 'Thao tác nhanh';
+
+  @override
+  String get teacherDashboardAssignmentHubSubtitle =>
+      'Tìm, lọc và mở hub bài giao.';
+
+  @override
+  String teacherDashboardPendingJoinsCount(int count) {
+    return '$count yêu cầu vào lớp';
+  }
+
+  @override
+  String teacherDashboardDueSoonCount(int count) {
+    return '$count sắp đến hạn';
+  }
+
+  @override
   String get teacherDashboardStatClasses => 'Lớp học';
+
+  @override
+  String get teacherDashboardStatStudents => 'Học sinh';
 
   @override
   String get teacherDashboardStatAssignments => 'Bài đã giao';
@@ -3126,6 +3278,20 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String teacherDashboardClassLabel(String name) {
     return 'Lớp: $name';
+  }
+
+  @override
+  String get teacherInboxPublicAssignment => 'Bài giao công khai';
+
+  @override
+  String teacherInboxItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mục',
+      one: '1 mục',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3962,6 +4128,90 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherCalendarGoToAssignment => 'Xem bài giao';
 
   @override
+  String get teacherCalendarPageSubtitle =>
+      'Hạn nộp, phòng trực tiếp và khung thời gian bài giao.';
+
+  @override
+  String get teacherCalendarViewWeek => 'Tuần';
+
+  @override
+  String get teacherCalendarKpiDueWeek => 'Hạn tuần này';
+
+  @override
+  String get teacherCalendarKpiOpens => 'Sắp mở';
+
+  @override
+  String get teacherCalendarKpiLive => 'Trực tiếp';
+
+  @override
+  String get teacherCalendarKpiTotal => 'Tổng sự kiện';
+
+  @override
+  String get teacherCalendarLegendTitle => 'Chú thích';
+
+  @override
+  String get teacherCalendarSearchHint => 'Tìm bài giao…';
+
+  @override
+  String get teacherCalendarFilterClassroomLabel => 'Lớp';
+
+  @override
+  String get teacherCalendarFilterClassroomAll => 'Tất cả lớp';
+
+  @override
+  String get teacherCalendarFilterAll => 'Tất cả';
+
+  @override
+  String get teacherCalendarAgendaTitle => 'Lịch trình';
+
+  @override
+  String teacherCalendarGroupsOnDay(int count) {
+    return '$count nhóm bài giao';
+  }
+
+  @override
+  String get teacherCalendarSectionToday => 'Hôm nay';
+
+  @override
+  String get teacherCalendarSectionUpcoming => 'Sắp tới';
+
+  @override
+  String get teacherCalendarSectionPast => 'Đã qua';
+
+  @override
+  String get teacherCalendarRelativeNow => 'Bây giờ';
+
+  @override
+  String teacherCalendarRelativeOverdueDays(int count) {
+    return 'Quá hạn $count ngày';
+  }
+
+  @override
+  String teacherCalendarRelativeOverdueHours(int count) {
+    return 'Quá hạn $count giờ';
+  }
+
+  @override
+  String teacherCalendarRelativeOverdueMinutes(int count) {
+    return 'Quá hạn $count phút';
+  }
+
+  @override
+  String teacherCalendarRelativeInDays(int count) {
+    return 'Còn $count ngày';
+  }
+
+  @override
+  String teacherCalendarRelativeInHours(int count) {
+    return 'Còn $count giờ';
+  }
+
+  @override
+  String teacherCalendarRelativeInMinutes(int count) {
+    return 'Còn $count phút';
+  }
+
+  @override
   String get teacherDashboardActionItems => 'Cần xử lý';
 
   @override
@@ -4136,6 +4386,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherCoTeacherAdded => 'Đã thêm giáo viên phụ';
+
+  @override
+  String get teacherCoTeacherInviteSent => 'Đã gửi lời mời';
+
+  @override
+  String get teacherCoTeacherPending => 'Chờ duyệt';
 
   @override
   String get teacherCoTeacherRemoved => 'Đã gỡ giáo viên phụ';
@@ -5122,4 +5378,16 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String get teacherAssignmentEditPracticeNote =>
       'Chế độ luyện tập không có lịch — học sinh có thể làm bài bất cứ lúc nào.';
+
+  @override
+  String get chatMediaDownloading => 'Đang tải file…';
+
+  @override
+  String get chatMediaDownloadDone => 'Đã tải file';
+
+  @override
+  String get chatMediaDownloadFailed => 'Không thể tải file';
+
+  @override
+  String get chatMediaVideoLoadFailed => 'Không thể phát video';
 }

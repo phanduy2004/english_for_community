@@ -8,6 +8,7 @@ part 'handlers/socket_listening_handler.dart';
 part 'handlers/socket_notification_handler.dart';
 part 'handlers/socket_admin_handler.dart';
 part 'handlers/socket_exam_handler.dart';
+part 'handlers/socket_classroom_chat_handler.dart';
 
 class SocketService {
   late IO.Socket _socket;
@@ -23,6 +24,19 @@ class SocketService {
   final List<void Function(Map<String, dynamic>)> _examLiveScreenListeners = [];
   bool _examLiveProgressBridgeAttached = false;
   bool _examLiveScreenBridgeAttached = false;
+
+  // Classroom chat — one socket bridge, many per-room callbacks (tránh duplicate listeners).
+  final Map<String, List<void Function(dynamic)>> _classroomChatMessageCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatReactCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatDeletedCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatEditedCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatTypingCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatPinnedCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatSettingsCallbacks = {};
+  final List<void Function(dynamic)> _classroomChatInboxCallbacks = [];
+  bool _classroomChatBridgeAttached = false;
+  final Set<String> _joinedClassroomChatRooms = {};
+  bool _pendingAdminJoin = false;
 
   /// Getter để kiểm tra socket có đang kết nối không (dùng trong các file part)
   bool get isConnected => _isInitialized && _socket.connected;
@@ -78,6 +92,12 @@ class SocketService {
         _socket.emit('join_listening_room', _currentListeningRoomId);
       }
 
+      if (_pendingAdminJoin) {
+        _socket.emit('admin_join');
+        _pendingAdminJoin = false;
+      }
+
+      reconnectClassroomChats();
       reconnectExamSocket();
     });
 
@@ -101,5 +121,37 @@ class SocketService {
     if (_currentExamSessionId != null && _currentExamSessionId!.isNotEmpty) {
       _socket.emit('join_exam_session', {'sessionId': _currentExamSessionId});
     }
+  }
+
+  void reconnectClassroomChats() {
+    if (!_isInitialized || !isConnected || _joinedClassroomChatRooms.isEmpty) return;
+    for (final classroomId in _joinedClassroomChatRooms) {
+      _socket.emit('classroom_chat_join', {'classroomId': classroomId});
+    }
+  }
+
+  void _resetSocketSessionState() {
+    _currentUserId = null;
+    _pendingUserId = null;
+    _currentListeningRoomId = null;
+    _examAccessToken = null;
+    _currentExamSessionId = null;
+    _pendingAdminJoin = false;
+    _joinedClassroomChatRooms.clear();
+
+    _classroomChatBridgeAttached = false;
+    _examLiveProgressBridgeAttached = false;
+    _examLiveScreenBridgeAttached = false;
+
+    _classroomChatMessageCallbacks.clear();
+    _classroomChatReactCallbacks.clear();
+    _classroomChatDeletedCallbacks.clear();
+    _classroomChatEditedCallbacks.clear();
+    _classroomChatTypingCallbacks.clear();
+    _classroomChatPinnedCallbacks.clear();
+    _classroomChatSettingsCallbacks.clear();
+    _classroomChatInboxCallbacks.clear();
+    _examLiveProgressListeners.clear();
+    _examLiveScreenListeners.clear();
   }
 }

@@ -1,4 +1,5 @@
-﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
@@ -237,7 +238,7 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
               // 3. LIST CONTENT
               Expanded(
                 child: state.status == HistoryStatus.loading
-                    ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const Center(child: AppLoadingIndicator.center())
                     : filteredList.isEmpty
                     ? AdminEmptyState(message: l10n.noData, icon: Icons.history_outlined)
                     : ListView.separated(

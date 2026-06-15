@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -17,9 +18,9 @@ import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart
 import 'package:english_for_community/feature/teacher/teacher_exam_session_compact_strip.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_timing.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_exam_participant_status_chip.dart';
+import 'package:english_for_community/feature/teacher/widgets/teacher_exam_session_student_share_card.dart';
 import 'package:english_for_community/feature/teacher/widgets/teacher_live_monitor_panel.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class TeacherExamSessionConsolePage extends StatelessWidget {
@@ -133,6 +134,18 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
       roomCode: roomCode,
       sessionCreatedAt: createdLabel,
       timing: _sessionTiming(context, state),
+    );
+  }
+
+  Widget _studentShareCard(
+    TeacherExamSessionConsoleState state,
+    String roomCode,
+  ) {
+    final ctx = state.assignmentContext ?? {};
+    return TeacherExamSessionStudentShareCard(
+      audience: ctx['audience'] as String?,
+      publicJoinToken: ctx['publicJoinToken'] as String?,
+      roomCode: roomCode,
     );
   }
 
@@ -383,8 +396,7 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
 
   Widget _buildControlTab(
     BuildContext context,
-    TeacherExamSessionConsoleState state,
-    String sharePath, {
+    TeacherExamSessionConsoleState state, {
     required String roomCode,
     required String createdLabel,
   }) {
@@ -407,21 +419,9 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
           ),
           const SizedBox(height: ExamSystemUi.cardGap),
         ],
-        if (sharePath.isNotEmpty && state.isLobby) ...[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: sharePath));
-                if (context.mounted) {
-                  AppCornerToast.show(context, l10n.copiedToClipboard);
-                }
-              },
-              icon: const Icon(Icons.link, size: 18),
-              label: Text(l10n.copyInviteCode),
-            ),
-          ),
-          const SizedBox(height: 10),
+        if (state.isLobby) ...[
+          _studentShareCard(state, roomCode),
+          const SizedBox(height: ExamSystemUi.cardGap),
         ],
         ..._rosterSection(context, state),
       ],
@@ -465,7 +465,6 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
                   _buildControlTab(
                     context,
                     state,
-                    sid.isEmpty ? '' : '/student/exam-session/$sid',
                     roomCode: roomCode,
                     createdLabel: createdLabel,
                   ),
@@ -518,7 +517,7 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
           actions: mobile ? const [] : sessionActions,
           bottomActions: mobile ? sessionActions : null,
           body: loading
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: AppLoadingIndicator.center())
               : error != null
                   ? Center(
                       child: Padding(
@@ -545,20 +544,8 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
                             _sessionCompactStrip(context, state, roomCode, createdLabel),
                             const SizedBox(height: ExamSystemUi.cardGap),
                             if (sid.isNotEmpty && state.isLobby) ...[
-                              const SizedBox(height: 10),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: () async {
-                                    await Clipboard.setData(ClipboardData(text: '/student/exam-session/$sid'));
-                                    if (context.mounted) {
-                                      AppCornerToast.show(context, l10n.copiedToClipboard);
-                                    }
-                                  },
-                                  icon: const Icon(Icons.link, size: 18),
-                                  label: Text(l10n.copyInviteCode),
-                                ),
-                              ),
+                              _studentShareCard(state, roomCode),
+                              const SizedBox(height: ExamSystemUi.cardGap),
                             ],
                             const SizedBox(height: ExamSystemUi.sectionGap),
                             ..._rosterSection(context, state),

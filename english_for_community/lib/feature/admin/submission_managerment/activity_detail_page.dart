@@ -1,4 +1,5 @@
 import 'package:english_for_community/feature/admin/submission_managerment/reading_detail_view.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc_detail/activity_detail_event.dart';
@@ -60,7 +61,7 @@ class ActivityDetailPage extends StatelessWidget {
         body: BlocBuilder<ActivityDetailBloc, ActivityDetailState>(
           builder: (context, state) {
             if (state.status == DetailStatus.loading) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(child: AppLoadingIndicator.center());
             }
             if (state.status == DetailStatus.error) {
               return Center(child: Text("Error: ${state.errorMessage}"));

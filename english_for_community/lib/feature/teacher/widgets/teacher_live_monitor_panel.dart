@@ -1,4 +1,5 @@
-﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_bloc.dart';
@@ -67,7 +68,7 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
       buildWhen: teacherLiveMonitorSummaryBuildWhen,
       builder: (context, state) {
         if (state.status == TeacherLiveMonitorStatus.loading && state.students.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoadingIndicator.center());
         }
         if (state.status == TeacherLiveMonitorStatus.error && state.students.isEmpty) {
           return Center(

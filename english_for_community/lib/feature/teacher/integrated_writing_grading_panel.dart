@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_score_widgets.dart';
@@ -145,9 +146,7 @@ class IntegratedWritingGradingPanel extends StatelessWidget {
               if (canEdit)
                 aiLoading
                     ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: const AppLoadingIndicator.button(),
                       )
                     : TeacherOutlinedButton(
                         onPressed: onRunAi,

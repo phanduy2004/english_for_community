@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -321,7 +322,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
       backgroundColor: AppColors.surface,
       appBar: StudentMobileUi.appBar(context, title: l10n.examModeRealtime),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+          ? const Center(child: AppLoadingIndicator.center(color: AppColors.primary))
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

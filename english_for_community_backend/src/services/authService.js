@@ -87,9 +87,17 @@ async function findUserForLogin(identifier) {
 }
 
 // --- 1. Đăng ký User mới ---
+function resolveRegisterRole(accountType) {
+  const t = String(accountType || 'student').trim().toLowerCase();
+  if (t === 'teacher') return 'teacher';
+  if (t === 'admin') throw createError(400, 'Invalid account type');
+  return 'user';
+}
+
 const registerUser = async (data) => {
   // Giữ lại các trường bạn đã thêm vào RegisterPage
-  const { username, email, password, fullName, phone, dateOfBirth, gender } = data;
+  const { username, email, password, fullName, phone, dateOfBirth, gender, accountType } = data;
+  const role = resolveRegisterRole(accountType);
 
   // 🔥 VALIDATION SẠCH: Chỉ check các trường bắt buộc theo Mongoose Model
   if (!email || !password || !fullName || !username) {
@@ -113,6 +121,7 @@ const registerUser = async (data) => {
     phone: phone || null,
     dateOfBirth: dateOfBirth,
     gender: gender || null,
+    role,
 
     resetOtp: otp,
     resetOtpExpiresAt: new Date(now + OTP_TTL_MS),

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:forui/forui.dart';
+import 'package:rive/rive.dart' as rive;
 
 import 'core/api/api_config.dart';
 import 'core/get_it/get_it.dart';
@@ -14,6 +15,7 @@ import 'core/router/configure_web_url_strategy.dart';
 import 'core/sqflite/notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/ui/e4c_scroll_behavior.dart';
+import 'core/ui/motion/app_lottie_cache.dart';
 
 // 1. Import Widget quản lý vòng đời Socket
 import 'core/notification/app_notification_listener.dart';
@@ -27,6 +29,7 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await rive.RiveNative.init();
   configureWebUrlStrategy();
   await NotificationService.I.init();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -40,6 +43,9 @@ Future<void> main() async {
   await LocalNotificationService().init();
   await getIt<AppLocaleController>().load();
   runApp(MyApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    AppLottieCache.warmUp();
+  });
 }
 
 class MyApp extends StatelessWidget {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
@@ -616,9 +617,13 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final existing = (ans is Map && ans[sectionId] is Map)
         ? Map<String, dynamic>.from(ans[sectionId] as Map)
         : <String, dynamic>{};
+    final prev = (existing['readingAnswers'] is Map)
+        ? Map<String, dynamic>.from(existing['readingAnswers'] as Map)
+        : <String, dynamic>{};
+    answers.forEach((k, v) => prev[k] = v);
     _patchSectionDraft(sectionId, {
       ...existing,
-      'readingAnswers': answers.map((k, v) => MapEntry(k, v)),
+      'readingAnswers': prev,
     });
   }
 
@@ -652,9 +657,15 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final existing = (ans is Map && ans[sectionId] is Map)
         ? Map<String, dynamic>.from(ans[sectionId] as Map)
         : <String, dynamic>{};
+    final prevCues = (existing['listeningCues'] is Map)
+        ? Map<String, dynamic>.from(existing['listeningCues'] as Map)
+        : <String, dynamic>{};
+    cueTextsByIndex.forEach((k, v) {
+      if (v.trim().isNotEmpty) prevCues[k] = v.trim();
+    });
     _patchSectionDraft(sectionId, {
       ...existing,
-      'listeningCues': cueTextsByIndex,
+      'listeningCues': prevCues,
       'listeningSaved': saved,
       'listeningTotal': total,
     });
@@ -701,9 +712,13 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final existing = (ans is Map && ans[sectionId] is Map)
         ? Map<String, dynamic>.from(ans[sectionId] as Map)
         : <String, dynamic>{};
+    final prev = (existing['listeningCompAnswers'] is Map)
+        ? Map<String, dynamic>.from(existing['listeningCompAnswers'] as Map)
+        : <String, dynamic>{};
+    answers.forEach((k, v) => prev[k] = v);
     _patchSectionDraft(sectionId, {
       ...existing,
-      'listeningCompAnswers': answers,
+      'listeningCompAnswers': prev,
       'listeningCompSaved': saved,
       'listeningCompTotal': total,
     });
@@ -1017,9 +1032,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
                   selected: i == _selectedPartIndex,
                   done: parts[i].done,
                   enabled: !locked,
-                  skillAccent: _partUsesListeningAccent(parts[i])
-                      ? AppSkillColors.listening
-                      : null,
+                  skillAccent: _skillAccentForPart(parts[i]),
                   onTap: () {
                     setState(() {
                       _selectedPartIndex = i;
@@ -1042,8 +1055,11 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     );
   }
 
-  bool _partUsesListeningAccent(_IntegratedExamPart part) =>
-      part.isMergedListening || part.section?['skill'] == 'listening';
+  SkillColorSet? _skillAccentForPart(_IntegratedExamPart part) {
+    if (part.isGrammar) return null;
+    if (part.isMergedListening) return AppSkillColors.listening;
+    return ExamNavTokens.accentForSkill(part.section?['skill'] as String?);
+  }
 
   Widget _buildGrammarPanel(List<Map<String, dynamic>> grammar, bool locked) {
     final l10n = context.l10n;
@@ -1387,10 +1403,10 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
       runSpacing: 6,
       children: [
         for (var i = 0; i < n; i++)
-          _GrammarNavPill(
-            index: i + 1,
+          ExamNavNumberChip(
+            number: i + 1,
             selected: i == _grammarNavIndex,
-            answered: _grammarAnswered(grammar[i]),
+            done: _grammarAnswered(grammar[i]) && i != _grammarNavIndex,
             onTap: () => _setGrammarNavIndex(i),
           ),
       ],
@@ -1557,7 +1573,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
               : null,
         ),
         body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: AppLoadingIndicator.center())
           : _error != null
               ? Center(
                   child: Padding(
@@ -2228,56 +2244,6 @@ class _MetaChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _GrammarNavPill extends StatelessWidget {
-  const _GrammarNavPill({
-    required this.index,
-    required this.selected,
-    required this.answered,
-    this.onTap,
-  });
-
-  final int index;
-  final bool selected;
-  final bool answered;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = selected ? AppColors.textPrimary : AppColors.outline;
-    final bg = answered
-        ? AppColors.outlineMuted.withValues(alpha: 0.45)
-        : selected
-            ? AppColors.surfaceCard
-            : AppColors.surfaceCard;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(ExamSectionTag.primaryRadius),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: 30,
-          height: 30,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(ExamSectionTag.primaryRadius),
-            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
-          ),
-          child: Text(
-            '$index',
-            style: TextStyle(
-              fontWeight: selected || answered ? FontWeight.w600 : FontWeight.w500,
-              fontSize: 11,
-              color: answered ? AppColors.textPrimary : AppColors.textSecondary,
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import '../../../../core/get_it/get_it.dart';
 import '../../../../core/repository/admin_repository.dart';
@@ -143,7 +144,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 if (index == _users.length) {
-                  return const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()));
+                  return const Center(child: Padding(padding: EdgeInsets.all(12), child: AppLoadingIndicator.center()));
                 }
                 final user = _users[index];
                 return _buildUserItem(user);

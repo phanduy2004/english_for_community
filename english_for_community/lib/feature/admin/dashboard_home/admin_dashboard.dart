@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
@@ -106,7 +107,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         },
         builder: (context, state) {
           if (state.status == AdminStatus.loading && state.stats == null) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+            return const Center(child: AppLoadingIndicator.center());
           }
 
           if (state.stats == null) {

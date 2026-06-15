@@ -12,6 +12,7 @@ abstract class AuthRepository {
     required String fullName,
     String? phone,
     DateTime? dateOfBirth,
+    String accountType = 'student',
   });
   Future<Either<Failure, void>> resendOtp(String email);
   Future<Either<Failure, void>> verifyOtp(String email, String otp, String purpose);

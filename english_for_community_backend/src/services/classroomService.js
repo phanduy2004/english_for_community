@@ -126,14 +126,17 @@ export const classroomService = {
     if (classroom.archived && teacherOid !== userId.toString()) {
       throw httpError(404, 'Classroom not found');
     }
-    const isTeacher = teacherOid === userId.toString();
+    const isOwner = teacherOid === userId.toString();
     const member = await ClassroomMember.findOne({
       classroomId,
       userId,
       status: 'active',
     });
+    const isCoTeacher =
+      member?.roleInClass === 'co_teacher' && member?.status === 'active';
+    const isTeacher = isOwner || isCoTeacher;
     if (!isTeacher && !member) throw httpError(403, 'Not a member of this classroom');
-    return { classroom, isTeacher, member };
+    return { classroom, isTeacher, isOwner, isCoTeacher, member };
   },
 
   /** Classroom JSON + member counts (for GET detail). */
@@ -204,6 +207,9 @@ export const classroomService = {
     if (member && member.status === 'active' && member.roleInClass === 'co_teacher') {
       return member;
     }
+    if (member && member.status === 'pending' && member.roleInClass === 'co_teacher') {
+      return member.populate('userId', 'fullName email username');
+    }
     if (member && member.roleInClass === 'student') {
       throw httpError(400, 'User is already a student in this class');
     }
@@ -212,20 +218,34 @@ export const classroomService = {
         classroomId,
         userId: user._id,
         roleInClass: 'co_teacher',
-        status: 'active',
+        status: 'pending',
       });
     } else {
       member.roleInClass = 'co_teacher';
-      member.status = 'active';
+      member.status = 'pending';
       member.leftAt = null;
       await member.save();
+    }
+    try {
+      const owner = await User.findById(ownerId).select('fullName username email');
+      const { notifyCoTeacherInvite } = await import('./teacherNotificationHelper.js');
+      await notifyCoTeacherInvite({
+        coTeacherId: user._id,
+        ownerId,
+        classroomId,
+        classroomName: classroom.name,
+        memberId: member._id,
+        ownerName: owner?.fullName || owner?.username || owner?.email,
+      });
+    } catch {
+      /* optional */
     }
     await classroomActivityService.log({
       classroomId,
       actorId: ownerId,
       type: 'co_teacher_added',
-      message: `Co-teacher added: ${user.fullName || user.email}`,
-      meta: { userId: user._id.toString() },
+      message: `Co-teacher invite sent: ${user.fullName || user.email}`,
+      meta: { userId: user._id.toString(), pending: true },
     });
     return member.populate('userId', 'fullName email username');
   },
@@ -239,9 +259,24 @@ export const classroomService = {
       roleInClass: 'co_teacher',
     });
     if (!m) throw httpError(404, 'Co-teacher not found');
+    const classroom = await Classroom.findById(classroomId).select('name teacherId');
+    const wasLinked = m.status === 'active' || m.status === 'pending';
     m.status = 'removed';
     m.leftAt = new Date();
     await m.save();
+    if (wasLinked) {
+      try {
+        const { notifyCoTeacherRemoved } = await import('./teacherNotificationHelper.js');
+        await notifyCoTeacherRemoved({
+          coTeacherId: coTeacherUserId,
+          ownerId,
+          classroomId,
+          classroomName: classroom?.name,
+        });
+      } catch {
+        /* optional */
+      }
+    }
     await classroomActivityService.log({
       classroomId,
       actorId: ownerId,
@@ -275,9 +310,8 @@ export const classroomService = {
   },
 
   async rotateInvite(teacherId, classroomId) {
-    const classroom = await Classroom.findById(classroomId);
-    if (!classroom) throw httpError(404, 'Classroom not found');
-    if (classroom.teacherId.toString() !== teacherId.toString()) throw httpError(403, 'Forbidden');
+    const { classroom, isOwner } = await this.assertCanManageClassroom(teacherId, classroomId);
+    if (!isOwner) throw httpError(403, 'Only the class owner can rotate invite codes');
     classroom.inviteCode = await uniqueInviteCode();
     classroom.inviteToken = uniqueInviteToken();
     await classroom.save();

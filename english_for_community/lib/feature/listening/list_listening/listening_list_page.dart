@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
@@ -137,7 +138,7 @@ class _ListeningListPageState extends State<ListeningListPage> {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
                             child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child: AppLoadingIndicator.center(),
                             ),
                           );
                         case ListeningStatus.error:

@@ -86,6 +86,11 @@ dependencies:
   firebase_analytics: ^11.6.0
   package_info_plus: ^8.0.2
   url_launcher: ^6.3.0
+  video_player: ^2.9.5
+  lottie: ^3.3.3
+  rive: ^0.14.7
+  uuid: ^4.4.0
+  mime: ^2.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -114,6 +119,8 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/animations/
+    - assets/animations/rive/
     - assets/db/dictionary.db
     - assets/samples/
 

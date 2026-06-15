@@ -91,6 +91,23 @@ class NotificationEntity extends Equatable {
     );
   }
 
+  /// In-app actions (accept / decline) while [data.actionStatus] is pending.
+  bool get isActionablePending {
+    final d = data;
+    if (d == null) return false;
+    if (d['actionable'] != true) return false;
+    final status = d['actionStatus']?.toString();
+    return status == null || status.isEmpty || status == 'pending';
+  }
+
+  static const actionableTypes = {
+    'CO_TEACHER_INVITE',
+    'CLASSROOM_JOIN_REQUEST',
+  };
+
+  bool get supportsInAppResponse =>
+      actionableTypes.contains(type) && isActionablePending;
+
   @override
   List<Object?> get props => [id, title, message, type, isRead, senderName, senderAvatar, createdAt, data];
 }

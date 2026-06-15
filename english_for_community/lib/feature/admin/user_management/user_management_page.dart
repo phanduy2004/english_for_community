@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
@@ -165,7 +166,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                       future: datasource.getDeletedUsers(page: 1, limit: 50),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
-                          return const Center(child: CircularProgressIndicator());
+                          return const Center(child: AppLoadingIndicator.center());
                         }
                         final users = snapshot.data!.data;
                         if (users.isEmpty) {
@@ -276,7 +277,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
             child: BlocBuilder<AdminBloc, AdminState>(
               builder: (context, state) {
                 if (state.status == AdminStatus.loading && state.users == null) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                  return const Center(child: AppLoadingIndicator.center());
                 }
 
                 final users = state.users?.data ?? [];

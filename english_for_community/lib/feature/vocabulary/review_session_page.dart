@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -65,7 +66,7 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
         listener: (context, state) {},
         builder: (context, state) {
           if (state.status == ReviewStatus.loading) {
-            return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+            return const Center(child: AppLoadingIndicator.center());
           }
           if (state.status == ReviewStatus.error) {
             final msg = state.errorMessage;

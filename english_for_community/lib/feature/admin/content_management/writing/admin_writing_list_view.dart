@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -113,7 +114,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedWritingTopics(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -292,7 +293,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             child: BlocBuilder<AdminWritingBloc, AdminWritingState>(
               builder: (context, state) {
                 if (state.status == AdminWritingStatus.loading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: AppLoadingIndicator.center());
                 }
 
                 if (state.topics.isEmpty) {

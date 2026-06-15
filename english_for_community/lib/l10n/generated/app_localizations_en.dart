@@ -123,10 +123,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navHome => 'Home';
 
   @override
+  String get navMessages => 'Messages';
+
+  @override
   String get navProgress => 'Progress';
 
   @override
   String get navProfile => 'Profile';
+
+  @override
+  String get studentChatHubSubtitle => 'Classroom group chats';
+
+  @override
+  String get studentChatHubSearchHint => 'Search classes…';
+
+  @override
+  String get studentChatHubFilterAll => 'All';
+
+  @override
+  String get studentChatHubFilterUnread => 'Unread';
 
   @override
   String get loginWelcomeBack => 'Welcome Back!';
@@ -795,6 +810,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Fill in the details to start your journey.';
 
   @override
+  String get registerAccountTypeLabel => 'Account type';
+
+  @override
+  String get registerAccountTypeStudent => 'Student';
+
+  @override
+  String get registerAccountTypeTeacher => 'Teacher';
+
+  @override
+  String get registerAccountTypeTeacherHint =>
+      'Teacher accounts need admin approval before you can create classes.';
+
+  @override
   String get labelFullName => 'Full Name *';
 
   @override
@@ -1017,6 +1045,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notificationsEmptyBody => 'You will receive notifications here.';
+
+  @override
+  String get notificationAccept => 'Accept';
+
+  @override
+  String get notificationDecline => 'Decline';
+
+  @override
+  String get notificationInviteAccepted => 'Invite accepted';
+
+  @override
+  String get notificationInviteDeclined => 'Invite declined';
+
+  @override
+  String get notificationJoinApproved => 'Join request approved';
+
+  @override
+  String get notificationJoinDeclined => 'Join request declined';
 
   @override
   String get aiAssistantEmptyPrompt =>
@@ -2258,6 +2304,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get copyInviteCode => 'Copy invite code';
 
   @override
+  String get teacherExamSessionShareTitle => 'What to send students';
+
+  @override
+  String get teacherExamSessionShareClassroom =>
+      'Students open their class, tap this assignment, then Enter waiting room. They do not paste any code here.';
+
+  @override
+  String get teacherExamSessionSharePublic =>
+      'Students open Public exam join and paste the join code below (not the room label or session link).';
+
+  @override
+  String get teacherExamSessionSharePublicCopy => 'Copy public join code';
+
+  @override
+  String get teacherExamSessionRoomCodeHint =>
+      'Room label (shown in lobby only — not used to join)';
+
+  @override
   String get adminTeacherApplicationsTitle => 'Teacher applications';
 
   @override
@@ -2284,6 +2348,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studentJoinClassTitle => 'Join with invite code';
+
+  @override
+  String get studentUnifiedJoinTitle => 'Join';
+
+  @override
+  String get studentUnifiedJoinSubtitle =>
+      'Paste any code or link — the app detects the type and opens the right place.';
+
+  @override
+  String get studentUnifiedJoinHint =>
+      'Class code · class link · public exam · live session link…';
+
+  @override
+  String get studentUnifiedJoinButton => 'Join';
+
+  @override
+  String get studentJoinInputInvalid =>
+      'Could not recognize that code. Check with your teacher and try again.';
+
+  @override
+  String get studentJoinDetectedClass => 'Class invite detected — joining…';
+
+  @override
+  String get studentJoinDetectedSession =>
+      'Live session detected — opening waiting room…';
+
+  @override
+  String get studentJoinDetectedPublicExam => 'Public exam detected — opening…';
 
   @override
   String get studentJoinClassSubtitle =>
@@ -2621,6 +2713,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Share this token with students. They paste it in “Join public exam” (or your shared instructions).';
 
   @override
+  String get teacherAssignmentPublicRealtimeNextSteps =>
+      'A live waiting room was created automatically. Open the live console to monitor students, then start the exam when everyone is ready.';
+
+  @override
+  String get teacherAssignmentOpenLiveConsole => 'Open live console';
+
+  @override
+  String get examPublicNoLiveSession =>
+      'The teacher has not opened a live room yet. Try again shortly.';
+
+  @override
   String get dashboardPublicCopyToken => 'Copy token';
 
   @override
@@ -2682,10 +2785,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studentJoinClassByTokenHint =>
-      'Paste the long token from your teacher’s class link';
+      'Paste the long token from your teacher’s class link (not a live exam session link)';
 
   @override
   String get studentJoinClassByTokenButton => 'Join with link';
+
+  @override
+  String get studentJoinClassOpeningExamLobby =>
+      'That is a live exam link — opening the waiting room…';
+
+  @override
+  String get studentJoinClassUsePublicExamLink =>
+      'That is a public exam join code. Use «Join via public link» below.';
 
   @override
   String get studentExamsHubTitle => 'Public exam join';
@@ -2956,6 +3067,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get examJoinByLinkHint => 'Paste the token from your teacher';
 
   @override
+  String get examJoinByLinkHintDetail =>
+      'Use the long join code from your teacher (about 36 characters). Do not paste a /student/exam-session/ link here.';
+
+  @override
+  String get examJoinWrongSessionLink =>
+      'That looks like a live session link, not a public join code. Ask your teacher for the join token shown when the assignment was created.';
+
+  @override
+  String get examJoinInvalidToken =>
+      'Could not read a join code. Paste only the token from your teacher.';
+
+  @override
   String get examJoinPreview => 'Preview';
 
   @override
@@ -3006,7 +3129,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherDashboardOverview => 'Overview';
 
   @override
+  String get teacherDashboardWorkZoneTitle => 'Today\'s focus';
+
+  @override
+  String get teacherDashboardWorkZoneSubtitle =>
+      'Grading queue and live rooms side by side — tap a KPI above to jump here.';
+
+  @override
+  String get teacherDashboardQuickActionsTitle => 'Quick actions';
+
+  @override
+  String get teacherDashboardAssignmentHubSubtitle =>
+      'Search, filter, and open assignment hubs.';
+
+  @override
+  String teacherDashboardPendingJoinsCount(int count) {
+    return '$count pending joins';
+  }
+
+  @override
+  String teacherDashboardDueSoonCount(int count) {
+    return '$count due soon';
+  }
+
+  @override
   String get teacherDashboardStatClasses => 'Classes';
+
+  @override
+  String get teacherDashboardStatStudents => 'Students';
 
   @override
   String get teacherDashboardStatAssignments => 'Assignments';
@@ -3142,6 +3292,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String teacherDashboardClassLabel(String name) {
     return 'Class: $name';
+  }
+
+  @override
+  String get teacherInboxPublicAssignment => 'Public assignment';
+
+  @override
+  String teacherInboxItemCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3980,6 +4144,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherCalendarGoToAssignment => 'View assignment';
 
   @override
+  String get teacherCalendarPageSubtitle =>
+      'Deadlines, live sessions, and assignment windows.';
+
+  @override
+  String get teacherCalendarViewWeek => 'Week';
+
+  @override
+  String get teacherCalendarKpiDueWeek => 'Due this week';
+
+  @override
+  String get teacherCalendarKpiOpens => 'Opening';
+
+  @override
+  String get teacherCalendarKpiLive => 'Live';
+
+  @override
+  String get teacherCalendarKpiTotal => 'Total events';
+
+  @override
+  String get teacherCalendarLegendTitle => 'Legend';
+
+  @override
+  String get teacherCalendarSearchHint => 'Search assignments…';
+
+  @override
+  String get teacherCalendarFilterClassroomLabel => 'Class';
+
+  @override
+  String get teacherCalendarFilterClassroomAll => 'All classes';
+
+  @override
+  String get teacherCalendarFilterAll => 'All types';
+
+  @override
+  String get teacherCalendarAgendaTitle => 'Agenda';
+
+  @override
+  String teacherCalendarGroupsOnDay(int count) {
+    return '$count assignment groups';
+  }
+
+  @override
+  String get teacherCalendarSectionToday => 'Today';
+
+  @override
+  String get teacherCalendarSectionUpcoming => 'Upcoming';
+
+  @override
+  String get teacherCalendarSectionPast => 'Past';
+
+  @override
+  String get teacherCalendarRelativeNow => 'Now';
+
+  @override
+  String teacherCalendarRelativeOverdueDays(int count) {
+    return '$count days overdue';
+  }
+
+  @override
+  String teacherCalendarRelativeOverdueHours(int count) {
+    return '$count hours overdue';
+  }
+
+  @override
+  String teacherCalendarRelativeOverdueMinutes(int count) {
+    return '$count min overdue';
+  }
+
+  @override
+  String teacherCalendarRelativeInDays(int count) {
+    return 'In $count days';
+  }
+
+  @override
+  String teacherCalendarRelativeInHours(int count) {
+    return 'In $count hours';
+  }
+
+  @override
+  String teacherCalendarRelativeInMinutes(int count) {
+    return 'In $count min';
+  }
+
+  @override
   String get teacherDashboardActionItems => 'Needs attention';
 
   @override
@@ -4155,6 +4403,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherCoTeacherAdded => 'Co-teacher added';
+
+  @override
+  String get teacherCoTeacherInviteSent => 'Invitation sent';
+
+  @override
+  String get teacherCoTeacherPending => 'Pending';
 
   @override
   String get teacherCoTeacherRemoved => 'Co-teacher removed';
@@ -5145,4 +5399,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get teacherAssignmentEditPracticeNote =>
       'Practice mode has no schedule — students can access this assignment at any time.';
+
+  @override
+  String get chatMediaDownloading => 'Downloading file…';
+
+  @override
+  String get chatMediaDownloadDone => 'File downloaded';
+
+  @override
+  String get chatMediaDownloadFailed => 'Could not download file';
+
+  @override
+  String get chatMediaVideoLoadFailed => 'Could not load video';
 }

@@ -43,6 +43,7 @@ abstract class TeacherExamRepository {
   Future<Either<Failure, List<dynamic>>> listClassroomAssignments(String classroomId);
   Future<Either<Failure, dynamic>> startExamAttempt(String assignmentId);
   Future<Either<Failure, dynamic>> startPublicExamAttempt(String publicToken);
+  Future<Either<Failure, dynamic>> joinPublicExamSession(String publicToken);
   Future<Either<Failure, dynamic>> previewPublicExam(String publicToken);
   Future<Either<Failure, List<dynamic>>> listMyAssignments();
   Future<Either<Failure, Map<String, dynamic>>> getAssignmentGradingHub(String assignmentId);

@@ -9,6 +9,7 @@ router.use(authenticate);
 
 router.get('/public/:token/preview', examPublicJoinLimiter, examStudentController.previewPublicExam);
 router.post('/public/:token/start', examPublicJoinLimiter, examStudentController.startPublicExamAttempt);
+router.post('/public/:token/join', examPublicJoinLimiter, examStudentController.joinPublicExamSession);
 
 router.use(examStandardLimiter);
 

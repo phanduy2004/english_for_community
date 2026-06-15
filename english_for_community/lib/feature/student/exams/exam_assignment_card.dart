@@ -265,23 +265,216 @@ class ExamAssignmentCard extends StatelessWidget {
     return l10n.teacherClassHistorySessionEnded(ended);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final title = _title();
-    final displayTitle = title.isNotEmpty ? title : l10n.studentExamUnknownTitle;
-    final mode = assignment['mode'] as String? ?? '';
-    final hintKey = assignment['studentStatusHint'] as String?;
-    final statusHint = _statusHintLabel(l10n);
-    final hintColor = _statusHintColor(hintKey);
-    final hintIcon = _statusHintIcon(hintKey);
-    final scheduleLines = _scheduleLines(context, l10n);
-    final statsLines = _statsLines(l10n);
-    final attemptLine = _myAttemptLine(l10n);
-    final teacherLine = _teacherStatsLine(l10n);
-    final teacherClosedLine = _teacherClosedSessionLine(context, l10n);
-    final desc = _description();
+  Color _modeAccent(String mode) {
+    switch (mode) {
+      case 'realtime':
+        return AppColors.info;
+      case 'scheduled':
+        return AppColors.warning;
+      case 'practice':
+        return AppSkillColors.speaking.color;
+      default:
+        return AppSkillColors.reading.color;
+    }
+  }
 
+  Widget _studentStatusBanner(
+    BuildContext context, {
+    required String text,
+    required Color color,
+    required IconData icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: StudentMobileUi.caption(context).copyWith(
+                color: color,
+                fontWeight: FontWeight.w600,
+                height: 1.35,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _studentMetaRow(BuildContext context, IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 15, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text, style: StudentMobileUi.body(context))),
+        ],
+      ),
+    );
+  }
+
+  Widget _studentStatChip(BuildContext context, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(color: AppColors.outlineMuted),
+      ),
+      child: Text(label, style: StudentMobileUi.caption(context)),
+    );
+  }
+
+  Widget _buildStudentCard(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required String displayTitle,
+    required String mode,
+    required String? hintKey,
+    required String? statusHint,
+    required Color hintColor,
+    required IconData hintIcon,
+    required List<String> scheduleLines,
+    required List<String> statsLines,
+    required String? attemptLine,
+    required String desc,
+  }) {
+    final accent = _modeAccent(mode);
+    final radius = BorderRadius.circular(AppRadius.card + 2);
+    final showAttemptBanner = attemptLine != null &&
+        (hintKey == 'already_submitted' ||
+            hintKey == 'resume' ||
+            hintKey == 'session_ended');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: radius,
+          border: Border.all(color: AppColors.outline),
+        ),
+        foregroundDecoration: BoxDecoration(
+          borderRadius: radius,
+          border: Border(left: BorderSide(color: accent, width: 3)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, AppSpacing.s3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _modeIconBox(mode, size: 40),
+                  const SizedBox(width: AppSpacing.s3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayTitle,
+                          style: StudentMobileUi.cardTitle(context),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        _chip(context, _modeLabel(l10n), accent),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (desc.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.s3),
+                Text(
+                  desc,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: StudentMobileUi.body(context).copyWith(height: 1.4, color: AppColors.textSecondary),
+                ),
+              ],
+              if (showAttemptBanner) ...[
+                const SizedBox(height: AppSpacing.s3),
+                _studentStatusBanner(
+                  context,
+                  text: attemptLine!,
+                  color: hintKey == 'resume' ? AppColors.primary : AppColors.textSecondary,
+                  icon: hintKey == 'resume' ? Icons.play_circle_outline : Icons.check_circle_outline,
+                ),
+              ] else if (statusHint != null && statusHint.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.s3),
+                _studentStatusBanner(
+                  context,
+                  text: statusHint,
+                  color: hintColor,
+                  icon: hintIcon,
+                ),
+              ],
+              if (scheduleLines.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.s3),
+                ...scheduleLines.take(3).map((line) => _studentMetaRow(context, Icons.schedule_outlined, line)),
+              ],
+              if (statsLines.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.s2),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: statsLines.map((s) => _studentStatChip(context, s)).toList(),
+                ),
+              ],
+              if (onPrimaryAction != null && primaryActionLabel != null) ...[
+                const SizedBox(height: AppSpacing.s4),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: primaryActionEnabled ? onPrimaryAction : null,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: primaryActionEnabled ? accent : null,
+                      foregroundColor: primaryActionEnabled ? AppColors.onPrimary : null,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.chip),
+                      ),
+                    ),
+                    child: Text(primaryActionLabel!),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeacherCard(
+    BuildContext context,
+    AppLocalizations l10n, {
+    required String displayTitle,
+    required String mode,
+    required String? statusHint,
+    required Color hintColor,
+    required IconData hintIcon,
+    required List<String> scheduleLines,
+    required List<String> statsLines,
+    required String? attemptLine,
+    required String? teacherLine,
+    required String? teacherClosedLine,
+    required String desc,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
       child: AppCard(
@@ -424,6 +617,57 @@ class ExamAssignmentCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final title = _title();
+    final displayTitle = title.isNotEmpty ? title : l10n.studentExamUnknownTitle;
+    final mode = assignment['mode'] as String? ?? '';
+    final hintKey = assignment['studentStatusHint'] as String?;
+    final statusHint = _statusHintLabel(l10n);
+    final hintColor = _statusHintColor(hintKey);
+    final hintIcon = _statusHintIcon(hintKey);
+    final scheduleLines = _scheduleLines(context, l10n);
+    final statsLines = _statsLines(l10n);
+    final attemptLine = _myAttemptLine(l10n);
+    final teacherLine = _teacherStatsLine(l10n);
+    final teacherClosedLine = _teacherClosedSessionLine(context, l10n);
+    final desc = _description();
+
+    if (isTeacherView) {
+      return _buildTeacherCard(
+        context,
+        l10n,
+        displayTitle: displayTitle,
+        mode: mode,
+        statusHint: statusHint,
+        hintColor: hintColor,
+        hintIcon: hintIcon,
+        scheduleLines: scheduleLines,
+        statsLines: statsLines,
+        attemptLine: attemptLine,
+        teacherLine: teacherLine,
+        teacherClosedLine: teacherClosedLine,
+        desc: desc,
+      );
+    }
+
+    return _buildStudentCard(
+      context,
+      l10n,
+      displayTitle: displayTitle,
+      mode: mode,
+      hintKey: hintKey,
+      statusHint: statusHint,
+      hintColor: hintColor,
+      hintIcon: hintIcon,
+      scheduleLines: scheduleLines,
+      statsLines: statsLines,
+      attemptLine: attemptLine,
+      desc: desc,
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -5,6 +7,149 @@ import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_answer_review_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+/// Shared accent palette for grammar interactive elements (matching, MCQ, blanks, reorder).
+abstract final class GrammarAccentPalette {
+  static const List<Color> colors = [
+    Color(0xFF2563EB),
+    Color(0xFF059669),
+    Color(0xFFD97706),
+    Color(0xFFDC2626),
+    Color(0xFF7C3AED),
+    Color(0xFF0891B2),
+    Color(0xFFDB2777),
+    Color(0xFF4F46E5),
+  ];
+
+  static Color of(int index) => colors[index.abs() % colors.length];
+
+  static Color fillBg(Color color, {double alpha = 0.08}) => color.withValues(alpha: alpha);
+
+  static int blankIndex(String blankId, {int fallback = 0}) =>
+      int.tryParse(blankId) ?? fallback;
+}
+
+/// MCQ row with per-option accent color (grammar exam).
+class _GrammarMcqOption extends StatelessWidget {
+  const _GrammarMcqOption({
+    required this.index,
+    required this.text,
+    required this.selected,
+    this.multiSelect = false,
+    this.onTap,
+  });
+
+  final int index;
+  final String text;
+  final bool selected;
+  final bool multiSelect;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = GrammarAccentPalette.of(index);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: selected ? GrammarAccentPalette.fillBg(accent) : AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap == null
+              ? null
+              : () {
+                  HapticFeedback.selectionClick();
+                  onTap!();
+                },
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: selected ? accent : AppColors.outlineMuted,
+                width: selected ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 32,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: selected ? 0.18 : 0.1),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
+                  ),
+                  child: Text(
+                    StudentMobileUi.mcqLetter(index),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                      fontSize: 13,
+                      height: 1,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.35)),
+                        ),
+                        if (selected) ...[
+                          const SizedBox(width: 6),
+                          Icon(
+                            multiSelect ? Icons.check_box_rounded : Icons.radio_button_checked,
+                            size: 18,
+                            color: accent,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+InputDecoration _grammarBlankDecoration({
+  required Color accent,
+  required bool filled,
+  String? hint,
+}) {
+  final borderColor = filled ? accent : AppColors.outlineMuted;
+  final borderWidth = filled ? 1.5 : 1.0;
+  final radius = BorderRadius.circular(8);
+  return InputDecoration(
+    isDense: true,
+    hintText: hint,
+    hintStyle: ExamSystemUi.captionMuted,
+    filled: true,
+    fillColor: filled ? GrammarAccentPalette.fillBg(accent) : AppColors.surfaceCard,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+    border: OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: borderColor, width: borderWidth),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: borderColor, width: borderWidth),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: radius,
+      borderSide: BorderSide(color: accent, width: 1.5),
+    ),
+  );
+}
 
 /// Localized label for a grammar / objective item [kind] string.
 String grammarItemKindLabel(BuildContext context, String kind) {
@@ -777,49 +922,53 @@ class _McqBodyState extends State<_McqBody> {
 
     if (kind == 'mcq_single') {
       final group = _localSel.isEmpty ? null : _localSel.first;
-      return Column(
-        children: [
-          for (var i = 0; i < options.length; i++)
-            StudentMobileUi.mcqOption(
-              context: context,
-              index: i,
-              text: options[i],
-              selected: group == i,
-              onTap: widget.locked
-                  ? null
-                  : () {
-                      setState(() => _localSel = {i});
-                      widget.onPartialPatch({'selectedIndexes': [i]});
-                    },
-            ),
-        ],
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        child: Column(
+          children: [
+            for (var i = 0; i < options.length; i++)
+              _GrammarMcqOption(
+                index: i,
+                text: options[i],
+                selected: group == i,
+                onTap: widget.locked
+                    ? null
+                    : () {
+                        setState(() => _localSel = {i});
+                        widget.onPartialPatch({'selectedIndexes': [i]});
+                      },
+              ),
+          ],
+        ),
       );
     }
 
-    return Column(
-      children: [
-        for (var i = 0; i < options.length; i++)
-          StudentMobileUi.mcqOption(
-            context: context,
-            index: i,
-            text: options[i],
-            multiSelect: true,
-            checked: _localSel.contains(i),
-            onTap: widget.locked
-                ? null
-                : () {
-                    final next = {..._localSel};
-                    if (next.contains(i)) {
-                      next.remove(i);
-                    } else {
-                      next.add(i);
-                    }
-                    final list = List<int>.from(next)..sort();
-                    setState(() => _localSel = next);
-                    widget.onPartialPatch({'selectedIndexes': list});
-                  },
-          ),
-      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      child: Column(
+        children: [
+          for (var i = 0; i < options.length; i++)
+            _GrammarMcqOption(
+              index: i,
+              text: options[i],
+              selected: _localSel.contains(i),
+              multiSelect: true,
+              onTap: widget.locked
+                  ? null
+                  : () {
+                      final next = {..._localSel};
+                      if (next.contains(i)) {
+                        next.remove(i);
+                      } else {
+                        next.add(i);
+                      }
+                      final list = List<int>.from(next)..sort();
+                      setState(() => _localSel = next);
+                      widget.onPartialPatch({'selectedIndexes': list});
+                    },
+            ),
+        ],
+      ),
     );
   }
 }
@@ -924,6 +1073,8 @@ class _ClozeBodyState extends State<_ClozeBody> {
       }
       final id = m.group(1) ?? '0';
       final ctl = _controllers[id]!;
+      final accent = GrammarAccentPalette.of(GrammarAccentPalette.blankIndex(id));
+      final filled = ctl.text.trim().isNotEmpty;
       pieces.add(
         SizedBox(
           width: 108,
@@ -931,12 +1082,17 @@ class _ClozeBodyState extends State<_ClozeBody> {
             key: ValueKey('cloze_${widget.item['itemId']}_$id'),
             enabled: !widget.locked,
             controller: ctl,
-            onChanged: widget.locked ? null : (_) => _emitBlanks(),
+            onChanged: widget.locked
+                ? null
+                : (_) {
+                    setState(() {});
+                    _emitBlanks();
+                  },
             style: ExamSystemUi.captionSecondary,
-            decoration: InputDecoration(
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            decoration: _grammarBlankDecoration(
+              accent: accent,
+              filled: filled,
+              hint: id,
             ),
           ),
         ),
@@ -1020,6 +1176,8 @@ class _GapBodyState extends State<_GapBody> {
   Widget build(BuildContext context) {
     final before = '${widget.item['textBefore'] ?? ''}';
     final after = '${widget.item['textAfter'] ?? ''}';
+    final accent = GrammarAccentPalette.of(0);
+    final filled = _ctl.text.trim().isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1033,13 +1191,14 @@ class _GapBodyState extends State<_GapBody> {
             child: TextField(
               enabled: !widget.locked,
               controller: _ctl,
-              onChanged: widget.locked ? null : (v) => widget.onPartialPatch({'blanks': {_blankId: v}}),
+              onChanged: widget.locked
+                  ? null
+                  : (v) {
+                      setState(() {});
+                      widget.onPartialPatch({'blanks': {_blankId: v}});
+                    },
               style: ExamSystemUi.captionSecondary,
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
+              decoration: _grammarBlankDecoration(accent: accent, filled: filled),
             ),
           ),
           Text(after, style: ExamSystemUi.captionSecondary),
@@ -1132,6 +1291,12 @@ class _MatchingBodyState extends State<_MatchingBody> {
     _emitMatching();
   }
 
+  Color _pairColorForLeft(String leftId) {
+    final idx = _leftRows.indexWhere((r) => '${r['id']}' == leftId);
+    if (idx < 0) return AppColors.textSecondary;
+    return GrammarAccentPalette.of(idx);
+  }
+
   void _refreshLines() {
     if (!mounted) return;
     final canvasBox = _canvasKey.currentContext?.findRenderObject() as RenderBox?;
@@ -1144,7 +1309,13 @@ class _MatchingBodyState extends State<_MatchingBody> {
       if (lBox == null || rBox == null) continue;
       final lCenter = lBox.localToGlobal(Offset(lBox.size.width, lBox.size.height / 2));
       final rCenter = rBox.localToGlobal(Offset(0, rBox.size.height / 2));
-      next.add(_MatchLine(start: lCenter - origin, end: rCenter - origin));
+      next.add(
+        _MatchLine(
+          start: lCenter - origin,
+          end: rCenter - origin,
+          color: _pairColorForLeft(entry.key),
+        ),
+      );
     }
     setState(() => _lines = next);
   }
@@ -1161,6 +1332,9 @@ class _MatchingBodyState extends State<_MatchingBody> {
       _rightKeys.putIfAbsent(id, () => GlobalKey());
     }
 
+    final rowCount = math.max(_leftRows.length, _rightRows.length);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshLines());
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, 12),
       child: Column(
@@ -1174,42 +1348,42 @@ class _MatchingBodyState extends State<_MatchingBody> {
                 style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
               ),
             ),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Stack(
-                key: _canvasKey,
-                clipBehavior: Clip.none,
+          Stack(
+            key: _canvasKey,
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MatchingLinesPainter(lines: _lines),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _MatchingLinesPainter(lines: _lines),
+                  for (var i = 0; i < rowCount; i++) ...[
+                    if (i > 0) const SizedBox(height: 8),
+                    IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: i < _leftRows.length
+                                ? _buildLeftCard(_leftRows[i])
+                                : const SizedBox.shrink(),
+                          ),
+                          const SizedBox(width: 28),
+                          Expanded(
+                            child: i < _rightRows.length
+                                ? _buildRightCard(_rightRows[i])
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (final row in _leftRows) _buildLeftCard(row),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            for (final row in _rightRows) _buildRightCard(row),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  ],
                 ],
-              );
-            },
+              ),
+            ],
           ),
         ],
       ),
@@ -1222,32 +1396,44 @@ class _MatchingBodyState extends State<_MatchingBody> {
     final matchedRight = _matching[id];
     final selected = _selectedLeftId == id;
     final paired = matchedRight != null;
+    final pairColor = paired ? _pairColorForLeft(id) : null;
 
     Widget card = Material(
       key: _leftKeys[id],
-      color: selected ? AppColors.primaryTint : (paired ? AppColors.surfaceSubtle : AppColors.surface),
+      color: selected
+          ? AppColors.primaryTint
+          : (paired ? pairColor!.withValues(alpha: 0.08) : AppColors.surface),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: widget.locked ? null : () => setState(() => _selectedLeftId = selected ? null : id),
         child: Container(
+          width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: selected ? AppColors.primary : (paired ? AppColors.outline : AppColors.outlineMuted),
-              width: selected ? 1.5 : 1,
+              color: selected
+                  ? AppColors.primary
+                  : (paired ? pairColor! : AppColors.outlineMuted),
+              width: selected || paired ? 1.5 : 1,
             ),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
                 paired ? Icons.link_outlined : Icons.drag_indicator,
                 size: 16,
-                color: paired ? AppColors.textSecondary : AppColors.textMuted,
+                color: paired ? pairColor : AppColors.textMuted,
               ),
               const SizedBox(width: 8),
-              Expanded(child: Text(text, style: ExamSystemUi.captionSecondary)),
+              Expanded(
+                child: Text(
+                  text,
+                  style: ExamSystemUi.captionSecondary.copyWith(height: 1.35),
+                ),
+              ),
               if (!widget.locked && paired)
                 IconButton(
                   onPressed: () => _clearLeft(id),
@@ -1262,99 +1448,108 @@ class _MatchingBodyState extends State<_MatchingBody> {
       ),
     );
 
-    if (widget.locked) return Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+    if (widget.locked) return card;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: LongPressDraggable<String>(
-        data: id,
-        feedback: Material(
-          elevation: 2,
-          borderRadius: BorderRadius.circular(8),
-          color: AppColors.surfaceCard,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            child: Text(text, style: ExamSystemUi.captionSecondary),
-          ),
+    return LongPressDraggable<String>(
+      data: id,
+      feedback: Material(
+        elevation: 2,
+        borderRadius: BorderRadius.circular(8),
+        color: AppColors.surfaceCard,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Text(text, style: ExamSystemUi.captionSecondary),
         ),
-        childWhenDragging: Opacity(opacity: 0.35, child: card),
-        child: card,
       ),
+      childWhenDragging: Opacity(opacity: 0.35, child: card),
+      child: card,
     );
   }
 
   Widget _buildRightCard(Map<String, dynamic> row) {
     final id = '${row['id']}';
     final text = '${row['text'] ?? ''}'.trim();
-    final isLinked = _matching.containsValue(id);
+    String? linkedLeftId;
+    for (final e in _matching.entries) {
+      if (e.value == id) {
+        linkedLeftId = e.key;
+        break;
+      }
+    }
+    final isLinked = linkedLeftId != null;
+    final pairColor = isLinked ? _pairColorForLeft(linkedLeftId) : null;
     final highlight = _selectedLeftId != null;
 
     Widget card = Material(
       key: _rightKeys[id],
-      color: isLinked ? AppColors.surfaceSubtle : AppColors.surface,
+      color: isLinked ? pairColor!.withValues(alpha: 0.08) : AppColors.surface,
       borderRadius: BorderRadius.circular(10),
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: highlight && !isLinked ? AppColors.primary.withValues(alpha: 0.35) : AppColors.outlineMuted,
-            width: 1,
+            color: isLinked
+                ? pairColor!
+                : (highlight ? AppColors.primary.withValues(alpha: 0.35) : AppColors.outlineMuted),
+            width: isLinked ? 1.5 : 1,
           ),
         ),
-        child: Text(text, style: ExamSystemUi.captionSecondary),
+        child: Text(
+          text,
+          style: ExamSystemUi.captionSecondary.copyWith(height: 1.35),
+        ),
       ),
     );
 
-    if (widget.locked) return Padding(padding: const EdgeInsets.only(bottom: 8), child: card);
+    if (widget.locked) return card;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: DragTarget<String>(
-        onWillAcceptWithDetails: (_) => !widget.locked,
-        onAcceptWithDetails: (d) => _setPair(d.data, id),
-        builder: (context, candidate, _) {
-          final active = candidate.isNotEmpty;
-          return InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: _selectedLeftId == null ? null : () => _setPair(_selectedLeftId!, id),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 120),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: active
-                    ? Border.all(color: AppColors.primary.withValues(alpha: 0.4), width: 1)
-                    : null,
-              ),
-              child: card,
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (_) => !widget.locked,
+      onAcceptWithDetails: (d) => _setPair(d.data, id),
+      builder: (context, candidate, _) {
+        final active = candidate.isNotEmpty;
+        return InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: _selectedLeftId == null ? null : () => _setPair(_selectedLeftId!, id),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: active
+                  ? Border.all(color: AppColors.primary.withValues(alpha: 0.45), width: 1.5)
+                  : null,
             ),
-          );
-        },
-      ),
+            child: card,
+          ),
+        );
+      },
     );
   }
 }
 
 class _MatchLine {
-  const _MatchLine({required this.start, required this.end});
+  const _MatchLine({required this.start, required this.end, required this.color});
   final Offset start;
   final Offset end;
+  final Color color;
 }
 
-/// Thin curved connector between matched left/right cards.
+/// Curved connector between matched left/right cards — one color per left item.
 class _MatchingLinesPainter extends CustomPainter {
   const _MatchingLinesPainter({required this.lines});
   final List<_MatchLine> lines;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.textSecondary.withValues(alpha: 0.55)
-      ..strokeWidth = 1.15
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
     for (final line in lines) {
+      final paint = Paint()
+        ..color = line.color.withValues(alpha: 0.88)
+        ..strokeWidth = 2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
       final dy = (line.end.dy - line.start.dy).abs();
       final flat = dy < 6;
       if (flat) {
@@ -1455,16 +1650,9 @@ class _ReorderBodyState extends State<_ReorderBody> {
             for (var i = 0; i < _order.length; i++)
               Padding(
                 padding: const EdgeInsets.only(bottom: 6),
-                child: Material(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    child: Text(
-                      _fragments.isNotEmpty && _order[i] < _fragments.length ? _fragments[_order[i]] : '',
-                      style: ExamSystemUi.captionSecondary,
-                    ),
-                  ),
+                child: _GrammarReorderTile(
+                  displayIndex: i,
+                  text: _fragments.isNotEmpty && _order[i] < _fragments.length ? _fragments[_order[i]] : '',
                 ),
               ),
           ],
@@ -1493,22 +1681,81 @@ class _ReorderBodyState extends State<_ReorderBody> {
             itemBuilder: (context, i) {
               final fi = _order[i];
               final text = fi < _fragments.length ? _fragments[fi] : '';
-              return Material(
+              return Padding(
                 key: ValueKey('${widget.item['itemId']}_${_order[i]}_$i'),
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  leading: ReorderableDragStartListener(
-                    index: i,
-                    child: const Icon(Icons.drag_handle, color: AppColors.textSecondary),
-                  ),
-                  title: Text(text, style: ExamSystemUi.captionSecondary),
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _GrammarReorderTile(
+                  displayIndex: i,
+                  text: text,
+                  draggable: true,
+                  dragIndex: i,
                 ),
               );
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _GrammarReorderTile extends StatelessWidget {
+  const _GrammarReorderTile({
+    super.key,
+    required this.displayIndex,
+    required this.text,
+    this.draggable = false,
+    this.dragIndex,
+  });
+
+  final int displayIndex;
+  final String text;
+  final bool draggable;
+  final int? dragIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = GrammarAccentPalette.of(displayIndex);
+    final leading = draggable && dragIndex != null
+        ? ReorderableDragStartListener(
+            index: dragIndex!,
+            child: Icon(Icons.drag_handle, size: 18, color: accent),
+          )
+        : Container(
+            width: 24,
+            height: 24,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${displayIndex + 1}',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: accent, height: 1),
+            ),
+          );
+
+    return Material(
+      color: GrammarAccentPalette.fillBg(accent),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: accent, width: 1.5),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              leading,
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.35)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

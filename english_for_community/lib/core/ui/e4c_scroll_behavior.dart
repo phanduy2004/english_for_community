@@ -55,6 +55,10 @@ class E4cScrollBehavior extends MaterialScrollBehavior {
 }
 
 /// Renders [Scrollbar] only after [ScrollController.hasClients].
+///
+/// Only listens to the controller until `hasClients` becomes true, then removes
+/// the listener. After that, Flutter's own [Scrollbar] handles its own repainting
+/// internally — no setState on every scroll pixel.
 class _SafeScrollbar extends StatefulWidget {
   const _SafeScrollbar({required this.controller, required this.child});
 
@@ -66,56 +70,58 @@ class _SafeScrollbar extends StatefulWidget {
 }
 
 class _SafeScrollbarState extends State<_SafeScrollbar> {
+  bool _ready = false;
+
   @override
   void initState() {
     super.initState();
-    widget.controller.addListener(_scheduleRebuild);
+    if (widget.controller.hasClients) {
+      _ready = true;
+    } else {
+      widget.controller.addListener(_onFirstClient);
+    }
   }
 
   @override
   void didUpdateWidget(_SafeScrollbar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.removeListener(_scheduleRebuild);
-      widget.controller.addListener(_scheduleRebuild);
+      oldWidget.controller.removeListener(_onFirstClient);
+      if (widget.controller.hasClients) {
+        _ready = true;
+      } else {
+        _ready = false;
+        widget.controller.addListener(_onFirstClient);
+      }
     }
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_scheduleRebuild);
+    widget.controller.removeListener(_onFirstClient);
     super.dispose();
   }
 
-  void _scheduleRebuild() {
-    if (mounted) setState(() {});
+  void _onFirstClient() {
+    if (!_ready && widget.controller.hasClients && mounted) {
+      widget.controller.removeListener(_onFirstClient);
+      setState(() => _ready = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.controller.hasClients || widget.controller.positions.length != 1) {
+    if (!_ready || widget.controller.positions.length != 1) {
       return widget.child;
     }
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final axis = widget.controller.position.axis;
-        // Skip Scrollbar when the scroll axis is unbounded (e.g. vertical scroll inside
-        // ListView children, or horizontal scroll inside a Column with unbounded height).
-        final scrollAxisBounded = axis == Axis.vertical
-            ? constraints.hasBoundedHeight
-            : constraints.hasBoundedWidth;
-        if (!scrollAxisBounded) {
-          return widget.child;
-        }
-        return Scrollbar(
-          controller: widget.controller,
-          thumbVisibility: true,
-          interactive: true,
-          radius: const Radius.circular(4),
-          thickness: 6,
-          child: widget.child,
-        );
-      },
+    // Do not wrap [LayoutBuilder] here — unbounded flex/dialog constraints break layout.
+    return Scrollbar(
+      controller: widget.controller,
+      thumbVisibility: true,
+      interactive: true,
+      radius: const Radius.circular(4),
+      thickness: 6,
+      child: widget.child,
     );
   }
 }

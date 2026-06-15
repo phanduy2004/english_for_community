@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import '../../../../core/entity/report_entity.dart';
 
 class ReportDetailDialog extends StatelessWidget {
@@ -203,7 +204,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator(color: Colors.white));
+                      return const Center(child: AppLoadingIndicator.center(color: Colors.white));
                     },
                   ),
                 ),

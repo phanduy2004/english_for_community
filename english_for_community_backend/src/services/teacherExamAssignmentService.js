@@ -239,6 +239,10 @@ export const teacherExamAssignmentService = {
     }
 
     const assignment = await ExamAssignment.create(doc);
+    if (parsed.audience === 'public_link' && parsed.mode === 'realtime') {
+      const { examSessionService } = await import('./examSessionService.js');
+      await examSessionService.createSession(teacherId, assignment._id.toString());
+    }
     if (parsed.audience === 'classroom' && parsed.classroomId) {
       try {
         const populated = await ExamAssignment.findById(assignment._id)
@@ -290,11 +294,28 @@ export const teacherExamAssignmentService = {
     if (pj.expiresAt && new Date(pj.expiresAt).getTime() < Date.now()) throw httpError(400, 'Link expired');
     if (pj.maxUses != null && (pj.usesCount || 0) >= pj.maxUses) throw httpError(400, 'Link has reached maximum uses');
     const exam = a.examId;
+    let activeSession = null;
+    if (a.mode === 'realtime') {
+      const session = await ExamSession.findOne({
+        assignmentId: a._id,
+        status: { $in: ['lobby', 'live'] },
+      })
+        .sort({ updatedAt: -1 })
+        .lean();
+      if (session) {
+        activeSession = {
+          id: session._id.toString(),
+          status: session.status,
+          roomCode: session.roomCode,
+        };
+      }
+    }
     return {
       assignmentId: a._id.toString(),
       mode: a.mode,
       examTitle: exam?.title || 'Exam',
       expiresAt: pj.expiresAt || null,
+      activeSession,
     };
   },
 
@@ -426,7 +447,6 @@ export const teacherExamAssignmentService = {
     if (!isTeacher) throw httpError(403, 'Not your classroom');
 
     const assignments = await ExamAssignment.find({
-      teacherId,
       audience: 'classroom',
       classroomId: classOid,
     })
@@ -570,7 +590,7 @@ export const teacherExamAssignmentService = {
     return a;
   },
 
-  async assertStudentEntitled(userId, assignmentId, { publicToken } = {}) {
+  async assertStudentEntitled(userId, assignmentId, { publicToken, sessionId } = {}) {
     const a = await ExamAssignment.findById(assignmentId).populate('examId');
     if (!a || a.status !== 'active') throw httpError(404, 'Assignment not found');
 
@@ -585,6 +605,13 @@ export const teacherExamAssignmentService = {
     }
 
     if (a.audience === 'public_link') {
+      if (sessionId && mongoose.Types.ObjectId.isValid(sessionId)) {
+        const session = await ExamSession.findById(sessionId).select('joinedUserIds assignmentId').lean();
+        if (session && session.assignmentId.toString() === a._id.toString()) {
+          const joined = (session.joinedUserIds || []).some((id) => id.toString() === userId.toString());
+          if (joined) return a;
+        }
+      }
       await this.assertPublicTokenValid(a, publicToken);
       return a;
     }

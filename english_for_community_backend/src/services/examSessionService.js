@@ -239,7 +239,9 @@ export const examSessionService = {
     if (session.leaderTeacherId.toString() === uid) {
       throw httpError(400, 'Teacher cannot set ready status');
     }
-    await teacherExamAssignmentService.assertStudentEntitled(userId, session.assignmentId._id.toString());
+    await teacherExamAssignmentService.assertStudentEntitled(userId, session.assignmentId._id.toString(), {
+      sessionId: session._id.toString(),
+    });
     const joined = (session.joinedUserIds || []).map((x) => x.toString());
     if (!joined.includes(uid)) throw httpError(400, 'Join the lobby first');
     if (ready) {
@@ -260,6 +262,8 @@ export const examSessionService = {
     const teacher = await User.findById(teacherId).select('fullName email username').lean();
     const assignmentContext = {
       assignmentId: assignment._id.toString(),
+      audience: assignment.audience || 'classroom',
+      publicJoinToken: assignment.publicJoin?.token || null,
       examTitle: assignment.examId?.title || '',
       examDescription: assignment.examId?.description || '',
       classroomName: assignment.classroomId?.name || '',
@@ -331,7 +335,7 @@ export const examSessionService = {
     return session;
   },
 
-  async joinSession(userId, sessionId) {
+  async joinSession(userId, sessionId, opts = {}) {
     const session = await ExamSession.findById(sessionId).populate('assignmentId');
     if (!session) throw httpError(404, 'Session not found');
     const assignment = session.assignmentId;
@@ -340,7 +344,10 @@ export const examSessionService = {
     const uid = userId.toString();
 
     if (!isLeader) {
-      await teacherExamAssignmentService.assertStudentEntitled(userId, assignment._id.toString());
+      await teacherExamAssignmentService.assertStudentEntitled(userId, assignment._id.toString(), {
+        publicToken: opts.publicToken,
+        sessionId: session._id.toString(),
+      });
       assertRealtimeLobbyOpenForStudent(assignment);
 
       const voidLeft = await ExamAttempt.findOne({
@@ -540,6 +547,28 @@ export const examSessionService = {
       endedAt: endedAt.toISOString(),
     });
     return session;
+  },
+
+  async joinPublicByToken(userId, publicToken) {
+    const assignment = await teacherExamAssignmentService.findByPublicToken(publicToken);
+    if (!assignment) throw httpError(404, 'Link not found');
+    if (assignment.mode !== 'realtime') {
+      throw httpError(400, 'This public link starts the exam directly. Use start instead of join.');
+    }
+    await teacherExamAssignmentService.assertPublicTokenValid(assignment, publicToken);
+    const session = await ExamSession.findOne({
+      assignmentId: assignment._id,
+      status: { $in: ['lobby', 'live'] },
+    }).sort({ updatedAt: -1 });
+    if (!session) {
+      throw httpError(400, 'No live room is open yet. Ask your teacher to open the live console.');
+    }
+    const joined = await this.joinSession(userId, session._id.toString(), { publicToken });
+    return {
+      sessionId: session._id.toString(),
+      session: joined,
+      assignmentId: assignment._id.toString(),
+    };
   },
 
   async getMyAttempt(userId, sessionId) {

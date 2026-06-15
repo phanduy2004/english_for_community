@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -112,7 +113,7 @@ class _TeacherGradebookView extends StatelessWidget {
           ],
           maxWidth: TeacherWebUi.contentMaxTable,
           body: state.status == TeacherGradebookStatus.loading
-              ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+              ? const Center(child: AppLoadingIndicator.center())
               : state.status == TeacherGradebookStatus.error
                   ? Center(
                       child: Column(

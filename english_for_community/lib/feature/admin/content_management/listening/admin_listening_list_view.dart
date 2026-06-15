@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -101,7 +102,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
       body: BlocBuilder<AdminListeningBloc, AdminListeningState>(
         builder: (context, state) {
           if (state.status == AdminListeningStatus.loading && state.listenings.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: AppLoadingIndicator.center());
           }
 
           if (state.listenings.isEmpty) {
@@ -210,7 +211,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedListenings(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(

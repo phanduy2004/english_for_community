@@ -19,6 +19,8 @@ import adminAppReleaseRoutes from "./src/routes/adminAppReleaseRoutes.js";
 import teacherRoutes from "./src/routes/teacherRoutes.js";
 import classroomRoutes from "./src/routes/classroomRoutes.js";
 import examRoutes from "./src/routes/examRoutes.js";
+import classroomChatRoutes from "./src/routes/classroomChatRoutes.js";
+import classroomChatRootRoutes from "./src/routes/classroomChatRootRoutes.js";
 const app = express();
 
 app.use(cors());
@@ -42,6 +44,7 @@ app.use('/api/admin/app-releases', adminAppReleaseRoutes);
 app.use('/api/teacher', teacherRoutes);
 app.use('/api/classrooms', classroomRoutes);
 app.use('/api/exams', examRoutes);
-
+app.use('/api/classroom-chat', classroomChatRootRoutes);
+app.use('/api/classroom-chat/:classroomId', classroomChatRoutes);
 
 export default app;

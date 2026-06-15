@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
-import 'package:english_for_community/core/ui/exam_system_ui.dart';
-import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:flutter/material.dart';
 
 /// Side / full-screen form: builds one `grammarItems[]` entry for skills exam.
@@ -24,6 +24,18 @@ class TeacherSkillsExamGrammarEditorPanel extends StatefulWidget {
 
   @override
   State<TeacherSkillsExamGrammarEditorPanel> createState() => _TeacherSkillsExamGrammarEditorPanelState();
+}
+
+class _GrammarKindOption {
+  const _GrammarKindOption({
+    required this.kind,
+    required this.icon,
+    required this.label,
+  });
+
+  final String kind;
+  final IconData icon;
+  final String label;
 }
 
 class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamGrammarEditorPanel> {
@@ -47,6 +59,15 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
   List<int> _reorderCorrectPerm = [0, 1];
 
   final Set<int> _mcqCorrect = {};
+
+  List<_GrammarKindOption> _kindOptions(AppLocalizations l10n) => [
+        _GrammarKindOption(kind: 'mcq_single', icon: Icons.radio_button_checked_outlined, label: l10n.teacherExamGrammarKindMcqSingle),
+        _GrammarKindOption(kind: 'mcq_multi', icon: Icons.check_box_outlined, label: l10n.teacherExamGrammarKindMcqMulti),
+        _GrammarKindOption(kind: 'grammar_cloze', icon: Icons.notes_outlined, label: l10n.teacherExamGrammarKindCloze),
+        _GrammarKindOption(kind: 'grammar_gap', icon: Icons.space_bar_outlined, label: l10n.teacherExamGrammarKindGap),
+        _GrammarKindOption(kind: 'grammar_matching', icon: Icons.swap_horiz_outlined, label: l10n.teacherExamGrammarKindMatching),
+        _GrammarKindOption(kind: 'grammar_reorder', icon: Icons.reorder_outlined, label: l10n.teacherExamGrammarKindReorder),
+      ];
 
   @override
   void initState() {
@@ -193,6 +214,8 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
   List<String> _splitAccepted(String raw) {
     return raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
   }
+
+  String _optionLetter(int index) => String.fromCharCode(65 + index);
 
   void _onSavePressed() {
     final l10n = context.l10n;
@@ -356,6 +379,135 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
     });
   }
 
+  Widget _formField(BuildContext context, {required String label, required Widget field, String? hint}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TeacherWebUi.formFieldLabel(context, label),
+        if (hint != null) ...[
+          const SizedBox(height: 2),
+          Text(hint, style: TeacherWebUi.metaMuted),
+        ],
+        const SizedBox(height: AppSpacing.s1),
+        field,
+      ],
+    );
+  }
+
+  Widget _textField(
+    BuildContext context, {
+    required TextEditingController controller,
+    String? hint,
+    int maxLines = 1,
+    ValueChanged<String>? onChanged,
+    TextInputType? keyboardType,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      onChanged: onChanged,
+      keyboardType: keyboardType,
+      style: TeacherWebUi.webBody(context),
+      decoration: TeacherWebUi.formInputDecoration(context, hintText: hint),
+    );
+  }
+
+  Widget _buildKindPicker(BuildContext context, AppLocalizations l10n) {
+    final options = _kindOptions(l10n);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _formField(
+          context,
+          label: l10n.teacherExamGrammarQuestionType,
+          field: DropdownButtonFormField<String>(
+            key: ValueKey(_kind),
+            initialValue: _kind,
+            isExpanded: true,
+            isDense: true,
+            decoration: TeacherWebUi.formInputDecoration(context),
+            style: TeacherWebUi.webBody(context),
+            icon: const Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
+            menuMaxHeight: 280,
+            borderRadius: BorderRadius.circular(10),
+            dropdownColor: AppColors.surfaceCard,
+            selectedItemBuilder: (ctx) => [
+              for (final opt in options)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    opt.label,
+                    style: TeacherWebUi.webBody(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            items: [
+              for (final opt in options)
+                DropdownMenuItem(
+                  value: opt.kind,
+                  child: Row(
+                    children: [
+                      Icon(opt.icon, size: 18, color: AppColors.textSecondary),
+                      const SizedBox(width: AppSpacing.s2),
+                      Expanded(
+                        child: Text(
+                          opt.label,
+                          style: TeacherWebUi.webBody(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+            onChanged: (v) {
+              if (v != null) _setKind(v);
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s3),
+        SizedBox(
+          width: 88,
+          child: _formField(
+            context,
+            label: l10n.teacherExamPoints,
+            field: _textField(context, controller: _points, keyboardType: TextInputType.number),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _optionLetterBadge(BuildContext context, int index) {
+    return Container(
+      width: 24,
+      height: 24,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.outlineMuted),
+      ),
+      child: Text(
+        _optionLetter(index),
+        style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Widget _compactAddButton(BuildContext context, {required String label, required VoidCallback onPressed}) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        style: TeacherWebUi.compactOutlinedStyle(context),
+        onPressed: onPressed,
+        icon: const Icon(Icons.add_outlined, size: 16),
+        label: Text(label),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -366,76 +518,50 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s3, AppSpacing.s2, AppSpacing.s2),
               child: Row(
                 children: [
                   Expanded(
                     child: Text(
                       widget.initial == null ? l10n.teacherExamGrammarNewItem : l10n.teacherExamGrammarPanelTitle,
-                      style: ExamSystemUi.sectionTitle(context),
+                      style: TeacherWebUi.webH3(context),
                     ),
                   ),
                   IconButton(
                     onPressed: widget.onClose,
-                    icon: const Icon(Icons.close_outlined),
+                    style: TeacherWebUi.compactHeaderIconStyle(),
+                    icon: const Icon(Icons.close_outlined, size: 18),
                     color: AppColors.textSecondary,
                     tooltip: l10n.teacherExamGrammarCloseEditor,
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, color: AppColors.outlineMuted),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, AppSpacing.s6),
                 children: [
-                  DropdownButtonFormField<String>(
-                    key: ValueKey(_kind),
-                    initialValue: _kind,
-                    decoration: InputDecoration(
-                      labelText: l10n.teacherExamGrammarQuestionType,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    items: [
-                      DropdownMenuItem(value: 'mcq_single', child: Text(l10n.teacherExamGrammarKindMcqSingle)),
-                      DropdownMenuItem(value: 'mcq_multi', child: Text(l10n.teacherExamGrammarKindMcqMulti)),
-                      DropdownMenuItem(value: 'grammar_cloze', child: Text(l10n.teacherExamGrammarKindCloze)),
-                      DropdownMenuItem(value: 'grammar_gap', child: Text(l10n.teacherExamGrammarKindGap)),
-                      DropdownMenuItem(value: 'grammar_matching', child: Text(l10n.teacherExamGrammarKindMatching)),
-                      DropdownMenuItem(value: 'grammar_reorder', child: Text(l10n.teacherExamGrammarKindReorder)),
-                    ],
-                    onChanged: (v) {
-                      if (v != null) _setKind(v);
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _points,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                      labelText: l10n.teacherExamPoints,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  if (_kind == 'mcq_single' || _kind == 'mcq_multi') ..._buildMcq(l10n),
-                  if (_kind == 'grammar_cloze') ..._buildCloze(l10n),
-                  if (_kind == 'grammar_gap') ..._buildGap(l10n),
-                  if (_kind == 'grammar_matching') ..._buildMatch(l10n),
-                  if (_kind == 'grammar_reorder') ..._buildReorder(l10n),
+                  _buildKindPicker(context, l10n),
+                  const SizedBox(height: AppSpacing.s5),
+                  if (_kind == 'mcq_single' || _kind == 'mcq_multi') ..._buildMcq(context, l10n),
+                  if (_kind == 'grammar_cloze') ..._buildCloze(context, l10n),
+                  if (_kind == 'grammar_gap') ..._buildGap(context, l10n),
+                  if (_kind == 'grammar_matching') ..._buildMatch(context, l10n),
+                  if (_kind == 'grammar_reorder') ..._buildReorder(context, l10n),
                 ],
               ),
             ),
-            const Divider(height: 1),
+            const Divider(height: 1, color: AppColors.outlineMuted),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-              child: TeacherInlineActions(
-                children: [
-                  TeacherFilledButton(
-                    label: l10n.teacherExamGrammarSaveItem,
-                    onPressed: _onSavePressed,
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s3, AppSpacing.s4, AppSpacing.s4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton(
+                  style: TeacherWebUi.compactFilledStyle(context),
+                  onPressed: _onSavePressed,
+                  child: Text(l10n.teacherExamGrammarSaveItem),
+                ),
               ),
             ),
           ],
@@ -444,49 +570,49 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
     );
   }
 
-  List<Widget> _buildMcq(AppLocalizations l10n) {
+  List<Widget> _buildMcq(BuildContext context, AppLocalizations l10n) {
+    final isMulti = _kind == 'mcq_multi';
     return [
-      TextField(
-        controller: _prompt,
-        maxLines: 3,
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamStemLabel,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      _formField(
+        context,
+        label: l10n.teacherExamStemLabel,
+        field: _textField(context, controller: _prompt, maxLines: 3),
       ),
-      const SizedBox(height: 12),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: TextButton.icon(
-          onPressed: () => setState(() => _mcqOptions.add(TextEditingController())),
-          icon: const Icon(Icons.add, size: 18),
-          label: Text(l10n.teacherExamGrammarAddOption),
-        ),
+      const SizedBox(height: AppSpacing.s3),
+      Text(
+        l10n.teacherExamOptionsHint,
+        style: TeacherWebUi.sectionTitle(context),
       ),
-      if (_kind == 'mcq_multi')
+      const SizedBox(height: AppSpacing.s2),
+      if (isMulti)
         for (var i = 0; i < _mcqOptions.length; i++)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(bottom: AppSpacing.s2),
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Checkbox(
-                  value: _mcqCorrect.contains(i),
-                  onChanged: (v) => setState(() {
-                    if (v == true) {
-                      _mcqCorrect.add(i);
-                    } else {
-                      _mcqCorrect.remove(i);
-                    }
-                  }),
+                SizedBox(
+                  width: 36,
+                  child: Checkbox(
+                    value: _mcqCorrect.contains(i),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onChanged: (v) => setState(() {
+                      if (v == true) {
+                        _mcqCorrect.add(i);
+                      } else {
+                        _mcqCorrect.remove(i);
+                      }
+                    }),
+                  ),
                 ),
+                _optionLetterBadge(context, i),
+                const SizedBox(width: AppSpacing.s2),
                 Expanded(
-                  child: TextField(
+                  child: _textField(
+                    context,
                     controller: _mcqOptions[i],
-                    decoration: InputDecoration(
-                      labelText: '${l10n.teacherExamOptionsHint} $i',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                    hint: '${l10n.teacherExamOptionsHint} ${_optionLetter(i)}',
                   ),
                 ),
               ],
@@ -504,18 +630,25 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
             children: [
               for (var i = 0; i < _mcqOptions.length; i++)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.s2),
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Radio<int>(value: i),
+                      SizedBox(
+                        width: 36,
+                        child: Radio<int>(
+                          value: i,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
+                      _optionLetterBadge(context, i),
+                      const SizedBox(width: AppSpacing.s2),
                       Expanded(
-                        child: TextField(
+                        child: _textField(
+                          context,
                           controller: _mcqOptions[i],
-                          decoration: InputDecoration(
-                            labelText: '${l10n.teacherExamOptionsHint} $i',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                          ),
+                          hint: '${l10n.teacherExamOptionsHint} ${_optionLetter(i)}',
                         ),
                       ),
                     ],
@@ -524,133 +657,167 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
             ],
           ),
         ),
+      const SizedBox(height: AppSpacing.s1),
+      _compactAddButton(
+        context,
+        label: l10n.teacherExamGrammarAddOption,
+        onPressed: () => setState(() => _mcqOptions.add(TextEditingController())),
+      ),
     ];
   }
 
-  List<Widget> _buildCloze(AppLocalizations l10n) {
+  List<Widget> _buildCloze(BuildContext context, AppLocalizations l10n) {
     return [
-      TextField(
-        controller: _clozePassage,
-        maxLines: 6,
-        onChanged: (_) => setState(_syncClozeBlankFields),
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamGrammarPassageLabel,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      _formField(
+        context,
+        label: l10n.teacherExamGrammarPassageLabel,
+        field: _textField(
+          context,
+          controller: _clozePassage,
+          maxLines: 6,
+          onChanged: (_) => setState(_syncClozeBlankFields),
         ),
       ),
-      const SizedBox(height: 16),
-      Text(l10n.teacherExamGrammarAcceptedAnswers, style: ExamSystemUi.captionMuted),
-      const SizedBox(height: 8),
-      for (final e in _clozeAccepted.entries)
-        Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: TextField(
-            controller: e.value,
-            decoration: InputDecoration(
-              labelText: '${l10n.teacherExamGrammarBlankId} ${e.key}',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      if (_clozeAccepted.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.s4),
+        Text(l10n.teacherExamGrammarAcceptedAnswers, style: TeacherWebUi.sectionTitle(context)),
+        const SizedBox(height: AppSpacing.s2),
+        for (final e in _clozeAccepted.entries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.s2),
+            child: _formField(
+              context,
+              label: '${l10n.teacherExamGrammarBlankId} ${e.key}',
+              field: _textField(context, controller: e.value),
             ),
           ),
-        ),
+      ],
     ];
   }
 
-  List<Widget> _buildGap(AppLocalizations l10n) {
+  List<Widget> _buildGap(BuildContext context, AppLocalizations l10n) {
     return [
-      TextField(
-        controller: _gapBefore,
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamGrammarTextBefore,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      _formField(
+        context,
+        label: l10n.teacherExamGrammarTextBefore,
+        field: _textField(context, controller: _gapBefore),
       ),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _gapAfter,
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamGrammarTextAfter,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      const SizedBox(height: AppSpacing.s3),
+      _formField(
+        context,
+        label: l10n.teacherExamGrammarTextAfter,
+        field: _textField(context, controller: _gapAfter),
       ),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _gapAccepted,
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamGrammarAcceptedAnswers,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      const SizedBox(height: AppSpacing.s3),
+      _formField(
+        context,
+        label: l10n.teacherExamGrammarAcceptedAnswers,
+        field: _textField(context, controller: _gapAccepted),
       ),
     ];
   }
 
-  List<Widget> _buildMatch(AppLocalizations l10n) {
+  Widget _matchPickMenu(BuildContext context, AppLocalizations l10n, int rowIndex) {
+    final pick = _matchPick[rowIndex].clamp(0, _matchLeft.length - 1);
+    final label = '${l10n.teacherExamGrammarRightColumn} ${pick + 1}';
+    return PopupMenuButton<int>(
+      initialValue: pick,
+      tooltip: l10n.integratedExamMatchPick,
+      onSelected: (v) => setState(() => _matchPick[rowIndex] = v),
+      itemBuilder: (ctx) => [
+        for (var j = 0; j < _matchLeft.length; j++)
+          PopupMenuItem(
+            value: j,
+            child: Text('${l10n.teacherExamGrammarRightColumn} ${j + 1}'),
+          ),
+      ],
+      child: Container(
+        height: TeacherWebUi.buttonHeightPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.outline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${l10n.integratedExamMatchPick}: $label',
+              style: TeacherWebUi.webLabel(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.expand_more, size: 16, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildMatch(BuildContext context, AppLocalizations l10n) {
     final rows = <Widget>[];
     for (var i = 0; i < _matchLeft.length; i++) {
       rows.add(
         Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(l10n.teacherExamGrammarPairCorrect(i + 1), style: ExamSystemUi.captionMuted),
-              const SizedBox(height: 6),
-              Row(
+          padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+          child: DecoratedBox(
+            decoration: TeacherWebUi.panelDecoration(bg: AppColors.surfaceSubtle),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s3),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _matchLeft[i],
-                      decoration: InputDecoration(
-                        labelText: l10n.teacherExamGrammarLeftColumn,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                    ),
+                  Text(
+                    l10n.teacherExamGrammarPairCorrect(i + 1),
+                    style: TeacherWebUi.sectionTitle(context),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _matchRight[i],
-                      decoration: InputDecoration(
-                        labelText: l10n.teacherExamGrammarRightColumn,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(height: AppSpacing.s2),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _formField(
+                          context,
+                          label: l10n.teacherExamGrammarLeftColumn,
+                          field: _textField(context, controller: _matchLeft[i]),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: AppSpacing.s2),
+                      Expanded(
+                        child: _formField(
+                          context,
+                          label: l10n.teacherExamGrammarRightColumn,
+                          field: _textField(context, controller: _matchRight[i]),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s2),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _matchPickMenu(context, l10n, i),
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<int>(
-                key: ValueKey('match_$i${_matchPick[i]}'),
-                initialValue: _matchPick[i].clamp(0, _matchLeft.length - 1),
-                decoration: InputDecoration(
-                  labelText: l10n.integratedExamMatchPick,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                items: [
-                  for (var j = 0; j < _matchLeft.length; j++)
-                    DropdownMenuItem(value: j, child: Text('${l10n.teacherExamGrammarRightColumn} ${j + 1}')),
-                ],
-                onChanged: (v) => setState(() => _matchPick[i] = v ?? 0),
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
     rows.add(
-      TextButton.icon(
+      _compactAddButton(
+        context,
+        label: l10n.teacherExamGrammarAddOption,
         onPressed: () => setState(() {
           _matchLeft.add(TextEditingController());
           _matchRight.add(TextEditingController());
           _matchPick.add(_matchLeft.length - 1);
         }),
-        icon: const Icon(Icons.add, size: 18),
-        label: Text(l10n.teacherExamGrammarAddOption),
       ),
     );
     return rows;
   }
 
-  List<Widget> _buildReorder(AppLocalizations l10n) {
+  List<Widget> _buildReorder(BuildContext context, AppLocalizations l10n) {
     final lines = _reorderLines.text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
     if (_reorderCorrectPerm.length != lines.length && lines.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -659,46 +826,60 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
       });
     }
     return [
-      TextField(
-        controller: _reorderLines,
-        maxLines: 8,
-        onChanged: (_) => setState(() {
-          final ln = _reorderLines.text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).length;
-          if (ln < 2) return;
-          _reorderCorrectPerm = List.generate(ln, (i) => i);
-        }),
-        decoration: InputDecoration(
-          labelText: l10n.teacherExamGrammarFragments,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      _formField(
+        context,
+        label: l10n.teacherExamGrammarFragments,
+        field: _textField(
+          context,
+          controller: _reorderLines,
+          maxLines: 8,
+          onChanged: (_) => setState(() {
+            final ln = _reorderLines.text.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty).length;
+            if (ln < 2) return;
+            _reorderCorrectPerm = List.generate(ln, (i) => i);
+          }),
         ),
       ),
-      const SizedBox(height: 12),
-      if (lines.length >= 2)
-        ReorderableListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          buildDefaultDragHandles: false,
-          itemCount: _reorderCorrectPerm.length,
-          onReorder: (a, b) {
-            setState(() {
-              if (b > a) b -= 1;
-              final x = _reorderCorrectPerm.removeAt(a);
-              _reorderCorrectPerm.insert(b, x);
-            });
-          },
-          itemBuilder: (ctx, i) {
-            final idx = _reorderCorrectPerm[i];
-            final text = idx < lines.length ? lines[idx] : '';
-            return ListTile(
-              key: ValueKey('ord_${i}_$idx'),
-              leading: ReorderableDragStartListener(
-                index: i,
-                child: const Icon(Icons.drag_handle, color: AppColors.textSecondary),
-              ),
-              title: Text(text, style: ExamSystemUi.captionSecondary),
-            );
-          },
+      if (lines.length >= 2) ...[
+        const SizedBox(height: AppSpacing.s3),
+        Text(l10n.teacherExamGrammarReorderInstruction, style: TeacherWebUi.metaMuted),
+        const SizedBox(height: AppSpacing.s2),
+        DecoratedBox(
+          decoration: TeacherWebUi.panelDecoration(),
+          child: ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            itemCount: _reorderCorrectPerm.length,
+            onReorder: (a, b) {
+              setState(() {
+                if (b > a) b -= 1;
+                final x = _reorderCorrectPerm.removeAt(a);
+                _reorderCorrectPerm.insert(b, x);
+              });
+            },
+            itemBuilder: (ctx, i) {
+              final idx = _reorderCorrectPerm[i];
+              final text = idx < lines.length ? lines[idx] : '';
+              return ListTile(
+                key: ValueKey('ord_${i}_$idx'),
+                dense: true,
+                visualDensity: VisualDensity.compact,
+                contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
+                leading: ReorderableDragStartListener(
+                  index: i,
+                  child: const Icon(Icons.drag_handle, size: 18, color: AppColors.textSecondary),
+                ),
+                title: Text(text, style: TeacherWebUi.webBody(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+                trailing: Text(
+                  '${i + 1}',
+                  style: TeacherWebUi.webCaption(context),
+                ),
+              );
+            },
+          ),
         ),
+      ],
     ];
   }
 }

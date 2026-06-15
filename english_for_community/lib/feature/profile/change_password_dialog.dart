@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
@@ -182,7 +183,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                              child: AppLoadingIndicator(color: Colors.white, strokeWidth: 2))
                               : Text(t.saveChanges,
                               style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
                         );

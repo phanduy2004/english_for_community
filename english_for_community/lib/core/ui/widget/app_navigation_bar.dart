@@ -43,7 +43,50 @@ class AppNavigationBar extends StatelessWidget {
   /// Hiển thị nhãn
   final NavigationDestinationLabelBehavior labelBehavior;
 
-  /// Factory nhanh: 4 tab chuẩn của app
+  /// Factory: 4 tab chuẩn học sinh (Home · Tin nhắn · Tiến độ · Hồ sơ).
+  factory AppNavigationBar.studentMain({
+    Key? key,
+    required int currentIndex,
+    required ValueChanged<int> onIndexSelected,
+    required String homeLabel,
+    required String messagesLabel,
+    required String progressLabel,
+    required String profileLabel,
+    Widget? messagesBadge,
+  }) {
+    final items = <AppNavItem>[
+      AppNavItem(
+        label: homeLabel,
+        icon: Icons.home_outlined,
+        selectedIcon: Icons.home,
+      ),
+      AppNavItem(
+        label: messagesLabel,
+        icon: Icons.chat_bubble_outline,
+        selectedIcon: Icons.chat_bubble,
+        badge: messagesBadge,
+      ),
+      AppNavItem(
+        label: progressLabel,
+        icon: Icons.style_outlined,
+        selectedIcon: Icons.style,
+      ),
+      AppNavItem(
+        label: profileLabel,
+        icon: Icons.person_outline,
+        selectedIcon: Icons.person,
+      ),
+    ];
+
+    return AppNavigationBar(
+      key: key,
+      currentIndex: currentIndex,
+      onIndexSelected: onIndexSelected,
+      items: items,
+    );
+  }
+
+  /// Factory nhanh: 3 tab (legacy).
   factory AppNavigationBar.main({
     Key? key,
     required int currentIndex,
@@ -96,10 +139,14 @@ class AppNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final safeIndex = items.isEmpty
+        ? 0
+        : currentIndex.clamp(0, items.length - 1);
+
     return SizedBox(
       height: 54,
       child: NavigationBar(
-        selectedIndex: currentIndex,
+        selectedIndex: safeIndex,
         labelBehavior: labelBehavior,
         backgroundColor: AppColors.surfaceCard,
         indicatorColor: AppColors.primaryTint,

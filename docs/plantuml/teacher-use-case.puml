@@ -1,0 +1,67 @@
+@startuml E4C_Teacher_UseCase
+' 2.4.1.3 Phía Giáo viên — paste vào https://www.planttext.com/
+' Teacher kế thừa use case User; sơ đồ này chỉ phần bổ sung role teacher.
+
+left to right direction
+skinparam shadowing false
+skinparam handwritten false
+skinparam usecase {
+  BackgroundColor #FEFECE
+  BorderColor #333333
+}
+skinparam actor {
+  BackgroundColor #FEFECE
+  BorderColor #333333
+}
+
+actor "Teacher" as Teacher
+
+Teacher --> (Quản lý lớp học)
+Teacher --> (Quản lý ngân hàng đề thi)
+Teacher --> (Giao bài thi)
+Teacher --> (Điều hành phiên thi realtime)
+Teacher --> (Chấm điểm và công bố kết quả)
+Teacher --> (Xem dashboard giáo viên)
+
+' --- Quản lý lớp học ---
+(Tạo và chỉnh sửa lớp) ..> (Quản lý lớp học) : <<extend>>
+(Lưu trữ lớp và đổi mã mời) ..> (Quản lý lớp học) : <<extend>>
+(Duyệt học sinh vào lớp) ..> (Quản lý lớp học) : <<extend>>
+(Quản lý co-teacher) ..> (Quản lý lớp học) : <<extend>>
+(Xem hoạt động lớp) ..> (Quản lý lớp học) : <<extend>>
+
+' --- Ngân hàng đề ---
+(Tạo đề thi nháp) ..> (Quản lý ngân hàng đề thi) : <<extend>>
+(Xuất bản và lưu trữ đề) ..> (Quản lý ngân hàng đề thi) : <<extend>>
+(AI gợi ý đề writing) ..> (Quản lý ngân hàng đề thi) : <<extend>>
+(Nhân bản đề thi) ..> (Quản lý ngân hàng đề thi) : <<extend>>
+
+' --- Giao bài ---
+(Giao bài cho lớp) ..> (Giao bài thi) : <<extend>>
+(Tạo link thi công khai) ..> (Giao bài thi) : <<extend>>
+(Đóng hoặc sửa assignment) ..> (Giao bài thi) : <<extend>>
+(Lưu preset giao bài) ..> (Giao bài thi) : <<extend>>
+
+' --- Phiên thi realtime ---
+(Tạo phiên thi) ..> (Điều hành phiên thi realtime) : <<extend>>
+(Lobby chờ học sinh) ..> (Điều hành phiên thi realtime) : <<extend>>
+(Bắt đầu và kết thúc phiên) ..> (Điều hành phiên thi realtime) : <<extend>>
+(Giám sát live monitor) ..> (Điều hành phiên thi realtime) : <<extend>>
+(Xem màn hình học sinh) ..> (Điều hành phiên thi realtime) : <<extend>>
+(Đuổi học sinh khỏi phiên) ..> (Điều hành phiên thi realtime) : <<extend>>
+
+' --- Chấm điểm ---
+(Xem danh sách bài nộp) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(Chấm thủ công) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(AI hỗ trợ chấm) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(Chấm hàng loạt) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(Công bố và chốt điểm) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(Xuất sổ điểm CSV XLSX) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+(Xem báo cáo integrity) ..> (Chấm điểm và công bố kết quả) : <<extend>>
+
+' --- Dashboard ---
+(Việc cần làm action items) ..> (Xem dashboard giáo viên) : <<extend>>
+(Analytics lớp và bài thi) ..> (Xem dashboard giáo viên) : <<extend>>
+(Lịch deadline và phiên thi) ..> (Xem dashboard giáo viên) : <<extend>>
+
+@enduml

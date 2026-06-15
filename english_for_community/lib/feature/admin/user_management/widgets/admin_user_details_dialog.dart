@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -94,7 +95,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                 future: _userFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                    return const Center(child: AppLoadingIndicator.center());
                   }
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));

@@ -24,7 +24,9 @@ import '../progress/bloc/progress_bloc.dart';
 import '../progress/bloc/progress_event.dart';
 import '../progress/bloc/progress_state.dart';
 import 'widgets/home_study_dashboard.dart';
+import '../../core/get_it/get_it.dart';
 import '../../core/notification/app_notification_listener.dart';
+import '../classroom_chat/dock/classroom_chat_dock_controller.dart';
 import '../../core/notification/notification_navigation.dart';
 
 // --- Feature Imports ---
@@ -38,7 +40,7 @@ import '../auth/bloc/user_state.dart';
 import '../profile/my_exercise_history/my_exercise_history_page.dart';
 import '../profile/profile_page.dart';
 import '../student/classes/my_classes_hub_page.dart';
-import '../student/exams/public_exam_join_page.dart';
+import '../student/messages/student_classroom_chat_hub_page.dart';
 import '../progress/progress_report_page.dart';
 import '../reading/reading_list_page.dart';
 import '../writing/writing_topics_page.dart';
@@ -59,26 +61,47 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  int _tab = 0;
+  static const int _tabHome = 0;
+  static const int _tabMessages = 1;
+  static const int _tabProgress = 2;
+  static const int _tabProfile = 3;
+
+  int _tab = _tabHome;
   late final NotificationBloc _notificationBloc;
-  late final List<Widget> _pages;
+
+  Widget? _homeTab;
+  Widget? _messagesTab;
+  Widget? _progressTab;
+  Widget? _profileTab;
+
+  static const int _tabCount = 4;
+
+  List<Widget> get _pages => [
+        _homeTab ??= _HomeContentView(
+          onOpenNotifications: _openNotifications,
+          onOpenAiAssistant: _openAiAssistant,
+          onOpenProfile: _openProfile,
+        ),
+        _messagesTab ??= const StudentClassroomChatHubPage(),
+        _progressTab ??= const ProgressReportPage(),
+        _profileTab ??= BlocProvider.value(
+          value: GetIt.I<UserBloc>(),
+          child: const ProfilePage(),
+        ),
+      ];
+
+  int get _tabIndex => _tab.clamp(0, _tabCount - 1);
+
+  void _selectTab(int index) {
+    final next = index.clamp(0, _tabCount - 1);
+    if (_tab == next) return;
+    setState(() => _tab = next);
+  }
 
   @override
   void initState() {
     super.initState();
     _notificationBloc = GetIt.I<NotificationBloc>();
-    _pages = [
-      _HomeContentView(
-        onOpenNotifications: _openNotifications,
-        onOpenAiAssistant: _openAiAssistant,
-        onOpenProfile: _openProfile,
-      ),
-      const ProgressReportPage(),
-      BlocProvider.value(
-        value: GetIt.I<UserBloc>(),
-        child: const ProfilePage(),
-      ),
-    ];
     _notificationBloc.add(const NotificationLoadStarted());
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -112,7 +135,7 @@ class _HomePageState extends State<HomePage> {
 
     final type = data['type']?.toString();
     if (type == 'PROGRESS_NUDGE') {
-      setState(() => _tab = 1);
+      _selectTab(_tabProgress);
     } else if (type == 'STREAK_RESCUE') {
       Future.delayed(const Duration(milliseconds: 500), () {
         if (mounted) showSpeakingModeDialog(context);
@@ -217,32 +240,48 @@ class _HomePageState extends State<HomePage> {
 
   void _openProfile() {
     context.read<UserBloc>().add(GetProfileEvent());
-    setState(() => _tab = 2);
+    _selectTab(_tabProfile);
   }
 
   @override
   Widget build(BuildContext context) {
+    registerClassroomChatDockController();
+    final chatController = GetIt.I<ClassroomChatDockController>();
+
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _notificationBloc),
       ],
-      child: Scaffold(
-          backgroundColor: AppColors.surface,
-          body: SafeArea(
-            child: IndexedStack(index: _tab, children: _pages),
-          ),
-          bottomNavigationBar: AppNavigationBar.main(
-            currentIndex: _tab,
-            onIndexSelected: (i) {
-              if (i == 0) context.read<UserBloc>().add(GetProfileEvent());
-              setState(() => _tab = i);
-            },
-            homeLabel: context.l10n.navHome,
-            progressLabel: context.l10n.navProgress,
-            profileLabel: context.l10n.navProfile,
-            vocabularyBadge: null,
-          ),
-        ),
+      child: ListenableBuilder(
+        listenable: chatController,
+        builder: (context, _) {
+          final unread = chatController.unreadConversations;
+          final messagesBadge = unread > 0
+              ? Text(unread > 99 ? '99+' : '$unread')
+              : null;
+          final tab = _tabIndex;
+
+          return Scaffold(
+            backgroundColor: AppColors.surface,
+            body: SafeArea(
+              child: IndexedStack(index: tab, children: _pages),
+            ),
+            bottomNavigationBar: AppNavigationBar.studentMain(
+              currentIndex: tab,
+              onIndexSelected: (i) {
+                _selectTab(i);
+                if (i == _tabHome) context.read<UserBloc>().add(GetProfileEvent());
+                if (i == _tabMessages) chatController.loadRooms(force: true);
+              },
+              homeLabel: context.l10n.navHome,
+              messagesLabel: context.l10n.navMessages,
+              progressLabel: context.l10n.navProgress,
+              profileLabel: context.l10n.navProfile,
+              messagesBadge: messagesBadge,
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -697,7 +736,7 @@ class _HomeContentView extends StatelessWidget {
                 icon: Icons.public_rounded,
                 label: t.homeQuickPublicExam,
                 skill: SkillType.reading,
-                onTap: () => context.push(PublicExamJoinPage.routePath),
+                onTap: () => context.push(MyClassesHubPage.routePath),
               ),
             ),
             const Expanded(child: SizedBox()),

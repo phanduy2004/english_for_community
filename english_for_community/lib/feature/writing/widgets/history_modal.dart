@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_bloc.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_state.dart';
@@ -65,7 +66,7 @@ class HistoryModal extends StatelessWidget {
                   previous.historyList != current.historyList,
               builder: (context, state) {
                 if (state.historyStatus == WritingStatus.loading) {
-                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                  return const Center(child: AppLoadingIndicator.center());
                 }
                 if (state.historyStatus == WritingStatus.error) {
                   return WritingErrorView(message: state.historyErrorMessage ?? t.writingHistoryLoadFailed);

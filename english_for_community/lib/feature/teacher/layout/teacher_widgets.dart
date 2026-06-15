@@ -312,23 +312,63 @@ class TeacherSegmentTileRow<T> extends StatelessWidget {
 class TeacherListRow extends StatelessWidget {
   const TeacherListRow({
     super.key,
-    required this.leading,
+    this.leading,
     this.title = '',
     this.titleWidget,
     this.subtitle,
     this.trailing,
     this.onTap,
+    this.dense = false,
   });
 
-  final Widget leading;
+  final Widget? leading;
   final String title;
   final Widget? titleWidget;
   final String? subtitle;
   final Widget? trailing;
   final VoidCallback? onTap;
+  /// Flat row inside a panel — no per-row card chrome.
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
+    final content = Row(
+      children: [
+        if (leading != null && !dense) ...[
+          leading!,
+          const SizedBox(width: AppSpacing.s5),
+        ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              titleWidget ??
+                  Text(title, style: TeacherWebUi.listTitle(context), maxLines: 2, overflow: TextOverflow.ellipsis),
+              if (subtitle != null && subtitle!.isNotEmpty) ...[
+                SizedBox(height: dense ? 2 : 3),
+                Text(subtitle!, style: TeacherWebUi.metaMuted, maxLines: 2, overflow: TextOverflow.ellipsis),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+
+    if (dense) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: AppColors.surfaceSubtle,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: 10),
+            child: content,
+          ),
+        ),
+      );
+    }
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -337,26 +377,7 @@ class TeacherListRow extends StatelessWidget {
         child: Ink(
           decoration: TeacherWebUi.cardDecoration(),
           padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: AppSpacing.s5),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    titleWidget ??
-                        Text(title, style: TeacherWebUi.listTitle(context), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(subtitle!, style: TeacherWebUi.metaMuted, maxLines: 2, overflow: TextOverflow.ellipsis),
-                    ],
-                  ],
-                ),
-              ),
-              if (trailing != null) trailing!,
-            ],
-          ),
+          child: content,
         ),
       ),
     );

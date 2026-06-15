@@ -19,26 +19,58 @@ function httpError(statusCode, message) {
   return e;
 }
 
+async function promoteUserToTeacher(userId, payload = {}, { source = 'application' } = {}) {
+  const user = await User.findById(userId);
+  if (!user || user._destroy) throw httpError(404, 'User not found');
+  if (user.role === 'admin') throw httpError(400, 'Admins do not need teacher promotion');
+  if (user.role === 'teacher') {
+    const latest = await TeacherApplication.findOne({ userId }).sort({ createdAt: -1 });
+    return { application: latest, user, alreadyTeacher: true };
+  }
+
+  const parsed = applicationPayloadSchema.parse(payload || {});
+  if (parsed.bio) user.bio = String(parsed.bio).trim();
+
+  user.role = 'teacher';
+  await user.save();
+
+  const pending = await TeacherApplication.findOne({ userId, status: 'pending' });
+  if (pending) {
+    pending.status = 'approved';
+    pending.payload = { ...pending.payload, ...parsed };
+    pending.review = {
+      reviewerAdminId: null,
+      decisionAt: new Date(),
+      reason: source === 'register' ? 'Auto-approved at registration' : 'Auto-approved on submit',
+    };
+    await pending.save();
+    return { application: pending, user, alreadyTeacher: false };
+  }
+
+  const doc = await TeacherApplication.create({
+    userId,
+    status: 'approved',
+    payload: parsed,
+    review: {
+      reviewerAdminId: null,
+      decisionAt: new Date(),
+      reason: source === 'register' ? 'Auto-approved at registration' : 'Auto-approved on submit',
+    },
+  });
+  return { application: doc, user, alreadyTeacher: false };
+}
+
 export const teacherApplicationService = {
   rejectBodySchema,
+  promoteUserToTeacher,
 
+  /** Học sinh đã có tài khoản → bật role teacher ngay (không chờ admin). */
   async createApplication(userId, body) {
-    const user = await User.findById(userId);
-    if (!user || user._destroy) throw httpError(404, 'User not found');
-    if (user.role === 'teacher') throw httpError(400, 'Already a teacher');
-    if (user.role === 'admin') throw httpError(400, 'Admins do not need teacher applications');
-
-    const pending = await TeacherApplication.findOne({ userId, status: 'pending' });
-    if (pending) throw httpError(409, 'You already have a pending application');
-
-    const payload = applicationPayloadSchema.parse(body || {});
-
-    const doc = await TeacherApplication.create({
-      userId,
-      status: 'pending',
-      payload,
+    const { application, user, alreadyTeacher } = await promoteUserToTeacher(userId, body, {
+      source: 'application',
     });
-    return doc;
+    if (alreadyTeacher) throw httpError(400, 'Already a teacher');
+    return application;
   },
 
   async getMyLatest(userId) {

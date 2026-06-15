@@ -101,24 +101,37 @@ import '../../feature/teacher/bloc/grading_hub/teacher_grading_hub_bloc.dart';
 import '../../feature/teacher/bloc/student_live_screen/teacher_student_live_screen_bloc.dart';
 import '../socket/socket_service.dart';
 import '../locale/app_locale_controller.dart';
+import '../datasource/classroom_chat_remote_datasource.dart';
+import '../repository/classroom_chat_repository.dart';
+import '../repository_impl/classroom_chat_repository_impl.dart';
+import '../../feature/classroom_chat/bloc/classroom_chat_bloc.dart';
+import '../../feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 
 var getIt = GetIt.instance;
 
 void setup() {
-  registerApiClient();
-  registerServices();
-  registerDataSource();
-  registerRepositories();
-  registerBloc();
+  if (!getIt.isRegistered<ApiClient>()) {
+    registerApiClient();
+    registerServices();
+    registerDataSource();
+    registerRepositories();
+    registerBloc();
+  }
+  registerClassroomChatDockController();
 }
 
 void registerApiClient() {
+  if (getIt.isRegistered<ApiClient>()) return;
   getIt.registerSingleton(ApiClient());
 }
 
 void registerServices() {
-  getIt.registerLazySingleton<SocketService>(() => SocketService());
-  getIt.registerSingleton<AppLocaleController>(AppLocaleController());
+  if (!getIt.isRegistered<SocketService>()) {
+    getIt.registerLazySingleton<SocketService>(() => SocketService());
+  }
+  if (!getIt.isRegistered<AppLocaleController>()) {
+    getIt.registerSingleton<AppLocaleController>(AppLocaleController());
+  }
 }
 
 void registerDataSource() {
@@ -185,6 +198,9 @@ void registerDataSource() {
   getIt.registerSingleton<ListeningCompRemoteDatasource>(
     ListeningCompRemoteDatasource(dio: dioAuth),
   );
+  getIt.registerSingleton<ClassroomChatRemoteDataSource>(
+    ClassroomChatRemoteDataSource(dio: dioAuth),
+  );
 }
 
 void registerRepositories() {
@@ -246,6 +262,10 @@ void registerRepositories() {
   getIt.registerSingleton<ListeningCompRepository>(
     ListeningCompRepositoryImpl(datasource: getIt()),
   );
+  getIt.registerSingleton<ClassroomChatRepository>(
+    ClassroomChatRepositoryImpl(remote: getIt()),
+  );
+  registerClassroomChatDockController();
 }
 
 void registerBloc() {
@@ -347,6 +367,15 @@ void registerBloc() {
     (attemptId, _) => TeacherExamAttemptGradeBloc(
       repository: getIt(),
       attemptId: attemptId,
+    ),
+  );
+  // ClassroomChatBloc: param1 = classroomId, param2 = currentUserId
+  getIt.registerFactoryParam<ClassroomChatBloc, String, String>(
+    (classroomId, currentUserId) => ClassroomChatBloc(
+      classroomId: classroomId,
+      currentUserId: currentUserId,
+      repo: getIt(),
+      socket: getIt(),
     ),
   );
   getIt.registerFactory(() => StudentClassesHubBloc(repository: getIt()));

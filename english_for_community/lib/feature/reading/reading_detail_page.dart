@@ -1,6 +1,7 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 // Import các file trong project của bạn
@@ -552,7 +553,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   Widget _buildQuestionsTab(BuildContext context, bool isSubmitted, bool isLoadingHistory) {
     if (isLoadingHistory) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: AppLoadingIndicator.center());
     }
     final questions = widget.reading.questions;
     if (questions.isEmpty) {
