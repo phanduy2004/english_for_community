@@ -1,5 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -16,7 +16,6 @@ import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_das
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_state.dart';
 import 'package:english_for_community/feature/teacher/teacher_skills_exam_draft_payload.dart';
-import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -131,6 +130,16 @@ class _TeacherDashboardView extends StatelessWidget {
         if (msg == null) return;
         AppCornerToast.show(context, msg, error: true);
       },
+      buildWhen: (prev, curr) =>
+          prev.status != curr.status ||
+          prev.errorMessage != curr.errorMessage ||
+          prev.classrooms != curr.classrooms ||
+          prev.exams != curr.exams ||
+          prev.gradingQueue != curr.gradingQueue ||
+          prev.assignments != curr.assignments ||
+          prev.actionItems != curr.actionItems ||
+          prev.gradingLoading != curr.gradingLoading ||
+          prev.mutationInProgress != curr.mutationInProgress,
       builder: (context, state) {
         final loading = state.status == TeacherDashboardStatus.loading && state.classrooms.isEmpty;
         final error = state.status == TeacherDashboardStatus.error ? state.errorMessage : null;
@@ -163,10 +172,7 @@ class _TeacherDashboardView extends StatelessWidget {
           body: Builder(
             builder: (context) {
               if (loading) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 80),
-                  child: Center(child: AppLoadingIndicator.center()),
-                );
+                return TeacherSkeleton.page(TeacherSkeleton.dashboard());
               }
               if (error != null) {
                 return Center(

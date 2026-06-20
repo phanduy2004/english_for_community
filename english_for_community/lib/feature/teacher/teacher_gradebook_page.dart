@@ -1,5 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -113,7 +113,7 @@ class _TeacherGradebookView extends StatelessWidget {
           ],
           maxWidth: TeacherWebUi.contentMaxTable,
           body: state.status == TeacherGradebookStatus.loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.table(rows: 8))
               : state.status == TeacherGradebookStatus.error
                   ? Center(
                       child: Column(
@@ -133,7 +133,7 @@ class _TeacherGradebookView extends StatelessWidget {
                       ),
                     )
                   : state.data != null
-                      ? TeacherGradebookView(data: state.data!)
+                      ? TeacherGradebookView(classroomId: classroomId)
                       : const SizedBox.shrink(),
         );
       },

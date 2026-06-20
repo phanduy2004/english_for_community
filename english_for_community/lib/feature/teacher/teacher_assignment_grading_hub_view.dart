@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -45,6 +46,16 @@ class TeacherAssignmentGradingHubView extends StatelessWidget {
   Widget build(BuildContext context) {
     final hub = BlocConsumer<TeacherGradingHubBloc, TeacherGradingHubState>(
       listenWhen: (p, c) => c.errorMessage != null && p.errorMessage != c.errorMessage,
+      buildWhen: (p, c) =>
+          p.status != c.status ||
+          p.errorMessage != c.errorMessage ||
+          p.assignment != c.assignment ||
+          p.stats != c.stats ||
+          p.visibleAttempts != c.visibleAttempts ||
+          p.batchAiRunning != c.batchAiRunning ||
+          p.batchOpsRunning != c.batchOpsRunning ||
+          p.attemptMutationId != c.attemptMutationId ||
+          p.filter != c.filter,
       listener: (context, state) {
         if (state.errorMessage != null) {
           AppCornerToast.show(context, state.errorMessage!, error: true);
@@ -137,7 +148,7 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
     final pad = padding ?? TeacherWebUi.pageScrollPadding(context);
 
     if (state.status == TeacherGradingHubStatus.loading) {
-      return const Center(child: AppLoadingIndicator.center());
+      return TeacherSkeleton.page(TeacherSkeleton.table(rows: 8));
     }
     if (state.status == TeacherGradingHubStatus.error) {
       return Center(

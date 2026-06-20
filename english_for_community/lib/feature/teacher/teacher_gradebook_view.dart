@@ -1,3 +1,7 @@
+import 'package:english_for_community/feature/teacher/bloc/gradebook/teacher_gradebook_bloc.dart';
+import 'package:english_for_community/feature/teacher/bloc/gradebook/teacher_gradebook_derived.dart';
+import 'package:english_for_community/feature/teacher/bloc/gradebook/teacher_gradebook_event.dart';
+import 'package:english_for_community/feature/teacher/bloc/gradebook/teacher_gradebook_state.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -10,6 +14,7 @@ import 'package:english_for_community/feature/teacher/teacher_gradebook_labels.d
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 const double _kStudentColWidth = 220;
@@ -17,13 +22,10 @@ const double _kAssignmentColWidth = 136;
 const double _kRowHeight = 56;
 const double _kHeaderHeight = 76;
 
-enum _GradebookSort { nameAsc, nameDesc, avgDesc, avgAsc }
-
 /// Gradebook matrix — `docs/ui-ux-system/07` §2 + `08` gradebook.
 class TeacherGradebookView extends StatefulWidget {
-  const TeacherGradebookView({super.key, required this.data, this.classroomId});
+  const TeacherGradebookView({super.key, this.classroomId});
 
-  final Map<String, dynamic> data;
   final String? classroomId;
 
   @override
@@ -32,66 +34,11 @@ class TeacherGradebookView extends StatefulWidget {
 
 class _TeacherGradebookViewState extends State<TeacherGradebookView> {
   final _searchCtrl = TextEditingController();
-  String _query = '';
-  String? _modeFilter;
-  _GradebookSort _sort = _GradebookSort.nameAsc;
-  bool _hideEmpty = false;
 
   @override
   void dispose() {
     _searchCtrl.dispose();
     super.dispose();
-  }
-
-  List<Map<String, dynamic>> get _assignments =>
-      (widget.data['assignments'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-  List<Map<String, dynamic>> get _classAvgs =>
-      (widget.data['classAverages'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-  Map<String, dynamic>? get _summary =>
-      widget.data['summary'] is Map ? Map<String, dynamic>.from(widget.data['summary'] as Map) : null;
-
-  List<Map<String, dynamic>> _filteredRows() {
-    var rows = (widget.data['rows'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
-
-    if (_query.trim().isNotEmpty) {
-      final q = _query.trim().toLowerCase();
-      rows = rows.where((r) {
-        final name = TeacherGradebookLabels.studentLabel(r).toLowerCase();
-        final email = ((r['email'] as String?) ?? '').toLowerCase();
-        return name.contains(q) || email.contains(q);
-      }).toList();
-    }
-
-    if (_hideEmpty) {
-      rows = rows.where((r) => (r['submittedCount'] as num? ?? 0) > 0).toList();
-    }
-
-    rows.sort((a, b) {
-      switch (_sort) {
-        case _GradebookSort.nameDesc:
-          return TeacherGradebookLabels.studentLabel(b).compareTo(TeacherGradebookLabels.studentLabel(a));
-        case _GradebookSort.avgDesc:
-          return ((b['rowAvgPercent'] as num?) ?? -1).compareTo((a['rowAvgPercent'] as num?) ?? -1);
-        case _GradebookSort.avgAsc:
-          final ba = b['rowAvgPercent'] as num?;
-          final aa = a['rowAvgPercent'] as num?;
-          if (ba == null && aa == null) return 0;
-          if (ba == null) return 1;
-          if (aa == null) return -1;
-          return aa.compareTo(ba);
-        case _GradebookSort.nameAsc:
-          return TeacherGradebookLabels.studentLabel(a).compareTo(TeacherGradebookLabels.studentLabel(b));
-      }
-    });
-
-    return rows;
-  }
-
-  List<Map<String, dynamic>> _visibleAssignments() {
-    if (_modeFilter == null) return _assignments;
-    return _assignments.where((a) => a['mode'] == _modeFilter).toList();
   }
 
   void _openCell(BuildContext context, Map<String, dynamic> cell) {
@@ -108,12 +55,28 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final assignments = _visibleAssignments();
-    final rows = _filteredRows();
-    final summary = _summary;
+    return BlocBuilder<TeacherGradebookBloc, TeacherGradebookState>(
+      buildWhen: (p, c) =>
+          p.assignments != c.assignments ||
+          p.summary != c.summary ||
+          p.classAverages != c.classAverages ||
+          p.filteredRows != c.filteredRows ||
+          p.visibleAssignments != c.visibleAssignments ||
+          p.searchQuery != c.searchQuery ||
+          p.modeFilter != c.modeFilter ||
+          p.sort != c.sort ||
+          p.hideEmpty != c.hideEmpty,
+      builder: (context, state) => _buildBody(context, state),
+    );
+  }
 
-    if (_assignments.isEmpty) {
+  Widget _buildBody(BuildContext context, TeacherGradebookState state) {
+    final l10n = context.l10n;
+    final assignments = state.visibleAssignments;
+    final rows = state.filteredRows;
+    final summary = state.summary;
+
+    if (state.assignments.isEmpty) {
       return Center(
         child: TeacherEmptyCard(
           message: l10n.teacherGradebookNoAssignments,
@@ -145,14 +108,17 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
         ],
         _Toolbar(
           searchCtrl: _searchCtrl,
-          query: _query,
-          onQueryChanged: (v) => setState(() => _query = v),
-          modeFilter: _modeFilter,
-          onModeFilter: (v) => setState(() => _modeFilter = v),
-          sort: _sort,
-          onSort: (v) => setState(() => _sort = v),
-          hideEmpty: _hideEmpty,
-          onHideEmpty: (v) => setState(() => _hideEmpty = v),
+          query: state.searchQuery,
+          onQueryChanged: (v) =>
+              context.read<TeacherGradebookBloc>().add(TeacherGradebookSearchChanged(v)),
+          modeFilter: state.modeFilter,
+          onModeFilter: (v) =>
+              context.read<TeacherGradebookBloc>().add(TeacherGradebookModeFilterChanged(v)),
+          sort: state.sort,
+          onSort: (v) => context.read<TeacherGradebookBloc>().add(TeacherGradebookSortChanged(v)),
+          hideEmpty: state.hideEmpty,
+          onHideEmpty: (v) =>
+              context.read<TeacherGradebookBloc>().add(TeacherGradebookHideEmptyChanged(v)),
           resultCount: rows.length,
           l10n: l10n,
         ),
@@ -176,7 +142,7 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
                   : _StickyGradebookTable(
                       rows: rows,
                       assignments: assignments,
-                      classAvgs: _classAvgs,
+                      classAvgs: state.classAverages,
                       classAvgPercent: summary?['classAvgPercent'],
                       l10n: l10n,
                       onAssignmentTap: (id) => context.push('${TeacherExamGradingPage.routePath}/$id'),
@@ -280,8 +246,8 @@ class _Toolbar extends StatelessWidget {
   final ValueChanged<String> onQueryChanged;
   final String? modeFilter;
   final ValueChanged<String?> onModeFilter;
-  final _GradebookSort sort;
-  final ValueChanged<_GradebookSort> onSort;
+  final TeacherGradebookSort sort;
+  final ValueChanged<TeacherGradebookSort> onSort;
   final bool hideEmpty;
   final ValueChanged<bool> onHideEmpty;
   final int resultCount;
@@ -342,13 +308,13 @@ class _Toolbar extends StatelessWidget {
               Text(l10n.teacherGradebookSortLabel, style: TeacherWebUi.metaMuted.copyWith(fontSize: 12)),
               TeacherFilterChip(
                 label: l10n.teacherGradebookSortName,
-                selected: sort == _GradebookSort.nameAsc,
-                onSelected: () => onSort(_GradebookSort.nameAsc),
+                selected: sort == TeacherGradebookSort.nameAsc,
+                onSelected: () => onSort(TeacherGradebookSort.nameAsc),
               ),
               TeacherFilterChip(
                 label: l10n.teacherGradebookSortAvg,
-                selected: sort == _GradebookSort.avgDesc,
-                onSelected: () => onSort(_GradebookSort.avgDesc),
+                selected: sort == TeacherGradebookSort.avgDesc,
+                onSelected: () => onSort(TeacherGradebookSort.avgDesc),
               ),
               FilterChip(
                 label: Text(l10n.teacherGradebookHideEmpty, style: const TextStyle(fontSize: 12)),

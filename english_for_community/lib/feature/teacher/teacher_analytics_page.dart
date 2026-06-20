@@ -1,19 +1,23 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_state.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_score_scale.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
+import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class TeacherAnalyticsPage extends StatelessWidget {
   const TeacherAnalyticsPage({super.key});
@@ -37,6 +41,8 @@ class _TeacherAnalyticsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return BlocBuilder<TeacherAnalyticsBloc, TeacherAnalyticsState>(
+      buildWhen: (p, c) =>
+          p.status != c.status || p.errorMessage != c.errorMessage || p.period != c.period,
       builder: (context, state) {
         final loading = state.status == TeacherAnalyticsStatus.loading;
         final error = state.status == TeacherAnalyticsStatus.error ? state.errorMessage : null;
@@ -58,7 +64,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
             ),
           ],
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.dashboard())
               : error != null
                   ? Center(
                       child: Column(
@@ -77,30 +83,61 @@ class _TeacherAnalyticsView extends StatelessWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _KpiRow(summary: state.summary ?? {}, charts: state.charts ?? {}),
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, Map<String, dynamic>>(
+                          selector: (s) => s.summary ?? const {},
+                          builder: (context, summary) => BlocSelector<TeacherAnalyticsBloc,
+                              TeacherAnalyticsState, Map<String, dynamic>?>(
+                            selector: (s) => s.charts,
+                            builder: (context, charts) =>
+                                _KpiRow(summary: summary, charts: charts ?? const {}),
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.s8),
                         _SectionTitle(l10n.teacherAnalyticsSubmissionsChart),
                         const SizedBox(height: AppSpacing.s4),
-                        SizedBox(height: 200, child: _SubmissionsChart(data: state.charts)),
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
+                          selector: (s) => (s.submissionRows, s.submissionMaxY),
+                          builder: (context, data) => SizedBox(
+                            height: 200,
+                            child: _SubmissionsChart(rows: data.$1, maxY: data.$2),
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.s8),
                         _SectionTitle(l10n.teacherAnalyticsScoreChart),
                         const SizedBox(height: AppSpacing.s4),
-                        SizedBox(height: 200, child: _ScoreDistChart(data: state.charts)),
-                        if ((state.charts?['skillScoreAvg'] as Map?)?.isNotEmpty == true) ...[
-                          const SizedBox(height: AppSpacing.s8),
-                          _SectionTitle(l10n.teacherAnalyticsSkillBreakdown),
-                          const SizedBox(height: AppSpacing.s4),
-                          _SkillBreakdownSection(data: state.charts),
-                        ],
-                        const SizedBox(height: AppSpacing.s8),
-                        _SectionTitle(l10n.teacherAnalyticsModeBreakdown),
-                        const SizedBox(height: AppSpacing.s4),
-                        _ModeBreakdownRow(data: state.charts),
-                        const SizedBox(height: AppSpacing.s8),
-                        _SectionTitle(l10n.teacherAnalyticsIntegrityChart),
-                        const SizedBox(height: AppSpacing.s4),
-                        _IntegrityRow(data: state.charts),
-                        const SizedBox(height: AppSpacing.s8),
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
+                          selector: (s) => (s.scoreDistRows, s.scoreDistMaxY),
+                          builder: (context, data) => SizedBox(
+                            height: 200,
+                            child: _ScoreDistChart(rows: data.$1, maxY: data.$2),
+                          ),
+                        ),
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, Map<String, dynamic>?>(
+                          selector: (s) => s.charts,
+                          builder: (context, charts) {
+                            if ((charts?['skillScoreAvg'] as Map?)?.isNotEmpty != true) {
+                              return const SizedBox.shrink();
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: AppSpacing.s8),
+                                _SectionTitle(l10n.teacherAnalyticsSkillBreakdown),
+                                const SizedBox(height: AppSpacing.s4),
+                                _SkillBreakdownSection(data: charts),
+                                const SizedBox(height: AppSpacing.s8),
+                                _SectionTitle(l10n.teacherAnalyticsModeBreakdown),
+                                const SizedBox(height: AppSpacing.s4),
+                                _ModeBreakdownRow(data: charts),
+                                const SizedBox(height: AppSpacing.s8),
+                                _SectionTitle(l10n.teacherAnalyticsIntegrityChart),
+                                const SizedBox(height: AppSpacing.s4),
+                                _IntegrityRow(data: charts),
+                                const SizedBox(height: AppSpacing.s8),
+                              ],
+                            );
+                          },
+                        ),
                       ],
                     ),
         );
@@ -137,7 +174,7 @@ class _PeriodChips extends StatelessWidget {
                     .read<TeacherAnalyticsBloc>()
                     .add(TeacherAnalyticsPeriodChanged(p.$1)),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
+              duration: AppMotion.segment,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
                 color: selected ? AppColors.primary : AppColors.surfaceSubtle,
@@ -289,23 +326,17 @@ class _TrendBadge extends StatelessWidget {
 // ── Submissions bar chart ──────────────────────────────────────────────────────
 
 class _SubmissionsChart extends StatelessWidget {
-  const _SubmissionsChart({this.data});
+  const _SubmissionsChart({required this.rows, required this.maxY});
 
-  final Map<String, dynamic>? data;
+  final List<Map<String, dynamic>> rows;
+  final double maxY;
 
   @override
   Widget build(BuildContext context) {
-    final rows = (data?['submissionsByDay'] as List? ?? [])
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
     if (rows.isEmpty) {
       return Center(child: Text(context.l10n.teacherAnalyticsNoData, style: TeacherWebUi.webBody(context)));
     }
     final today = DateTime.now().toIso8601String().substring(0, 10);
-    final maxY = rows.fold<double>(1, (m, r) {
-      final c = (r['count'] as num?)?.toDouble() ?? 0;
-      return c > m ? c : m;
-    });
     return BarChart(
       BarChartData(
         maxY: maxY + 1,
@@ -357,30 +388,18 @@ class _SubmissionsChart extends StatelessWidget {
 // ── Score distribution chart ───────────────────────────────────────────────────
 
 class _ScoreDistChart extends StatelessWidget {
-  const _ScoreDistChart({this.data});
+  const _ScoreDistChart({required this.rows, required this.maxY});
 
-  final Map<String, dynamic>? data;
+  final List<Map<String, dynamic>> rows;
+  final double maxY;
 
-  static const List<Color> _bucketColors = [
-    AppColors.danger,
-    Color(0xFFEA580C),
-    AppColors.warning,
-    Color(0xFF65A30D),
-    AppColors.success,
-  ];
+  static const List<Color> _bucketColors = AppScoreScale.ramp;
 
   @override
   Widget build(BuildContext context) {
-    final rows = (data?['scoreDistribution'] as List? ?? [])
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
     if (rows.isEmpty) {
       return Center(child: Text(context.l10n.teacherAnalyticsNoData, style: TeacherWebUi.webBody(context)));
     }
-    final maxY = rows.fold<double>(1, (m, r) {
-      final c = (r['count'] as num?)?.toDouble() ?? 0;
-      return c > m ? c : m;
-    });
     return BarChart(
       BarChartData(
         maxY: maxY + 1,
@@ -597,6 +616,8 @@ class _ModeBreakdownRow extends StatelessWidget {
       return TeacherEmptyCard(
         message: l10n.teacherAnalyticsNoData,
         icon: Icons.bar_chart_outlined,
+        actionLabel: l10n.teacherEmptyInboxCta,
+        onAction: () => context.go(TeacherDashboardPage.routePath),
       );
     }
 
@@ -668,6 +689,8 @@ class _IntegrityRow extends StatelessWidget {
       return TeacherEmptyCard(
         message: l10n.teacherAnalyticsNoData,
         icon: Icons.shield_outlined,
+        actionLabel: l10n.teacherEmptyInboxCta,
+        onAction: () => context.go(TeacherDashboardPage.routePath),
       );
     }
     return Wrap(
