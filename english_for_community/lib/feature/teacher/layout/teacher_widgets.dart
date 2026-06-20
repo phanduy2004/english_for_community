@@ -1,6 +1,8 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
 class TeacherKpiCard extends StatelessWidget {
@@ -50,9 +52,8 @@ class TeacherKpiCard extends StatelessWidget {
         ],
       ),
     );
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    return RepaintBoundary(
+      child: TeacherWebUi.focusableTile(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.card),
         child: Ink(
@@ -69,13 +70,20 @@ class TeacherEmptyCard extends StatelessWidget {
     super.key,
     required this.message,
     this.icon = Icons.inbox_outlined,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String message;
   final IconData icon;
 
+  /// CTA bước kế tiếp (`docs/ui-ux-system/18` §5.12) — tuỳ chọn.
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
   @override
   Widget build(BuildContext context) {
+    final hasCta = actionLabel != null && onAction != null;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
@@ -85,8 +93,98 @@ class TeacherEmptyCard extends StatelessWidget {
           Icon(icon, size: 18, color: AppColors.textMuted),
           const SizedBox(width: AppSpacing.s5),
           Expanded(child: Text(message, style: TeacherWebUi.webBody(context))),
+          if (hasCta) ...[
+            const SizedBox(width: AppSpacing.s4),
+            FilledButton(
+              style: TeacherWebUi.compactFilledStyle(context),
+              onPressed: onAction,
+              child: Text(actionLabel!),
+            ),
+          ],
         ],
       ),
+    );
+  }
+}
+
+/// Editor save-state machine — idle / saving / saved / error (`18` §5.7).
+enum TeacherSaveState { idle, saving, saved, error }
+
+class TeacherSaveStateIndicator extends StatelessWidget {
+  const TeacherSaveStateIndicator({
+    super.key,
+    required this.state,
+    this.savedAt,
+    this.onRetry,
+  });
+
+  final TeacherSaveState state;
+  final DateTime? savedAt;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final (Widget icon, String label, Color color) = switch (state) {
+      TeacherSaveState.idle => (
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle),
+          ),
+          '',
+          AppColors.textMuted,
+        ),
+      TeacherSaveState.saving => (
+          const SizedBox(
+            width: 12,
+            height: 12,
+            child: CircularProgressIndicator(strokeWidth: 1.5, color: AppColors.textMuted),
+          ),
+          l10n.teacherSaveStateSaving,
+          AppColors.textMuted,
+        ),
+      TeacherSaveState.saved => (
+          const Icon(Icons.check_circle_outline, size: 14, color: AppColors.success),
+          savedAt != null
+              ? l10n.teacherSaveStateSavedAt(
+                  MaterialLocalizations.of(context).formatTimeOfDay(
+                    TimeOfDay.fromDateTime(savedAt!),
+                    alwaysUse24HourFormat: true,
+                  ),
+                )
+              : l10n.teacherExamDraftSaved,
+          AppColors.success,
+        ),
+      TeacherSaveState.error => (
+          const Icon(Icons.error_outline, size: 14, color: AppColors.danger),
+          l10n.teacherSaveStateError,
+          AppColors.danger,
+        ),
+    };
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        icon,
+        if (label.isNotEmpty) ...[
+          const SizedBox(width: AppSpacing.s2),
+          Text(label, style: TeacherWebUi.webCaption(context).copyWith(color: color)),
+        ],
+        if (state == TeacherSaveState.error && onRetry != null) ...[
+          const SizedBox(width: AppSpacing.s2),
+          TextButton(
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
+              minimumSize: const Size(0, 28),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            onPressed: onRetry,
+            child: Text(l10n.teacherSaveStateRetry, style: TeacherWebUi.webCaption(context)),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -229,13 +327,13 @@ class TeacherSegmentTileRow<T> extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onChanged(opt.value),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.segment,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? palette.bg : AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: isSelected ? palette.border : AppColors.outline,
               width: isSelected ? 1.5 : 1,
@@ -251,7 +349,7 @@ class TeacherSegmentTileRow<T> extends StatelessWidget {
                     color: isSelected
                         ? palette.fg.withValues(alpha: 0.12)
                         : AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
                   ),
                   child: Icon(
                     opt.icon,
@@ -282,7 +380,7 @@ class TeacherSegmentTileRow<T> extends StatelessWidget {
                     color: isSelected
                         ? palette.fg.withValues(alpha: 0.12)
                         : AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     border: Border.all(
                       color: isSelected
                           ? palette.border.withValues(alpha: 0.5)
@@ -375,7 +473,7 @@ class TeacherListRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.card),
         child: Ink(
-          decoration: TeacherWebUi.cardDecoration(),
+          decoration: TeacherWebUi.panelDecoration(),
           padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
           child: content,
         ),
@@ -425,7 +523,7 @@ class TeacherLiveMonitorMetricChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: accent.withValues(alpha: 0.22)),
       ),
       child: Column(
@@ -493,13 +591,13 @@ class TeacherExamPartTabChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.segment,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: borderColor, width: selected ? 1.5 : 0.75),
           ),
           child: Row(
@@ -560,7 +658,7 @@ class TeacherLiveMirrorStatusBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: accent.withValues(alpha: 0.24)),
       ),
       child: Row(
@@ -631,7 +729,7 @@ class TeacherQuestionStatusLegend extends StatelessWidget {
       runSpacing: 4,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        _LegendItem(color: const Color(0xFF43A047), label: correctLabel),
+        _LegendItem(color: AppColors.success, label: correctLabel),
         _LegendItem(color: AppColors.chartTrend, label: wrongLabel),
         _LegendItem(color: AppColors.outlineMuted, label: unansweredLabel),
       ],
@@ -655,7 +753,7 @@ class _LegendItem extends StatelessWidget {
           height: 10,
           decoration: BoxDecoration(
             color: color.withValues(alpha: color == AppColors.outlineMuted ? 0.35 : 0.2),
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             border: Border.all(color: color, width: 1),
           ),
         ),

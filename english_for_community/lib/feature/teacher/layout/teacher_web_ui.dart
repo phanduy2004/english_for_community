@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_fonts.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_mobile_ui.dart';
@@ -61,8 +62,7 @@ abstract final class TeacherWebUi {
   );
 
   static const List<BoxShadow> cardShadow = [
-    BoxShadow(color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4)),
-    BoxShadow(color: Color(0x04000000), blurRadius: 1, offset: Offset(0, 1)),
+    BoxShadow(color: AppColors.shadowCard, blurRadius: 6, offset: Offset(0, 2)),
   ];
 
   static BoxDecoration cardDecoration({Color? bg}) => BoxDecoration(
@@ -172,7 +172,7 @@ abstract final class TeacherWebUi {
   /// Viền + fill đồng bộ mọi field trong form workspace.
   static InputDecoration formInputDecoration(BuildContext context, {String? hintText}) {
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       borderSide: const BorderSide(color: AppColors.outline),
     );
     return InputDecoration(
@@ -185,11 +185,11 @@ abstract final class TeacherWebUi {
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         borderSide: const BorderSide(color: AppColors.danger),
       ),
     );
@@ -199,7 +199,7 @@ abstract final class TeacherWebUi {
   /// Custom choice tiles (assign exam, classroom picker) dùng cùng pattern — xem [choiceTileDecoration].
   static BoxDecoration choiceTileDecoration({required bool selected}) => BoxDecoration(
         color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(
           color: selected ? AppColors.primary : AppColors.outline,
           width: selected ? 1.5 : 1,
@@ -258,10 +258,67 @@ abstract final class TeacherWebUi {
         textStyle: _compactButtonText(context),
       );
 
-  static const EdgeInsets _compactButtonPadding = EdgeInsets.symmetric(horizontal: 12);
+  static const EdgeInsets _compactButtonPadding = EdgeInsets.symmetric(horizontal: AppSpacing.s4);
   static const RoundedRectangleBorder _compactButtonShape = RoundedRectangleBorder(
-    borderRadius: BorderRadius.all(Radius.circular(8)),
+    borderRadius: BorderRadius.all(Radius.circular(AppRadius.input)),
   );
+
+  // --- A11y / validation helpers (`docs/ui-ux-system/18` §5.6, §5.9) ---
+
+  /// Error text inline dưới field — KHÔNG dùng toast cho lỗi validate.
+  static Widget formFieldError(BuildContext context, String? message) {
+    if (message == null || message.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s2),
+      child: Text(
+        message,
+        style: webCaption(context).copyWith(color: AppColors.danger),
+      ),
+    );
+  }
+
+  /// Header icon button with focus ring (`18` §5.9).
+  static Widget headerIconButton({
+    required BuildContext context,
+    required IconData icon,
+    required VoidCallback? onPressed,
+    String? tooltip,
+    Color? color,
+  }) {
+    final radius = BorderRadius.circular(AppRadius.input);
+    return focusableTile(
+      onTap: onPressed,
+      borderRadius: radius,
+      tooltip: tooltip,
+      child: SizedBox(
+        width: 32,
+        height: 32,
+        child: Icon(icon, size: 18, color: color ?? AppColors.textSecondary),
+      ),
+    );
+  }
+
+  /// Bọc phần tử tap được để hiện **focus ring 2px** khi Tab + hover/press state.
+  /// Dùng cho sidebar tile, KPI card, dialog choice tile, icon action.
+  static Widget focusableTile({
+    required Widget child,
+    required VoidCallback? onTap,
+    BorderRadius? borderRadius,
+    String? tooltip,
+    String? semanticLabel,
+  }) {
+    final radius = borderRadius ?? BorderRadius.circular(AppRadius.card);
+    Widget tile = _FocusableTile(
+      onTap: onTap,
+      radius: radius,
+      semanticLabel: semanticLabel,
+      child: child,
+    );
+    if (tooltip != null && tooltip.isNotEmpty) {
+      tile = Tooltip(message: tooltip, child: tile);
+    }
+    return tile;
+  }
 
   static TextStyle _compactButtonText(BuildContext context) => webLabel(context).copyWith(
         fontSize: 12,
@@ -289,6 +346,60 @@ abstract final class TeacherWebUi {
         return AppColors.textPrimary;
       }),
       side: const WidgetStatePropertyAll(BorderSide(color: AppColors.outline, width: 1)),
+    );
+  }
+}
+
+/// Tile tap được có **focus ring 2px** (Tab) + hover/press overlay. `18` §5.9.
+class _FocusableTile extends StatefulWidget {
+  const _FocusableTile({
+    required this.child,
+    required this.onTap,
+    required this.radius,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final BorderRadius radius;
+  final String? semanticLabel;
+
+  @override
+  State<_FocusableTile> createState() => _FocusableTileState();
+}
+
+class _FocusableTileState extends State<_FocusableTile> {
+  bool _focused = false;
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final overlay = _hovered ? AppColors.hoverOverlay : Colors.transparent;
+    return Semantics(
+      button: widget.onTap != null,
+      label: widget.semanticLabel,
+      child: FocusableActionDetector(
+        enabled: widget.onTap != null,
+        onShowFocusHighlight: (v) => setState(() => _focused = v),
+        onShowHoverHighlight: (v) => setState(() => _hovered = v),
+        mouseCursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: AppMotion.effective(context, AppMotion.micro),
+            decoration: BoxDecoration(
+              color: overlay,
+              borderRadius: widget.radius,
+              border: Border.all(
+                color: _focused ? AppColors.focusRing : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
     );
   }
 }

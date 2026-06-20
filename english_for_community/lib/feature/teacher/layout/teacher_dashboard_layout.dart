@@ -170,7 +170,7 @@ class TeacherDashboardHeroBand extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         border: Border.all(color: AppColors.outline),
       ),
       child: Column(
@@ -268,7 +268,7 @@ class _AttentionRow extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
                 ),
                 child: Icon(icon, size: 13, color: color),
               ),
@@ -446,11 +446,11 @@ class TeacherDashboardPanel extends StatelessWidget {
     final decorated = DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         border: Border.all(color: AppColors.outline),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x06000000),
+            color: AppColors.shadowHairline,
             blurRadius: 0,
             offset: Offset(0, 1),
           ),
@@ -459,7 +459,7 @@ class TeacherDashboardPanel extends StatelessWidget {
       child: accentColor != null
           ? DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.sheet),
                 border: Border(left: BorderSide(color: accentColor, width: 3)),
               ),
               child: column,
@@ -468,16 +468,20 @@ class TeacherDashboardPanel extends StatelessWidget {
     );
 
     if (resolved != null) {
-      return SizedBox(
-        height: resolved,
-        width: double.infinity,
-        child: decorated,
+      return RepaintBoundary(
+        child: SizedBox(
+          height: resolved,
+          width: double.infinity,
+          child: decorated,
+        ),
       );
     }
     if (expand) {
-      return SizedBox(width: double.infinity, child: decorated);
+      return RepaintBoundary(
+        child: SizedBox(width: double.infinity, child: decorated),
+      );
     }
-    return decorated;
+    return RepaintBoundary(child: decorated);
   }
 }
 
@@ -500,7 +504,7 @@ class _PanelHeader extends StatelessWidget {
       decoration: const BoxDecoration(
         color: AppColors.surfaceSubtle,
         border: Border(bottom: BorderSide(color: AppColors.outlineMuted)),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s3, AppSpacing.s3, AppSpacing.s3),
@@ -570,7 +574,7 @@ class TeacherDashboardSectionHeader extends StatelessWidget {
             margin: const EdgeInsets.only(right: AppSpacing.s3, top: 2),
             decoration: BoxDecoration(
               color: AppColors.primary,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
           Expanded(
@@ -619,7 +623,7 @@ class TeacherDashboardWorkZoneShell extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Padding(
@@ -735,7 +739,7 @@ class TeacherDashboardClassroomTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         hoverColor: AppColors.primaryStrong,
         child: Ink(
           decoration: TeacherWebUi.panelDecoration(),
@@ -751,7 +755,7 @@ class TeacherDashboardClassroomTile extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.card),
                       border: Border.all(color: AppColors.outlineMuted),
                     ),
                     child: const Icon(Icons.groups_outlined, size: 20, color: AppColors.textPrimary),
@@ -773,7 +777,7 @@ class TeacherDashboardClassroomTile extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceSubtle,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                           border: Border.all(color: AppColors.outlineMuted),
                         ),
                         child: Text(
@@ -802,7 +806,7 @@ class TeacherDashboardClassroomTile extends StatelessWidget {
       ),
     );
 
-    return TeacherDashboardMotion.hoverLift(tile);
+    return TeacherDashboardMotion.hoverLift(tile, useScale: true);
   }
 }
 
@@ -905,7 +909,7 @@ class TeacherDashboardLegendBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: TeacherWebUi.cardDecoration(bg: AppColors.surfaceSubtle),
+      decoration: TeacherWebUi.panelDecoration(bg: AppColors.surfaceSubtle),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
       child: Wrap(
         spacing: AppSpacing.s4,
@@ -976,7 +980,7 @@ class TeacherDashboardInboxCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         hoverColor: AppColors.primaryTint.withValues(alpha: 0.35),
         child: Ink(
-          decoration: TeacherWebUi.cardDecoration(),
+          decoration: TeacherWebUi.panelDecoration(),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: kTeacherDashboardInboxCardMinHeight),
             child: IntrinsicHeight(
@@ -1139,7 +1143,7 @@ class TeacherDashboardInboxPanel extends StatelessWidget {
     final hidden = entries.length - visible.length;
 
     return DecoratedBox(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1168,7 +1172,9 @@ class TeacherDashboardInboxPanel extends StatelessWidget {
                           children: [
                             for (var i = 0; i < visible.length; i++) ...[
                               if (i > 0) const SizedBox(height: AppSpacing.s2),
-                              TeacherDashboardInboxCard(entry: visible[i]),
+                              RepaintBoundary(
+                                child: TeacherDashboardInboxCard(entry: visible[i]),
+                              ),
                             ],
                             if (hidden > 0 && onViewAll != null) ...[
                               const SizedBox(height: AppSpacing.s2),
@@ -1220,13 +1226,13 @@ class TeacherDashboardNavFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: TeacherWebUi.cardDecoration(bg: AppColors.surfaceSubtle),
+      decoration: TeacherWebUi.panelDecoration(bg: AppColors.surfaceSubtle),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
       child: Row(
         children: [
           InkWell(
             onTap: onOpenClasses,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.input),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: Row(

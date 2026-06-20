@@ -3,10 +3,12 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
+import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_attempt_grade_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_grading_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_gradebook_labels.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,9 +21,10 @@ enum _GradebookSort { nameAsc, nameDesc, avgDesc, avgAsc }
 
 /// Gradebook matrix — `docs/ui-ux-system/07` §2 + `08` gradebook.
 class TeacherGradebookView extends StatefulWidget {
-  const TeacherGradebookView({super.key, required this.data});
+  const TeacherGradebookView({super.key, required this.data, this.classroomId});
 
   final Map<String, dynamic> data;
+  final String? classroomId;
 
   @override
   State<TeacherGradebookView> createState() => _TeacherGradebookViewState();
@@ -115,6 +118,10 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
         child: TeacherEmptyCard(
           message: l10n.teacherGradebookNoAssignments,
           icon: Icons.assignment_outlined,
+          actionLabel: widget.classroomId != null ? l10n.teacherEmptyGradebookCta : null,
+          onAction: widget.classroomId != null
+              ? () => context.push('${TeacherClassroomDetailPage.routePath}/${widget.classroomId}')
+              : null,
         ),
       );
     }
@@ -128,7 +135,6 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
       );
     }
 
-    final tableWidth = _kStudentColWidth + assignments.length * _kAssignmentColWidth + 88;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -153,7 +159,7 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
         const SizedBox(height: AppSpacing.s4),
         Expanded(
           child: DecoratedBox(
-            decoration: TeacherWebUi.cardDecoration(),
+            decoration: TeacherWebUi.panelDecoration(),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(AppRadius.card),
               child: rows.isEmpty
@@ -167,39 +173,14 @@ class _TeacherGradebookViewState extends State<TeacherGradebookView> {
                         ),
                       ),
                     )
-                  : Scrollbar(
-                      thumbVisibility: true,
-                      child: SingleChildScrollView(
-                        padding: TeacherWebUi.pageScrollPadding(context).copyWith(top: AppSpacing.s4, bottom: AppSpacing.s4),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: tableWidth,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _HeaderRow(
-                                  assignments: assignments,
-                                  l10n: l10n,
-                                  onAssignmentTap: (id) => context.push('${TeacherExamGradingPage.routePath}/$id'),
-                                ),
-                                ...rows.map((row) => _StudentRow(
-                                      row: row,
-                                      assignments: assignments,
-                                      l10n: l10n,
-                                      onCellTap: (c) => _openCell(context, c),
-                                    )),
-                                _ClassAverageRow(
-                                  assignments: assignments,
-                                  classAvgs: _classAvgs,
-                                  classAvgPercent: summary?['classAvgPercent'],
-                                  l10n: l10n,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                  : _StickyGradebookTable(
+                      rows: rows,
+                      assignments: assignments,
+                      classAvgs: _classAvgs,
+                      classAvgPercent: summary?['classAvgPercent'],
+                      l10n: l10n,
+                      onAssignmentTap: (id) => context.push('${TeacherExamGradingPage.routePath}/$id'),
+                      onCellTap: (c) => _openCell(context, c),
                     ),
             ),
           ),
@@ -470,7 +451,7 @@ class _AssignmentHeaderCell extends StatelessWidget {
       children: [
         Tooltip(
           message: title,
-          waitDuration: const Duration(milliseconds: 400),
+          waitDuration: AppMotion.tooltipWait,
           child: Text(
             short,
             style: TeacherWebUi.webLabel(context).copyWith(
@@ -693,6 +674,425 @@ class _ClassAverageRow extends StatelessWidget {
               ),
             ),
           ),
+          ...assignments.map((a) {
+            final id = a['id'] as String? ?? '';
+            final avg = classAvgs.firstWhere(
+              (x) => x['assignmentId'] == id,
+              orElse: () => <String, dynamic>{},
+            );
+            final pct = avg['avgPercent'];
+            final sub = avg['submittedCount'] != null && avg['studentCount'] != null
+                ? '${avg['submittedCount']}/${avg['studentCount']}'
+                : null;
+            return SizedBox(
+              width: _kAssignmentColWidth,
+              height: _kRowHeight,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      pct is num ? '${pct.toStringAsFixed(pct % 1 == 0 ? 0 : 1)}%' : '—',
+                      style: TeacherWebUi.webBody(context).copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.15,
+                        fontFeatures: const [FontFeature.tabularFigures()],
+                      ),
+                      maxLines: 1,
+                    ),
+                    if (sub != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        sub,
+                        style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.1),
+                        maxLines: 1,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }),
+          SizedBox(
+            width: 88,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  classAvgPercent is num
+                      ? '${classAvgPercent.toStringAsFixed(classAvgPercent % 1 == 0 ? 0 : 1)}%'
+                      : '—',
+                  style: TeacherWebUi.webBody(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Sticky cột tên + header; ListView.builder khi >100 hàng (`18` §5.5).
+class _StickyGradebookTable extends StatefulWidget {
+  const _StickyGradebookTable({
+    required this.rows,
+    required this.assignments,
+    required this.classAvgs,
+    required this.classAvgPercent,
+    required this.l10n,
+    required this.onAssignmentTap,
+    required this.onCellTap,
+  });
+
+  final List<Map<String, dynamic>> rows;
+  final List<Map<String, dynamic>> assignments;
+  final List<Map<String, dynamic>> classAvgs;
+  final dynamic classAvgPercent;
+  final AppLocalizations l10n;
+  final void Function(String assignmentId) onAssignmentTap;
+  final void Function(Map<String, dynamic> cell) onCellTap;
+
+  @override
+  State<_StickyGradebookTable> createState() => _StickyGradebookTableState();
+}
+
+class _StickyGradebookTableState extends State<_StickyGradebookTable> {
+  final ScrollController _vLeft = ScrollController();
+  final ScrollController _vRight = ScrollController();
+  bool _syncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _vLeft.addListener(_syncLeftToRight);
+    _vRight.addListener(_syncRightToLeft);
+  }
+
+  void _syncLeftToRight() {
+    if (_syncing || !_vRight.hasClients) return;
+    _syncing = true;
+    _vRight.jumpTo(_vLeft.offset);
+    _syncing = false;
+  }
+
+  void _syncRightToLeft() {
+    if (_syncing || !_vLeft.hasClients) return;
+    _syncing = true;
+    _vLeft.jumpTo(_vRight.offset);
+    _syncing = false;
+  }
+
+  @override
+  void dispose() {
+    _vLeft.removeListener(_syncLeftToRight);
+    _vRight.removeListener(_syncRightToLeft);
+    _vLeft.dispose();
+    _vRight.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dataWidth = widget.assignments.length * _kAssignmentColWidth + 88;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(
+              width: _kStudentColWidth,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    height: _kHeaderHeight,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 12, 8, 8),
+                      child: Align(
+                        alignment: Alignment.bottomLeft,
+                        child: Text(
+                          widget.l10n.teacherGradebookStudent.toUpperCase(),
+                          style: TeacherWebUi.webTableHead(context),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _vLeft,
+                      itemCount: widget.rows.length,
+                      itemExtent: _kRowHeight,
+                      itemBuilder: (context, i) {
+                        final row = widget.rows[i];
+                        final rowId = (row['userId'] ?? row['id'])?.toString() ?? '$i';
+                        return RepaintBoundary(
+                          key: ValueKey('gb-name-$rowId'),
+                          child: _StudentNameCell(row: row),
+                        );
+                      },
+                    ),
+                  ),
+                  _ClassAverageStudentCell(l10n: widget.l10n),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: SizedBox(
+                  width: dataWidth,
+                  height: constraints.maxHeight,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _AssignmentHeadersRow(
+                        assignments: widget.assignments,
+                        l10n: widget.l10n,
+                        onAssignmentTap: widget.onAssignmentTap,
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          controller: _vRight,
+                          itemCount: widget.rows.length,
+                          itemExtent: _kRowHeight,
+                          itemBuilder: (context, i) {
+                            final row = widget.rows[i];
+                            final rowId = (row['userId'] ?? row['id'])?.toString() ?? '$i';
+                            return RepaintBoundary(
+                              key: ValueKey('gb-scores-$rowId'),
+                              child: _StudentScoresRow(
+                                row: row,
+                                assignments: widget.assignments,
+                                l10n: widget.l10n,
+                                onCellTap: widget.onCellTap,
+                                zebra: i.isOdd,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      _ClassAverageScoresRow(
+                        assignments: widget.assignments,
+                        classAvgs: widget.classAvgs,
+                        classAvgPercent: widget.classAvgPercent,
+                        l10n: widget.l10n,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StudentNameCell extends StatelessWidget {
+  const _StudentNameCell({required this.row});
+
+  final Map<String, dynamic> row;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = TeacherGradebookLabels.studentLabel(row);
+    final email = (row['email'] as String?)?.trim() ?? '';
+    return Container(
+      height: _kRowHeight,
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(bottom: BorderSide(color: AppColors.outlineMuted)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              name,
+              style: TeacherWebUi.listTitle(context).copyWith(fontSize: 13, height: 1.15),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (email.isNotEmpty) ...[
+              const SizedBox(height: 1),
+              Text(
+                email,
+                style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.1),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AssignmentHeadersRow extends StatelessWidget {
+  const _AssignmentHeadersRow({
+    required this.assignments,
+    required this.l10n,
+    required this.onAssignmentTap,
+  });
+
+  final List<Map<String, dynamic>> assignments;
+  final AppLocalizations l10n;
+  final void Function(String assignmentId) onAssignmentTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _kHeaderHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ...assignments.map((a) {
+            final id = a['id'] as String? ?? '';
+            return _AssignmentHeaderCell(
+              col: a,
+              l10n: l10n,
+              onTap: id.isNotEmpty ? () => onAssignmentTap(id) : null,
+            );
+          }),
+          SizedBox(
+            width: 88,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 12, 12, 8),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: Text(
+                  l10n.teacherGradebookColAvg.toUpperCase(),
+                  style: TeacherWebUi.webTableHead(context),
+                  textAlign: TextAlign.right,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StudentScoresRow extends StatelessWidget {
+  const _StudentScoresRow({
+    required this.row,
+    required this.assignments,
+    required this.l10n,
+    required this.onCellTap,
+    this.zebra = false,
+  });
+
+  final Map<String, dynamic> row;
+  final List<Map<String, dynamic>> assignments;
+  final AppLocalizations l10n;
+  final void Function(Map<String, dynamic> cell) onCellTap;
+  final bool zebra;
+
+  @override
+  Widget build(BuildContext context) {
+    final cells = (row['cells'] as List? ?? []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    final rowAvg = row['rowAvgPercent'];
+    return Container(
+      height: _kRowHeight,
+      color: zebra ? AppColors.surfaceSubtle : AppColors.surfaceCard,
+      child: Row(
+        children: [
+          ...assignments.map((a) {
+            final id = a['id'] as String? ?? '';
+            final cell = cells.firstWhere(
+              (c) => c['assignmentId'] == id,
+              orElse: () => <String, dynamic>{'assignmentId': id, 'status': 'not_started'},
+            );
+            return _ScoreCell(cell: cell, l10n: l10n, onTap: () => onCellTap(cell));
+          }),
+          SizedBox(
+            width: 88,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  rowAvg is num ? '${rowAvg.toStringAsFixed(rowAvg % 1 == 0 ? 0 : 1)}%' : '—',
+                  style: TeacherWebUi.webBody(context).copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    color: rowAvg is num ? AppColors.primaryDark : AppColors.textMuted,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClassAverageStudentCell extends StatelessWidget {
+  const _ClassAverageStudentCell({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _kRowHeight,
+      decoration: BoxDecoration(
+        color: AppColors.primaryTint.withValues(alpha: 0.35),
+        border: Border(top: BorderSide(color: AppColors.outline)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            l10n.teacherGradebookClassAverage,
+            style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w700, fontSize: 13),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ClassAverageScoresRow extends StatelessWidget {
+  const _ClassAverageScoresRow({
+    required this.assignments,
+    required this.classAvgs,
+    required this.classAvgPercent,
+    required this.l10n,
+  });
+
+  final List<Map<String, dynamic>> assignments;
+  final List<Map<String, dynamic>> classAvgs;
+  final dynamic classAvgPercent;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: _kRowHeight,
+      decoration: BoxDecoration(
+        color: AppColors.primaryTint.withValues(alpha: 0.35),
+        border: Border(top: BorderSide(color: AppColors.outline)),
+      ),
+      child: Row(
+        children: [
           ...assignments.map((a) {
             final id = a['id'] as String? ?? '';
             final avg = classAvgs.firstWhere(

@@ -10,6 +10,7 @@ import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_account_menu.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_dashboard_motion.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock.dart';
@@ -17,6 +18,7 @@ import 'package:english_for_community/feature/teacher/teacher_analytics_page.dar
 import 'package:english_for_community/feature/teacher/teacher_calendar_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -63,11 +65,13 @@ class _TeacherShellState extends State<TeacherShell> {
                         onToggleSidebar: () => setState(() => _collapsed = !_collapsed),
                       ),
                       Expanded(
-                        child: WorkspaceLayoutScope(
-                          useWebDensity: true,
-                          child: Theme(
-                            data: AppTheme.mergeWorkspaceWeb(context),
-                            child: widget.navigationShell,
+                        child: TeacherScrollActivityScope(
+                          child: WorkspaceLayoutScope(
+                            useWebDensity: true,
+                            child: Theme(
+                              data: AppTheme.mergeWorkspaceWeb(context),
+                              child: widget.navigationShell,
+                            ),
                           ),
                         ),
                       ),
@@ -129,9 +133,11 @@ class _TeacherMobileShell extends StatelessWidget {
               ],
             )
           : null,
-      body: WorkspaceLayoutScope(
-        useWebDensity: false,
-        child: navigationShell,
+      body: TeacherScrollActivityScope(
+        child: WorkspaceLayoutScope(
+          useWebDensity: false,
+          child: navigationShell,
+        ),
       ),
       bottomNavigationBar: showNav
           ? NavigationBar(
@@ -249,7 +255,7 @@ class _TeacherSidebar extends StatelessWidget {
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: AppColors.primaryTint,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(AppRadius.input),
                             ),
                             child: const Icon(Icons.school_outlined, size: 18, color: AppColors.primary),
                           ),
@@ -276,7 +282,7 @@ class _TeacherSidebar extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColors.primaryTint,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppRadius.input),
                           ),
                           child: const Icon(Icons.school_outlined, size: 16, color: AppColors.primary),
                         ),
@@ -365,26 +371,25 @@ class _SidebarNavTile extends StatelessWidget {
     final bg = selected ? AppColors.primaryTint : Colors.transparent;
     final fg = selected ? AppColors.primaryDark : AppColors.textPrimary;
     final weight = selected ? FontWeight.w600 : FontWeight.w400;
+    final radius = BorderRadius.circular(AppRadius.input);
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+      child: TeacherWebUi.focusableTile(
+        onTap: onTap,
+        borderRadius: radius,
+        tooltip: collapsed ? item.label : null,
+        semanticLabel: item.label,
+        child: Material(
+          color: bg,
+          borderRadius: radius,
           child: SizedBox(
             height: 40,
             child: collapsed
-                ? Tooltip(
-                    message: item.label,
-                    waitDuration: const Duration(milliseconds: 400),
-                    child: Center(
-                      child: Icon(
-                        selected ? item.selectedIcon : item.icon,
-                        size: 20,
-                        color: fg,
-                      ),
+                ? Center(
+                    child: Icon(
+                      selected ? item.selectedIcon : item.icon,
+                      size: 20,
+                      color: fg,
                     ),
                   )
                 : Row(
@@ -430,10 +435,10 @@ class _SidebarUserFooter extends StatelessWidget {
             child: Center(
               child: Tooltip(
                 message: name,
-                waitDuration: const Duration(milliseconds: 400),
+                waitDuration: AppMotion.tooltipWait,
                 child: InkWell(
                   onTap: () => showTeacherAccountMenu(context),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                   child: CircleAvatar(
                     radius: 16,
                     backgroundColor: AppColors.primaryTint,

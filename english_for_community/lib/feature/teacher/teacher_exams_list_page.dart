@@ -1,5 +1,5 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -119,10 +119,7 @@ class TeacherExamsListPage extends StatelessWidget {
       body: Builder(
         builder: (context) {
           if (loading) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 80),
-              child: Center(child: AppLoadingIndicator.center()),
-            );
+            return TeacherSkeleton.page(TeacherSkeleton.cardList(n: 4));
           }
           if (error != null) {
             return Center(
@@ -145,6 +142,8 @@ class TeacherExamsListPage extends StatelessWidget {
                   child: TeacherEmptyCard(
                     message: state.exams.isEmpty ? l10n.teacherExamsListEmpty : l10n.teacherExamsFilterEmpty,
                     icon: Icons.quiz_outlined,
+                    actionLabel: state.exams.isEmpty ? l10n.teacherDashboardActionNewExam : null,
+                    onAction: state.exams.isEmpty ? () => _newIntegratedDraft(context) : null,
                   ),
                 ),
               ],
@@ -191,15 +190,17 @@ class TeacherExamsListPage extends StatelessWidget {
 
                 final bloc = context.read<TeacherExamsListBloc>();
 
-                return TeacherListRow(
-                  onTap: id.isEmpty ? null : openEditor,
-                  leading: TeacherIconBadge(
-                    icon: integrated ? Icons.layers_outlined : Icons.quiz_outlined,
-                    color: integrated ? AppColors.secondary : AppColors.primary,
-                  ),
-                  title: title,
-                  subtitle: subtitle,
-                  trailing: Row(
+                return RepaintBoundary(
+                  key: ValueKey('exam-$id'),
+                  child: TeacherListRow(
+                    onTap: id.isEmpty ? null : openEditor,
+                    leading: TeacherIconBadge(
+                      icon: integrated ? Icons.layers_outlined : Icons.quiz_outlined,
+                      color: integrated ? AppColors.secondary : AppColors.primary,
+                    ),
+                    title: title,
+                    subtitle: subtitle,
+                    trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TeacherStatusPill(label: statusLabel, tone: tone),
@@ -276,6 +277,7 @@ class TeacherExamsListPage extends StatelessWidget {
                         ),
                       const Icon(Icons.chevron_right, size: 20, color: AppColors.textMuted),
                     ],
+                  ),
                   ),
                 );
               },
