@@ -1775,7 +1775,8 @@ export const examAttemptService = {
 
     const attempts = await ExamAttempt.find({ assignmentId: assignment._id })
       .sort({ submittedAt: -1, updatedAt: -1 })
-      .populate('userId', 'fullName email username');
+      .populate('userId', 'fullName email username')
+      .lean();
 
     const stats = {
       total: 0,
@@ -1787,8 +1788,7 @@ export const examAttemptService = {
       partial: 0,
     };
 
-    const rows = attempts.map((doc) => {
-      const plain = doc.toJSON ? doc.toJSON() : { ...doc };
+    const rows = attempts.map((plain) => {
       stats.total += 1;
       if (plain.status === 'submitted') stats.submitted += 1;
       if (plain.status === 'in_progress') stats.inProgress += 1;

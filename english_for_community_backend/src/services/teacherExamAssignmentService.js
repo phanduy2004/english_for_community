@@ -269,11 +269,20 @@ export const teacherExamAssignmentService = {
     return assignment;
   },
 
-  async listForTeacher(teacherId) {
-    const assignments = await ExamAssignment.find({ teacherId })
+  async listForTeacher(teacherId, { skip = 0, limit } = {}) {
+    let query = ExamAssignment.find({ teacherId })
       .sort({ updatedAt: -1 })
-      .populate('examId')
-      .populate('classroomId');
+      .populate('examId', 'title settings')
+      .populate('classroomId', 'name')
+      .lean();
+
+    const parsedSkip = Math.max(0, Number(skip) || 0);
+    if (limit != null && limit !== '') {
+      const parsedLimit = Math.min(500, Math.max(1, Number(limit) || 50));
+      query = query.skip(parsedSkip).limit(parsedLimit);
+    }
+
+    const assignments = await query;
 
     const activeSessionMap = await latestSessionMapForAssignments(assignments);
     const closedSessionMap = await latestClosedSessionMapForAssignments(assignments);

@@ -77,7 +77,9 @@ export const teacherGradebookService = {
       classroomId,
       status: 'active',
       roleInClass: 'student',
-    }).populate('userId', 'fullName email username');
+    })
+      .populate('userId', 'fullName email username')
+      .lean();
 
     const assignments = await ExamAssignment.find({
       audience: 'classroom',
@@ -85,16 +87,20 @@ export const teacherGradebookService = {
       mode: { $ne: 'practice' },
     })
       .sort({ createdAt: -1 })
-      .populate('examId', 'title');
+      .populate('examId', 'title')
+      .lean();
 
     const assignmentIds = assignments.map((a) => a._id);
+    const memberUserIds = members.map((m) =>
+      m.userId?._id ? m.userId._id : m.userId
+    );
     const attempts = assignmentIds.length
       ? await ExamAttempt.find({
           assignmentId: { $in: assignmentIds },
-          userId: { $in: members.map((m) => m.userId) },
-        }).select(
-          'userId assignmentId status scores gradingState resultsReleased submittedAt'
-        )
+          userId: { $in: memberUserIds },
+        })
+          .select('userId assignmentId status scores gradingState resultsReleased submittedAt')
+          .lean()
       : [];
 
     const byUserAssignment = new Map();
@@ -121,7 +127,10 @@ export const teacherGradebookService = {
 
     const rows = members.map((m) => {
       const u = m.userId;
-      const userId = u?._id?.toString() || m.userId.toString();
+      const userId =
+        u != null && typeof u === 'object' && u._id != null
+          ? u._id.toString()
+          : m.userId.toString();
       const cells = assignmentCols.map((col) => {
         const key = `${userId}:${col.id}`;
         const list = byUserAssignment.get(key) || [];
@@ -154,22 +163,22 @@ export const teacherGradebookService = {
       };
     });
 
-    const classAverageCells = assignmentCols.map((col) => {
-      const percents = rows
-        .map((r) => r.cells.find((c) => c.assignmentId === col.id)?.scorePercent)
-        .filter((p) => p != null);
-      const submitted = rows.filter((r) => {
-        const c = r.cells.find((x) => x.assignmentId === col.id);
-        return c && (c.status === 'submitted' || c.status === 'expired');
-      }).length;
-      const pendingGrading = rows.filter((r) => {
-        const c = r.cells.find((x) => x.assignmentId === col.id);
-        return c?.pendingGrading;
-      }).length;
+    const classAverageCells = assignmentCols.map((col, colIdx) => {
+      let sum = 0;
+      let scoredCount = 0;
+      let submitted = 0;
+      let pendingGrading = 0;
+      for (const r of rows) {
+        const c = r.cells[colIdx];
+        if (c.scorePercent != null) {
+          sum += c.scorePercent;
+          scoredCount++;
+        }
+        if (c.status === 'submitted' || c.status === 'expired') submitted++;
+        if (c.pendingGrading) pendingGrading++;
+      }
       const avgPercent =
-        percents.length > 0
-          ? Math.round((percents.reduce((a, b) => a + b, 0) / percents.length) * 10) / 10
-          : null;
+        scoredCount > 0 ? Math.round((sum / scoredCount) * 10) / 10 : null;
 
       return {
         assignmentId: col.id,

@@ -265,7 +265,8 @@ export const rotatePublicJoin = async (req, res) => {
 
 export const listMyAssignments = async (req, res) => {
   try {
-    const list = await teacherExamAssignmentService.listForTeacher(req.user._id);
+    const { skip, limit } = req.query;
+    const list = await teacherExamAssignmentService.listForTeacher(req.user._id, { skip, limit });
     return res.status(200).json(list);
   } catch (error) {
     return res.status(getStatusCode(error)).json({ message: error.message });

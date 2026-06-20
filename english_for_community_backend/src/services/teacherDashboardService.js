@@ -161,13 +161,15 @@ export const teacherDashboardService = {
           .populate('userId', 'fullName email')
           .populate('classroomId', 'name')
           .limit(50)
+          .lean()
       : [];
 
     const assignments = await ExamAssignment.find({ teacherId, status: 'active' })
       .populate('examId', 'title')
       .populate('classroomId', 'name')
       .sort({ updatedAt: -1 })
-      .limit(100);
+      .limit(100)
+      .lean();
 
     const assignmentIds = assignments.map((a) => a._id);
     const attemptStatsByAssignment = await buildAttemptStatsByAssignment(assignmentIds);
@@ -211,7 +213,7 @@ export const teacherDashboardService = {
   },
 
   async getAnalyticsSummary(teacherId) {
-    const assignments = await ExamAssignment.find({ teacherId }).select('_id status audience');
+    const assignments = await ExamAssignment.find({ teacherId }).select('_id status audience').lean();
     const assignmentIds = assignments.map((a) => a._id);
     const activeAssignments = assignments.filter((a) => a.status === 'active').length;
 
