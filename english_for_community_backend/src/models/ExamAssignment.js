@@ -31,6 +31,8 @@ const examAssignmentSchema = new mongoose.Schema(
 
 examAssignmentSchema.index({ teacherId: 1, updatedAt: -1 });
 examAssignmentSchema.index({ 'publicJoin.token': 1 }, { sparse: true });
+// P0-B3: classroom assignment list/filter (see doc 21 §3C).
+examAssignmentSchema.index({ classroomId: 1, audience: 1, status: 1 });
 
 examAssignmentSchema.set('toJSON', {
   transform: (doc, ret) => {

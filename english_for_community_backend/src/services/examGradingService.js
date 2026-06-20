@@ -136,6 +136,10 @@ export const examGradingService = {
 
   async runAiSuggestions(teacherId, attemptId) {
     const attempt = await assertTeacherOwnsAttempt(teacherId, attemptId);
+    return this.runAiSuggestionsOnAttempt(teacherId, attempt);
+  },
+
+  async runAiSuggestionsOnAttempt(teacherId, attempt) {
     if (attempt.status !== 'submitted') throw httpError(400, 'Attempt must be submitted');
 
     const examFormat = attempt.examSnapshot?.settings?.examFormat;
@@ -276,6 +280,10 @@ ${text || '(empty)'}`;
 
   async releaseResults(teacherId, attemptId, body = {}) {
     const attempt = await assertTeacherOwnsAttempt(teacherId, attemptId);
+    return this.releaseResultsOnAttempt(teacherId, attempt, body);
+  },
+
+  async releaseResultsOnAttempt(teacherId, attempt, body = {}) {
     const wasReleased = !!attempt.resultsReleased;
 
     const detailLevel = body?.resultsDetailLevel;
@@ -317,6 +325,10 @@ ${text || '(empty)'}`;
 
   async finalizeAttempt(teacherId, attemptId) {
     const attempt = await assertTeacherOwnsAttempt(teacherId, attemptId);
+    return this.finalizeAttemptOnAttempt(teacherId, attempt);
+  },
+
+  async finalizeAttemptOnAttempt(teacherId, attempt) {
     if (attempt.status !== 'submitted') {
       throw httpError(400, 'Only submitted attempts can be finalized');
     }
@@ -328,21 +340,25 @@ ${text || '(empty)'}`;
   async runAiBatchForAssignment(teacherId, assignmentId) {
     await teacherExamAssignmentService.assertTeacherOwnsAssignment(teacherId, assignmentId);
 
-    const submitted = await ExamAttempt.find({
+    const attempts = await ExamAttempt.find({
       assignmentId,
       status: 'submitted',
-    }).select('_id');
+    }).populate({
+      path: 'assignmentId',
+      select: 'teacherId classroomId',
+    });
 
-    const results = [];
-    for (const row of submitted) {
-      const id = row._id.toString();
-      try {
-        await this.runAiSuggestions(teacherId, id);
-        results.push({ attemptId: id, ok: true });
-      } catch (err) {
-        results.push({ attemptId: id, ok: false, message: err.message || 'AI grading failed' });
-      }
-    }
+    const results = await Promise.all(
+      attempts.map(async (attempt) => {
+        const id = attempt._id.toString();
+        try {
+          await this.runAiSuggestionsOnAttempt(teacherId, attempt);
+          return { attemptId: id, ok: true };
+        } catch (err) {
+          return { attemptId: id, ok: false, message: err.message || 'AI grading failed' };
+        }
+      })
+    );
     return { processed: results.length, results };
   },
 
@@ -352,17 +368,21 @@ ${text || '(empty)'}`;
       assignmentId,
       status: 'submitted',
       resultsReleased: { $ne: true },
+    }).populate({
+      path: 'assignmentId',
+      select: 'teacherId classroomId',
     });
-    const results = [];
-    for (const row of attempts) {
-      const id = row._id.toString();
-      try {
-        await this.releaseResults(teacherId, id);
-        results.push({ attemptId: id, ok: true });
-      } catch (err) {
-        results.push({ attemptId: id, ok: false, message: err.message || 'Release failed' });
-      }
-    }
+    const results = await Promise.all(
+      attempts.map(async (attempt) => {
+        const id = attempt._id.toString();
+        try {
+          await this.releaseResultsOnAttempt(teacherId, attempt);
+          return { attemptId: id, ok: true };
+        } catch (err) {
+          return { attemptId: id, ok: false, message: err.message || 'Release failed' };
+        }
+      })
+    );
     return { processed: results.length, results };
   },
 
@@ -372,17 +392,21 @@ ${text || '(empty)'}`;
       assignmentId,
       status: 'submitted',
       gradingState: { $ne: 'finalized' },
+    }).populate({
+      path: 'assignmentId',
+      select: 'teacherId classroomId',
     });
-    const results = [];
-    for (const row of attempts) {
-      const id = row._id.toString();
-      try {
-        await this.finalizeAttempt(teacherId, id);
-        results.push({ attemptId: id, ok: true });
-      } catch (err) {
-        results.push({ attemptId: id, ok: false, message: err.message || 'Finalize failed' });
-      }
-    }
+    const results = await Promise.all(
+      attempts.map(async (attempt) => {
+        const id = attempt._id.toString();
+        try {
+          await this.finalizeAttemptOnAttempt(teacherId, attempt);
+          return { attemptId: id, ok: true };
+        } catch (err) {
+          return { attemptId: id, ok: false, message: err.message || 'Finalize failed' };
+        }
+      })
+    );
     return { processed: results.length, results };
   },
 };

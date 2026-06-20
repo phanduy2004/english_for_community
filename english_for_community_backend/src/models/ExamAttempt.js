@@ -25,6 +25,13 @@ const examAttemptSchema = new mongoose.Schema(
 );
 
 examAttemptSchema.index({ assignmentId: 1, userId: 1, status: 1 });
+// P0-B3: compound indexes for gradebook/grading hub queries (see doc 21 §3C).
+examAttemptSchema.index({ assignmentId: 1, status: 1 });
+examAttemptSchema.index({ assignmentId: 1, submittedAt: -1 });
+examAttemptSchema.index({ sessionId: 1, status: 1 });
+examAttemptSchema.index({ sessionId: 1, userId: 1, status: 1 });
+examAttemptSchema.index({ status: 1, attemptDeadlineAt: 1 });
+examAttemptSchema.index({ userId: 1, status: 1 });
 
 examAttemptSchema.set('toJSON', {
   transform: (doc, ret) => {

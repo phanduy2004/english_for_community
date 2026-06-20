@@ -572,6 +572,469 @@ async function fetchWritingRecord(userId, topicId, bounds) {
   return { records: null, source: null };
 }
 
+function groupRowsByKey(rows, keyFn) {
+  const map = new Map();
+  for (const row of rows) {
+    const k = keyFn(row);
+    if (!map.has(k)) map.set(k, []);
+    map.get(k).push(row);
+  }
+  return map;
+}
+
+/** Batch dictation lookup keyed by listeningId string (P0-B1). */
+async function batchFetchListeningRecordsMap(userId, listeningOids, bounds, opts = {}) {
+  const map = new Map();
+  if (!userId || !bounds || listeningOids.length === 0) return map;
+  const examOnly = opts.examOnly === true;
+  const oidList = [...new Set(listeningOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+
+  const strictRows = await DictationAttempt.find({
+    userId,
+    listeningId: { $in: oidList },
+    $or: [
+      { updatedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+      { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+    ],
+  })
+    .select('listeningId cueIdx userText score submittedAt updatedAt')
+    .sort({ cueIdx: 1 })
+    .lean();
+
+  const strictById = groupRowsByKey(strictRows, (r) => String(r.listeningId));
+  const pending = [];
+  for (const oid of oidList) {
+    const key = oid.toString();
+    const strict = strictById.get(key) || [];
+    if (strict.length > 0) {
+      map.set(key, { records: strict, source: 'exam_window' });
+    } else if (!examOnly) {
+      pending.push(oid);
+    } else {
+      map.set(key, { records: [], source: null });
+    }
+  }
+  if (pending.length === 0) return map;
+
+  const softRows = await DictationAttempt.find({
+    userId,
+    listeningId: { $in: pending },
+    updatedAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+  })
+    .select('listeningId cueIdx userText score submittedAt updatedAt')
+    .lean();
+  const softById = groupRowsByKey(softRows, (r) => String(r.listeningId));
+  const stillPending = [];
+  for (const oid of pending) {
+    const key = oid.toString();
+    const picked = pickLatestDictationPerCue(softById.get(key) || []);
+    if (picked.length > 0) {
+      map.set(key, { records: picked, source: 'near_session' });
+    } else {
+      stillPending.push(oid);
+    }
+  }
+  if (stillPending.length === 0) return map;
+
+  const allRows = await DictationAttempt.find({
+    userId,
+    listeningId: { $in: stillPending },
+  })
+    .select('listeningId cueIdx userText score submittedAt updatedAt')
+    .lean();
+  const allById = groupRowsByKey(allRows, (r) => String(r.listeningId));
+  for (const oid of stillPending) {
+    const key = oid.toString();
+    const latest = pickLatestDictationPerCue(allById.get(key) || []);
+    map.set(key, {
+      records: latest,
+      source: latest.length > 0 ? 'latest_linked' : null,
+    });
+  }
+  return map;
+}
+
+/** Batch reading lookup keyed by readingId string (P0-B1). */
+async function batchFetchReadingRecordsMap(userId, readingOids, bounds, opts = {}) {
+  const map = new Map();
+  if (!userId || !bounds || readingOids.length === 0) return map;
+  const examOnly = opts.examOnly === true;
+  const oidList = [...new Set(readingOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+
+  const strictRows = await ReadingAttempt.find({
+    userId,
+    readingId: { $in: oidList },
+    createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  const strictById = new Map();
+  for (const row of strictRows) {
+    const key = String(row.readingId);
+    if (!strictById.has(key)) strictById.set(key, row);
+  }
+  const pending = [];
+  for (const oid of oidList) {
+    const key = oid.toString();
+    if (strictById.has(key)) {
+      map.set(key, { records: strictById.get(key), source: 'exam_window' });
+    } else if (!examOnly) {
+      pending.push(oid);
+    } else {
+      map.set(key, { records: null, source: null });
+    }
+  }
+  if (pending.length === 0) return map;
+
+  const softRows = await ReadingAttempt.find({
+    userId,
+    readingId: { $in: pending },
+    createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  const softById = new Map();
+  for (const row of softRows) {
+    const key = String(row.readingId);
+    if (!softById.has(key)) softById.set(key, row);
+  }
+  const stillPending = [];
+  for (const oid of pending) {
+    const key = oid.toString();
+    if (softById.has(key)) {
+      map.set(key, { records: softById.get(key), source: 'near_session' });
+    } else {
+      stillPending.push(oid);
+    }
+  }
+  if (stillPending.length === 0) return map;
+
+  const latestRows = await ReadingAttempt.find({
+    userId,
+    readingId: { $in: stillPending },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  const latestById = new Map();
+  for (const row of latestRows) {
+    const key = String(row.readingId);
+    if (!latestById.has(key)) latestById.set(key, row);
+  }
+  for (const oid of stillPending) {
+    const key = oid.toString();
+    const doc = latestById.get(key);
+    map.set(key, {
+      records: doc ?? null,
+      source: doc ? 'latest_linked' : null,
+    });
+  }
+  return map;
+}
+
+/** Batch speaking lookup keyed by speakingSetId string (P0-B1). */
+async function batchFetchSpeakingRecordsMap(userId, speakingSetIds, bounds, opts = {}) {
+  const map = new Map();
+  if (!userId || !bounds || speakingSetIds.length === 0) return map;
+  const examOnly = opts.examOnly === true;
+  const idList = [...new Set(speakingSetIds.map((id) => String(id).trim()).filter(Boolean))];
+
+  const strictRows = await SpeakingAttempt.find({
+    userId,
+    speakingSetId: { $in: idList },
+    $or: [
+      { createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+      { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+    ],
+  })
+    .select('speakingSetId sentenceId userTranscript score submittedAt createdAt')
+    .sort({ sentenceId: 1 })
+    .lean();
+  const strictById = groupRowsByKey(strictRows, (r) => String(r.speakingSetId));
+  const pending = [];
+  for (const id of idList) {
+    const strict = strictById.get(id) || [];
+    if (strict.length > 0) {
+      map.set(id, { records: strict, source: 'exam_window' });
+    } else if (!examOnly) {
+      pending.push(id);
+    } else {
+      map.set(id, { records: [], source: null });
+    }
+  }
+  if (pending.length === 0) return map;
+
+  const softRows = await SpeakingAttempt.find({
+    userId,
+    speakingSetId: { $in: pending },
+    createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+  })
+    .select('speakingSetId sentenceId userTranscript score submittedAt createdAt')
+    .sort({ sentenceId: 1 })
+    .lean();
+  const softById = groupRowsByKey(softRows, (r) => String(r.speakingSetId));
+  const stillPending = [];
+  for (const id of pending) {
+    const soft = softById.get(id) || [];
+    if (soft.length > 0) {
+      map.set(id, { records: soft, source: 'near_session' });
+    } else {
+      stillPending.push(id);
+    }
+  }
+  if (stillPending.length === 0) return map;
+
+  const latestRows = await SpeakingAttempt.find({
+    userId,
+    speakingSetId: { $in: stillPending },
+  })
+    .select('speakingSetId sentenceId userTranscript score submittedAt createdAt')
+    .sort({ createdAt: -1 })
+    .lean();
+  const latestById = groupRowsByKey(latestRows, (r) => String(r.speakingSetId));
+  for (const id of stillPending) {
+    const latest = latestById.get(id) || [];
+    map.set(id, {
+      records: latest.slice(0, 50),
+      source: latest.length > 0 ? 'latest_linked' : null,
+    });
+  }
+  return map;
+}
+
+/** Batch writing lookup keyed by topicId string (P0-B1). */
+async function batchFetchWritingRecordsMap(userId, topicOids, bounds) {
+  const map = new Map();
+  if (!userId || !bounds || topicOids.length === 0) return map;
+  const statuses = ['draft', 'submitted', 'reviewed'];
+  const selectFields = 'topicId content score status submittedAt createdAt feedback wordCount generatedPrompt';
+  const oidList = [...new Set(topicOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+
+  const strictRows = await WritingSubmission.find({
+    userId,
+    topicId: { $in: oidList },
+    status: { $in: statuses },
+    $or: [
+      { createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+      { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
+    ],
+  })
+    .sort({ updatedAt: -1 })
+    .select(selectFields)
+    .lean();
+  const strictById = new Map();
+  for (const row of strictRows) {
+    const key = String(row.topicId);
+    if (!strictById.has(key)) strictById.set(key, row);
+  }
+  const pending = [];
+  for (const oid of oidList) {
+    const key = oid.toString();
+    if (strictById.has(key)) {
+      map.set(key, { records: strictById.get(key), source: 'exam_window' });
+    } else {
+      pending.push(oid);
+    }
+  }
+  if (pending.length === 0) return map;
+
+  const softRows = await WritingSubmission.find({
+    userId,
+    topicId: { $in: pending },
+    status: { $in: statuses },
+    createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+  })
+    .sort({ updatedAt: -1 })
+    .select(selectFields)
+    .lean();
+  const softById = new Map();
+  for (const row of softRows) {
+    const key = String(row.topicId);
+    if (!softById.has(key)) softById.set(key, row);
+  }
+  const stillPending = [];
+  for (const oid of pending) {
+    const key = oid.toString();
+    if (softById.has(key)) {
+      map.set(key, { records: softById.get(key), source: 'near_session' });
+    } else {
+      stillPending.push(oid);
+    }
+  }
+  if (stillPending.length === 0) return map;
+
+  const latestRows = await WritingSubmission.find({
+    userId,
+    topicId: { $in: stillPending },
+    status: { $in: statuses },
+  })
+    .sort({ updatedAt: -1 })
+    .select(selectFields)
+    .lean();
+  const latestById = new Map();
+  for (const row of latestRows) {
+    const key = String(row.topicId);
+    if (!latestById.has(key)) latestById.set(key, row);
+  }
+  for (const oid of stillPending) {
+    const key = oid.toString();
+    const doc = latestById.get(key);
+    map.set(key, {
+      records: doc ?? null,
+      source: doc ? 'latest_linked' : null,
+    });
+  }
+  return map;
+}
+
+async function batchFetchListeningCuesMap(listeningOids) {
+  const map = new Map();
+  if (listeningOids.length === 0) return map;
+  const oidList = [...new Set(listeningOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+  const docs = await Listening.find({ _id: { $in: oidList } }).select('cues').lean();
+  for (const doc of docs) {
+    map.set(String(doc._id), Array.isArray(doc.cues) ? doc.cues : []);
+  }
+  return map;
+}
+
+async function batchFetchReadingQuestionsMap(readingOids) {
+  const map = new Map();
+  if (readingOids.length === 0) return map;
+  const oidList = [...new Set(readingOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+  const docs = await Reading.find({ _id: { $in: oidList } }).select('questions').lean();
+  for (const doc of docs) {
+    map.set(String(doc._id), Array.isArray(doc.questions) ? doc.questions : []);
+  }
+  return map;
+}
+
+async function batchFetchListeningCompMaps(userId, compOids, bounds) {
+  const docsById = new Map();
+  const attemptsById = new Map();
+  if (compOids.length === 0) return { docsById, attemptsById };
+  const oidList = [...new Set(compOids.map((o) => o.toString()))].map(
+    (s) => new mongoose.Types.ObjectId(s)
+  );
+  const docs = await ListeningComprehension.find({ _id: { $in: oidList } })
+    .select('title audioUrl questions')
+    .lean();
+  for (const doc of docs) {
+    docsById.set(String(doc._id), doc);
+  }
+  if (!userId || !bounds) return { docsById, attemptsById };
+
+  const strictRows = await ListeningCompAttempt.find({
+    userId,
+    listeningId: { $in: oidList },
+    createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+  for (const row of strictRows) {
+    const key = String(row.listeningId);
+    if (!attemptsById.has(key)) attemptsById.set(key, row);
+  }
+  const missing = oidList.filter((oid) => !attemptsById.has(oid.toString()));
+  if (missing.length > 0) {
+    const softRows = await ListeningCompAttempt.find({
+      userId,
+      listeningId: { $in: missing },
+      createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    for (const row of softRows) {
+      const key = String(row.listeningId);
+      if (!attemptsById.has(key)) attemptsById.set(key, row);
+    }
+  }
+  return { docsById, attemptsById };
+}
+
+function buildInlineListeningRecordsFromCues(cues, listeningCues, cueOffset = 0) {
+  if (!cues.length || !listeningCues) return [];
+  const records = [];
+  for (let i = 0; i < cues.length; i += 1) {
+    const expected = cues[i]?.text != null ? String(cues[i].text) : '';
+    const userText = listeningCueTextAt(listeningCues, cueOffset + i);
+    const { wer, correctWords, totalWords } = wordErrorRate(expected, userText);
+    const passed =
+      listeningCueTextIsCorrect(expected, userText) === true || wer <= WER_PASS_THRESHOLD;
+    records.push({
+      cueIdx: i,
+      userText,
+      score: { wer, correctWords, totalWords, thresholdWer: WER_PASS_THRESHOLD, passed },
+    });
+  }
+  return records;
+}
+
+function buildInlineReadingRecordFromQuestions(questions, readingAnswers) {
+  if (!questions.length || !readingAnswers) return null;
+  const answers = [];
+  let correctCount = 0;
+  for (let i = 0; i < questions.length; i += 1) {
+    const q = questions[i];
+    const qid = q._id != null ? String(q._id) : String(i);
+    const chosen = readingChosenForQuestion(readingAnswers, q, i);
+    const isCorrect = chosen !== undefined && readingChoiceIsCorrect(q, chosen) === true;
+    if (isCorrect) correctCount += 1;
+    answers.push({
+      questionId: qid,
+      chosenIndex: chosen ?? -1,
+      isCorrect,
+    });
+  }
+  const totalQuestions = questions.length;
+  const score =
+    totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 1000) / 10 : 0;
+  return { answers, score, correctCount, totalQuestions };
+}
+
+function resolveListeningCompRecordForGrading(compDoc, attemptDoc, secAns) {
+  if (!compDoc) return null;
+  const inlineAnswers = secAns?.listeningCompAnswers;
+  if (inlineAnswers && typeof inlineAnswers === 'object' && Object.keys(inlineAnswers).length > 0) {
+    return {
+      questions: compDoc.questions,
+      answers: inlineAnswers,
+      audioUrl: compDoc.audioUrl,
+      title: compDoc.title,
+      source: 'exam_inline',
+    };
+  }
+  if (attemptDoc) {
+    const byQid = {};
+    for (const a of Array.isArray(attemptDoc.answers) ? attemptDoc.answers : []) {
+      byQid[String(a.questionId)] = a.chosenIndex;
+    }
+    return {
+      questions: compDoc.questions,
+      answers: byQid,
+      audioUrl: compDoc.audioUrl,
+      title: compDoc.title,
+      source: 'near_session',
+    };
+  }
+  return {
+    questions: compDoc.questions,
+    answers: {},
+    audioUrl: compDoc.audioUrl,
+    title: compDoc.title,
+    source: null,
+  };
+}
+
 /** Rebuild per-skill 0–10 scores when legacy attempts lack `skillScores`. */
 async function ensureIntegratedScoresOnAttempt(attemptDoc) {
   const exam = attemptDoc.examSnapshot;
@@ -792,8 +1255,68 @@ async function attachSkillWorkForGrading(attemptDoc) {
   const hasTimeWindow =
     userId && startedAt && !Number.isNaN(startedAt.getTime());
   const bounds = hasTimeWindow ? examTimeBounds(startedAt, endAt) : null;
+  const sections = skillSectionsFromExam(exam);
 
-  for (const sec of skillSectionsFromExam(exam)) {
+  const listeningOids = [];
+  const compOids = [];
+  const readingOids = [];
+  const speakingIds = [];
+  const writingOids = [];
+
+  for (const sec of sections) {
+    for (const res of resourcesFromSkillSection(sec)) {
+      const resourceOid = resolveMongoResourceId(res.id);
+      if (!resourceOid) continue;
+      switch (sec.skill) {
+        case 'listening':
+          if ((sec.sectionConfig?.listeningType || 'dictation') === 'comprehension') {
+            compOids.push(resourceOid);
+          } else {
+            listeningOids.push(resourceOid);
+          }
+          break;
+        case 'reading':
+          readingOids.push(resourceOid);
+          break;
+        case 'speaking':
+          speakingIds.push(String(res.id).trim());
+          break;
+        case 'writing':
+          writingOids.push(resourceOid);
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  const [
+    listeningMap,
+    readingMap,
+    speakingMap,
+    writingMap,
+    listeningCuesMap,
+    readingQuestionsMap,
+    listeningCompMaps,
+  ] = await Promise.all([
+    bounds && userId
+      ? batchFetchListeningRecordsMap(userId, listeningOids, bounds)
+      : Promise.resolve(new Map()),
+    bounds && userId
+      ? batchFetchReadingRecordsMap(userId, readingOids, bounds)
+      : Promise.resolve(new Map()),
+    bounds && userId
+      ? batchFetchSpeakingRecordsMap(userId, speakingIds, bounds)
+      : Promise.resolve(new Map()),
+    bounds && userId
+      ? batchFetchWritingRecordsMap(userId, writingOids, bounds)
+      : Promise.resolve(new Map()),
+    batchFetchListeningCuesMap(listeningOids),
+    batchFetchReadingQuestionsMap(readingOids),
+    batchFetchListeningCompMaps(userId, compOids, bounds),
+  ]);
+
+  for (const sec of sections) {
     const sid = String(sec.sectionId || '').trim();
     if (!sid) continue;
     const secAns =
@@ -805,6 +1328,7 @@ async function attachSkillWorkForGrading(attemptDoc) {
     for (const res of resourcesFromSkillSection(sec)) {
       const resourceOid = resolveMongoResourceId(res.id);
       if (!resourceOid) continue;
+      const resourceKey = resourceOid.toString();
 
       let records = null;
       let source = null;
@@ -812,22 +1336,27 @@ async function attachSkillWorkForGrading(attemptDoc) {
         case 'listening': {
           const listeningType = sec.sectionConfig?.listeningType || 'dictation';
           if (listeningType === 'comprehension') {
-            const compRecord = await fetchListeningCompRecordForGrading(userId, res.id, bounds, secAns);
+            const compRecord = resolveListeningCompRecordForGrading(
+              listeningCompMaps.docsById.get(resourceKey),
+              listeningCompMaps.attemptsById.get(resourceKey),
+              secAns
+            );
             if (compRecord) {
               records = compRecord;
               source = compRecord.source || null;
             }
           } else {
             if (bounds && userId) {
-              const r = await fetchListeningRecords(userId, resourceOid, bounds);
-              records = r.records;
-              source = r.source;
+              const cached = listeningMap.get(resourceKey);
+              records = cached?.records;
+              source = cached?.source ?? null;
             } else {
               records = [];
             }
             if ((!records || records.length === 0) && secAns?.listeningCues) {
-              const inline = await buildInlineListeningRecords(
-                resourceOid,
+              const cues = listeningCuesMap.get(resourceKey) || [];
+              const inline = buildInlineListeningRecordsFromCues(
+                cues,
                 secAns.listeningCues,
                 listeningCueOffset
               );
@@ -836,21 +1365,19 @@ async function attachSkillWorkForGrading(attemptDoc) {
                 source = 'exam_inline';
               }
             }
-            {
-              const doc = await Listening.findById(resourceOid).select('cues').lean();
-              listeningCueOffset += Array.isArray(doc?.cues) ? doc.cues.length : 0;
-            }
+            listeningCueOffset += (listeningCuesMap.get(resourceKey) || []).length;
           }
           break;
         }
         case 'reading': {
           if (bounds && userId) {
-            const r = await fetchReadingRecord(userId, resourceOid, bounds);
-            records = r.records;
-            source = r.source;
+            const cached = readingMap.get(resourceKey);
+            records = cached?.records;
+            source = cached?.source ?? null;
           }
           if (!records && secAns?.readingAnswers) {
-            const inline = await buildInlineReadingRecord(resourceOid, secAns.readingAnswers);
+            const questions = readingQuestionsMap.get(resourceKey) || [];
+            const inline = buildInlineReadingRecordFromQuestions(questions, secAns.readingAnswers);
             if (inline) {
               records = inline;
               source = 'exam_inline';
@@ -860,13 +1387,12 @@ async function attachSkillWorkForGrading(attemptDoc) {
         }
         case 'speaking': {
           if (bounds && userId) {
-            // Display only records from the exam window (strict or near-session).
-            // latest_linked records from old practice sessions are intentionally excluded —
-            // showing them would mislead the teacher into thinking the student did speaking in this exam.
-            const { records: spRecs, source: spSrc } = await fetchSpeakingRecords(userId, res.id, bounds);
+            const speakKey = String(res.id).trim();
+            const cached = speakingMap.get(speakKey);
+            const spSrc = cached?.source;
             if (spSrc !== 'latest_linked') {
-              records = spRecs;
-              source = spSrc;
+              records = cached?.records ?? [];
+              source = spSrc ?? null;
             } else {
               records = [];
               source = null;
@@ -878,14 +1404,13 @@ async function attachSkillWorkForGrading(attemptDoc) {
         }
         case 'writing': {
           if (bounds && userId) {
-            const r = await fetchWritingRecord(userId, resourceOid, bounds);
-            if (r.records) {
-              const hasContent = String(r.records.content ?? '').trim().length > 0;
-              const hasPrompt = r.records.generatedPrompt?.text || r.records.generatedPrompt?.title;
-              // Attach if student wrote something OR if there is a generated prompt to show
+            const cached = writingMap.get(resourceKey);
+            if (cached?.records) {
+              const hasContent = String(cached.records.content ?? '').trim().length > 0;
+              const hasPrompt = cached.records.generatedPrompt?.text || cached.records.generatedPrompt?.title;
               if (hasContent || hasPrompt) {
-                records = r.records;
-                source = r.source;
+                records = cached.records;
+                source = cached.source;
               }
             }
           }
