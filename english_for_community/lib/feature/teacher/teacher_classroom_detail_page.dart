@@ -1,6 +1,6 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'dart:async';
 
-import 'package:english_for_community/core/ui/motion/app_motion.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -24,6 +24,7 @@ import 'package:english_for_community/feature/teacher/bloc/classroom/teacher_cla
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/teacher/teacher_gradebook_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/services.dart';
@@ -432,7 +433,7 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
         ),
       ],
       body: loading
-          ? const Center(child: AppLoadingIndicator.center())
+          ? TeacherSkeleton.page(TeacherSkeleton.dashboard())
           : error != null
               ? Center(
                   child: Padding(
@@ -749,6 +750,8 @@ class _OverviewTab extends StatelessWidget {
             TeacherEmptyCard(
               message: l10n.teacherClassNoAssignments,
               icon: Icons.assignment_outlined,
+              actionLabel: l10n.teacherClassAssignExamCta,
+              onAction: onAssignExam,
             )
           else
             ...recentAssignments.map(
@@ -760,18 +763,6 @@ class _OverviewTab extends StatelessWidget {
                 onDelete: () => onDeleteAssignment(m),
               ),
             ),
-          if (recentAssignments.isEmpty) ...[
-            const SizedBox(height: AppSpacing.s5),
-            TeacherInlineActions(
-              children: [
-                TeacherFilledButton(
-                  label: l10n.teacherClassAssignExamCta,
-                  icon: Icons.add_task_outlined,
-                  onPressed: onAssignExam,
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: AppSpacing.s9),
         ],
       ),
@@ -1077,7 +1068,7 @@ class _MembersTabState extends State<_MembersTab> {
                     minimumSize: const Size(0, 36),
                     textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                     side: const BorderSide(color: AppColors.outline),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                   ),
                 ),
               ),
@@ -1162,7 +1153,7 @@ class _MembersTabState extends State<_MembersTab> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
               child: Text(
                 '$count',
@@ -1226,7 +1217,7 @@ class _MemberRow extends StatelessWidget {
     return Material(
       color: AppColors.surfaceCard,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         side: const BorderSide(color: AppColors.outline),
       ),
       child: Padding(
@@ -1248,7 +1239,7 @@ class _MemberRow extends StatelessWidget {
     if (avatar != null && avatar!.isNotEmpty) {
       return CircleAvatar(
         radius: 18,
-        backgroundImage: NetworkImage(avatar!),
+        backgroundImage: TeacherWebUi.networkAvatar(avatar, logicalSize: 36),
         backgroundColor: AppColors.surfaceSubtle,
       );
     }
@@ -1346,7 +1337,7 @@ class _StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
@@ -1382,9 +1373,9 @@ class _CompactActionButton extends StatelessWidget {
 
     return Material(
       color: bg,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         onTap: onPressed,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1422,7 +1413,7 @@ class _ActivityTabState extends State<_ActivityTab> {
     return BlocBuilder<TeacherClassroomBloc, TeacherClassroomState>(
       builder: (context, state) {
         if (state.activityReloading && state.activityRows.isEmpty) {
-          return const Center(child: AppLoadingIndicator.center());
+          return TeacherSkeleton.page(TeacherSkeleton.table(rows: 6));
         }
         if (state.activityRows.isEmpty) {
           return RefreshIndicator(
@@ -1449,7 +1440,7 @@ class _ActivityTabState extends State<_ActivityTab> {
               return ListTile(
                 tileColor: AppColors.surfaceCard,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   side: const BorderSide(color: AppColors.outline),
                 ),
                 title: Text(msg, style: TeacherWebUi.listTitle(context)),
@@ -1615,7 +1606,7 @@ class _SettingsTabState extends State<_SettingsTab> {
       return;
     }
     setState(() => _searching = true);
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () => _runCoTeacherSearch(q));
+    _searchDebounce = Timer(AppMotion.debounce, () => _runCoTeacherSearch(q));
   }
 
   Future<void> _runCoTeacherSearch(String query) async {
@@ -1932,7 +1923,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                         Material(
                           color: AppColors.surfaceSubtle,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                             side: const BorderSide(color: AppColors.outline),
                           ),
                           clipBehavior: Clip.antiAlias,
@@ -2021,7 +2012,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
                           color: AppColors.primaryTint,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(AppRadius.card),
                           border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                         ),
                         child: SelectableText(
@@ -2044,7 +2035,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceSubtle,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                             border: Border.all(color: AppColors.outline),
                           ),
                           child: SelectableText(
@@ -2189,7 +2180,7 @@ class _CoTeacherSearchResultRow extends StatelessWidget {
             radius: 18,
             backgroundColor: AppColors.primaryTint,
             backgroundImage: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
-                ? NetworkImage(teacher['avatarUrl'] as String)
+                ? TeacherWebUi.networkAvatar(teacher['avatarUrl'] as String, logicalSize: 36)
                 : null,
             child: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
                 ? null
@@ -2341,7 +2332,7 @@ class _TeacherPersonTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
       ),
       child: Row(
@@ -2349,7 +2340,7 @@ class _TeacherPersonTile extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.primaryTint,
-            backgroundImage: (avatarUrl != null && avatarUrl!.isNotEmpty) ? NetworkImage(avatarUrl!) : null,
+            backgroundImage: TeacherWebUi.networkAvatar(avatarUrl, logicalSize: 36),
             child: (avatarUrl == null || avatarUrl!.isEmpty)
                 ? Text(initial, style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w700))
                 : null,
@@ -2377,7 +2368,7 @@ class _TeacherPersonTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
                 border: Border.all(color: (badgeColor ?? AppColors.primary).withValues(alpha: 0.35)),
               ),
               child: Text(
@@ -2466,7 +2457,7 @@ class _InvitePanel extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.primaryTint,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
             ),
             child: SelectableText(

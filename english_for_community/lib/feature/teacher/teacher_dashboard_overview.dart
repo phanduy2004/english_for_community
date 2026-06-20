@@ -158,7 +158,7 @@ class TeacherDashboardOverviewBody extends StatelessWidget {
           ),
         ),
         if (classrooms.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.s4),
+          const SizedBox(height: AppSpacing.s6),
           _ClassroomStrip(
             l10n: l10n,
             classrooms: classrooms,
@@ -579,6 +579,7 @@ class _ClassroomStrip extends StatelessWidget {
                   final count = memberCount(m, 'memberCountActive');
                   final code = (m['inviteCode'] as String?)?.trim() ?? '';
                   return _ClassroomChip(
+                    key: ValueKey(id),
                     name: name,
                     meta: l10n.teacherClassroomMemberCountActive(count),
                     inviteCode: code,
@@ -598,6 +599,7 @@ class _ClassroomStrip extends StatelessWidget {
 
 class _ClassroomChip extends StatelessWidget {
   const _ClassroomChip({
+    super.key,
     required this.name,
     required this.meta,
     required this.inviteCode,
@@ -618,7 +620,7 @@ class _ClassroomChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         child: Ink(
           width: 220,
-          decoration: TeacherWebUi.cardDecoration(),
+          decoration: TeacherWebUi.panelDecoration(),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s2),
           child: Row(
             children: [

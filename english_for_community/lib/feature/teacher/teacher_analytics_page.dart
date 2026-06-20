@@ -92,7 +92,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
                                 _KpiRow(summary: summary, charts: charts ?? const {}),
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.s8),
+                        const SizedBox(height: AppSpacing.s6),
                         _SectionTitle(l10n.teacherAnalyticsSubmissionsChart),
                         const SizedBox(height: AppSpacing.s4),
                         BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
@@ -102,7 +102,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
                             child: _SubmissionsChart(rows: data.$1, maxY: data.$2),
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.s8),
+                        const SizedBox(height: AppSpacing.s6),
                         _SectionTitle(l10n.teacherAnalyticsScoreChart),
                         const SizedBox(height: AppSpacing.s4),
                         BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
@@ -121,19 +121,19 @@ class _TeacherAnalyticsView extends StatelessWidget {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                const SizedBox(height: AppSpacing.s8),
+                                const SizedBox(height: AppSpacing.s6),
                                 _SectionTitle(l10n.teacherAnalyticsSkillBreakdown),
                                 const SizedBox(height: AppSpacing.s4),
                                 _SkillBreakdownSection(data: charts),
-                                const SizedBox(height: AppSpacing.s8),
+                                const SizedBox(height: AppSpacing.s6),
                                 _SectionTitle(l10n.teacherAnalyticsModeBreakdown),
                                 const SizedBox(height: AppSpacing.s4),
                                 _ModeBreakdownRow(data: charts),
-                                const SizedBox(height: AppSpacing.s8),
+                                const SizedBox(height: AppSpacing.s6),
                                 _SectionTitle(l10n.teacherAnalyticsIntegrityChart),
                                 const SizedBox(height: AppSpacing.s4),
                                 _IntegrityRow(data: charts),
-                                const SizedBox(height: AppSpacing.s8),
+                                const SizedBox(height: AppSpacing.s6),
                               ],
                             );
                           },
@@ -325,21 +325,58 @@ class _TrendBadge extends StatelessWidget {
 
 // ── Submissions bar chart ──────────────────────────────────────────────────────
 
-class _SubmissionsChart extends StatelessWidget {
+class _SubmissionsChart extends StatefulWidget {
   const _SubmissionsChart({required this.rows, required this.maxY});
 
   final List<Map<String, dynamic>> rows;
   final double maxY;
 
   @override
+  State<_SubmissionsChart> createState() => _SubmissionsChartState();
+}
+
+class _SubmissionsChartState extends State<_SubmissionsChart> {
+  List<BarChartGroupData>? _barGroups;
+  String? _rowsKey;
+  double? _maxY;
+
+  String _cacheKey(List<Map<String, dynamic>> rows) =>
+      rows.map((r) => '${r['date']}:${r['count']}').join('|');
+
+  List<BarChartGroupData> _barGroupsFor(List<Map<String, dynamic>> rows) {
+    final key = _cacheKey(rows);
+    if (_barGroups != null && _rowsKey == key && _maxY == widget.maxY) {
+      return _barGroups!;
+    }
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    _rowsKey = key;
+    _maxY = widget.maxY;
+    _barGroups = [
+      for (var i = 0; i < rows.length; i++)
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
+              color: rows[i]['date'] == today ? AppColors.chartHighlight : AppColors.chartBar,
+              width: rows.length > 14 ? 8 : 12,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+            ),
+          ],
+        ),
+    ];
+    return _barGroups!;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final rows = widget.rows;
     if (rows.isEmpty) {
       return Center(child: Text(context.l10n.teacherAnalyticsNoData, style: TeacherWebUi.webBody(context)));
     }
-    final today = DateTime.now().toIso8601String().substring(0, 10);
     return BarChart(
       BarChartData(
-        maxY: maxY + 1,
+        maxY: widget.maxY + 1,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -366,20 +403,7 @@ class _SubmissionsChart extends StatelessWidget {
             ),
           ),
         ),
-        barGroups: [
-          for (var i = 0; i < rows.length; i++)
-            BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
-                  color: rows[i]['date'] == today ? AppColors.chartHighlight : AppColors.chartBar,
-                  width: rows.length > 14 ? 8 : 12,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-                ),
-              ],
-            ),
-        ],
+        barGroups: _barGroupsFor(rows),
       ),
     );
   }
@@ -387,7 +411,7 @@ class _SubmissionsChart extends StatelessWidget {
 
 // ── Score distribution chart ───────────────────────────────────────────────────
 
-class _ScoreDistChart extends StatelessWidget {
+class _ScoreDistChart extends StatefulWidget {
   const _ScoreDistChart({required this.rows, required this.maxY});
 
   final List<Map<String, dynamic>> rows;
@@ -396,13 +420,50 @@ class _ScoreDistChart extends StatelessWidget {
   static const List<Color> _bucketColors = AppScoreScale.ramp;
 
   @override
+  State<_ScoreDistChart> createState() => _ScoreDistChartState();
+}
+
+class _ScoreDistChartState extends State<_ScoreDistChart> {
+  List<BarChartGroupData>? _barGroups;
+  String? _rowsKey;
+  double? _maxY;
+
+  String _cacheKey(List<Map<String, dynamic>> rows) =>
+      rows.map((r) => '${r['range']}:${r['count']}').join('|');
+
+  List<BarChartGroupData> _barGroupsFor(List<Map<String, dynamic>> rows) {
+    final key = _cacheKey(rows);
+    if (_barGroups != null && _rowsKey == key && _maxY == widget.maxY) {
+      return _barGroups!;
+    }
+    _rowsKey = key;
+    _maxY = widget.maxY;
+    _barGroups = [
+      for (var i = 0; i < rows.length; i++)
+        BarChartGroupData(
+          x: i,
+          barRods: [
+            BarChartRodData(
+              toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
+              color: _ScoreDistChart._bucketColors[i % _ScoreDistChart._bucketColors.length],
+              width: 28,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            ),
+          ],
+        ),
+    ];
+    return _barGroups!;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final rows = widget.rows;
     if (rows.isEmpty) {
       return Center(child: Text(context.l10n.teacherAnalyticsNoData, style: TeacherWebUi.webBody(context)));
     }
     return BarChart(
       BarChartData(
-        maxY: maxY + 1,
+        maxY: widget.maxY + 1,
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
@@ -435,20 +496,7 @@ class _ScoreDistChart extends StatelessWidget {
             ),
           ),
         ),
-        barGroups: [
-          for (var i = 0; i < rows.length; i++)
-            BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
-                  color: _bucketColors[i % _bucketColors.length],
-                  width: 28,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                ),
-              ],
-            ),
-        ],
+        barGroups: _barGroupsFor(rows),
       ),
     );
   }
@@ -490,7 +538,7 @@ class _SkillBreakdownSection extends StatelessWidget {
     }
 
     return Container(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       padding: const EdgeInsets.all(AppSpacing.s5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

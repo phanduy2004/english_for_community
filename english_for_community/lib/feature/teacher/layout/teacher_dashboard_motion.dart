@@ -43,21 +43,23 @@ abstract final class TeacherDashboardMotion {
     return _HoverLift(scale: scale, useScale: useScale, child: child);
   }
 
-  /// Pulsing dot for live / urgent states.
+  /// Pulsing dot for live / urgent states (P1-R4: dot only, pause while scrolling).
   static Widget livePulse(Widget child, {required bool active}) {
-    return Builder(
-      builder: (context) {
-        if (!active || MediaQuery.disableAnimationsOf(context)) return child;
-        return child
-            .animate(onPlay: (c) => c.repeat(reverse: true))
-            .scale(
-              begin: const Offset(0.92, 0.92),
-              end: const Offset(1.08, 1.08),
-              duration: AppMotion.pulse,
-              curve: Curves.easeInOut,
-            )
-            .fadeIn(duration: AppMotion.fade);
-      },
+    return RepaintBoundary(
+      child: Builder(
+        builder: (context) {
+          if (!active || MediaQuery.disableAnimationsOf(context)) return child;
+          if (TeacherScrollActivity.isScrollingOf(context)) return child;
+          return child
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                begin: const Offset(0.92, 0.92),
+                end: const Offset(1.08, 1.08),
+                duration: AppMotion.pulse,
+                curve: Curves.easeInOut,
+              );
+        },
+      ),
     );
   }
 }

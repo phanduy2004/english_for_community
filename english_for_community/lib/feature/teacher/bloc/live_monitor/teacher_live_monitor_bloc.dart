@@ -3,6 +3,7 @@ import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_derived.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_state.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Merges socket/API live payloads without resetting UI focus from progress-only events.
@@ -80,15 +81,38 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
   }) {
     final enriched = students.map(enrichLiveMonitorStudentRow).toList();
     final nextSummary = summary ?? summaryFromLiveMonitorStudents(enriched);
+    final nextVisible = filterLiveMonitorStudents(enriched, state.filter);
+
+    if (status == null &&
+        !clearError &&
+        state.status == TeacherLiveMonitorStatus.success &&
+        _sameEnrichedRoster(state.students, enriched) &&
+        mapEquals(state.summary, nextSummary) &&
+        _sameEnrichedRoster(state.visibleStudents, nextVisible)) {
+      return;
+    }
+
     emit(state.copyWith(
       status: status ?? state.status,
       students: enriched,
       summary: nextSummary,
-      visibleStudents: filterLiveMonitorStudents(enriched, state.filter),
+      visibleStudents: nextVisible,
       studentsByUserId: indexLiveMonitorStudents(enriched),
       dataRevision: state.dataRevision + 1,
       clearError: clearError,
     ));
+  }
+
+  bool _sameEnrichedRoster(List<Map<String, dynamic>> before, List<Map<String, dynamic>> after) {
+    if (before.length != after.length) return false;
+    final afterById = indexLiveMonitorStudents(after);
+    for (final s in before) {
+      final id = s['userId']?.toString();
+      if (id == null || id.isEmpty) return false;
+      final other = afterById[id];
+      if (other == null || liveMonitorRowVisualChanged(s, other)) return false;
+    }
+    return true;
   }
 
   void _ingestSnapshot(Map<String, dynamic> data, Emitter<TeacherLiveMonitorState> emit) {

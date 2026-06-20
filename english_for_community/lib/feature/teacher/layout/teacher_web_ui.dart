@@ -79,6 +79,14 @@ abstract final class TeacherWebUi {
         border: Border.all(color: AppColors.outline, width: 1),
       );
 
+  /// Decode avatars at display size (P1-R6) — pass logical diameter in px.
+  static ImageProvider? networkAvatar(String? url, {double logicalSize = 36}) {
+    if (url == null || url.isEmpty) return null;
+    final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final px = (logicalSize * dpr).ceil();
+    return ResizeImage.resizeIfNeeded(px, px, NetworkImage(url));
+  }
+
   /// Inline text action in data tables (Open, Grade, Copy…).
   static ButtonStyle linkActionStyle(BuildContext context) => TextButton.styleFrom(
         foregroundColor: AppColors.textPrimary,

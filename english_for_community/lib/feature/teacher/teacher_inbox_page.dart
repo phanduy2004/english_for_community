@@ -1,5 +1,7 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -108,7 +110,7 @@ class _TeacherInboxViewState extends State<_TeacherInboxView> {
             ),
           ],
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.cardList(n: 5, height: 64))
               : error != null
                   ? Center(
                       child: Column(
@@ -225,12 +227,14 @@ class _InboxListBody extends StatelessWidget {
         child: TeacherEmptyCard(
           message: l10n.teacherDashboardGradingEmpty,
           icon: Icons.inbox_outlined,
+          actionLabel: l10n.teacherEmptyInboxCta,
+          onAction: () => context.go(TeacherDashboardPage.routePath),
         ),
       );
     }
 
     return DecoratedBox(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

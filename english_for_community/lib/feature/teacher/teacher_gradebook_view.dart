@@ -19,7 +19,7 @@ import 'package:go_router/go_router.dart';
 
 const double _kStudentColWidth = 220;
 const double _kAssignmentColWidth = 136;
-const double _kRowHeight = 56;
+const double _kRowHeight = TeacherWebUi.tableRowDefault;
 const double _kHeaderHeight = 76;
 
 /// Gradebook matrix — `docs/ui-ux-system/07` §2 + `08` gradebook.
@@ -511,7 +511,12 @@ class _StudentRow extends StatelessWidget {
               (c) => c['assignmentId'] == id,
               orElse: () => <String, dynamic>{'assignmentId': id, 'status': 'not_started'},
             );
-            return _ScoreCell(cell: cell, l10n: l10n, onTap: () => onCellTap(cell));
+            return _ScoreCell(
+              key: ValueKey('gb-cell-$id-${cell['attemptId'] ?? cell['status']}'),
+              cell: cell,
+              l10n: l10n,
+              onTap: () => onCellTap(cell),
+            );
           }),
           SizedBox(
             width: 88,
@@ -538,7 +543,7 @@ class _StudentRow extends StatelessWidget {
 }
 
 class _ScoreCell extends StatelessWidget {
-  const _ScoreCell({required this.cell, required this.l10n, required this.onTap});
+  const _ScoreCell({super.key, required this.cell, required this.l10n, required this.onTap});
 
   final Map<String, dynamic> cell;
   final AppLocalizations l10n;
@@ -983,7 +988,12 @@ class _StudentScoresRow extends StatelessWidget {
               (c) => c['assignmentId'] == id,
               orElse: () => <String, dynamic>{'assignmentId': id, 'status': 'not_started'},
             );
-            return _ScoreCell(cell: cell, l10n: l10n, onTap: () => onCellTap(cell));
+            return _ScoreCell(
+              key: ValueKey('gb-cell-$id-${cell['attemptId'] ?? cell['status']}'),
+              cell: cell,
+              l10n: l10n,
+              onTap: () => onCellTap(cell),
+            );
           }),
           SizedBox(
             width: 88,

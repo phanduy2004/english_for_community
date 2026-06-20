@@ -256,6 +256,7 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
                     // past one card does not repaint the rest of the list.
                     return RepaintBoundary(
                       child: TeacherGradingAttemptCard(
+                        key: ValueKey(m['id'] ?? index),
                         attempt: m,
                         studentLabel: _studentLabel(m),
                         studentEmail: _studentEmail(m),
