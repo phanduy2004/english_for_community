@@ -43,17 +43,19 @@ class TeacherClassroomBloc extends Bloc<TeacherClassroomEvent, TeacherClassroomS
     List<dynamic> items = [];
     List<dynamic> members = [];
 
-    final cr = await repository.getClassroom(classroomId);
-    cr.fold((f) => err = f.message, (d) => room = Map<String, dynamic>.from(d as Map));
+    // P0-F1: parallel load (was 3 sequential round-trips).
+    final results = await Future.wait([
+      repository.getClassroom(classroomId),
+      repository.listClassroomAssignments(classroomId),
+      repository.listClassroomMembers(classroomId),
+    ]);
 
+    results[0].fold((f) => err = f.message, (d) => room = Map<String, dynamic>.from(d as Map));
     if (err == null) {
-      final ar = await repository.listClassroomAssignments(classroomId);
-      ar.fold((f) => err = f.message, (list) => items = list);
+      results[1].fold((f) => err = f.message, (list) => items = list);
     }
-
     if (err == null) {
-      final mr = await repository.listClassroomMembers(classroomId);
-      mr.fold((f) => err ??= f.message, (list) => members = list);
+      results[2].fold((f) => err ??= f.message, (list) => members = list);
     }
 
     if (err != null) {

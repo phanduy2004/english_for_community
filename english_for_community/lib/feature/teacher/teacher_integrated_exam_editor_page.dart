@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
@@ -13,6 +15,7 @@ import 'package:english_for_community/core/repository/reading_repository.dart';
 import 'package:english_for_community/core/repository/speaking_repository.dart';
 import 'package:english_for_community/core/repository/writing_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/speaking/speaking_hub_page.dart';
@@ -27,6 +30,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
@@ -79,31 +83,9 @@ class TeacherIntegratedExamEditorPage extends StatelessWidget {
             (curr.writingPromptOptions != null && prev.writingPromptOptions != curr.writingPromptOptions),
         listener: (context, state) {
           final l10n = context.l10n;
-          if (state.errorMessage != null) {
-            AppCornerToast.show(context, state.errorMessage!, error: true);
-          }
-          if (state.successMessage == 'draft_saved') {
-            AppCornerToast.show(context, l10n.teacherExamDraftSaved);
-          } else if (state.successMessage == 'published') {
+          if (state.successMessage == 'published') {
             AppCornerToast.show(context, l10n.teacherExamPublished);
             context.pop();
-          }
-          final failure = state.publishFailure;
-          if (failure != null) {
-            final msg = switch (failure) {
-              TeacherIntegratedExamEditorPublishFailure.writingNeedPrompt =>
-                l10n.teacherExamWritingPublishNeedPrompt,
-              TeacherIntegratedExamEditorPublishFailure.speakingRequired =>
-                l10n.teacherExamSpeakingExerciseRequired,
-              TeacherIntegratedExamEditorPublishFailure.skillResourceRequired =>
-                l10n.teacherExamPublishPickEachIncludedSkill,
-              TeacherIntegratedExamEditorPublishFailure.grammarEnabledNoItems =>
-                l10n.teacherExamGrammarEnabledNoItems,
-              TeacherIntegratedExamEditorPublishFailure.needSelection => l10n.teacherExamPublishNeedSelection,
-              TeacherIntegratedExamEditorPublishFailure.grammarPointsCap100 =>
-                l10n.teacherExamGrammarPointsCap100,
-            };
-            AppCornerToast.show(context, msg, error: true);
           }
           final options = state.writingPromptOptions;
           if (options != null) {
@@ -131,14 +113,108 @@ class _TeacherIntegratedExamEditorView extends StatefulWidget {
 class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExamEditorView> {
   final TextEditingController _titleController = TextEditingController();
 
+  TeacherSaveState _saveState = TeacherSaveState.idle;
+  DateTime? _savedAt;
+  Timer? _autosaveTimer;
+  Timer? _savedFadeTimer;
+  String? _publishError;
+  String? _contentSnapshot;
+
   TeacherIntegratedExamEditorBloc get _bloc => context.read<TeacherIntegratedExamEditorBloc>();
 
   TeacherIntegratedExamEditorState get _s => _bloc.state;
 
   @override
   void dispose() {
+    _autosaveTimer?.cancel();
+    _savedFadeTimer?.cancel();
     _titleController.dispose();
     super.dispose();
+  }
+
+  String? _publishFailureMessage(TeacherIntegratedExamEditorPublishFailure? failure, AppLocalizations l10n) {
+    if (failure == null) return null;
+    return switch (failure) {
+      TeacherIntegratedExamEditorPublishFailure.writingNeedPrompt => l10n.teacherExamWritingPublishNeedPrompt,
+      TeacherIntegratedExamEditorPublishFailure.speakingRequired => l10n.teacherExamSpeakingExerciseRequired,
+      TeacherIntegratedExamEditorPublishFailure.skillResourceRequired => l10n.teacherExamPublishPickEachIncludedSkill,
+      TeacherIntegratedExamEditorPublishFailure.grammarEnabledNoItems => l10n.teacherExamGrammarEnabledNoItems,
+      TeacherIntegratedExamEditorPublishFailure.needSelection => l10n.teacherExamPublishNeedSelection,
+      TeacherIntegratedExamEditorPublishFailure.grammarPointsCap100 => l10n.teacherExamGrammarPointsCap100,
+    };
+  }
+
+  void _scheduleAutosave(TeacherIntegratedExamEditorState state) {
+    if (state.examStatus != 'draft' || !state.canEditSkillContent) return;
+    if (state.status != TeacherIntegratedExamEditorStatus.success) return;
+    final snap = '${state.title}|${state.skillIncluded}|${state.grammarItems.length}';
+    if (_contentSnapshot == null) {
+      _contentSnapshot = snap;
+      return;
+    }
+    if (snap == _contentSnapshot) return;
+    _contentSnapshot = snap;
+    _autosaveTimer?.cancel();
+    _autosaveTimer = Timer(AppMotion.autosave, () {
+      if (!mounted) return;
+      setState(() => _saveState = TeacherSaveState.saving);
+      _bloc.add(const TeacherIntegratedExamEditorSaveDraftRequested());
+    });
+  }
+
+  void _onSaveSuccess() {
+    _savedFadeTimer?.cancel();
+    setState(() {
+      _saveState = TeacherSaveState.saved;
+      _savedAt = DateTime.now();
+    });
+    _savedFadeTimer = Timer(AppMotion.savedFade, () {
+      if (mounted) setState(() => _saveState = TeacherSaveState.idle);
+    });
+  }
+
+  void _onSaveError() {
+    setState(() => _saveState = TeacherSaveState.error);
+  }
+
+  Widget _publishValidationBanner(BuildContext context) {
+    if (_publishError == null || _publishError!.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.s4),
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      decoration: BoxDecoration(
+        color: AppColors.dangerBg,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, size: 16, color: AppColors.danger),
+          const SizedBox(width: AppSpacing.s3),
+          Expanded(
+            child: Text(
+              _publishError!,
+              style: TeacherWebUi.webBody(context).copyWith(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _saveStateIndicator(BuildContext context) {
+    return TeacherSaveStateIndicator(
+      state: _s.saving ? TeacherSaveState.saving : _saveState,
+      savedAt: _savedAt,
+      onRetry: _saveState == TeacherSaveState.error
+          ? () {
+              setState(() => _saveState = TeacherSaveState.saving);
+              _saveDraft();
+            }
+          : null,
+    );
   }
 
   String _displayTitle(AppLocalizations l10n) {
@@ -168,7 +244,10 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
 
   void _saveDraft() => _bloc.add(const TeacherIntegratedExamEditorSaveDraftRequested());
 
-  void _publish() => _bloc.add(const TeacherIntegratedExamEditorPublishRequested());
+  void _publish() {
+    setState(() => _publishError = null);
+    _bloc.add(const TeacherIntegratedExamEditorPublishRequested());
+  }
 
   bool _skillMeetsPublishRequirement(String skill) =>
       teacherIntegratedExamEditorSkillMeetsPublishRequirement(
@@ -215,7 +294,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Icon(_skillIcon(skill), size: 18, color: AppColors.textSecondary),
@@ -228,7 +307,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Row(
@@ -292,7 +371,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           return Dialog(
             backgroundColor: AppColors.surfaceCard,
             surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: 560,
@@ -341,7 +420,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         isScrollControlled: true,
         backgroundColor: AppColors.surface,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
         ),
         builder: (ctx) => DraggableScrollableSheet(
           expand: false,
@@ -360,7 +439,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                       height: 4,
                       decoration: BoxDecoration(
                         color: AppColors.outlineMuted,
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),
@@ -417,7 +496,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       builder: (ctx) {
         final h = MediaQuery.sizeOf(ctx).height * 0.92;
@@ -517,6 +596,8 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              _saveStateIndicator(context),
+              const SizedBox(width: AppSpacing.s3),
               OutlinedButton(
                 style: TeacherWebUi.compactOutlinedStyle(context),
                 onPressed: _saveDraft,
@@ -584,7 +665,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                 const SizedBox(height: 12),
                 InputDecorator(
                   decoration: InputDecoration(
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   ),
                   child: DropdownButtonHideUnderline(
@@ -651,7 +732,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       builder: (ctx) => Dialog(
         backgroundColor: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 600,
@@ -712,14 +793,14 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     final taskType = (prompt['taskType'] as String?)?.trim() ?? '';
     return Material(
       color: AppColors.surface,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: () => Navigator.pop(ctx, prompt),
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.outline),
           ),
           child: Column(
@@ -733,7 +814,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                       border: Border.all(color: AppColors.outlineMuted),
                     ),
                     child: Text(
@@ -750,7 +831,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceCard,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
                         border: Border.all(color: AppColors.outlineMuted),
                       ),
                       child: Text(taskType, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
@@ -800,7 +881,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           builder: (ctx, setLocal) => Dialog(
             backgroundColor: AppColors.surfaceCard,
             surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: 560,
@@ -841,9 +922,9 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                                 hintText: l10n.teacherExamWritingPromptTitleHint,
                                 filled: true,
                                 fillColor: AppColors.surface,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(AppRadius.card),
                                   borderSide: const BorderSide(color: AppColors.outline),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -856,9 +937,9 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                               decoration: InputDecoration(
                                 filled: true,
                                 fillColor: AppColors.surface,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(AppRadius.card),
                                   borderSide: const BorderSide(color: AppColors.outline),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
@@ -893,9 +974,9 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                                 hintText: l10n.teacherExamWritingPromptTextHint,
                                 filled: true,
                                 fillColor: AppColors.surface,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                                 enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(AppRadius.card),
                                   borderSide: const BorderSide(color: AppColors.outline),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -1009,7 +1090,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       padding: const EdgeInsets.all(AppSpacing.s3),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Column(
@@ -1279,7 +1360,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         builder: (ctx) => Dialog(
           backgroundColor: AppColors.surfaceCard,
           surfaceTintColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
           child: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: 560,
@@ -1325,7 +1406,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         isScrollControlled: true,
         backgroundColor: AppColors.surfaceCard,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
         ),
         builder: (ctx) => DraggableScrollableSheet(
           expand: false,
@@ -1343,7 +1424,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
                       color: AppColors.outlineMuted,
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
                     ),
                   ),
                 ),
@@ -1390,7 +1471,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -1403,7 +1484,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               border: Border.all(color: AppColors.outlineMuted),
             ),
             child: Text(
@@ -1560,7 +1641,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       builder: (ctx) => Dialog(
         backgroundColor: AppColors.surfaceCard,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxWidth: 600,
@@ -1604,7 +1685,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(AppRadius.input),
                       border: Border.all(color: AppColors.outlineMuted),
                     ),
                     padding: const EdgeInsets.all(12),
@@ -1673,7 +1754,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     border: Border.all(color: AppColors.outlineMuted),
                   ),
                   child: const Icon(Icons.spellcheck_outlined, size: 18, color: AppColors.textSecondary),
@@ -1796,14 +1877,39 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
   Widget build(BuildContext context) {
     return BlocListener<TeacherIntegratedExamEditorBloc, TeacherIntegratedExamEditorState>(
       listenWhen: (prev, curr) =>
-          prev.title != curr.title &&
-          curr.status == TeacherIntegratedExamEditorStatus.success &&
-          _titleController.text != curr.title,
-      listener: (_, state) {
-        _titleController.value = TextEditingValue(
-          text: state.title,
-          selection: TextSelection.collapsed(offset: state.title.length),
-        );
+          (prev.title != curr.title &&
+              curr.status == TeacherIntegratedExamEditorStatus.success &&
+              _titleController.text != curr.title) ||
+          prev.successMessage != curr.successMessage ||
+          prev.errorMessage != curr.errorMessage ||
+          prev.publishFailure != curr.publishFailure ||
+          prev.title != curr.title ||
+          prev.skillIncluded != curr.skillIncluded ||
+          prev.grammarItems.length != curr.grammarItems.length,
+      listener: (context, state) {
+        if (state.status == TeacherIntegratedExamEditorStatus.success &&
+            _titleController.text != state.title) {
+          _titleController.value = TextEditingValue(
+            text: state.title,
+            selection: TextSelection.collapsed(offset: state.title.length),
+          );
+        }
+        _scheduleAutosave(state);
+        final l10n = context.l10n;
+        if (state.successMessage == 'draft_saved') {
+          _onSaveSuccess();
+        }
+        if (state.errorMessage != null && !state.saving) {
+          if (_saveState == TeacherSaveState.saving) {
+            _onSaveError();
+          } else {
+            AppCornerToast.show(context, state.errorMessage!, error: true);
+          }
+        }
+        final pubMsg = _publishFailureMessage(state.publishFailure, l10n);
+        if (pubMsg != null) {
+          setState(() => _publishError = pubMsg);
+        }
       },
       child: BlocBuilder<TeacherIntegratedExamEditorBloc, TeacherIntegratedExamEditorState>(
         builder: (context, state) => _buildScaffold(context, state),
@@ -1829,6 +1935,8 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
       ],
       actions: [
         if (!_useWebLayout() && _s.canEditSkillContent) ...[
+          _saveStateIndicator(context),
+          const SizedBox(width: AppSpacing.s3),
           TextButton(
             onPressed: _saveDraft,
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
@@ -1837,11 +1945,11 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
           if (_s.examStatus == 'draft')
             TeacherFilledButton(label: l10n.teacherExamPublish, onPressed: _publish),
         ],
-        IconButton(
+        TeacherWebUi.headerIconButton(
+          context: context,
+          icon: Icons.refresh_outlined,
           onPressed: _reload,
-          icon: const Icon(Icons.refresh_outlined),
-          iconSize: ExamSystemUi.iconSm,
-          color: AppColors.textSecondary,
+          tooltip: l10n.retry,
         ),
       ],
       body: Column(
@@ -1849,7 +1957,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         children: [
           Expanded(
             child: loading
-                ? const Center(child: AppLoadingIndicator.center())
+                ? TeacherSkeleton.page(TeacherSkeleton.cardList(n: 3, height: 96))
                 : state.errorMessage != null
                     ? Center(
                         child: Padding(
@@ -1867,6 +1975,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                _publishValidationBanner(context),
                                 if (state.examStatus != 'draft')
                                   Padding(
                                     padding: const EdgeInsets.only(bottom: AppSpacing.s4),
@@ -1931,7 +2040,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                                                 color: AppColors.surfaceCard,
                                                 clipBehavior: Clip.antiAlias,
                                                 shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(12),
+                                                  borderRadius: BorderRadius.circular(AppRadius.card),
                                                   side: const BorderSide(color: AppColors.outline),
                                                 ),
                                                 child: TeacherSkillsExamGrammarEditorPanel(
@@ -2008,22 +2117,30 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
         final levels = ['Beginner', 'Intermediate', 'Advanced'];
         final seen = <String>{};
         final out = <({String id, String title})>[];
-        for (final mode in SpeakingMode.values) {
-          for (final lv in levels) {
-            final r = await repo.getSpeakingSets(mode: mode, level: lv, page: 1, limit: 40);
-            r.fold((_) {}, (page) {
-              for (final s in page.data) {
-                if (seen.add(s.id)) out.add((id: s.id, title: s.title));
-              }
-            });
-          }
+        final speakingFutures = <Future<dynamic>>[
+          for (final mode in SpeakingMode.values)
+            for (final lv in levels)
+              repo.getSpeakingSets(mode: mode, level: lv, page: 1, limit: 40),
+        ];
+        final speakingResults = await Future.wait(speakingFutures);
+        for (final r in speakingResults) {
+          r.fold((_) {}, (page) {
+            for (final s in page.data) {
+              if (seen.add(s.id)) out.add((id: s.id, title: s.title));
+            }
+          });
         }
         return out;
       case 'reading':
         final seen = <String>{};
         final out = <({String id, String title})>[];
-        for (final diff in ['easy', 'medium', 'hard']) {
-          final r = await getIt<ReadingRepository>().getReadingListWithProgress(difficulty: diff, page: 1, limit: 60);
+        const diffs = ['easy', 'medium', 'hard'];
+        final readingRepo = getIt<ReadingRepository>();
+        final readingResults = await Future.wait([
+          for (final diff in diffs)
+            readingRepo.getReadingListWithProgress(difficulty: diff, page: 1, limit: 60),
+        ]);
+        for (final r in readingResults) {
           r.fold((_) {}, (page) {
             for (final e in page.data) {
               if (seen.add(e.id)) out.add((id: e.id, title: e.title));
@@ -2048,7 +2165,7 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
       future: _future,
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Center(child: AppLoadingIndicator.center());
+          return TeacherSkeleton.page(TeacherSkeleton.table(rows: 5));
         }
         final allItems = snap.data ?? [];
         final available = allItems.where((it) => !widget.alreadySelectedIds.contains(it.id)).toList();
@@ -2060,9 +2177,9 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
             if (widget.onCreateNew != null) ...[
               Material(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                   onTap: widget.onCreateNew,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -2140,7 +2257,7 @@ class _SkillPickPanelState extends State<_SkillPickPanel> {
                         value: isChecked,
                         onChanged: (_) => _toggleItem(it.id),
                         activeColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.xs)),
                         visualDensity: VisualDensity.compact,
                       ),
                       title: Text(it.title, style: ExamSystemUi.listTitle(context)),

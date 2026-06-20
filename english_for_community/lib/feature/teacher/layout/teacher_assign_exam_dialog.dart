@@ -11,6 +11,7 @@ import 'package:english_for_community/feature/teacher/layout/teacher_realtime_sc
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_console_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -69,18 +70,22 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   String _resultsDetailLevel = 'full_detail';
   List<dynamic> _presets = [];
 
+  String? _fieldExamStatus;
+  String? _fieldClassroom;
+  String? _fieldScheduledStart;
+
   static const _maxAttemptChoices = [2, 3, 5, 10];
 
   // ─── Per-mode accent colours (info callouts only — not selection tiles) ───
   static const _modeInfoColors = {
-    'practice': (fg: Color(0xFF7C3AED), bg: Color(0xFFF5F3FF)),
+    'practice': (fg: AppColors.info, bg: AppColors.infoBg),
   };
 
-  // ─── Policy colours ────────────────────────────────────────────────────────
+  // ─── Policy colours (semantic tokens — `docs/ui-ux-system/18` §3.1) ─────────
   static const _policyColors = {
-    'after_submit':  (fg: Color(0xFF15803D), bg: Color(0xFFECFDF5), border: Color(0xFF86EFAC)),
-    'after_release': (fg: Color(0xFFD97706), bg: Color(0xFFFFFBEB), border: Color(0xFFFCD34D)),
-    'never':         (fg: Color(0xFFDC2626), bg: Color(0xFFFEF2F2), border: Color(0xFFFCA5A5)),
+    'after_submit':  (fg: AppColors.success, bg: AppColors.successBg, border: AppColors.success),
+    'after_release': (fg: AppColors.warning, bg: AppColors.warningBg, border: AppColors.warning),
+    'never':         (fg: AppColors.danger,  bg: AppColors.dangerBg,  border: AppColors.danger),
   };
 
   @override
@@ -98,18 +103,21 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
 
   Future<void> _bootstrap() async {
     final repo = getIt<TeacherExamRepository>();
-    final ex = await repo.getExam(widget.examId);
-    final cr = await repo.listMyClassroomsAsTeacher();
+    // P0-F1: parallel bootstrap (was 3 sequential round-trips).
+    final results = await Future.wait([
+      repo.getExam(widget.examId),
+      repo.listMyClassroomsAsTeacher(),
+      repo.listAssignmentPresets(),
+    ]);
     if (!mounted) return;
-    ex.fold((_) {}, (d) {
+    results[0].fold((_) {}, (d) {
       final m = Map<String, dynamic>.from(d as Map);
       _examStatus = m['status'] as String?;
       final t = (m['title'] as String?)?.trim();
       if (t != null && t.isNotEmpty) _examTitle = t;
     });
-    final pr = await repo.listAssignmentPresets();
-    pr.fold((_) {}, (list) => _presets = list);
-    cr.fold((_) {}, (list) {
+    results[2].fold((_) {}, (list) => _presets = list);
+    results[1].fold((_) {}, (list) {
       _classrooms = list;
       String? pickId;
       final wanted = widget.initialClassroomId;
@@ -213,24 +221,21 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
 
   Future<void> _submit() async {
     final l10n = context.l10n;
-    if (_examStatus != 'published') {
-      AppCornerToast.show(context, l10n.teacherAssignmentExamNotPublished, error: true);
-      return;
-    }
-    if (_audience == 'classroom' && (_classroomId == null || _classroomId!.isEmpty)) {
-      AppCornerToast.show(context, l10n.teacherAssignmentPickClass, error: true);
-      return;
-    }
-    if (_mode == 'realtime' &&
-        _realtimeScheduleMode == 'scheduled' &&
-        _scheduledStartAt == null) {
-      AppCornerToast.show(
-        context,
-        l10n.teacherAssignmentRealtimeScheduledStartRequired,
-        error: true,
-      );
-      return;
-    }
+    final examErr = _examStatus != 'published' ? l10n.teacherAssignmentExamNotPublished : null;
+    final classErr = _audience == 'classroom' && (_classroomId == null || _classroomId!.isEmpty)
+        ? l10n.teacherAssignmentPickClass
+        : null;
+    final schedErr = _mode == 'realtime' &&
+            _realtimeScheduleMode == 'scheduled' &&
+            _scheduledStartAt == null
+        ? l10n.teacherAssignmentRealtimeScheduledStartRequired
+        : null;
+    setState(() {
+      _fieldExamStatus = examErr;
+      _fieldClassroom = classErr;
+      _fieldScheduledStart = schedErr;
+    });
+    if (examErr != null || classErr != null || schedErr != null) return;
     setState(() => _submitting = true);
     final config = <String, dynamic>{
       'allowPartialSubmit': _allowPartialSubmit,
@@ -371,12 +376,12 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Ink(
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
               border: Border.all(color: AppColors.outline),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
             ),
             child: Padding(
               padding: TeacherWebUi.formInputContentPadding,
@@ -417,7 +422,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
           height: 24,
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
           ),
           child: Icon(icon, size: 13, color: color),
         ),
@@ -462,57 +467,55 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
 
   Widget _audienceTile(dynamic opt) {
     final selected = _audience == opt.value;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _audience = opt.value),
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  opt.icon as IconData,
-                  size: 16,
-                  color: TeacherWebUi.choiceTileIconColor(selected: selected),
-                ),
+    return TeacherWebUi.focusableTile(
+      onTap: () => setState(() => _audience = opt.value),
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      semanticLabel: opt.title as String,
+      child: AnimatedContainer(
+        duration: AppMotion.segment,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      opt.title as String,
-                      style: TeacherWebUi.webLabel(context).copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: TeacherWebUi.choiceTileTitleColor(selected: selected),
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      opt.hint as String,
-                      style: TeacherWebUi.metaMuted.copyWith(fontSize: 10.5, height: 1.3),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+              child: Icon(
+                opt.icon as IconData,
+                size: 16,
+                color: TeacherWebUi.choiceTileIconColor(selected: selected),
               ),
-              if (selected)
-                const Icon(Icons.check_circle_rounded, size: 15, color: AppColors.primary),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    opt.title as String,
+                    style: TeacherWebUi.webLabel(context).copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                      color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    opt.hint as String,
+                    style: TeacherWebUi.metaMuted.copyWith(fontSize: 10.5, height: 1.3),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check_circle_rounded, size: 15, color: AppColors.primary),
+          ],
         ),
       ),
     );
@@ -565,59 +568,57 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
 
   Widget _modeCard(_ModeOption o) {
     final selected = _mode == o.value;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => setState(() => _mode = o.value),
-        borderRadius: BorderRadius.circular(10),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
-          decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Icon(
-                  o.icon,
-                  size: 15,
-                  color: TeacherWebUi.choiceTileIconColor(selected: selected),
-                ),
+    return TeacherWebUi.focusableTile(
+      onTap: () => setState(() => _mode = o.value),
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      semanticLabel: o.title,
+      child: AnimatedContainer(
+        duration: AppMotion.segment,
+        padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+        decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 30,
+              height: 30,
+              decoration: BoxDecoration(
+                color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
+                borderRadius: BorderRadius.circular(AppRadius.chip),
               ),
-              const SizedBox(width: 9),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      o.title,
-                      style: TeacherWebUi.webLabel(context).copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                        color: TeacherWebUi.choiceTileTitleColor(selected: selected),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      o.hint,
-                      style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.3),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+              child: Icon(
+                o.icon,
+                size: 15,
+                color: TeacherWebUi.choiceTileIconColor(selected: selected),
               ),
-              if (selected)
-                const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.primary),
-            ],
-          ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    o.title,
+                    style: TeacherWebUi.webLabel(context).copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                      color: TeacherWebUi.choiceTileTitleColor(selected: selected),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    o.hint,
+                    style: TeacherWebUi.metaMuted.copyWith(fontSize: 10, height: 1.3),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check_circle_rounded, size: 14, color: AppColors.primary),
+          ],
         ),
       ),
     );
@@ -649,13 +650,17 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
               _lobbyOpensAt = null;
             }
           }),
-          onScheduledStartChanged: (d) => setState(() => _scheduledStartAt = d),
+          onScheduledStartChanged: (d) => setState(() {
+            _scheduledStartAt = d;
+            _fieldScheduledStart = null;
+          }),
           onLobbyOpensChanged: (d) => setState(() => _lobbyOpensAt = d),
           formatDateTime: _formatDateTime,
           onPickDateTime: ({required initial, required onPicked, firstDate}) =>
               _pickDateTime(onPicked, initial: initial, firstDate: firstDate),
         ),
       );
+      children.add(TeacherWebUi.formFieldError(context, _fieldScheduledStart));
       children.add(const SizedBox(height: AppSpacing.s4));
     }
 
@@ -714,11 +719,11 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
             return GestureDetector(
               onTap: () => setState(() => _timeLimitMinutes.text = '$m'),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 120),
+                duration: AppMotion.fast,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
                   color: active ? AppColors.primaryTint : AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                   border: Border.all(
                     color: active ? AppColors.primary : AppColors.outlineStrong,
                     width: active ? 1.5 : 1,
@@ -790,7 +795,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
         Container(
           decoration: BoxDecoration(
             color: AppColors.surfaceSubtle,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.outline),
           ),
           child: SwitchListTile(
@@ -829,7 +834,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     return GestureDetector(
       onTap: () => setState(() => _attemptPolicy = value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
+        duration: AppMotion.panel,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
         decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
         child: Column(
@@ -886,7 +891,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     return GestureDetector(
       onTap: () => setState(() => _resultsDetailLevel = value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
+        duration: AppMotion.panel,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
         child: Column(
@@ -945,11 +950,11 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
     return GestureDetector(
       onTap: () => setState(() => _showResultsPolicy = opt.value),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
+        duration: AppMotion.panel,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 9),
         decoration: BoxDecoration(
           color: selected ? pc.bg : AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
             color: selected ? pc.border : AppColors.outline,
             width: selected ? 1.5 : 1,
@@ -991,7 +996,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
@@ -1059,6 +1064,8 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
               ),
             ),
 
+          TeacherWebUi.formFieldError(context, _fieldExamStatus),
+
           // ── Section: Audience ────────────────────────────────────────
           _sectionHeader(l10n.teacherAssignmentSectionAudience, Icons.people_outline_rounded, AppColors.primary),
           const SizedBox(height: 10),
@@ -1084,9 +1091,13 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
                   key: ValueKey(id),
                   name: name,
                   selected: _classroomId == id,
-                  onTap: () => setState(() => _classroomId = id),
+                  onTap: () => setState(() {
+                    _classroomId = id;
+                    _fieldClassroom = null;
+                  }),
                 );
               }),
+            TeacherWebUi.formFieldError(context, _fieldClassroom),
           ]
           else ...[
             _formGroup(
