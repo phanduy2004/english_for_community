@@ -52,8 +52,6 @@ const userSchema = new mongoose.Schema({
   isBanned: { type: Boolean, default: false },
   banExpiresAt: { type: Date, default: null },
   banReason: { type: String, default: '' },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: null },
 
   _destroy: { type: Boolean, default: false },
   refreshToken: { type: String, default: null },
@@ -69,14 +67,11 @@ const userSchema = new mongoose.Schema({
 
   // 🔥 Cần thêm trường này để kích hoạt TTL Index (tự động xóa sau 10 phút)
   otpCreatedAt: { type: Date, default: null }
-});
+}, { timestamps: true });
 
-userSchema.pre('save', function (next) {
-  this.updatedAt = Date.now();
-  next();
-});
+// Timestamps: Mongoose quản lý createdAt/updatedAt (D1 migration backfill doc null).
 
-// 🔥 INDEX TTL: Tự động xóa user sau 10 phút nếu chưa xác thực VÀ purpose là 'signup'
+// TTL: tự động xóa user signup chưa xác thực sau 10 phút
 userSchema.index(
   { "otpCreatedAt": 1 },
   {
@@ -106,6 +101,8 @@ userSchema.set('toJSON', {
     return ret;
   }
 });
+
+userSchema.index({ isOnline: 1, lastActivityDate: -1 });
 
 const User = mongoose.model('User', userSchema);
 export default User;

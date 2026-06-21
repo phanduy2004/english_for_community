@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, ttlIndexPlugin } from '../lib/mongoosePlugins.js';
 
 const AdminAuditLogSchema = new mongoose.Schema(
   {
@@ -13,6 +14,12 @@ const AdminAuditLogSchema = new mongoose.Schema(
   },
   { timestamps: true, versionKey: false }
 );
+
+AdminAuditLogSchema.index({ targetType: 1, targetId: 1, createdAt: -1 });
+AdminAuditLogSchema.index({ actorId: 1, createdAt: -1 });
+
+toJsonIdPlugin(AdminAuditLogSchema);
+ttlIndexPlugin(AdminAuditLogSchema, { field: 'createdAt', expireAfterSeconds: 365 * 24 * 3600 });
 
 const AdminAuditLog = mongoose.model('AdminAuditLog', AdminAuditLogSchema, 'admin_audit_logs');
 export default AdminAuditLog;

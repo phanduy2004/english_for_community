@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin } from '../lib/mongoosePlugins.js';
 
 /**
  * ClassroomMessage — tin nhắn nhóm lớp học.
@@ -84,6 +85,9 @@ const classroomMessageSchema = new mongoose.Schema(
 
 // Pagination: newest first for a classroom
 classroomMessageSchema.index({ classroomId: 1, createdAt: -1 });
+classroomMessageSchema.index({ senderId: 1, createdAt: -1 });
+
+toJsonIdPlugin(classroomMessageSchema);
 
 classroomMessageSchema.set('toJSON', {
   transform: (doc, ret) => {

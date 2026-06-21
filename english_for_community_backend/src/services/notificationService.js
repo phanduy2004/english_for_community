@@ -2,6 +2,7 @@ import Notification from '../models/Notification.js';
 import { getIO } from '../socket/socketManager.js';
 import User from "../models/User.js";
 import { messaging } from '../config/firebase.js';
+import { serializeNotificationRows } from '../lib/leanApiSerialize.js';
 
 /** Plain JSON for Socket.IO clients (Flutter/web). */
 export function toNotificationSocketPayload(doc) {
@@ -151,7 +152,7 @@ const listForUser = async (userId, page = 1, limit = 20) => {
   const hasMore = totalDocs > page * limit;
 
   return {
-    data: notifications,
+    data: serializeNotificationRows(notifications),
     unreadCount,
     pagination: { page, hasMore },
   };

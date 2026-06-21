@@ -1,5 +1,6 @@
 // models/CueComment.js
 import mongoose from 'mongoose';
+import { toJsonIdPlugin } from '../lib/mongoosePlugins.js';
 
 const cueCommentSchema = new mongoose.Schema({
   listeningId: { type: mongoose.Schema.Types.ObjectId, ref: 'Listening', required: true },
@@ -23,6 +24,11 @@ const cueCommentSchema = new mongoose.Schema({
 
   createdAt: { type: Date, default: Date.now }
 });
+
+cueCommentSchema.index({ listeningId: 1, cueId: 1, createdAt: -1 });
+cueCommentSchema.index({ parentId: 1, createdAt: 1 });
+
+toJsonIdPlugin(cueCommentSchema);
 
 // Populate user info
 cueCommentSchema.pre(/^find/, function(next) {

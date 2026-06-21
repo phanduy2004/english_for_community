@@ -1,5 +1,6 @@
 // models/Notification.js
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, ttlIndexPlugin } from '../lib/mongoosePlugins.js';
 
 const notificationSchema = new mongoose.Schema({
   // Người nhận thông báo
@@ -43,6 +44,10 @@ const notificationSchema = new mongoose.Schema({
 });
 
 notificationSchema.index({ recipientId: 1, createdAt: -1 });
+notificationSchema.index({ recipientId: 1, isRead: 1, createdAt: -1 });
+
+toJsonIdPlugin(notificationSchema);
+ttlIndexPlugin(notificationSchema, { field: 'createdAt', expireAfterSeconds: 365 * 24 * 3600 });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 export default Notification;

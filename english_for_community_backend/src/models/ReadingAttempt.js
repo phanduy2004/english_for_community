@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin } from '../lib/mongoosePlugins.js';
 
 const { Schema, model, Types } = mongoose;
 
@@ -23,6 +24,10 @@ const ReadingAttemptSchema = new Schema(
     timestamps: true
   }
 );
+
+ReadingAttemptSchema.index({ userId: 1, readingId: 1, createdAt: -1 });
+
+toJsonIdPlugin(ReadingAttemptSchema);
 
 // ✍️ Sử dụng export default
 const ReadingAttempt = model('ReadingAttempt', ReadingAttemptSchema);

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { httpError } from '../utils/AppError.js';
 import Exam from '../models/Exam.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamAssignment from '../models/ExamAssignment.js';
@@ -12,7 +13,8 @@ import Reading from '../models/Reading.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import SpeakingAttempt from '../models/SpeakingAttempt.js';
 import WritingSubmission from '../models/WritingSubmission.js';
-import { wordErrorRate } from '../untils/scoring.js';
+import { wordErrorRate } from '../utils/scoring.js';
+import { withLeanApiId, withLeanNestedIds } from '../lib/leanApiSerialize.js';
 import { teacherExamService } from './teacherExamService.js';
 import { teacherExamAssignmentService } from './teacherExamAssignmentService.js';
 import { resolveAttemptPolicy, resolveResultsDetailLevel, resolveShowResultsPolicy } from './assignmentPolicy.js';
@@ -29,12 +31,6 @@ import {
   normalizeExamSnapshot,
   resourcesFromSkillSection,
 } from './examSkillSectionResources.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 async function assertLiveSessionAllowsEdits(attempt) {
   if (!attempt.sessionId) return;
@@ -1796,7 +1792,7 @@ export const examAttemptService = {
       if (plain.gradingState === 'finalized') stats.finalized += 1;
       if (plain.resultsReleased) stats.released += 1;
       if (plain.meta?.submitCompleteness === 'partial') stats.partial += 1;
-      return plain;
+      return withLeanApiId(withLeanNestedIds(plain, ['userId']), { attempt: true });
     });
 
     const exam = assignment.examId;

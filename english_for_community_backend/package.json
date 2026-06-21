@@ -22,6 +22,10 @@
     "check:seed-student-data": "node src/scripts/checkSeedStudentData.js",
     "db:inspect": "node src/scripts/inspectAtlasData.js",
     "migrate:cms": "node src/scripts/migrateCmsContent.js",
+    "migrate": "node migrations/runner.js",
+    "migrate:dry": "node migrations/runner.js --dry",
+    "golden:capture": "node scripts/goldenCapture.js",
+    "audit:t1": "node scripts/auditT1.js",
     "test": "node --test",
     "test:notifications": "node src/scripts/testTeacherStudentNotifications.js"
   },
