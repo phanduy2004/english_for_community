@@ -327,4 +327,24 @@ abstract final class ClassroomChatUi {
       bottom: AppSpacing.s1,
     );
   }
+
+  /// Stable avatar tint from group name — Telegram-style identity (`23` §3.3).
+  static ({Color background, Color foreground}) groupAvatarColors(String name) {
+    const palette = <({Color background, Color foreground})>[
+      (background: AppColors.infoBg, foreground: AppColors.info),
+      (background: AppColors.successBg, foreground: AppColors.successDark),
+      (background: AppColors.accentTint, foreground: AppColors.accentDark),
+      (background: AppColors.primaryTint, foreground: AppColors.primaryDark),
+      (background: AppColors.dangerBg, foreground: AppColors.danger),
+      (background: AppColors.warningBg, foreground: AppColors.warning),
+      (background: AppColors.surfaceSubtle, foreground: AppColors.textSecondary),
+      (background: AppColors.dangerBg, foreground: AppColors.textPrimary),
+    ];
+    final trimmed = name.trim();
+    var hash = 0;
+    for (final codeUnit in trimmed.codeUnits) {
+      hash = (hash * 31 + codeUnit) & 0x7FFFFFFF;
+    }
+    return palette[hash % palette.length];
+  }
 }
