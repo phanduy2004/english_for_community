@@ -62,6 +62,25 @@
   "studentChatHubSearchHint": "Search classes…",
   "studentChatHubFilterAll": "All",
   "studentChatHubFilterUnread": "Unread",
+  "studentChatHubOverviewTitle": "Stay connected",
+  "studentChatHubOverviewBody": "Chat with your classmates and teachers in each class group.",
+  "studentChatHubSectionConversations": "Conversations",
+  "studentChatHubUnreadCount": "{count} unread",
+  "@studentChatHubUnreadCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentChatHubClassCount": "{count} classes",
+  "@studentChatHubClassCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentChatHubEmptyTitle": "No messages yet",
+  "studentChatHubEmptyBody": "Classrooms you join will appear here.",
+  "studentChatHubSearchEmptyTitle": "No results",
+  "studentChatHubSearchEmptyBody": "Try another keyword or clear the search.",
   "loginWelcomeBack": "Welcome Back!",
   "loginSubtitle": "Enter your details to continue.",
   "labelEmail": "Email",
@@ -1370,6 +1389,12 @@
   "studentExamLeaveRealtimeMessage": "If you leave now, you cannot return to this live exam. Your attempt will be closed.",
   "studentExamLeaveRealtimeConfirm": "Leave exam",
   "studentExamLeaveRealtimeCancel": "Keep working",
+  "studentRunnerExitTitle": "Leave this exercise?",
+  "studentRunnerExitMessage": "Your progress may be lost if you leave now.",
+  "studentRunnerExitConfirm": "Leave",
+  "studentRunnerExitCancel": "Keep working",
+  "studentAudioPlay": "Play",
+  "studentAudioPause": "Pause",
   "studentExamVoluntaryExitBlocked": "You left this exam and cannot re-enter.",
   "studentExamCannotRejoinAfterLeave": "You cannot rejoin this exam after leaving.",
   "teacherExamSessionLeavePageHint": "Leaving this page does not end the exam for students. End the session here when you are ready to finish.",
@@ -1592,6 +1617,7 @@
     "placeholders": { "part": { "type": "String" } }
   },
   "teacherLiveMirrorFollowStudent": "Follow student",
+  "teacherLiveMirrorQuestionMap": "Question map",
   "teacherLiveMirrorWritingPrompt": "Exam prompt",
   "teacherLiveMirrorListeningEmpty": "Student has not entered any dictation yet.",
   "teacherLiveMirrorListeningProgress": "Dictation progress: {saved} / {total} cues",
@@ -1651,6 +1677,26 @@
   "teacherExamCreateSession": "Create / refresh lobby",
   "teacherExamStartSession": "Start for everyone",
   "teacherExamEndSession": "End and submit all",
+  "teacherExamEndSessionConfirm": "This ends the session and force-submits every student's attempt — including those still in progress. This can't be undone.",
+  "teacherExamEndSessionTypePrompt": "Type {count} to confirm force-submit for all students in this session.",
+  "@teacherExamEndSessionTypePrompt": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherEmptyInboxCta": "View classes",
+  "teacherEmptyCalendarCta": "Create new exam",
+  "teacherEmptyGradebookCta": "Open classroom",
+  "teacherSaveStateSaving": "Saving…",
+  "teacherSaveStateSavedAt": "Saved {time}",
+  "@teacherSaveStateSavedAt": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "teacherSaveStateError": "Sync failed",
+  "teacherSaveStateRetry": "Retry",
+  "teacherExamValidationBanner": "Fix the errors below before publishing.",
   "teacherExamGradingTitle": "Grading",
   "teacherExamRunAi": "AI suggestions",
   "teacherExamReleaseResults": "Release results",

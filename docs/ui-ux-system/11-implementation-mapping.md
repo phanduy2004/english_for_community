@@ -174,6 +174,8 @@ abstract final class AppMotion {
 | 2026-06-14 | Teacher web remediation (`18-teacher-web-audit`): token sweep, skeleton, sticky gradebook, save-state editors, inline validate, focusableTile, empty CTA | _(pending commit)_ |
 | 2026-06-21 | Student chat reverse list + scroll polish (`22-student-chat-scroll-and-conversation-list` §3A) | `eca074e` |
 | 2026-06-21 | Student conversation list redesign — shared ConversationTile web+mobile (`23`) | `0c9ac90`, `9ed4cfb`, `503bc2b`, `66d05fb`, `c478cb9` |
+| 2026-06-21 | Teacher live mirror — full-height shell (`24` §S1) | `b8b80ac` |
+| 2026-06-21 | Teacher live mirror — active-section question map + collapse (`24` §S2) | `146910b` |
 
 ## 5.1 Teacher dialogs (`14-teacher-dialogs.md`)
 

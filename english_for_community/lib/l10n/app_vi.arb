@@ -42,6 +42,25 @@
   "studentChatHubSearchHint": "Tìm lớp học…",
   "studentChatHubFilterAll": "Tất cả",
   "studentChatHubFilterUnread": "Chưa đọc",
+  "studentChatHubOverviewTitle": "Kết nối lớp học",
+  "studentChatHubOverviewBody": "Trò chuyện với bạn cùng lớp và giáo viên trong từng nhóm lớp.",
+  "studentChatHubSectionConversations": "Cuộc trò chuyện",
+  "studentChatHubUnreadCount": "{count} chưa đọc",
+  "@studentChatHubUnreadCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentChatHubClassCount": "{count} lớp",
+  "@studentChatHubClassCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentChatHubEmptyTitle": "Chưa có tin nhắn",
+  "studentChatHubEmptyBody": "Các lớp bạn tham gia sẽ hiển thị ở đây.",
+  "studentChatHubSearchEmptyTitle": "Không tìm thấy",
+  "studentChatHubSearchEmptyBody": "Thử từ khóa khác hoặc xóa bộ lọc.",
   "loginWelcomeBack": "Chào mừng trở lại!",
   "loginSubtitle": "Nhập thông tin để tiếp tục.",
   "labelEmail": "Email",
@@ -1210,6 +1229,12 @@
   "studentExamLeaveRealtimeMessage": "Nếu thoát bây giờ, bạn sẽ không được vào lại bài thi trực tiếp này. Bài làm của bạn sẽ bị đóng.",
   "studentExamLeaveRealtimeConfirm": "Thoát bài thi",
   "studentExamLeaveRealtimeCancel": "Tiếp tục làm",
+  "studentRunnerExitTitle": "Thoát bài?",
+  "studentRunnerExitMessage": "Tiến độ có thể mất nếu bạn thoát bây giờ.",
+  "studentRunnerExitConfirm": "Thoát",
+  "studentRunnerExitCancel": "Tiếp tục làm",
+  "studentAudioPlay": "Phát",
+  "studentAudioPause": "Tạm dừng",
   "studentExamVoluntaryExitBlocked": "Bạn đã thoát bài thi này và không thể vào lại.",
   "studentExamCannotRejoinAfterLeave": "Bạn không thể vào lại bài thi sau khi đã thoát.",
   "teacherExamSessionLeavePageHint": "Rời màn hình này không kết thúc bài thi với học sinh. Hãy bấm kết thúc phiên khi bạn muốn dừng bài thi.",
@@ -1385,6 +1410,7 @@
   "teacherLiveMirrorSkillInProgress": "Đang làm {skill}…",
   "teacherLiveMirrorBrowsingPart": "Đang xem: {part}",
   "teacherLiveMirrorFollowStudent": "Theo học sinh",
+  "teacherLiveMirrorQuestionMap": "Bản đồ câu hỏi",
   "teacherLiveMirrorWritingPrompt": "Đề bài",
   "teacherLiveMirrorListeningEmpty": "Học sinh chưa nhập dictation nào.",
   "teacherLiveMirrorListeningProgress": "Tiến độ dictation: {saved} / {total} câu",
@@ -1417,6 +1443,26 @@
   "teacherExamCreateSession": "Tạo / làm mới phòng chờ",
   "teacherExamStartSession": "Bắt đầu cho mọi người",
   "teacherExamEndSession": "Kết thúc và nộp tất cả",
+  "teacherExamEndSessionConfirm": "Hành động này kết thúc phiên và nộp bài thay cho mọi học sinh — kể cả người đang làm dở. Không thể hoàn tác.",
+  "teacherExamEndSessionTypePrompt": "Gõ {count} để xác nhận nộp bài thay cho mọi học sinh trong phiên.",
+  "@teacherExamEndSessionTypePrompt": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "teacherEmptyInboxCta": "Xem lớp học",
+  "teacherEmptyCalendarCta": "Tạo đề mới",
+  "teacherEmptyGradebookCta": "Mở lớp học",
+  "teacherSaveStateSaving": "Đang lưu…",
+  "teacherSaveStateSavedAt": "Đã lưu {time}",
+  "@teacherSaveStateSavedAt": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "teacherSaveStateError": "Lưu thất bại",
+  "teacherSaveStateRetry": "Thử lại",
+  "teacherExamValidationBanner": "Sửa các lỗi bên dưới trước khi xuất bản.",
   "teacherExamGradingTitle": "Chấm điểm",
   "teacherExamRunAi": "Gợi ý AI",
   "teacherExamReleaseResults": "Công bố điểm",

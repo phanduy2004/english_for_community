@@ -144,6 +144,40 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studentChatHubFilterUnread => 'Chưa đọc';
 
   @override
+  String get studentChatHubOverviewTitle => 'Kết nối lớp học';
+
+  @override
+  String get studentChatHubOverviewBody =>
+      'Trò chuyện với bạn cùng lớp và giáo viên trong từng nhóm lớp.';
+
+  @override
+  String get studentChatHubSectionConversations => 'Cuộc trò chuyện';
+
+  @override
+  String studentChatHubUnreadCount(int count) {
+    return '$count chưa đọc';
+  }
+
+  @override
+  String studentChatHubClassCount(int count) {
+    return '$count lớp';
+  }
+
+  @override
+  String get studentChatHubEmptyTitle => 'Chưa có tin nhắn';
+
+  @override
+  String get studentChatHubEmptyBody =>
+      'Các lớp bạn tham gia sẽ hiển thị ở đây.';
+
+  @override
+  String get studentChatHubSearchEmptyTitle => 'Không tìm thấy';
+
+  @override
+  String get studentChatHubSearchEmptyBody =>
+      'Thử từ khóa khác hoặc xóa bộ lọc.';
+
+  @override
   String get loginWelcomeBack => 'Chào mừng trở lại!';
 
   @override
@@ -3090,6 +3124,25 @@ class AppLocalizationsVi extends AppLocalizations {
   String get studentExamLeaveRealtimeCancel => 'Tiếp tục làm';
 
   @override
+  String get studentRunnerExitTitle => 'Thoát bài?';
+
+  @override
+  String get studentRunnerExitMessage =>
+      'Tiến độ có thể mất nếu bạn thoát bây giờ.';
+
+  @override
+  String get studentRunnerExitConfirm => 'Thoát';
+
+  @override
+  String get studentRunnerExitCancel => 'Tiếp tục làm';
+
+  @override
+  String get studentAudioPlay => 'Phát';
+
+  @override
+  String get studentAudioPause => 'Tạm dừng';
+
+  @override
   String get studentExamVoluntaryExitBlocked =>
       'Bạn đã thoát bài thi này và không thể vào lại.';
 
@@ -3515,6 +3568,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherLiveMirrorFollowStudent => 'Theo học sinh';
 
   @override
+  String get teacherLiveMirrorQuestionMap => 'Bản đồ câu hỏi';
+
+  @override
   String get teacherLiveMirrorWritingPrompt => 'Đề bài';
 
   @override
@@ -3632,6 +3688,42 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherExamEndSession => 'Kết thúc và nộp tất cả';
+
+  @override
+  String get teacherExamEndSessionConfirm =>
+      'Hành động này kết thúc phiên và nộp bài thay cho mọi học sinh — kể cả người đang làm dở. Không thể hoàn tác.';
+
+  @override
+  String teacherExamEndSessionTypePrompt(int count) {
+    return 'Gõ $count để xác nhận nộp bài thay cho mọi học sinh trong phiên.';
+  }
+
+  @override
+  String get teacherEmptyInboxCta => 'Xem lớp học';
+
+  @override
+  String get teacherEmptyCalendarCta => 'Tạo đề mới';
+
+  @override
+  String get teacherEmptyGradebookCta => 'Mở lớp học';
+
+  @override
+  String get teacherSaveStateSaving => 'Đang lưu…';
+
+  @override
+  String teacherSaveStateSavedAt(String time) {
+    return 'Đã lưu $time';
+  }
+
+  @override
+  String get teacherSaveStateError => 'Lưu thất bại';
+
+  @override
+  String get teacherSaveStateRetry => 'Thử lại';
+
+  @override
+  String get teacherExamValidationBanner =>
+      'Sửa các lỗi bên dưới trước khi xuất bản.';
 
   @override
   String get teacherExamGradingTitle => 'Chấm điểm';

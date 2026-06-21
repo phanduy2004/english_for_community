@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
@@ -13,6 +14,7 @@ class TeacherExamQuestionStripSection extends StatelessWidget {
     required this.questions,
     this.currentQuestionIndex,
     this.compact = false,
+    this.showTitle = true,
   });
 
   final String title;
@@ -20,6 +22,7 @@ class TeacherExamQuestionStripSection extends StatelessWidget {
   /// 0-based index of the question the student is on (optional).
   final int? currentQuestionIndex;
   final bool compact;
+  final bool showTitle;
 
   static List<Map<String, dynamic>> parseStrips(dynamic raw) {
     if (raw is! List) return [];
@@ -61,14 +64,16 @@ class TeacherExamQuestionStripSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          title,
-          style: ExamSystemUi.captionSecondary.copyWith(
-            fontWeight: FontWeight.w600,
-            fontSize: compact ? 11 : 12,
+        if (showTitle) ...[
+          Text(
+            title,
+            style: ExamSystemUi.captionSecondary.copyWith(
+              fontWeight: FontWeight.w600,
+              fontSize: compact ? 11 : 12,
+            ),
           ),
-        ),
-        const SizedBox(height: 6),
+          const SizedBox(height: 6),
+        ],
         SizedBox(
           height: boxSize + 4,
           child: e4cHorizontalScroll(
@@ -104,11 +109,14 @@ class TeacherExamSkillStripsPanel extends StatelessWidget {
     required this.skillStrips,
     this.compact = false,
     this.showLegend = true,
+    this.singleSectionMode = false,
   });
 
   final List<Map<String, dynamic>> skillStrips;
   final bool compact;
   final bool showLegend;
+  /// When true, omit redundant section titles (mirror shows one active part only).
+  final bool singleSectionMode;
 
   @override
   Widget build(BuildContext context) {
@@ -161,6 +169,7 @@ class TeacherExamSkillStripsPanel extends StatelessWidget {
               questions: questions,
               currentQuestionIndex: current,
               compact: compact,
+              showTitle: !singleSectionMode,
             ),
           );
         }),
@@ -176,14 +185,16 @@ class TeacherExamSkillStripsPanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            title,
-            style: ExamSystemUi.captionSecondary.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: compact ? 11 : 12,
+          if (!singleSectionMode) ...[
+            Text(
+              title,
+              style: ExamSystemUi.captionSecondary.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: compact ? 11 : 12,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
+            const SizedBox(height: 6),
+          ],
           for (final strip in strips) ...[
             _buildListeningSubStrip(context, Map<String, dynamic>.from(strip as Map)),
             const SizedBox(height: 4),
@@ -269,9 +280,9 @@ class _QuestionBox extends StatelessWidget {
 
     if (answered) {
       if (isCorrect == true) {
-        bg = const Color(0xFFE8F5E9);
-        border = const Color(0xFF43A047);
-        fg = const Color(0xFF2E7D32);
+        bg = AppColors.successBg;
+        border = AppColors.success;
+        fg = AppColors.success;
       } else if (isCorrect == false) {
         bg = AppColors.chartTrend.withValues(alpha: 0.12);
         border = AppColors.chartTrend;
@@ -293,7 +304,7 @@ class _QuestionBox extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         border: Border.all(color: border, width: borderWidth),
       ),
       child: Text(

@@ -1,4 +1,6 @@
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/entity/reading/reading_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -32,6 +34,9 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
   /// When set, teacher browses parts locally; resets when student changes part.
   int? _teacherPartOverride;
   int? _lastStudentPartIndex;
+  bool _questionMapExpanded = false;
+
+  static const double _questionMapMaxHeight = 120;
 
   int _resolveGrammarNavIndex(
     List<Map<String, dynamic>> grammar,
@@ -140,7 +145,24 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     if (_lastStudentPartIndex != studentIdx) {
       _lastStudentPartIndex = studentIdx;
       _teacherPartOverride = null;
+      _questionMapExpanded = false;
     }
+  }
+
+  List<Map<String, dynamic>> _stripsForActivePart(
+    List<Map<String, dynamic>> allStrips,
+    _MirrorPart active,
+  ) {
+    if (allStrips.isEmpty) return [];
+    if (active.isGrammar) {
+      return allStrips.where((s) => s['skill'] == 'grammar').toList();
+    }
+    if (active.isMergedListening) {
+      return allStrips.where((s) => s['skill'] == 'listening').toList();
+    }
+    final skill = active.section?['skill']?.toString();
+    if (skill == null || skill.isEmpty) return [];
+    return allStrips.where((s) => s['skill'] == skill).toList();
   }
 
   @override
@@ -200,7 +222,10 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
                   selected: i == idx,
                   done: p.done,
                   studentHere: i == studentIdx,
-                  onTap: () => setState(() => _teacherPartOverride = i),
+                  onTap: () => setState(() {
+                    _teacherPartOverride = i;
+                    _questionMapExpanded = false;
+                  }),
                 );
               },
             ),
@@ -208,10 +233,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
         ),
         if (TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']).isNotEmpty) ...[
           const SizedBox(height: 10),
-          TeacherExamSkillStripsPanel(
-            skillStrips: TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']),
-            compact: true,
-          ),
+          _buildQuestionMapPanel(context, active),
         ],
         const SizedBox(height: 12),
         Expanded(
@@ -223,6 +245,56 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
                     : _buildSkillMirror(context, active.section!, answers),
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionMapPanel(BuildContext context, _MirrorPart active) {
+    final l10n = context.l10n;
+    final allStrips = TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']);
+    final activeStrips = _stripsForActivePart(allStrips, active);
+    if (activeStrips.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => setState(() => _questionMapExpanded = !_questionMapExpanded),
+            borderRadius: BorderRadius.circular(AppSpacing.s2),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.teacherLiveMirrorQuestionMap,
+                      style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Icon(
+                    _questionMapExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                    color: AppColors.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_questionMapExpanded)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: _questionMapMaxHeight),
+            child: SingleChildScrollView(
+              child: TeacherExamSkillStripsPanel(
+                skillStrips: activeStrips,
+                compact: true,
+                showLegend: false,
+                singleSectionMode: true,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -372,7 +444,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
                   border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                 ),
                 child: Text(
@@ -461,7 +533,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outlineMuted),
             ),
             child: Text(promptText, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)),
@@ -476,7 +548,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outlineMuted),
             ),
             child: Text(draft, style: ExamSystemUi.captionSecondary.copyWith(height: 1.5)),
@@ -549,7 +621,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceCard,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: AppColors.outlineMuted),
               ),
               child: Column(
@@ -691,9 +763,9 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 24),
-        child: Center(child: AppLoadingIndicator.center()),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: StudentMobileUi.runnerLoading(),
       );
     }
     if (_error != null) {
@@ -724,7 +796,7 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceCard,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: AppColors.outlineMuted),
               ),
               child: Column(

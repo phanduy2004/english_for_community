@@ -350,6 +350,60 @@ abstract class AppLocalizations {
   /// **'Unread'**
   String get studentChatHubFilterUnread;
 
+  /// No description provided for @studentChatHubOverviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay connected'**
+  String get studentChatHubOverviewTitle;
+
+  /// No description provided for @studentChatHubOverviewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat with your classmates and teachers in each class group.'**
+  String get studentChatHubOverviewBody;
+
+  /// No description provided for @studentChatHubSectionConversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get studentChatHubSectionConversations;
+
+  /// No description provided for @studentChatHubUnreadCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String studentChatHubUnreadCount(int count);
+
+  /// No description provided for @studentChatHubClassCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} classes'**
+  String studentChatHubClassCount(int count);
+
+  /// No description provided for @studentChatHubEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get studentChatHubEmptyTitle;
+
+  /// No description provided for @studentChatHubEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Classrooms you join will appear here.'**
+  String get studentChatHubEmptyBody;
+
+  /// No description provided for @studentChatHubSearchEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No results'**
+  String get studentChatHubSearchEmptyTitle;
+
+  /// No description provided for @studentChatHubSearchEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another keyword or clear the search.'**
+  String get studentChatHubSearchEmptyBody;
+
   /// No description provided for @loginWelcomeBack.
   ///
   /// In en, this message translates to:
@@ -5703,6 +5757,42 @@ abstract class AppLocalizations {
   /// **'Keep working'**
   String get studentExamLeaveRealtimeCancel;
 
+  /// No description provided for @studentRunnerExitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this exercise?'**
+  String get studentRunnerExitTitle;
+
+  /// No description provided for @studentRunnerExitMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress may be lost if you leave now.'**
+  String get studentRunnerExitMessage;
+
+  /// No description provided for @studentRunnerExitConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get studentRunnerExitConfirm;
+
+  /// No description provided for @studentRunnerExitCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep working'**
+  String get studentRunnerExitCancel;
+
+  /// No description provided for @studentAudioPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get studentAudioPlay;
+
+  /// No description provided for @studentAudioPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get studentAudioPause;
+
   /// No description provided for @studentExamVoluntaryExitBlocked.
   ///
   /// In en, this message translates to:
@@ -6401,6 +6491,12 @@ abstract class AppLocalizations {
   /// **'Follow student'**
   String get teacherLiveMirrorFollowStudent;
 
+  /// No description provided for @teacherLiveMirrorQuestionMap.
+  ///
+  /// In en, this message translates to:
+  /// **'Question map'**
+  String get teacherLiveMirrorQuestionMap;
+
   /// No description provided for @teacherLiveMirrorWritingPrompt.
   ///
   /// In en, this message translates to:
@@ -6592,6 +6688,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'End and submit all'**
   String get teacherExamEndSession;
+
+  /// No description provided for @teacherExamEndSessionConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'This ends the session and force-submits every student\'s attempt — including those still in progress. This can\'t be undone.'**
+  String get teacherExamEndSessionConfirm;
+
+  /// No description provided for @teacherExamEndSessionTypePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Type {count} to confirm force-submit for all students in this session.'**
+  String teacherExamEndSessionTypePrompt(int count);
+
+  /// No description provided for @teacherEmptyInboxCta.
+  ///
+  /// In en, this message translates to:
+  /// **'View classes'**
+  String get teacherEmptyInboxCta;
+
+  /// No description provided for @teacherEmptyCalendarCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create new exam'**
+  String get teacherEmptyCalendarCta;
+
+  /// No description provided for @teacherEmptyGradebookCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Open classroom'**
+  String get teacherEmptyGradebookCta;
+
+  /// No description provided for @teacherSaveStateSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get teacherSaveStateSaving;
+
+  /// No description provided for @teacherSaveStateSavedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved {time}'**
+  String teacherSaveStateSavedAt(String time);
+
+  /// No description provided for @teacherSaveStateError.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed'**
+  String get teacherSaveStateError;
+
+  /// No description provided for @teacherSaveStateRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get teacherSaveStateRetry;
+
+  /// No description provided for @teacherExamValidationBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Fix the errors below before publishing.'**
+  String get teacherExamValidationBanner;
 
   /// No description provided for @teacherExamGradingTitle.
   ///

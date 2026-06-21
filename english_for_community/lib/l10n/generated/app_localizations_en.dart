@@ -144,6 +144,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studentChatHubFilterUnread => 'Unread';
 
   @override
+  String get studentChatHubOverviewTitle => 'Stay connected';
+
+  @override
+  String get studentChatHubOverviewBody =>
+      'Chat with your classmates and teachers in each class group.';
+
+  @override
+  String get studentChatHubSectionConversations => 'Conversations';
+
+  @override
+  String studentChatHubUnreadCount(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String studentChatHubClassCount(int count) {
+    return '$count classes';
+  }
+
+  @override
+  String get studentChatHubEmptyTitle => 'No messages yet';
+
+  @override
+  String get studentChatHubEmptyBody => 'Classrooms you join will appear here.';
+
+  @override
+  String get studentChatHubSearchEmptyTitle => 'No results';
+
+  @override
+  String get studentChatHubSearchEmptyBody =>
+      'Try another keyword or clear the search.';
+
+  @override
   String get loginWelcomeBack => 'Welcome Back!';
 
   @override
@@ -3104,6 +3137,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get studentExamLeaveRealtimeCancel => 'Keep working';
 
   @override
+  String get studentRunnerExitTitle => 'Leave this exercise?';
+
+  @override
+  String get studentRunnerExitMessage =>
+      'Your progress may be lost if you leave now.';
+
+  @override
+  String get studentRunnerExitConfirm => 'Leave';
+
+  @override
+  String get studentRunnerExitCancel => 'Keep working';
+
+  @override
+  String get studentAudioPlay => 'Play';
+
+  @override
+  String get studentAudioPause => 'Pause';
+
+  @override
   String get studentExamVoluntaryExitBlocked =>
       'You left this exam and cannot re-enter.';
 
@@ -3528,6 +3580,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherLiveMirrorFollowStudent => 'Follow student';
 
   @override
+  String get teacherLiveMirrorQuestionMap => 'Question map';
+
+  @override
   String get teacherLiveMirrorWritingPrompt => 'Exam prompt';
 
   @override
@@ -3645,6 +3700,42 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherExamEndSession => 'End and submit all';
+
+  @override
+  String get teacherExamEndSessionConfirm =>
+      'This ends the session and force-submits every student\'s attempt — including those still in progress. This can\'t be undone.';
+
+  @override
+  String teacherExamEndSessionTypePrompt(int count) {
+    return 'Type $count to confirm force-submit for all students in this session.';
+  }
+
+  @override
+  String get teacherEmptyInboxCta => 'View classes';
+
+  @override
+  String get teacherEmptyCalendarCta => 'Create new exam';
+
+  @override
+  String get teacherEmptyGradebookCta => 'Open classroom';
+
+  @override
+  String get teacherSaveStateSaving => 'Saving…';
+
+  @override
+  String teacherSaveStateSavedAt(String time) {
+    return 'Saved $time';
+  }
+
+  @override
+  String get teacherSaveStateError => 'Sync failed';
+
+  @override
+  String get teacherSaveStateRetry => 'Retry';
+
+  @override
+  String get teacherExamValidationBanner =>
+      'Fix the errors below before publishing.';
 
   @override
   String get teacherExamGradingTitle => 'Grading';
