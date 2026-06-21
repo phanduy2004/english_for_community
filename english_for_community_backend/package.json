@@ -26,6 +26,8 @@
     "migrate:dry": "node migrations/runner.js --dry",
     "golden:capture": "node scripts/goldenCapture.js",
     "audit:t1": "node scripts/auditT1.js",
+    "audit:d4": "node scripts/auditD4.js",
+    "discover:exam-snapshot": "node scripts/discoverExamSnapshotParity.js",
     "test": "node --test",
     "test:notifications": "node src/scripts/testTeacherStudentNotifications.js"
   },

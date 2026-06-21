@@ -26,6 +26,9 @@ const examAssignmentSchema = new mongoose.Schema(
       default: null,
     },
     status: { type: String, enum: ['active', 'closed'], default: 'active' },
+    /** D4: frozen exam copy once per assignment (dedup storage). */
+    examSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
+    examSnapshotFrozenAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -43,6 +46,8 @@ examAssignmentSchema.set('toJSON', {
     ret.id = ret._id.toString();
     delete ret._id;
     delete ret.__v;
+    delete ret.examSnapshot;
+    delete ret.examSnapshotFrozenAt;
     return ret;
   },
 });

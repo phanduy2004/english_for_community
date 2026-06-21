@@ -8,6 +8,7 @@ import ExamSession from '../models/ExamSession.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import { classroomService } from './classroomService.js';
 import { teacherExamService } from './teacherExamService.js';
+import { ensureAssignmentFrozenSnapshot } from './examSnapshotStore.js';
 import { cascadeDeleteService } from './cascadeDeleteService.js';
 import {
   applyStudentAttemptGate,
@@ -110,6 +111,8 @@ function teacherListSegmentForAssignment(assignment, activeSessionMap, closedSes
 /** Classroom list: show every active assignment; gate "start" via studentCanStart + studentStatusHint. */
 function enrichStudentAssignmentView(a, activeSessionMap, closedSessionMap) {
   const plain = a.toJSON ? a.toJSON() : { ...a };
+  delete plain.examSnapshot;
+  delete plain.examSnapshotFrozenAt;
   let studentCanStart = false;
   let studentStatusHint = 'available';
 
@@ -165,6 +168,8 @@ function enrichStudentAssignmentView(a, activeSessionMap, closedSessionMap) {
 
 function enrichTeacherAssignmentView(a, activeSessionMap, closedSessionMap, attemptStatsMap) {
   const plain = a.toJSON ? a.toJSON() : { ...a };
+  delete plain.examSnapshot;
+  delete plain.examSnapshotFrozenAt;
   const sessionDoc = activeSessionMap.get(a._id.toString());
   const closedDoc = closedSessionMap.get(a._id.toString());
   const stats = attemptStatsMap.get(a._id.toString()) || null;
@@ -235,6 +240,7 @@ export const teacherExamAssignmentService = {
     }
 
     const assignment = await ExamAssignment.create(doc);
+    await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
     if (parsed.audience === 'public_link' && parsed.mode === 'realtime') {
       const { examSessionService } = await import('./examSessionService.js');
       await examSessionService.createSession(teacherId, assignment._id.toString());

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { httpError } from '../utils/AppError.js';
 import Exam from '../models/Exam.js';
 import ExamSession from '../models/ExamSession.js';
 import ExamAttempt from '../models/ExamAttempt.js';
@@ -10,6 +11,12 @@ import { buildAssignmentCardFields } from './assignmentCardEnrichment.js';
 import { assertRealtimeLobbyOpenForStudent } from './realtimeSchedule.js';
 import { broadcastAllSessionAttempts, examLiveMonitorService } from './examLiveMonitorService.js';
 import { normalizeExamSnapshot } from './examSkillSectionResources.js';
+import {
+  dualWriteSnapshotFields,
+  ensureAssignmentFrozenSnapshot,
+  healPersistSnapshot,
+  buildSnapshotFromExam,
+} from './examSnapshotStore.js';
 
 function mapJoinedUsersToParticipants(joinedUserIds, readyUserIds = []) {
   const readySet = new Set((readyUserIds || []).map((id) => id.toString()));
@@ -48,12 +55,6 @@ async function buildSessionContext(session) {
     mode: assignment.mode,
     ...buildAssignmentCardFields(assignment, {}),
   };
-}
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
 }
 
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -313,9 +314,7 @@ export const examSessionService = {
     if (assignment.mode !== 'realtime') throw httpError(400, 'Assignment must be realtime mode');
     const exam = assignment.examId;
     if (!exam) throw httpError(500, 'Exam not populated');
-    let snapshot = exam.toObject ? exam.toObject() : exam;
-    delete snapshot._id;
-    snapshot = normalizeExamSnapshot(snapshot);
+    const snapshot = await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
 
     const existing = await ExamSession.findOne({ assignmentId: assignment._id, status: 'lobby' });
     if (existing) {
@@ -438,10 +437,17 @@ export const examSessionService = {
     const assignment = session.assignmentId;
     const examDoc = await Exam.findById(assignment.examId);
     if (!examDoc) throw httpError(500, 'Exam missing on assignment');
-    let exam = examDoc.toObject ? examDoc.toObject() : examDoc;
-    delete exam._id;
-    exam = normalizeExamSnapshot(exam);
+    let exam = await ensureAssignmentFrozenSnapshot(assignment._id, { exam: examDoc });
+    if (!exam) {
+      exam = buildSnapshotFromExam(examDoc);
+    }
     session.examSnapshot = exam;
+    exam = await healPersistSnapshot({
+      assignmentId: assignment._id,
+      sessionDoc: session,
+      snapshot: exam,
+      liveExam: examDoc.toObject ? examDoc.toObject() : examDoc,
+    });
     const startedAt = new Date();
     const attemptDeadlineAt = computeAttemptDeadline(assignment, startedAt);
     session.status = 'live';
@@ -459,7 +465,7 @@ export const examSessionService = {
         status: 'in_progress',
       });
       if (existing) {
-        existing.examSnapshot = exam;
+        dualWriteSnapshotFields(existing, exam);
         await existing.save();
         continue;
       }

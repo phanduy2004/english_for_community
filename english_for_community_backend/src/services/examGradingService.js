@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import { httpError } from '../utils/AppError.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import { teacherExamService } from './teacherExamService.js';
@@ -18,12 +19,7 @@ import {
   resolveMongoUserId,
   resourcesFromSkillSection,
 } from './examAttemptService.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
+import { resolveSnapshotForAttemptDoc } from './examSnapshotStore.js';
 
 const { walkItems } = teacherExamService;
 
@@ -36,12 +32,14 @@ function getGroq() {
 async function assertTeacherOwnsAttempt(teacherId, attemptId) {
   const attempt = await ExamAttempt.findById(attemptId).populate({
     path: 'assignmentId',
-    select: 'teacherId classroomId',
+    select: 'teacherId classroomId examSnapshot examId',
   });
   if (!attempt) throw httpError(404, 'Attempt not found');
   const a = attempt.assignmentId;
   if (!a) throw httpError(404, 'Assignment not found');
   await teacherExamAssignmentService.assertTeacherOwnsAssignment(teacherId, a._id.toString());
+  const snap = await resolveSnapshotForAttemptDoc(attempt, { heal: false });
+  if (snap) attempt.examSnapshot = snap;
   return attempt;
 }
 

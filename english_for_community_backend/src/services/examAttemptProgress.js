@@ -1,4 +1,5 @@
 import { walkItems } from './teacherExamService.js';
+import { hydrateLeanAttemptSnapshot } from './examSnapshotStore.js';
 
 /** Normalize populate/ObjectId/string refs to a 24-char hex id string. */
 export function refToMongoIdString(ref) {
@@ -227,6 +228,7 @@ export function buildLiveScreenPayload(attempt, userLean = null) {
 
 /** Async variant includes live skill question strips (grammar / listening / reading). */
 export async function buildLiveScreenPayloadAsync(attempt, userLean = null, { skillStrips } = {}) {
+  await hydrateLeanAttemptSnapshot(attempt);
   const row = buildAttemptLiveProgressRow(attempt, userLean);
   const snap = attempt.examSnapshot || {};
   let strips = skillStrips;

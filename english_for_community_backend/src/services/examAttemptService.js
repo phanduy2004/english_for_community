@@ -15,6 +15,12 @@ import SpeakingAttempt from '../models/SpeakingAttempt.js';
 import WritingSubmission from '../models/WritingSubmission.js';
 import { wordErrorRate } from '../utils/scoring.js';
 import { withLeanApiId, withLeanNestedIds } from '../lib/leanApiSerialize.js';
+import {
+  attachResolvedSnapshotToPlain,
+  dualWriteSnapshotFields,
+  ensureAssignmentFrozenSnapshot,
+  resolveSnapshotForAttemptDoc,
+} from './examSnapshotStore.js';
 import { teacherExamService } from './teacherExamService.js';
 import { teacherExamAssignmentService } from './teacherExamAssignmentService.js';
 import { resolveAttemptPolicy, resolveResultsDetailLevel, resolveShowResultsPolicy } from './assignmentPolicy.js';
@@ -313,31 +319,9 @@ async function attachRuntimeContextToAttempt(attemptDoc) {
 
   const student = await User.findById(plain.userId).select('fullName username').lean();
 
-  if (plain.examSnapshot && typeof plain.examSnapshot === 'object') {
-    let snap = normalizeExamSnapshot(plain.examSnapshot);
-    const examRef = assignment?.examId;
-    const examId =
-      examRef && typeof examRef === 'object' && examRef._id
-        ? examRef._id
-        : examRef;
-    if (examId) {
-      const liveExam = await Exam.findById(examId).lean();
-      if (liveExam) {
-        const healed = healExamSnapshotFromLiveExam(snap, liveExam);
-        snap = healed;
-        if (attemptDoc?.save && attemptDoc.examSnapshot) {
-          const before = JSON.stringify(attemptDoc.examSnapshot?.sections ?? []);
-          const after = JSON.stringify(healed.sections ?? []);
-          if (before !== after) {
-            attemptDoc.examSnapshot = healed;
-            attemptDoc.markModified('examSnapshot');
-            await attemptDoc.save();
-          }
-        }
-      }
-    }
-    plain.examSnapshot = snap;
-  }
+  const resolvedSnap = await resolveSnapshotForAttemptDoc(attemptDoc, { heal: true });
+  attachResolvedSnapshotToPlain(plain, resolvedSnap);
+
   const snap = plain.examSnapshot || {};
   const classRoom = assignment?.classroomId;
   const classroomName =
@@ -1243,6 +1227,9 @@ async function attachSkillWorkForGrading(attemptDoc) {
       ? attemptDoc.toObject()
       : { ...attemptDoc };
 
+  const resolvedSnap = await resolveSnapshotForAttemptDoc(attemptDoc, { heal: false });
+  attachResolvedSnapshotToPlain(plain, resolvedSnap);
+
   const startedAt = plain.startedAt ? new Date(plain.startedAt) : null;
   const endAt = plain.submittedAt ? new Date(plain.submittedAt) : new Date();
   const exam = plain.examSnapshot || {};
@@ -1535,9 +1522,7 @@ export const examAttemptService = {
       await teacherExamAssignmentService.consumePublicStartSlot(assignment._id);
     }
 
-    let snapshot = exam.toObject ? exam.toObject() : exam;
-    delete snapshot._id;
-    snapshot = normalizeExamSnapshot(snapshot);
+    const snapshot = await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
 
     const startedAt = new Date();
     const attemptDeadlineAt = computeAttemptDeadline(assignment, startedAt);
