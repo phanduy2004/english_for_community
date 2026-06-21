@@ -191,10 +191,11 @@ class ClassroomChatDockController extends ChangeNotifier {
 
   void _sortRooms() {
     rooms = [...rooms]..sort((a, b) {
-        if (a.hasUnread != b.hasUnread) return a.hasUnread ? -1 : 1;
         final ta = a.lastMessageAt?.millisecondsSinceEpoch ?? 0;
         final tb = b.lastMessageAt?.millisecondsSinceEpoch ?? 0;
-        return tb.compareTo(ta);
+        if (ta != tb) return tb.compareTo(ta);
+        if (a.hasUnread != b.hasUnread) return a.hasUnread ? -1 : 1;
+        return 0;
       });
   }
 
@@ -216,10 +217,32 @@ class ClassroomChatDockController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void openChat({required String classroomId, required String classroomName}) {
+  void updateRoomCover(String classroomId, String? coverImageUrl) {
+    final idx = rooms.indexWhere((r) => r.id == classroomId);
+    if (idx < 0) return;
+    final next = List<ClassroomChatRoomItem>.from(rooms);
+    next[idx] = next[idx].copyWith(coverImageUrl: coverImageUrl);
+    rooms = next;
+    if (session?.classroomId == classroomId) {
+      session = ClassroomChatSession(
+        classroomId: session!.classroomId,
+        classroomName: session!.classroomName,
+        coverImageUrl: coverImageUrl,
+        minimized: session!.minimized,
+      );
+    }
+    notifyListeners();
+  }
+
+  void openChat({
+    required String classroomId,
+    required String classroomName,
+    String? coverImageUrl,
+  }) {
     session = ClassroomChatSession(
       classroomId: classroomId,
       classroomName: classroomName,
+      coverImageUrl: coverImageUrl,
     );
     listPanelOpen = false;
     markConversationRead(classroomId, notify: true);
