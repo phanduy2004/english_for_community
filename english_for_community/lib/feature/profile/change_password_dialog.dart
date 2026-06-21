@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
@@ -65,7 +66,11 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   }
 
   void _showToast(BuildContext context, String message, {bool isError = false}) {
-    AppCornerToast.show(context, message, error: isError);
+    if (isError) {
+      AppFeedback.error(context, message);
+    } else {
+      AppFeedback.success(context, message);
+    }
   }
 
   @override
@@ -87,7 +92,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       child: Dialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         insetPadding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -161,7 +166,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: borderCol),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                         foregroundColor: textMain,
                       ),
                       child: Text(t.cancel, style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -177,7 +182,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                             backgroundColor: primaryCol,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                           ),
                           child: state.isFormLoading
                               ? const SizedBox(
@@ -247,13 +252,13 @@ class _ShadcnInput extends StatelessWidget {
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.outline)),
           enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.outline)),
           focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               borderSide: const BorderSide(color: AppColors.primary, width: 1.2)),
           filled: true,
           fillColor: Colors.white,

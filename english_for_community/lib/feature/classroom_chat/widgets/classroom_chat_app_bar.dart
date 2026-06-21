@@ -1,6 +1,6 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -151,30 +151,12 @@ class ClassroomChatHeader extends StatelessWidget {
     final size = radius * 2;
     final iconSize = compact ? 16.0 : 18.0;
 
-    Widget avatar = CircleAvatar(
+    Widget avatar = ChatGroupCoverAvatar(
+      coverImageUrl: coverImageUrl,
       radius: radius,
       backgroundColor: backgroundColor,
-      child: coverImageUrl != null && coverImageUrl!.isNotEmpty
-          ? ClipOval(
-              child: CachedNetworkImage(
-                key: ValueKey(coverImageUrl),
-                imageUrl: coverImageUrl!,
-                width: size,
-                height: size,
-                fit: BoxFit.cover,
-                placeholder: (_, __) => Icon(
-                  Icons.groups_outlined,
-                  size: iconSize,
-                  color: iconColor,
-                ),
-                errorWidget: (_, __, ___) => Icon(
-                  Icons.groups_outlined,
-                  size: iconSize,
-                  color: iconColor,
-                ),
-              ),
-            )
-          : Icon(Icons.groups_outlined, size: iconSize, color: iconColor),
+      fallbackIconColor: iconColor,
+      fallbackIconSize: iconSize,
     );
 
     if (coverUploading) {

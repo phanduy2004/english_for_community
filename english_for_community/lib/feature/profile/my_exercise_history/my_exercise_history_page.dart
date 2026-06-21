@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import '../../../core/get_it/get_it.dart';
 import '../../../core/locale/l10n_context.dart';
 import '../../../l10n/generated/app_localizations.dart';
@@ -141,7 +142,7 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
           if (state.status == MyExerciseHistoryStatus.error &&
               state.errorMessage != null &&
               state.items.isNotEmpty) {
-            AppCornerToast.show(context, state.errorMessage!, error: true);
+            AppFeedback.error(context, state.errorMessage!);
           }
         },
         builder: (context, state) {
@@ -188,7 +189,7 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
               ),
               Expanded(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 320),
+                  duration: AppMotion.debounce,
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
                   transitionBuilder: (child, anim) {
@@ -262,9 +263,9 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
       separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.cardGap),
       itemBuilder: (context, index) {
         if (index >= state.items.length) {
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.s5),
-            child: Center(child: AppLoadingIndicator.center()),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s5),
+            child: StudentMobileUi.listLoading(),
           );
         }
         final item = state.items[index];
@@ -304,7 +305,7 @@ class _DateFilterChip extends StatelessWidget {
     final end = DateFormat('MMM dd, yy').format(range.end);
     return ScalePressable(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       minScale: 0.99,
       splashColor: AppColors.primary.withValues(alpha: 0.08),
       highlightColor: AppColors.primaryTint,

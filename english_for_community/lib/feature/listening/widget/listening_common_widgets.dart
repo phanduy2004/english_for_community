@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -7,6 +8,7 @@ import 'package:english_for_community/feature/student/exams/exam_section_tag.dar
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+import '../../../core/ui/student_mobile_ui.dart';
 import '../../../core/locale/l10n_context.dart';
 
 // =============================================================================
@@ -36,7 +38,7 @@ class ListeningHeader extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: AppColors.outlineMuted, width: 0.75),
         ),
         child: Column(
@@ -49,7 +51,7 @@ class ListeningHeader extends StatelessWidget {
             ],
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 5,
@@ -70,7 +72,7 @@ class ListeningHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         color: AppColors.primary,
         boxShadow: [
           BoxShadow(
@@ -102,7 +104,7 @@ class ListeningHeader extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.onPrimary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(AppRadius.chip),
                         border: Border.all(color: AppColors.onPrimary.withValues(alpha: 0.25)),
                       ),
                       child: Text(
@@ -187,41 +189,53 @@ class ListeningPlayer extends StatelessWidget {
     final isDisabled = disabled || onTogglePlay == null;
     final canSeek = allowSeek && !isDisabled && onSeek != null;
 
-    return Container(
+    return Opacity(
+      opacity: isDisabled ? 0.55 : 1.0,
+      child: Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         border: Border.all(color: AppColors.outline),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+        boxShadow: const [BoxShadow(color: AppColors.shadowCard, blurRadius: 4, offset: Offset(0, 2))],
       ),
       child: StreamBuilder<PlayerState>(
         stream: player.playerStateStream,
         builder: (_, s) {
           final isPlaying = s.data?.playing ?? false;
+          final l10n = context.l10n;
+          final playLabel = isPlaying ? l10n.studentAudioPause : l10n.studentAudioPlay;
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 children: [
-                  Material(
-                    color: isDisabled ? AppColors.textMuted : primary,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      onTap: isDisabled ? null : onTogglePlay,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        width: 44,
-                        height: 44,
-                        alignment: Alignment.center,
-                        child: Icon(
-                          isDisabled
-                              ? Icons.play_disabled_rounded
-                              : isPlaying
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded,
-                          color: AppColors.onPrimary,
-                          size: 30,
+                  Semantics(
+                    button: true,
+                    label: playLabel,
+                    enabled: !isDisabled,
+                    child: Material(
+                      color: isDisabled ? AppColors.textMuted : primary,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      child: InkWell(
+                        onTap: isDisabled ? null : onTogglePlay,
+                        borderRadius: BorderRadius.circular(AppRadius.card),
+                        child: Tooltip(
+                          message: playLabel,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            alignment: Alignment.center,
+                            child: Icon(
+                              isDisabled
+                                  ? Icons.play_disabled_rounded
+                                  : isPlaying
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                              color: AppColors.onPrimary,
+                              size: 30,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -232,7 +246,7 @@ class ListeningPlayer extends StatelessWidget {
                       stream: player.positionStream,
                       builder: (_, p) {
                         final pos = p.data ?? Duration.zero;
-                        final dur = player.duration ?? const Duration(milliseconds: 1);
+                        final dur = player.duration ?? const Duration(milliseconds: 1); // audit-ignore: audio fallback divisor
 
                         return Column(
                           mainAxisSize: MainAxisSize.min,
@@ -256,7 +270,7 @@ class ListeningPlayer extends StatelessWidget {
                               )
                             else
                               ClipRRect(
-                                borderRadius: BorderRadius.circular(2),
+                                borderRadius: BorderRadius.circular(AppRadius.xs),
                                 child: LinearProgressIndicator(
                                   value: isDisabled
                                       ? 1.0
@@ -271,14 +285,23 @@ class ListeningPlayer extends StatelessWidget {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(_formatDuration(isDisabled ? dur : pos), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                  Text(
+                                    _formatDuration(isDisabled ? dur : pos),
+                                    style: StudentMobileUi.caption(context),
+                                  ),
                                   if (isDisabled)
                                     Text(
                                       context.l10n.listeningCompPlayedOnce,
-                                      style: TextStyle(fontSize: 10, color: AppColors.warning, fontWeight: FontWeight.w500),
+                                      style: StudentMobileUi.caption(context).copyWith(
+                                        color: AppColors.warning,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     )
                                   else
-                                    Text(_formatDuration(dur), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                    Text(
+                                      _formatDuration(dur),
+                                      style: StudentMobileUi.caption(context),
+                                    ),
                                 ],
                               ),
                             )
@@ -293,6 +316,7 @@ class ListeningPlayer extends StatelessWidget {
           );
         },
       ),
+    ),
     );
   }
 }

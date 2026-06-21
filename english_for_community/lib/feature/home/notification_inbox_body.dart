@@ -9,7 +9,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_lottie_preset.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/ui/widget/app_load_gate.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_bloc.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_event.dart';
@@ -90,7 +90,7 @@ class _NotificationInboxBodyState extends State<NotificationInboxBody> {
     final actionStatus = action == 'accept' ? 'accepted' : 'declined';
     var ok = false;
     result.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message),
       (_) {
         ok = true;
         context.read<NotificationBloc>().add(
@@ -106,18 +106,18 @@ class _NotificationInboxBodyState extends State<NotificationInboxBody> {
       if (cid != null && cid.isNotEmpty) {
         _closeOverlayIfNeeded();
         router.push('${TeacherClassroomDetailPage.routePath}/$cid');
-        AppCornerToast.show(context, t.notificationInviteAccepted);
+        AppFeedback.success(context, t.notificationInviteAccepted);
         return;
       }
     }
     if (item.type == 'CLASSROOM_JOIN_REQUEST') {
-      AppCornerToast.show(
+      AppFeedback.success(
         context,
         action == 'accept' ? t.notificationJoinApproved : t.notificationJoinDeclined,
       );
       return;
     }
-    AppCornerToast.show(
+    AppFeedback.success(
       context,
       action == 'accept' ? t.notificationInviteAccepted : t.notificationInviteDeclined,
     );
@@ -154,8 +154,8 @@ class _NotificationInboxBodyState extends State<NotificationInboxBody> {
             context.read<NotificationBloc>().add(const NotificationLoadStarted());
           },
           retryLabel: t.retry,
-          loading: const Center(
-            child: AppLoadingIndicator.center(color: AppColors.primary),
+          loading: Center(
+            child: StudentMobileUi.runnerLoading(),
           ),
           child: state.notifications.isEmpty
               ? StudentMobileUi.emptyState(

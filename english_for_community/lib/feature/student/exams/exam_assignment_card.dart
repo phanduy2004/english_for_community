@@ -562,7 +562,7 @@ class ExamAssignmentCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(AppRadius.chip),
                             border: Border.all(color: AppColors.outlineMuted),
                           ),
                           child: Text(s, style: StudentMobileUi.caption(context)),
@@ -721,7 +721,7 @@ class ExamAssignmentCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
       ),
       child: Text(label, style: AppTypography.label(color: color)),
     );

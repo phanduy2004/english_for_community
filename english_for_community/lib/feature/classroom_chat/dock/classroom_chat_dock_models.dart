@@ -48,10 +48,12 @@ class ClassroomChatSession {
   ClassroomChatSession({
     required this.classroomId,
     required this.classroomName,
+    this.coverImageUrl,
     this.minimized = false,
   });
 
   final String classroomId;
   final String classroomName;
+  final String? coverImageUrl;
   bool minimized;
 }

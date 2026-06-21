@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -76,7 +77,7 @@ class ExamEmbeddedWritingReviewPanel extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primaryTint,
-                        borderRadius: BorderRadius.circular(999),
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                         border: Border.all(color: AppColors.outline),
                       ),
                       child: Text(

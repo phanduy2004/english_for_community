@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +9,7 @@ import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/api/api_config.dart';
 import '../../../core/locale/l10n_context.dart';
-import '../../../core/ui/widget/app_corner_toast.dart';
+import '../../../core/ui/feedback/app_feedback.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_skill_colors.dart';
 import '../../../core/ui/student_mobile_ui.dart';
@@ -265,11 +266,11 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     setState(() => _showHint = !result.passed);
     if (!mounted) return;
     final t = context.l10n;
-    AppCornerToast.show(
-      context,
-      result.passed ? '✅ ${t.dictationSnackCorrect}' : '⚠️ ${t.dictationSnackTryAgain}',
-      error: !result.passed,
-    );
+    if (result.passed) {
+      AppFeedback.success(context, '✅ ${t.dictationSnackCorrect}');
+    } else {
+      AppFeedback.error(context, '⚠️ ${t.dictationSnackTryAgain}');
+    }
   }
 
   Widget _buildCueContent(BuildContext context, String myUserId) {
@@ -294,9 +295,19 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
             }
           },
           builder: (context, state) {
-            if (state.status == CueStatus.loading) return const Center(child: AppLoadingIndicator.center());
+            if (state.status == CueStatus.loading) return StudentMobileUi.runnerLoading();
             if (state.status == CueStatus.error) {
-              return Center(child: Text(state.errorMessage ?? context.l10n.commonError));
+              return StudentMobileUi.errorRetry(
+                context,
+                message: state.errorMessage ?? context.l10n.commonError,
+                onRetry: () => context.read<CueBloc>().add(
+                      LoadCuesAndAttempts(
+                        listeningId: widget.listeningId,
+                        examPracticeMode: widget.examPracticeMode,
+                      ),
+                    ),
+                retryLabel: context.l10n.commonRetry,
+              );
             }
 
             final practice = PracticeTab(
@@ -381,7 +392,7 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadius.sheet),
                       border: Border.all(color: AppColors.outline),
                     ),
                     child: Column(
@@ -435,6 +446,11 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
         );
   }
 
+  bool _shouldBlockExit(CueState state) {
+    if (widget.embedded || widget.readOnlyReview) return false;
+    return state.userAnswer.trim().isNotEmpty || state.completedIdx.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -445,14 +461,22 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
       return content;
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: StudentMobileUi.skillAppBar(
-        context,
-        title: widget.title ?? t.listeningSkillsPracticeTitle,
-        skill: SkillType.listening,
-      ),
-      body: SafeArea(child: content),
+    return BlocBuilder<CueBloc, CueState>(
+      builder: (context, state) {
+        return StudentMobileUi.runnerPopScope(
+          context: context,
+          blockExit: _shouldBlockExit(state),
+          child: Scaffold(
+            backgroundColor: AppColors.surface,
+            appBar: StudentMobileUi.skillAppBar(
+              context,
+              title: widget.title ?? t.listeningSkillsPracticeTitle,
+              skill: SkillType.listening,
+            ),
+            body: SafeArea(child: content),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,7 +11,8 @@ import 'package:translator/translator.dart';
 
 import '../../../../core/api/api_config.dart';
 import '../../../../core/locale/l10n_context.dart';
-import '../../../../core/ui/widget/app_corner_toast.dart';
+import '../../../../core/util/app_haptics.dart';
+import '../../../../core/ui/feedback/app_feedback.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../../../../core/theme/app_color.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -47,7 +49,7 @@ class ListeningCompPage extends StatelessWidget {
       create: (context) =>
       // 🔥 TRUYỀN THẲNG VÀO ĐÂY
       getIt<ListeningCompBloc>()..add(FetchListeningCompDetail(id, isRetake: isRetake)),
-      child: const _ListeningCompView(),
+      child: _ListeningCompView(compId: id, isRetake: isRetake),
     );
   }
 }
@@ -55,7 +57,10 @@ class ListeningCompPage extends StatelessWidget {
 // 2. WIDGET CON
 // =============================================================================
 class _ListeningCompView extends StatefulWidget {
-  const _ListeningCompView();
+  const _ListeningCompView({required this.compId, required this.isRetake});
+
+  final String compId;
+  final bool isRetake;
 
   @override
   State<_ListeningCompView> createState() => _ListeningCompViewState();
@@ -67,6 +72,8 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   late final TabController _tabController;
 
   final ScrollController _questionsScrollController = ScrollController();
+  late final PageController _questionPageController;
+  int _questionPageIndex = 0;
   final Map<String, int> _selectedAnswers = {};
 
   Timer? _timer;
@@ -96,6 +103,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
     super.initState();
     _player = ja.AudioPlayer();
     _tabController = TabController(length: 2, vsync: this);
+    _questionPageController = PageController();
     _remainingSecondsNotifier = ValueNotifier<int>(0);
 
     _tabController.addListener(() {
@@ -188,7 +196,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         if (mounted) {
           final currentState = context.read<ListeningCompBloc>().state;
           if (currentState.status == CompStatus.success) {
-            AppCornerToast.show(context, context.l10n.quizTimeUpSubmitting, error: true);
+            AppFeedback.error(context, context.l10n.quizTimeUpSubmitting);
             _submitQuiz(context);
           }
         }
@@ -222,7 +230,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
     if (_questionsScrollController.hasClients) {
       _questionsScrollController.animateTo(
         0,
-        duration: const Duration(milliseconds: 300),
+        duration: AppMotion.base,
         curve: Curves.easeOut,
       );
     }
@@ -232,6 +240,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   void dispose() {
     _player.dispose();
     _tabController.dispose();
+    _questionPageController.dispose();
     _questionsScrollController.dispose();
     _timer?.cancel();
     _remainingSecondsNotifier.dispose();
@@ -241,6 +250,16 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   // =========================================================================
   // BUILD
   // =========================================================================
+
+  bool _shouldBlockExit() =>
+      !_isReviewMode && (_selectedAnswers.isNotEmpty || _remainingSecondsNotifier.value < _totalSeconds);
+
+  void _reloadComp() {
+    context.read<ListeningCompBloc>().add(
+          FetchListeningCompDetail(widget.compId, isRetake: widget.isRetake),
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = AppColors.primary;
@@ -294,7 +313,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 return AlertDialog(
                 backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(AppRadius.card)),
                 title: Text(d.readingQuizResultTitle,
                     style: const TextStyle(fontWeight: FontWeight.w700)),
                 content: Text(
@@ -325,7 +344,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         }
 
         if (state.status == CompStatus.error) {
-          AppCornerToast.show(context, state.errorMessage ?? context.l10n.commonError, error: true);
+          AppFeedback.error(context, state.errorMessage ?? context.l10n.commonError, blocking: true);
         }
       },
       builder: (context, state) {
@@ -334,23 +353,32 @@ class _ListeningCompViewState extends State<_ListeningCompView>
         final bool isSubmitting = state.status == CompStatus.submitting;
 
         if (isLoading) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: AppColors.surface,
-            body: Center(child: AppLoadingIndicator.center()),
+            body: StudentMobileUi.runnerLoading(),
           );
         }
 
         if (state.data == null) {
           return Scaffold(
             backgroundColor: AppColors.surface,
-            body: Center(child: Text(context.l10n.listeningCompLoadError)),
+            body: StudentMobileUi.errorRetry(
+              context,
+              title: context.l10n.listeningCompTitle,
+              message: context.l10n.listeningCompLoadError,
+              onRetry: _reloadComp,
+              retryLabel: context.l10n.commonRetry,
+            ),
           );
         }
 
         final entity = state.data!;
         final t = context.l10n;
 
-        return Scaffold(
+        return StudentMobileUi.runnerPopScope(
+          context: context,
+          blockExit: _shouldBlockExit(),
+          child: Scaffold(
           backgroundColor: AppColors.surface,
           appBar: AppBar(
             toolbarHeight: StudentMobileUi.appBarHeight,
@@ -438,7 +466,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 child: TabBar(
                   controller: _tabController,
                   labelColor: primaryColor,
-                  unselectedLabelColor: const Color(0xFF71717A),
+                  unselectedLabelColor: AppColors.textSecondary,
                   indicatorColor: primaryColor,
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelStyle: const TextStyle(fontWeight: FontWeight.w600),
@@ -469,6 +497,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 _buildBottomActionBar(context, isSubmitting),
             ],
           ),
+        ),
         );
       },
     );
@@ -484,10 +513,10 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   }) {
     return Material(
       color: primaryColor.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Icon(icon, size: 24, color: primaryColor),
@@ -526,7 +555,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
-                  color: isTimeRunningOut ? Colors.red : const Color(0xFF09090B),
+                  color: isTimeRunningOut ? Colors.red : AppColors.textPrimary,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
@@ -546,19 +575,19 @@ class _ListeningCompViewState extends State<_ListeningCompView>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: const BoxDecoration(color: Color(0xFFF0FDF4)),
+      decoration: const BoxDecoration(color: AppColors.successBg),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Icon(Icons.check_circle_outline, color: Color(0xFF15803D), size: 18),
+              const Icon(Icons.check_circle_outline, color: AppColors.success, size: 18),
               const SizedBox(width: 8),
               Text(
                 t.readingReviewingWithScore(score.round()),
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF15803D),
+                    color: AppColors.success,
                     fontSize: 14),
               ),
             ],
@@ -572,7 +601,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                   child: SizedBox(
                     width: 14,
                     height: 14,
-                    child: AppLoadingIndicator(strokeWidth: 2, color: Color(0xFF15803D)),
+                    child: AppLoadingIndicator(strokeWidth: 2, color: AppColors.success),
                   ),
                 ),
               Text(
@@ -616,141 +645,170 @@ class _ListeningCompViewState extends State<_ListeningCompView>
   // =========================================================================
   Widget _buildQuestionsTab(
       ListeningCompEntity entity, bool isSubmitted, Color primaryColor) {
+    Widget questionAt(int index) {
+      final q = entity.questions[index];
+      final isExpanded = _expandedFeedback.contains(q.id);
+      final t = context.l10n;
+
+      return AppCard(
+        variant: AppCardVariant.outline,
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: StudentMobileUi.exerciseCardPadding,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t.listeningCompQuestionNumber(index + 1),
+                    style: StudentMobileUi.caption(context),
+                  ),
+                  const SizedBox(height: AppSpacing.s2),
+                  Text(q.questionText, style: StudentMobileUi.cardTitle(context)),
+                  if (_showTranslation && _translatedQuestions.containsKey(q.id)) ...[
+                    const SizedBox(height: AppSpacing.s2),
+                    Text(
+                      _translatedQuestions[q.id]!,
+                      style: StudentMobileUi.body(context).copyWith(color: AppColors.success),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+              child: Column(
+                children: List.generate(q.options.length, (optIdx) {
+                  final isSelected = _selectedAnswers[q.id.toString()] == optIdx;
+                  final isCorrect = optIdx == q.correctAnswerIndex;
+                  String? sub;
+                  if (_showTranslation && _translatedOptions.containsKey(q.id)) {
+                    sub = _translatedOptions[q.id]![optIdx];
+                  }
+                  return StudentMobileUi.mcqOption(
+                    context: context,
+                    index: optIdx,
+                    text: q.options[optIdx],
+                    subtitle: sub,
+                    selected: !isSubmitted && isSelected,
+                    showReviewCorrect: isSubmitted && isCorrect,
+                    showReviewWrong: isSubmitted && isSelected && !isCorrect,
+                    onTap: isSubmitted
+                        ? null
+                        : () => setState(() => _selectedAnswers[q.id] = optIdx),
+                  );
+                }),
+              ),
+            ),
+            if (isSubmitted && q.feedback != null)
+              InkWell(
+                onTap: () => setState(() => isExpanded
+                    ? _expandedFeedback.remove(q.id)
+                    : _expandedFeedback.add(q.id)),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.card)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.lightbulb_outline, size: 16, color: AppColors.accent),
+                          const SizedBox(width: 6),
+                          Text(
+                            t.readingFeedbackExplanation,
+                            style: TextStyle(
+                                fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            isExpanded ? Icons.expand_less : Icons.expand_more,
+                            size: 18,
+                            color: AppColors.textMuted,
+                          ),
+                        ],
+                      ),
+                      if (isExpanded) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          q.feedback!.reasoning,
+                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                        ),
+                        if (_showTranslation && _translatedFeedback.containsKey(q.id)) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _translatedFeedback[q.id]!,
+                            style: const TextStyle(
+                                fontSize: 14, color: AppColors.successDark, height: 1.5),
+                          ),
+                        ],
+                        if (q.feedback!.hintTimestampSeconds != null) ...[
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Divider(height: 1, color: AppColors.outline),
+                          ),
+                          ActionChip(
+                            avatar: const Icon(Icons.play_circle_fill, size: 18, color: Colors.white),
+                            label: Text(
+                              t.listeningCompHintSeekSeconds(q.feedback!.hintTimestampSeconds!),
+                            ),
+                            backgroundColor: primaryColor.withValues(alpha: 0.8),
+                            labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            onPressed: () => _seekAndPlay(q.feedback!.hintTimestampSeconds!),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    if (!isSubmitted && entity.questions.length > 1) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          StudentMobileUi.mcqPagerHeader(
+            context,
+            current: _questionPageIndex + 1,
+            total: entity.questions.length,
+          ),
+          Expanded(
+            child: StudentMobileUi.mcqQuestionPager(
+              context: context,
+              controller: _questionPageController,
+              itemCount: entity.questions.length,
+              onPageChanged: (index) {
+                AppHaptics.select(context);
+                setState(() => _questionPageIndex = index);
+              },
+              itemBuilder: (context, index) {
+                return SingleChildScrollView(
+                  padding: StudentMobileUi.pagePadding,
+                  child: questionAt(index),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView.separated(
       controller: _questionsScrollController,
       padding: StudentMobileUi.pagePadding,
       itemCount: entity.questions.length,
       separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.exerciseSectionGap),
-      itemBuilder: (context, index) {
-        final q = entity.questions[index];
-        final isExpanded = _expandedFeedback.contains(q.id);
-        final t = context.l10n;
-
-        return AppCard(
-          variant: AppCardVariant.outline,
-          padding: EdgeInsets.zero,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: StudentMobileUi.exerciseCardPadding,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.listeningCompQuestionNumber(index + 1),
-                      style: StudentMobileUi.caption(context),
-                    ),
-                    const SizedBox(height: AppSpacing.s2),
-                    Text(q.questionText, style: StudentMobileUi.cardTitle(context)),
-                    if (_showTranslation && _translatedQuestions.containsKey(q.id)) ...[
-                      const SizedBox(height: AppSpacing.s2),
-                      Text(
-                        _translatedQuestions[q.id]!,
-                        style: StudentMobileUi.body(context).copyWith(color: AppColors.success),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-                child: Column(
-                  children: List.generate(q.options.length, (optIdx) {
-                    final isSelected = _selectedAnswers[q.id.toString()] == optIdx;
-                    final isCorrect = optIdx == q.correctAnswerIndex;
-                    String? sub;
-                    if (_showTranslation && _translatedOptions.containsKey(q.id)) {
-                      sub = _translatedOptions[q.id]![optIdx];
-                    }
-                    return StudentMobileUi.mcqOption(
-                      context: context,
-                      index: optIdx,
-                      text: q.options[optIdx],
-                      subtitle: sub,
-                      selected: !isSubmitted && isSelected,
-                      showReviewCorrect: isSubmitted && isCorrect,
-                      showReviewWrong: isSubmitted && isSelected && !isCorrect,
-                      onTap: isSubmitted
-                          ? null
-                          : () => setState(() => _selectedAnswers[q.id] = optIdx),
-                    );
-                  }),
-                ),
-              ),
-              if (isSubmitted && q.feedback != null)
-                InkWell(
-                  onTap: () => setState(() => isExpanded
-                      ? _expandedFeedback.remove(q.id)
-                      : _expandedFeedback.add(q.id)),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFAFAFA),
-                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(12)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFFF59E0B)),
-                            const SizedBox(width: 6),
-                            Text(
-                              t.readingFeedbackExplanation,
-                              style: TextStyle(
-                                  fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
-                            ),
-                            const Spacer(),
-                            Icon(
-                              isExpanded ? Icons.expand_less : Icons.expand_more,
-                              size: 18,
-                              color: const Color(0xFFA1A1AA),
-                            ),
-                          ],
-                        ),
-                        if (isExpanded) ...[
-                          const SizedBox(height: 8),
-                          // Explanation Gốc
-                          Text(
-                            q.feedback!.reasoning,
-                            style: const TextStyle(fontSize: 14, color: Color(0xFF52525B), height: 1.5),
-                          ),
-                          // Explanation Dịch
-                          if (_showTranslation && _translatedFeedback.containsKey(q.id)) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              _translatedFeedback[q.id]!,
-                              style: const TextStyle(
-                                  fontSize: 14, color: Color(0xFF166534), height: 1.5),
-                            ),
-                          ],
-
-                          if (q.feedback!.hintTimestampSeconds != null) ...[
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
-                              child: Divider(height: 1, color: Color(0xFFE4E4E7)),
-                            ),
-                            ActionChip(
-                              avatar: const Icon(Icons.play_circle_fill, size: 18, color: Colors.white),
-                              label: Text(
-                                t.listeningCompHintSeekSeconds(q.feedback!.hintTimestampSeconds!),
-                              ),
-                              backgroundColor: primaryColor.withValues(alpha: 0.8),
-                              labelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                              onPressed: () => _seekAndPlay(q.feedback!.hintTimestampSeconds!),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        );
-      },
+      itemBuilder: (context, index) => questionAt(index),
     );
   }
 
@@ -767,27 +825,27 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           margin: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE4E4E7)),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.outline),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.lock_outline, color: Color(0xFFE4E4E7), size: 48),
+              const Icon(Icons.lock_outline, color: AppColors.outline, size: 48),
               const SizedBox(height: 16),
               Text(
                 t.listeningCompTranscriptLocked,
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
-                    color: Color(0xFF09090B)),
+                    color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
               Text(
                 t.listeningCompTranscriptLockedHint,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Color(0xFF71717A), fontSize: 14, height: 1.4),
+                    color: AppColors.textSecondary, fontSize: 14, height: 1.4),
               ),
             ],
           ),
@@ -806,7 +864,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF71717A),
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -815,7 +873,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             style: const TextStyle(
               fontSize: 16,
               height: 1.6,
-              color: Color(0xFF09090B),
+              color: AppColors.textPrimary,
               fontFamily: 'Serif',
             ),
           ),
@@ -824,14 +882,14 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           if (_showTranslation) ...[
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24.0),
-              child: Divider(color: Color(0xFFE4E4E7), thickness: 1.5),
+              child: Divider(color: AppColors.outline, thickness: 1.5),
             ),
             Text(
               t.listeningCompTranscriptTranslation,
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF71717A),
+                color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
@@ -843,7 +901,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 style: const TextStyle(
                   fontSize: 16,
                   height: 1.6,
-                  color: Color(0xFF166534), // Màu xanh phân biệt
+                  color: AppColors.successDark, // Màu xanh phân biệt
                   fontFamily: 'Serif',
                 ),
               ),

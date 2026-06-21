@@ -15,7 +15,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../auth/bloc/user_bloc.dart';
 import '../auth/bloc/user_event.dart';
 import '../auth/bloc/user_state.dart';
@@ -270,14 +270,14 @@ class _ProfilePageState extends State<ProfilePage> {
       listener: (context, state) {
         if (state.status == UserStatus.unauthenticated) context.goNamed(LoginPage.routeName);
         if (state.status == UserStatus.error && state.errorMessage != null) {
-          AppCornerToast.show(context, state.errorMessage!, error: true);
+          AppFeedback.error(context, state.errorMessage!);
         }
       },
       builder: (context, state) {
         if (state.status == UserStatus.loading && state.userEntity == null) {
-          return const Scaffold(
+          return Scaffold(
             backgroundColor: AppColors.surface,
-            body: Center(child: AppLoadingIndicator.center(color: AppColors.primary)),
+            body: StudentMobileUi.runnerLoading(),
           );
         }
 
@@ -492,7 +492,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         foregroundColor: AppColors.textPrimary,
                         backgroundColor: AppColors.surfaceCard,
                         side: const BorderSide(color: AppColors.outline),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                       ),
                       child: Text(t.signOut, style: AppTypography.label()),
                     ),
@@ -519,12 +519,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildProfileHeader(BuildContext context, UserEntity user, AppLocalizations t) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
         color: AppColors.surfaceCard,
       ),
       foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border(
           left: BorderSide(color: AppColors.accent, width: 3),
         ),
@@ -655,7 +655,7 @@ class _SettingsTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(

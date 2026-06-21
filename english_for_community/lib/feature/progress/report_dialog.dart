@@ -8,7 +8,7 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/progress/bloc_report/report_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc_report/report_event.dart';
 import 'package:english_for_community/feature/progress/bloc_report/report_state.dart';
@@ -98,7 +98,11 @@ class _ReportDialogState extends State<ReportDialog> {
   }
 
   void _showToast(BuildContext context, String message, {bool isError = false}) {
-    AppCornerToast.show(context, message, error: isError);
+    if (isError) {
+      AppFeedback.error(context, message);
+    } else {
+      AppFeedback.success(context, message);
+    }
   }
 
   @override

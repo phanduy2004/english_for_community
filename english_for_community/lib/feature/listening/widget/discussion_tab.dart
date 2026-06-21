@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_color.dart';
@@ -69,7 +72,7 @@ class _DiscussionTabState extends State<DiscussionTab> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
+          duration: AppMotion.base,
           curve: Curves.easeOut,
         );
       }
@@ -113,7 +116,7 @@ class _DiscussionTabState extends State<DiscussionTab> {
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    if (widget.isLoading) return const Center(child: AppLoadingIndicator.center());
+    if (widget.isLoading) return StudentMobileUi.runnerLoading();
 
     final organized = _organizeComments(widget.comments);
 
@@ -140,7 +143,7 @@ class _DiscussionTabState extends State<DiscussionTab> {
                 decoration: shouldHighlight
                     ? BoxDecoration(
                     color: Colors.yellow.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
                     border: Border.all(color: Colors.orange.withValues(alpha: 0.3))
                 )
                     : null,
@@ -174,10 +177,10 @@ class _DiscussionTabState extends State<DiscussionTab> {
                 Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(8), border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3))),
+                  decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 3))),
                   child: Row(children: [Expanded(child: Text(t.replyingToUser(_replyingTo!.userName), style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600))), InkWell(onTap: () => setState(() => _replyingTo = null), child: const Icon(Icons.close, size: 16, color: Colors.grey))]),
                 ),
-              Row(children: [Expanded(child: TextField(controller: _commentCtrl, decoration: InputDecoration(hintText: _replyingTo != null ? t.commentHintReply : t.commentHintAsk, isDense: true, filled: true, fillColor: AppColors.surface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none)))), const SizedBox(width: 8), CircleAvatar(backgroundColor: Theme.of(context).primaryColor, child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)))]),
+              Row(children: [Expanded(child: TextField(controller: _commentCtrl, decoration: InputDecoration(hintText: _replyingTo != null ? t.commentHintReply : t.commentHintAsk, isDense: true, filled: true, fillColor: AppColors.surface, contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide.none)))), const SizedBox(width: 8), CircleAvatar(backgroundColor: Theme.of(context).primaryColor, child: IconButton(onPressed: _handleSend, icon: const Icon(Icons.send, size: 18, color: Colors.white)))]),
             ],
           ),
         ),
@@ -243,7 +246,7 @@ class CommentItem extends StatelessWidget {
               // 🔥 Đổi màu nền đậm hơn xíu nếu là target
               color: isHighlighted ? Colors.yellow.shade100 : AppColors.surfaceSubtle,
               border: isHighlighted ? Border.all(color: Colors.orange.withValues(alpha: 0.5)) : null,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.sheet),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(c.userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)), const SizedBox(width: 8), Text(timeStr, style: const TextStyle(fontSize: 10, color: Colors.grey))]),
@@ -251,9 +254,9 @@ class CommentItem extends StatelessWidget {
               RichText(text: TextSpan(style: const TextStyle(fontSize: 14, fontFamily: 'Roboto', height: 1.4, color: Colors.black), children: _parseContentStyle(c.content))),
             ]),
           ),
-          if (totalReactions > 0) Positioned(bottom: -10, right: 0, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))]), child: Row(mainAxisSize: MainAxisSize.min, children: [...(displayReactions ?? []).map((t) => Padding(padding: const EdgeInsets.only(right: 2), child: _buildReactionIconWidget(t, size: 12))), Text("$totalReactions", style: const TextStyle(fontSize: 10, color: Colors.black54))]))),
+          if (totalReactions > 0) Positioned(bottom: -10, right: 0, child: Container(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.card), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1))]), child: Row(mainAxisSize: MainAxisSize.min, children: [...(displayReactions ?? []).map((t) => Padding(padding: const EdgeInsets.only(right: 2), child: _buildReactionIconWidget(t, size: 12))), Text("$totalReactions", style: const TextStyle(fontSize: 10, color: Colors.black54))]))),
         ]),
-        Padding(padding: const EdgeInsets.only(left: 8, top: 6), child: Row(children: [GestureDetector(onTap: () => onReply(c), child: Text(t.discussionReply, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey))), const SizedBox(width: 16), Theme(data: Theme.of(context).copyWith(popupMenuTheme: const PopupMenuThemeData(color: Colors.white)), child: PopupMenuButton<ReactionType>(tooltip: t.discussionReactTooltip, offset: const Offset(0, -45), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)), elevation: 4, child: Row(children: [myReaction != null ? _buildReactionIconWidget(myReaction, size: 14) : const Icon(Icons.favorite_border, size: 14, color: Colors.grey), const SizedBox(width: 4), Text(myReaction != null ? _getReactionLabel(myReaction, t) : t.reactionLike, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: myReaction != null ? _getReactionColor(myReaction) : Colors.grey))]), itemBuilder: (context) => ReactionType.values.map((type) => PopupMenuItem(value: type, padding: const EdgeInsets.symmetric(horizontal: 8), height: 40, child: Center(child: _buildReactionIconWidget(type, size: 24)))).toList(), onSelected: (type) => onReact(c.id, type)))])),
+        Padding(padding: const EdgeInsets.only(left: 8, top: 6), child: Row(children: [GestureDetector(onTap: () => onReply(c), child: Text(t.discussionReply, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey))), const SizedBox(width: 16), Theme(data: Theme.of(context).copyWith(popupMenuTheme: const PopupMenuThemeData(color: Colors.white)), child: PopupMenuButton<ReactionType>(tooltip: t.discussionReactTooltip, offset: const Offset(0, -45), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)), elevation: 4, child: Row(children: [myReaction != null ? _buildReactionIconWidget(myReaction, size: 14) : const Icon(Icons.favorite_border, size: 14, color: Colors.grey), const SizedBox(width: 4), Text(myReaction != null ? _getReactionLabel(myReaction, t) : t.reactionLike, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: myReaction != null ? _getReactionColor(myReaction) : Colors.grey))]), itemBuilder: (context) => ReactionType.values.map((type) => PopupMenuItem(value: type, padding: const EdgeInsets.symmetric(horizontal: 8), height: 40, child: Center(child: _buildReactionIconWidget(type, size: 24)))).toList(), onSelected: (type) => onReact(c.id, type)))])),
       ])),
     ]);
   }

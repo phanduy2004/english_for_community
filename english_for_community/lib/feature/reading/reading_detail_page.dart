@@ -14,10 +14,11 @@ import '../../core/entity/reading/reading_feedback_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/repository/reading_repository.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/util/app_haptics.dart';
 import '../../core/ui/exam_system_ui.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
@@ -116,11 +117,14 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
   bool _isReviewMode = false;
   final Set<String> _expandedFeedback = {};
   bool _showReadingTranslation = false;
+  late final PageController _questionPageController;
+  int _questionPageIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _questionPageController = PageController();
 
     _totalSeconds = widget.reading.minutesToRead * 60;
     _remainingSeconds = _totalSeconds;
@@ -163,7 +167,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
         if (mounted) {
           final currentState = context.read<ReadingAttemptBloc>().state;
           if (currentState.status == AttemptStatus.initial || currentState.status == AttemptStatus.error) {
-            AppCornerToast.show(context, context.l10n.quizTimeUpSubmitting, error: true);
+            AppFeedback.error(context, context.l10n.quizTimeUpSubmitting);
             _submitQuiz(context);
           }
         }
@@ -179,6 +183,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   @override
   void dispose() {
+    _questionPageController.dispose();
     _tabController.dispose();
     _timer?.cancel();
     super.dispose();
@@ -216,6 +221,12 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     context.read<ReadingAttemptBloc>().add(SubmitAttemptEvent(payload: attemptPayload));
   }
 
+  bool _shouldBlockExit(AttemptStatus status) {
+    if (widget.embedded || _isReviewMode || widget.examReviewMode) return false;
+    if (status == AttemptStatus.success || status == AttemptStatus.review) return false;
+    return _selectedAnswers.isNotEmpty || _remainingSeconds < _totalSeconds;
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = AppColors.primary;
@@ -242,7 +253,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           }
           if (widget.embedded) {
             widget.onPartComplete?.call();
-            AppCornerToast.show(
+            AppFeedback.success(
               context,
               context.l10n.readingQuizResultSummary(
                 result?.correctCount ?? 0,
@@ -258,7 +269,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 final d = ctx.l10n;
                 return AlertDialog(
                   backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                   title: Text(d.readingQuizResultTitle, style: const TextStyle(fontWeight: FontWeight.w700)),
                   content: Text(
                     d.readingQuizResultSummary(
@@ -287,7 +298,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                     FilledButton(
                       style: FilledButton.styleFrom(
                         backgroundColor: primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                       ),
                       onPressed: () => Navigator.of(ctx).pop(),
                       child: Text(d.commonOk),
@@ -299,7 +310,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           }
         }
         else if (state.status == AttemptStatus.error) {
-          AppCornerToast.show(context, state.errorMessage ?? context.l10n.readingSubmissionFailed, error: true);
+          AppFeedback.error(context, state.errorMessage ?? context.l10n.readingSubmissionFailed, blocking: true);
         }
       },
       builder: (context, state) {
@@ -358,7 +369,10 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           return body;
         }
 
-        return Scaffold(
+        return StudentMobileUi.runnerPopScope(
+          context: context,
+          blockExit: _shouldBlockExit(state.status),
+          child: Scaffold(
           backgroundColor: AppColors.surface,
           appBar: AppBar(
             toolbarHeight: StudentMobileUi.appBarHeight,
@@ -396,6 +410,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             ),
           ),
           body: body,
+        ),
         );
       },
     );
@@ -505,7 +520,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                 label: Text(_showReadingTranslation ? t.readingHideTranslation : t.readingShowTranslation, style: TextStyle(color: primaryColor)),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: primaryColor.withValues(alpha: 0.5)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                 ),
               ),
             ),
@@ -553,20 +568,50 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
 
   Widget _buildQuestionsTab(BuildContext context, bool isSubmitted, bool isLoadingHistory) {
     if (isLoadingHistory) {
-      return const Center(child: AppLoadingIndicator.center());
+      return StudentMobileUi.runnerLoading();
     }
     final questions = widget.reading.questions;
     if (questions.isEmpty) {
       return Center(child: Text(context.l10n.readingNoQuestionsAvailable, style: const TextStyle(color: AppColors.textSecondary)));
     }
 
-    return ListView.separated(
-      padding: StudentMobileUi.pagePadding,
-      itemCount: questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.exerciseSectionGap),
-      itemBuilder: (context, index) {
-        return _buildQuestionCard(questions[index], index, isSubmitted);
-      },
+    if (isSubmitted || questions.length <= 1) {
+      return ListView.separated(
+        padding: StudentMobileUi.pagePadding,
+        itemCount: questions.length,
+        separatorBuilder: (_, __) => const SizedBox(height: StudentMobileUi.exerciseSectionGap),
+        itemBuilder: (context, index) {
+          return _buildQuestionCard(questions[index], index, isSubmitted);
+        },
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        StudentMobileUi.mcqPagerHeader(
+          context,
+          current: _questionPageIndex + 1,
+          total: questions.length,
+        ),
+        Expanded(
+          child: StudentMobileUi.mcqQuestionPager(
+            context: context,
+            controller: _questionPageController,
+            itemCount: questions.length,
+            onPageChanged: (index) {
+              AppHaptics.select(context);
+              setState(() => _questionPageIndex = index);
+            },
+            itemBuilder: (context, index) {
+              return SingleChildScrollView(
+                padding: StudentMobileUi.pagePadding,
+                child: _buildQuestionCard(questions[index], index, isSubmitted),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

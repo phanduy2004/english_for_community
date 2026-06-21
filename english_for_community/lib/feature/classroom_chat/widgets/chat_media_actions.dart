@@ -4,7 +4,7 @@ import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/util/file_download.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +56,7 @@ class ChatMediaActions {
   static Future<void> downloadFile(BuildContext context, {required ChatMedia media}) async {
     if (media.url.isEmpty) return;
     final l10n = context.l10n;
-    AppCornerToast.show(context, l10n.chatMediaDownloading);
+    AppFeedback.success(context, l10n.chatMediaDownloading);
 
     try {
       final dio = Dio();
@@ -77,11 +77,11 @@ class ChatMediaActions {
       );
 
       if (context.mounted) {
-        AppCornerToast.show(context, l10n.chatMediaDownloadDone);
+        AppFeedback.success(context, l10n.chatMediaDownloadDone);
       }
     } catch (_) {
       if (context.mounted) {
-        AppCornerToast.show(context, l10n.chatMediaDownloadFailed, error: true);
+        AppFeedback.error(context, l10n.chatMediaDownloadFailed);
       }
     }
   }

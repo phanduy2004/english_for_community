@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -19,7 +20,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/theme/app_color.dart' as T;
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -194,7 +195,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         final code = event.data?['code'] as String? ?? 'unknown';
         final msg = event.data?['message'] as String? ?? context.l10n.genericLoadError;
         SpeakingTelemetry.logError(code);
-        AppCornerToast.show(context, msg, error: true);
+        AppFeedback.error(context, msg);
         break;
 
       case 'status':
@@ -243,7 +244,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   // Hiệu ứng sóng âm giả lập
   void _startWaveAnimation() {
     _waveTimer?.cancel();
-    _waveTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
+    _waveTimer = Timer.periodic(AppMotion.micro, (_) {
       if (mounted) setState(() => _volumeLevel = 0.2 + Random().nextDouble() * 0.8);
     });
   }
@@ -277,7 +278,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       if (!status.isGranted) {
         await SpeakingTelemetry.logMicDenied();
         if (mounted) {
-          AppCornerToast.show(context, context.l10n.freeSpeakingMicDenied, error: true);
+          AppFeedback.error(context, context.l10n.freeSpeakingMicDenied);
         }
         return;
       }
@@ -346,11 +347,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
+      Future.delayed(AppMotion.fast, () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
+            duration: AppMotion.base,
             curve: Curves.easeOutQuart,
           );
         }
@@ -361,14 +362,14 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   // Hiển thị BottomSheet chọn giọng
   void _showVoiceSelector() {
     if (_callStatus != VapiCallStatus.disconnected && _callStatus != VapiCallStatus.ended) {
-      AppCornerToast.show(context, context.l10n.freeSpeakingEndCallToChangeVoice, error: true);
+      AppFeedback.error(context, context.l10n.freeSpeakingEndCallToChangeVoice);
       return;
     }
 
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg))),
       builder: (sheetContext) {
         final st = sheetContext.l10n;
         return Container(
@@ -430,7 +431,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const AppLoadingIndicator.center(),
+              StudentMobileUi.runnerLoading(),
               const SizedBox(height: 16),
               Text(t.freeSpeakingLoadingConfig, style: StudentMobileUi.body(context).copyWith(color: T.AppColors.textMuted)),
             ],
@@ -493,7 +494,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: isConnected ? T.AppColors.successBg : T.AppColors.surface,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: isConnected ? T.AppColors.success.withValues(alpha: 0.2) : Colors.transparent),
           ),
           child: Row(
@@ -533,13 +534,13 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
             padding: const EdgeInsets.only(right: AppSpacing.s4),
             child: InkWell(
               onTap: _showVoiceSelector,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 112),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: T.AppColors.surface,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   border: Border.all(color: T.AppColors.outline),
                 ),
                 child: Row(
@@ -610,7 +611,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                         height: 50,
                         decoration: BoxDecoration(
                           color: T.AppColors.surface,
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(AppRadius.sheet),
                         ),
                         child: TextField(
                           controller: _textController,
@@ -634,11 +635,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                     GestureDetector(
                       onTap: _handleBottomButtonPress,
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
+                        duration: AppMotion.base,
                         height: 50, width: 50,
                         decoration: BoxDecoration(
                             color: (isConnected && !_isTyping) ? Colors.red.shade500 : T.AppColors.primary,
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(AppRadius.sheet),
                             boxShadow: [
                               BoxShadow(
                                   color: (isConnected && !_isTyping)
@@ -693,7 +694,7 @@ class _SystemHintBubble extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: T.AppColors.outlineMuted,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: T.AppColors.outline),
           ),
           child: Text(
@@ -840,15 +841,15 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
             crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: AppMotion.base,
                 curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: isUser ? T.AppColors.primary : T.AppColors.surfaceCard,
                   border: isUser ? null : Border.all(color: T.AppColors.outline),
                   borderRadius: BorderRadius.only(
-                    topLeft: const Radius.circular(20),
-                    topRight: const Radius.circular(20),
+                    topLeft: const Radius.circular(AppRadius.lg),
+                    topRight: const Radius.circular(AppRadius.lg),
                     bottomLeft: Radius.circular(isUser ? 20 : 6),
                     bottomRight: Radius.circular(isUser ? 6 : 20),
                   ),
@@ -884,7 +885,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                             padding: const EdgeInsets.only(left: 6),
                             child: AnimatedOpacity(
                               opacity: 0.55,
-                              duration: const Duration(milliseconds: 400),
+                              duration: AppMotion.tooltipWait,
                               child: Text(
                                 '…',
                                 style: TextStyle(
@@ -954,7 +955,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
             height: 36,
             decoration: BoxDecoration(
               color: T.AppColors.primary.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: T.AppColors.primary.withValues(alpha: 0.25)),
             ),
             child: Icon(Icons.person_rounded, color: T.AppColors.primary, size: 20),
@@ -980,7 +981,7 @@ class _ActionButton extends StatelessWidget {
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: active ? T.AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
         ),
         child: Icon(
           icon,
@@ -1006,13 +1007,13 @@ class _Waveform extends StatelessWidget {
         final dist = (index - 10).abs();
         final scale = (1.0 - (dist / 10)).clamp(0.2, 1.0);
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 80),
+          duration: AppMotion.micro,
           margin: const EdgeInsets.symmetric(horizontal: 2),
           width: 3,
           height: 10 + (volume * 30 * scale),
           decoration: BoxDecoration(
             color: T.AppColors.primary.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(2),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
           ),
         );
       }),

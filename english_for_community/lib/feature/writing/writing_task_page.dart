@@ -13,7 +13,7 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -159,6 +159,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   Timer? _savedStatusTicker;
   DateTime? _lastAutoSavedAt;
   String _lastAutoSavedContent = '';
+  bool _showMinWordsError = false;
 
   @override
   void initState() {
@@ -171,6 +172,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       setState(() {
         _wordCount = t.trim().isEmpty ? 0 : t.trim().split(RegExp(r'\s+')).length;
         if (_wordCount > 0) _isDirty = true;
+        if (_canSubmitNow) _showMinWordsError = false;
       });
       _scheduleAutoSave();
       _scheduleEmbeddedDraftNotify();
@@ -224,7 +226,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
   void _submit(WritingTaskState s) {
     if (s.submission == null || _taskType == null) return;
     if (!_canSubmitNow) {
-      AppCornerToast.show(context, 'Please write at least $_minimumSubmitWords words before submitting.', error: true);
+      setState(() => _showMinWordsError = true);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -255,7 +257,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         return AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         title: Text(t.writingSaveDraftTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         content: Text(
           t.writingSaveDraftMessage,
@@ -359,7 +361,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
         return AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         title: Text(t.writingResumeTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
         content: Text(
           t.writingResumeMessage,
@@ -470,7 +472,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               _isAutoSaving = false;
               if (_shouldCloseAfterSave) {
                 _shouldCloseAfterSave = false;
-                AppCornerToast.show(context, context.l10n.writingDraftSavedSnack);
+                AppFeedback.success(context, context.l10n.writingDraftSavedSnack);
                 Navigator.of(context).pop();
               }
             }
@@ -481,7 +483,7 @@ class _WritingTaskViewState extends State<WritingTaskView> {
               }
               if (widget.embedded) {
                 widget.onPartComplete?.call();
-                AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+                AppFeedback.success(context, context.l10n.studentExamSubmitted);
               } else {
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(builder: (_) => WritingFeedbackPage(submission: state.submission!)),
@@ -490,12 +492,12 @@ class _WritingTaskViewState extends State<WritingTaskView> {
             }
             if (state.status == WritingTaskStatus.error) {
               _isAutoSaving = false;
-              AppCornerToast.show(context, state.errorMessage ?? context.l10n.genericLoadError, error: true);
+              AppFeedback.error(context, state.errorMessage ?? context.l10n.genericLoadError, blocking: true);
             }
           },
           builder: (context, state) {
             if (state.status == WritingTaskStatus.loading) {
-              return const Center(child: AppLoadingIndicator.center(color: AppColors.primary));
+              return StudentMobileUi.runnerLoading();
             }
             if (state.submission == null) {
               return Center(child: Text(context.l10n.writingPreparingTask, style: const TextStyle(color: AppColors.textSecondary)));
@@ -557,6 +559,9 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                       canSubmit: _canSubmitNow,
                       isAutoSaving: _isAutoSaving,
                       savedLabel: _savedLabel,
+                      validationMessage: _showMinWordsError
+                          ? 'Please write at least $_minimumSubmitWords words before submitting.'
+                          : null,
                       onSubmit: () => _submit(state),
                     )
                   else if (widget.readOnlyReview)
@@ -602,7 +607,7 @@ class _PromptCardState extends State<_PromptCard> {
       margin: EdgeInsets.all(compact ? 10 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
         boxShadow: compact ? null : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))],
       ),
@@ -610,14 +615,14 @@ class _PromptCardState extends State<_PromptCard> {
         children: [
           InkWell(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.outlineMuted, borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: AppColors.outlineMuted, borderRadius: BorderRadius.circular(AppRadius.input)),
                     child: const Icon(Icons.article_outlined, size: 20, color: AppColors.textPrimary),
                   ),
                   const SizedBox(width: 12),
@@ -652,7 +657,7 @@ class _PromptCardState extends State<_PromptCard> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               child: Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.outline.withValues(alpha: 0.5))),
+                decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: AppColors.outline.withValues(alpha: 0.5))),
                 child: Text(
                   widget.text,
                   style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textPrimary),
@@ -710,6 +715,7 @@ class _ClassicBottomBar extends StatelessWidget {
   final bool canSubmit;
   final bool isAutoSaving;
   final String? savedLabel;
+  final String? validationMessage;
   final VoidCallback onSubmit;
 
   const _ClassicBottomBar({
@@ -719,6 +725,7 @@ class _ClassicBottomBar extends StatelessWidget {
     required this.canSubmit,
     required this.isAutoSaving,
     required this.savedLabel,
+    this.validationMessage,
     required this.onSubmit,
   });
 
@@ -752,6 +759,7 @@ class _ClassicBottomBar extends StatelessWidget {
             ),
           ),
         ),
+        AppFeedback.fieldError(validationMessage),
         StudentMobileUi.bottomActionBar(
           context: context,
           progressLabel: progressLabel,

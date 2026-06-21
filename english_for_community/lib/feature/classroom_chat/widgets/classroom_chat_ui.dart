@@ -330,7 +330,7 @@ abstract final class ClassroomChatUi {
 
   /// Stable avatar tint from group name — Telegram-style identity (`23` §3.3).
   static ({Color background, Color foreground}) groupAvatarColors(String name) {
-    const palette = <({Color background, Color foreground})>[
+    final palette = <({Color background, Color foreground})>[
       (background: AppColors.infoBg, foreground: AppColors.info),
       (background: AppColors.successBg, foreground: AppColors.successDark),
       (background: AppColors.accentTint, foreground: AppColors.accentDark),

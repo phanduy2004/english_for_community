@@ -50,6 +50,8 @@ class _ClassroomChatMiniWindowState extends State<ClassroomChatMiniWindow> {
         currentUserId: widget.currentUserId,
         repo: di.getIt<ClassroomChatRepository>(),
         socket: di.getIt<SocketService>(),
+        initialCoverImageUrl: widget.session.coverImageUrl,
+        initialGroupName: widget.session.classroomName,
       )..add(const ClassroomChatLoaded()),
       child: BlocListener<ClassroomChatBloc, ClassroomChatState>(
         listenWhen: (p, c) {

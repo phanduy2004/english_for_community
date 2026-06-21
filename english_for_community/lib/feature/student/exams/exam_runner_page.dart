@@ -1,14 +1,15 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_motion.dart' as theme_motion;
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/util/app_haptics.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_runner_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
@@ -63,6 +64,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
   String? _error;
   Map<String, dynamic>? _attempt;
   int _itemIndex = 0;
+  late final PageController _pageController;
   int? _mcqSingle;
   final Set<int> _mcqMulti = {};
   final Map<String, String> _blankDraft = {};
@@ -75,7 +77,16 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
   late final ExamLiveSessionGuard _liveGuard;
 
   @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _liveGuard = ExamLiveSessionGuard(context);
+    _load();
+  }
+
+  @override
   void dispose() {
+    _pageController.dispose();
     _liveGuard.dispose();
     _disposeBlankControllers();
     _ticker?.dispose();
@@ -88,13 +99,6 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
       c.dispose();
     }
     _blankControllers.clear();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _liveGuard = ExamLiveSessionGuard(context);
-    _load();
   }
 
   void _stopTicker() {
@@ -138,7 +142,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
       },
       (d) {
         setState(() => _attempt = Map<String, dynamic>.from(d as Map));
-        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+        AppFeedback.success(context, context.l10n.studentExamSubmitted);
       },
     );
   }
@@ -290,12 +294,12 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     final r = await getIt<TeacherExamRepository>().patchExamAttempt(widget.attemptId, entry);
     if (!mounted) return;
     r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message, blocking: true),
       (d) => setState(() => _attempt = Map<String, dynamic>.from(d as Map)),
     );
   }
 
-  Future<void> _goToIndex(int next) async {
+  Future<void> _goToIndex(int next, {bool fromPager = false}) async {
     final list = _flatItems();
     if (list.isEmpty) return;
     final clamped = next.clamp(0, list.length - 1);
@@ -306,6 +310,19 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
       _itemIndex = clamped;
       _hydrateCurrentItem();
     });
+    if (!fromPager && list.length > 1 && _pageController.hasClients) {
+      await _pageController.animateToPage(
+        clamped,
+        duration: theme_motion.AppMotion.effective(context, theme_motion.AppMotion.page),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _onExamPageChanged(int index) {
+    if (index == _itemIndex) return;
+    AppHaptics.select(context);
+    _goToIndex(index, fromPager: true);
   }
 
   String? _remainingLabel(AppLocalizations l10n) {
@@ -325,7 +342,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     if (!mounted) return;
     final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId);
     r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message, blocking: true),
       (d) {
         _stopTicker();
         final m = Map<String, dynamic>.from(d as Map);
@@ -335,7 +352,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
           _hydrateCurrentItem();
         });
         _liveGuard.unbind();
-        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+        AppFeedback.success(context, context.l10n.studentExamSubmitted);
       },
     );
   }
@@ -431,7 +448,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColors.outlineMuted),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     color: AppColors.surfaceSubtle,
                   ),
                   child: Text(
@@ -460,7 +477,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.outlineMuted),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 color: AppColors.surfaceSubtle,
               ),
               child: Text(
@@ -618,6 +635,18 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     );
   }
 
+  bool _blocksExitConfirm() {
+    if (_loading || _error != null) return false;
+    return (_attempt?['status'] as String? ?? '') == 'in_progress';
+  }
+
+  void _clearRealtimeOnExit() {
+    final rt = _attempt?['runtimeContext'];
+    if (rt is Map && rt['assignmentMode'] == 'realtime') {
+      getIt<SocketService>().clearExamRealtimeContext();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -630,7 +659,6 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     }
 
     final flat = _flatItems();
-    final item = _currentItem();
     final status = _attempt?['status'] as String? ?? '';
     final submitted = status == 'submitted';
     final expired = status == 'expired';
@@ -639,15 +667,18 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     final lastIndex = flat.isEmpty ? 0 : flat.length - 1;
 
     return PopScope<Object?>(
-      canPop: true,
+      canPop: !_blocksExitConfirm(),
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) return;
-        final rt = _attempt?['runtimeContext'];
-        final isRealtime = rt is Map && rt['assignmentMode'] == 'realtime';
-        if (isRealtime) {
-          // Ensure teacher roster is updated immediately when the student exits the live attempt.
-          getIt<SocketService>().clearExamRealtimeContext();
+        if (didPop) {
+          _clearRealtimeOnExit();
+          return;
         }
+        if (!_blocksExitConfirm()) return;
+        StudentMobileUi.confirmRunnerExit(context).then((leave) {
+          if (!leave || !mounted) return;
+          _clearRealtimeOnExit();
+          Navigator.of(context).pop();
+        });
       },
       child: Scaffold(
         backgroundColor: AppColors.surface,
@@ -669,26 +700,13 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
           ],
         ),
         body: _loading
-            ? const Center(child: AppLoadingIndicator.center())
+            ? StudentMobileUi.runnerLoading()
             : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: StudentMobileUi.pagePadding,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l10n.studentExamRunnerLoadFailed,
-                            style: StudentMobileUi.sectionTitle(context),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(_error!, style: StudentMobileUi.body(context), textAlign: TextAlign.center),
-                          const SizedBox(height: 16),
-                          FilledButton(onPressed: () => _load(), child: Text(l10n.commonRetry)),
-                        ],
-                      ),
-                    ),
+                ? StudentMobileUi.errorRetry(
+                    context,
+                    message: _error!,
+                    title: l10n.studentExamRunnerLoadFailed,
+                    onRetry: () => _load(),
                   )
                 : Column(
                     children: [
@@ -703,55 +721,98 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                                 style: StudentMobileUi.caption(context),
                               ),
                               const SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: (_itemIndex + 1) / flat.length,
-                                borderRadius: BorderRadius.circular(4),
-                                backgroundColor: AppColors.outlineMuted,
-                                color: AppSkillColors.listening.color,
+                              TweenAnimationBuilder<double>(
+                                key: ValueKey(_itemIndex),
+                                tween: Tween(
+                                  begin: 0,
+                                  end: flat.isEmpty ? 0.0 : (_itemIndex + 1) / flat.length,
+                                ),
+                                duration: theme_motion.AppMotion.effective(
+                                  context,
+                                  theme_motion.AppMotion.base,
+                                ),
+                                curve: Curves.easeOutCubic,
+                                builder: (_, value, __) => LinearProgressIndicator(
+                                  value: value,
+                                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                                  backgroundColor: AppColors.outlineMuted,
+                                  color: AppSkillColors.listening.color,
+                                ),
                               ),
                             ],
                           ),
                         ),
                       Expanded(
-                        child: ListView(
-                          padding: StudentMobileUi.pagePadding,
-                          children: [
-                            if (expired)
-                              AppCard(
-                                variant: AppCardVariant.outline,
-                                child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
-                              ),
-                            if (locked && flat.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              for (var i = 0; i < flat.length; i++) ...[
-                                if (flat.length > 1)
-                                  Padding(
-                                    padding: const EdgeInsets.only(bottom: 8),
-                                    child: Text(
-                                      l10n.studentExamQuestionProgress(i + 1, flat.length),
-                                      style: StudentMobileUi.caption(context),
+                        child: locked && flat.isNotEmpty
+                            ? ListView(
+                                padding: StudentMobileUi.pagePadding,
+                                children: [
+                                  if (expired)
+                                    AppCard(
+                                      variant: AppCardVariant.outline,
+                                      child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
                                     ),
+                                  const SizedBox(height: 8),
+                                  for (var i = 0; i < flat.length; i++) ...[
+                                    if (flat.length > 1)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: Text(
+                                          l10n.studentExamQuestionProgress(i + 1, flat.length),
+                                          style: StudentMobileUi.caption(context),
+                                        ),
+                                      ),
+                                    _buildReviewItemCard(flat[i]),
+                                    if (i < flat.length - 1) const SizedBox(height: StudentMobileUi.sectionGap),
+                                  ],
+                                  if (submitted && _attempt?['scores'] != null) ...[
+                                    const SizedBox(height: StudentMobileUi.sectionGap),
+                                    AppCard(
+                                      variant: AppCardVariant.outline,
+                                      child: Text(_scoreSummaryText(), style: StudentMobileUi.body(context)),
+                                    ),
+                                  ],
+                                ],
+                              )
+                            : flat.isEmpty
+                                ? ListView(
+                                    padding: StudentMobileUi.pagePadding,
+                                    children: [
+                                      if (expired)
+                                        AppCard(
+                                          variant: AppCardVariant.outline,
+                                          child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
+                                        )
+                                      else if (!locked)
+                                        AppCard(
+                                          variant: AppCardVariant.outline,
+                                          child: Text(l10n.studentExamNoQuestions, style: StudentMobileUi.body(context)),
+                                        ),
+                                    ],
+                                  )
+                                : StudentMobileUi.mcqQuestionPager(
+                                    context: context,
+                                    controller: _pageController,
+                                    itemCount: flat.length,
+                                    onPageChanged: _onExamPageChanged,
+                                    itemBuilder: (context, index) {
+                                      final pageItem = flat[index];
+                                      return ListView(
+                                        padding: StudentMobileUi.pagePadding,
+                                        children: [
+                                          if (expired)
+                                            AppCard(
+                                              variant: AppCardVariant.outline,
+                                              child: Text(l10n.studentExamExpired, style: StudentMobileUi.body(context)),
+                                            ),
+                                          const SizedBox(height: 8),
+                                          index == _itemIndex
+                                              ? _buildItemCard(pageItem, locked)
+                                              : _buildReviewItemCard(pageItem),
+                                        ],
+                                      );
+                                    },
                                   ),
-                                _buildReviewItemCard(flat[i]),
-                                if (i < flat.length - 1) const SizedBox(height: StudentMobileUi.sectionGap),
-                              ],
-                            ] else if (item != null) ...[
-                              const SizedBox(height: 8),
-                              _buildItemCard(item, locked),
-                            ] else if (!locked)
-                              AppCard(
-                                variant: AppCardVariant.outline,
-                                child: Text(l10n.studentExamNoQuestions, style: StudentMobileUi.body(context)),
-                              ),
-                            if (submitted && _attempt?['scores'] != null) ...[
-                              const SizedBox(height: StudentMobileUi.sectionGap),
-                              AppCard(
-                                variant: AppCardVariant.outline,
-                                child: Text(_scoreSummaryText(), style: StudentMobileUi.body(context)),
-                              ),
-                            ],
-                          ],
-                        ),
                       ),
                       if (!locked && flat.isNotEmpty)
                         Container(

@@ -1,10 +1,13 @@
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
 import 'package:english_for_community/core/entity/reading/reading_entity.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/repository/listening_repository.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
@@ -540,42 +543,47 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
             ],
             if (widget.skill != 'speaking' && resources.length <= 1)
               const SizedBox(height: ExamSystemUi.cardGap),
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: AppLoadingIndicator.center()),
-              )
-            else if (_error != null)
-              AppCard(
-                variant: AppCardVariant.outline,
-                child: Column(
-                  children: [
-                    Text(_error!, style: ExamSystemUi.captionSecondary),
-                    const SizedBox(height: 8),
-                    TextButton(onPressed: _loadCurrent, child: Text(l10n.retry)),
-                  ],
-                ),
-              )
-            else if (resources.isEmpty)
-              AppCard(
-                variant: AppCardVariant.outline,
-                child: Text(
-                  widget.skill == 'speaking'
-                      ? l10n.integratedExamEmbeddedNoSpeakingResource
-                      : l10n.integratedExamEmbeddedNoResource,
-                  style: ExamSystemUi.captionSecondary,
-                ),
-              )
-            else if (boundedHeight)
-              Expanded(child: _exerciseHost())
+            if (boundedHeight)
+              Expanded(child: _buildBody(context, l10n, resources))
             else
               SizedBox(
                 height: _scrollEmbeddedHeight(context),
-                child: _exerciseHost(),
+                child: _buildBody(context, l10n, resources),
               ),
           ],
         );
       },
     );
+  }
+
+  Widget _buildBody(BuildContext context, AppLocalizations l10n, List<Map<String, dynamic>> resources) {
+    if (_loading) {
+      return Center(child: StudentMobileUi.runnerLoading());
+    }
+    if (_error != null) {
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_error!, style: ExamSystemUi.captionSecondary),
+            const SizedBox(height: AppSpacing.s3),
+            TextButton(onPressed: _loadCurrent, child: Text(l10n.retry)),
+          ],
+        ),
+      );
+    }
+    if (resources.isEmpty) {
+      return AppCard(
+        variant: AppCardVariant.outline,
+        child: Text(
+          widget.skill == 'speaking'
+              ? l10n.integratedExamEmbeddedNoSpeakingResource
+              : l10n.integratedExamEmbeddedNoResource,
+          style: ExamSystemUi.captionSecondary,
+        ),
+      );
+    }
+    return _exerciseHost();
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:english_for_community/core/datasource/classroom_chat_remote_datasource.dart';
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -9,9 +8,10 @@ import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_state.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_app_bar.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_avatar.dart';
+import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -51,7 +51,7 @@ abstract final class ChatGroupAvatarPicker {
 
       if (bytes == null || bytes.isEmpty) {
         if (context.mounted) {
-          AppCornerToast.show(context, 'Không đọc được ảnh', error: true);
+          AppFeedback.error(context, 'Không đọc được ảnh');
         }
         return;
       }
@@ -61,10 +61,10 @@ abstract final class ChatGroupAvatarPicker {
             fileName: fileName,
             bytes: bytes,
           ));
-      AppCornerToast.show(context, 'Đang cập nhật ảnh nhóm…');
+      AppFeedback.success(context, 'Đang cập nhật ảnh nhóm…');
     } catch (e) {
       if (context.mounted) {
-        AppCornerToast.show(context, 'Không chọn được ảnh: $e', error: true);
+        AppFeedback.error(context, 'Không chọn được ảnh: $e');
       }
     }
   }
@@ -290,7 +290,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                 if (name.isEmpty) return;
                 Navigator.of(rootNavigatorKey.currentContext ?? context).pop();
                 context.read<ClassroomChatBloc>().add(ClassroomChatUpdateGroupName(name));
-                AppCornerToast.show(context, 'Đã cập nhật tên nhóm');
+                AppFeedback.success(context, 'Đã cập nhật tên nhóm');
               },
               child: const Text('Lưu'),
             ),
@@ -345,7 +345,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                   onPressed: () {
                     Navigator.of(rootNavigatorKey.currentContext ?? context).pop();
                     context.read<ClassroomChatBloc>().add(const ClassroomChatUnpinMessage());
-                    AppCornerToast.show(context, 'Đã bỏ ghim tin nhắn');
+                    AppFeedback.success(context, 'Đã bỏ ghim tin nhắn');
                   },
                   child: const Text('Bỏ ghim'),
                 ),
@@ -417,7 +417,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
     );
     if (ok == true && mounted) {
       widget.onMuteChat?.call();
-      AppCornerToast.show(context, 'Đã tắt thông báo nhóm này');
+      AppFeedback.success(context, 'Đã tắt thông báo nhóm này');
     }
   }
 
@@ -484,30 +484,10 @@ class _GroupProfileHeader extends StatelessWidget {
               child: Stack(
                 alignment: Alignment.bottomRight,
                 children: [
-                  CircleAvatar(
+                  ChatGroupCoverAvatar(
+                    coverImageUrl: coverImageUrl,
                     radius: 36,
-                    backgroundColor: AppColors.primaryTint,
-                    child: coverImageUrl != null && coverImageUrl!.isNotEmpty
-                        ? ClipOval(
-                            child: CachedNetworkImage(
-                              key: ValueKey(coverImageUrl),
-                              imageUrl: coverImageUrl!,
-                              width: 72,
-                              height: 72,
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => const Icon(
-                                Icons.groups_outlined,
-                                size: 32,
-                                color: AppColors.primary,
-                              ),
-                              errorWidget: (_, __, ___) => const Icon(
-                                Icons.groups_outlined,
-                                size: 32,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.groups_outlined, size: 32, color: AppColors.primary),
+                    fallbackIconSize: 32,
                   ),
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -799,7 +779,7 @@ class _MemberRow extends StatelessWidget {
           : null,
       onLongPress: () {
         Clipboard.setData(ClipboardData(text: '@${member.username}'));
-        AppCornerToast.show(context, 'Đã sao chép @${member.username}');
+        AppFeedback.success(context, 'Đã sao chép @${member.username}');
       },
     );
   }

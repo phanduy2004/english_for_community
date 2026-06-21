@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -102,7 +102,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
     context.read<UserBloc>().add(ResendOtpEvent(email: widget.email));
 
-    AppCornerToast.show(context, context.l10n.resendingCodeSnack);
+    AppFeedback.info(context, context.l10n.resendingCodeSnack);
     startTimer();
   }
 
@@ -123,7 +123,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
         if (state.status == UserStatus.unauthenticated &&
             state.errorMessage != null) {
-          AppCornerToast.show(context, state.errorMessage!);
+          AppFeedback.error(context, state.errorMessage!);
           context.goNamed(LoginPage.routeName);
         }
       },

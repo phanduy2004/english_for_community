@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
@@ -11,7 +13,7 @@ import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_panel.dart';
 import 'package:english_for_community/feature/student/exams/exam_section_tag.dart';
 import 'package:english_for_community/feature/student/exams/exam_section_resources.dart';
@@ -116,7 +118,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
         });
         _syncLiveGuardBinding();
         _restartClock();
-        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+        AppFeedback.success(context, context.l10n.studentExamSubmitted);
       },
     );
   }
@@ -285,7 +287,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
   void _scheduleSyncLiveView() {
     if ((_runtimeContext()?['assignmentMode'] as String?) != 'realtime') return;
     _liveViewDebounce?.cancel();
-    _liveViewDebounce = Timer(const Duration(milliseconds: 80), () {
+    _liveViewDebounce = Timer(AppMotion.micro, () {
       _liveViewDebounce = null;
       if (mounted) unawaited(_flushLiveViewToServer());
     });
@@ -555,7 +557,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message, blocking: true),
       (d) {
         _applyAttemptMap(d);
         _scheduleSyncLiveView();
@@ -569,7 +571,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
     if (!mounted) return;
     r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message, blocking: true),
       (d) {
         _applyAttemptMap(d);
         _scheduleSyncLiveView();
@@ -867,7 +869,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
               children: [
                 Expanded(
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       value: doneCount / total,
                       minHeight: 4,
@@ -911,7 +913,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
         if (!submitted && !expired && total > 0) ...[
           const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.input),
             child: LinearProgressIndicator(
               value: doneCount / total,
               minHeight: 8,
@@ -932,12 +934,12 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => setState(() => _detailsExpanded = !_detailsExpanded),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: AppMotion.base,
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.outlineMuted, width: 0.75),
           ),
           child: Column(
@@ -1422,7 +1424,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     if (total > 0 && doneCount < total) {
       if (!_allowPartialSubmit()) {
         if (mounted) {
-          AppCornerToast.show(context, l10n.integratedExamSubmitBlockedAll, error: true);
+          AppFeedback.error(context, l10n.integratedExamSubmitBlockedAll, blocking: true);
         }
         return;
       }
@@ -1470,12 +1472,17 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId);
     if (!mounted) return;
     r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message, blocking: true),
       (_) {
-        AppCornerToast.show(context, context.l10n.studentExamSubmitted);
+        AppFeedback.success(context, context.l10n.studentExamSubmitted);
         _load();
       },
     );
+  }
+
+  bool _blocksExitConfirm() {
+    if (_loading || _error != null) return false;
+    return (_attempt?['status'] as String? ?? '') == 'in_progress';
   }
 
   bool _isRealtimeInProgress() {
@@ -1515,12 +1522,12 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     await r.fold(
       (f) async {
         setState(() => _abandonBusy = false);
-        AppCornerToast.show(context, f.message, error: true);
+        AppFeedback.error(context, f.message, blocking: true);
       },
       (_) async {
         getIt<SocketService>().clearExamRealtimeContext();
         if (!mounted) return;
-        AppCornerToast.show(context, l10n.studentExamVoluntaryExitBlocked);
+        AppFeedback.success(context, l10n.studentExamVoluntaryExitBlocked);
         exitLiveExamFlow(context);
       },
     );
@@ -1541,7 +1548,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final appTitle = (barTitle != null && barTitle.isNotEmpty) ? barTitle : l10n.integratedExamRunnerTitle;
 
     final shell = PopScope<Object?>(
-      canPop: !_isRealtimeInProgress(),
+      canPop: !_blocksExitConfirm(),
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
           final rt = _attempt?['runtimeContext'];
@@ -1550,10 +1557,17 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
           }
           return;
         }
-        if (!_isRealtimeInProgress()) return;
-        _confirmLeaveRealtimeExam().then((leave) {
+        if (!_blocksExitConfirm()) return;
+        final confirmFuture = _isRealtimeInProgress()
+            ? _confirmLeaveRealtimeExam()
+            : StudentMobileUi.confirmRunnerExit(context);
+        confirmFuture.then((leave) {
           if (!leave || !mounted) return;
-          _abandonRealtimeAndExit();
+          if (_isRealtimeInProgress()) {
+            _abandonRealtimeAndExit();
+          } else {
+            Navigator.of(context).pop();
+          }
         });
       },
       child: Scaffold(
@@ -1573,20 +1587,13 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
               : null,
         ),
         body: _loading
-          ? const Center(child: AppLoadingIndicator.center())
+          ? StudentMobileUi.runnerLoading()
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: ExamSystemUi.pagePadding,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_error!, textAlign: TextAlign.center, style: ExamSystemUi.captionSecondary),
-                        const SizedBox(height: ExamSystemUi.blockGap),
-                        FilledButton(onPressed: _load, child: Text(l10n.retry)),
-                      ],
-                    ),
-                  ),
+              ? StudentMobileUi.errorRetry(
+                  context,
+                  message: _error!,
+                  onRetry: _load,
+                  retryLabel: l10n.retry,
                 )
               : _buildRunnerBody(
                   ctx: ctx,
@@ -2227,7 +2234,7 @@ class _MetaChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         border: Border.all(color: AppColors.outlineMuted, width: 0.75),
       ),
       child: Row(

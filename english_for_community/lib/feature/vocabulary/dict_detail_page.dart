@@ -4,7 +4,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/repository/user_vocab_repository.dart';
 import '../../core/sqflite/dict_db.dart';
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -269,8 +269,8 @@ class _DictDetailPageState extends State<DictDetailPage> {
     final result = await _userVocabRepository!.saveWord(widget.entry);
     if (context.mounted) {
       result.fold(
-        (l) => AppCornerToast.show(context, l.message, error: true),
-        (r) => AppCornerToast.show(context, context.l10n.wordSavedSnackbar(widget.entry.headword)),
+        (l) => AppFeedback.error(context, l.message),
+        (r) => AppFeedback.success(context, context.l10n.wordSavedSnackbar(widget.entry.headword)),
       );
     }
   }
@@ -280,8 +280,8 @@ class _DictDetailPageState extends State<DictDetailPage> {
     final result = await _userVocabRepository!.startLearningWord(widget.entry);
     if (context.mounted) {
       result.fold(
-        (l) => AppCornerToast.show(context, l.message, error: true),
-        (r) => AppCornerToast.show(context, context.l10n.wordAddedToLearningQueue(widget.entry.headword)),
+        (l) => AppFeedback.error(context, l.message),
+        (r) => AppFeedback.success(context, context.l10n.wordAddedToLearningQueue(widget.entry.headword)),
       );
     }
   }

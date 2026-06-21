@@ -109,7 +109,7 @@ class _StudentUnifiedJoinCardState extends State<StudentUnifiedJoinCard> {
           ),
           const SizedBox(height: AppSpacing.s3),
           SizedBox(
-            height: 38,
+            height: 44,
             child: FilledButton(
               onPressed: _busy ? null : _submit,
               style: FilledButton.styleFrom(

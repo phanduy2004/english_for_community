@@ -11,7 +11,7 @@ import '../../core/get_it/get_it.dart';
 import '../../core/repository/dictionary_repository.dart';
 import '../../core/router/app_router.dart';
 import '../../core/locale/l10n_context.dart';
-import '../../core/ui/widget/app_corner_toast.dart';
+import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -67,7 +67,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
       final result = await _dictionaryRepository.searchWord(headword, limit: 1);
       result.fold(
         (failure) {
-          AppCornerToast.show(context, context.l10n.vocabErrorWithMessage(failure.message), error: true);
+          AppFeedback.error(context, context.l10n.vocabErrorWithMessage(failure.message));
         },
         (entries) {
           if (entries.isNotEmpty && entries.first.headword == headword) {
@@ -77,13 +77,13 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
                   .then((_) => _loadData());
             }
           } else {
-            AppCornerToast.show(context, context.l10n.vocabNoDetailsForWord(headword), error: true);
+            AppFeedback.error(context, context.l10n.vocabNoDetailsForWord(headword));
           }
         },
       );
     } catch (e) {
       if (mounted) {
-        AppCornerToast.show(context, context.l10n.vocabErrorWithMessage(e.toString()), error: true);
+        AppFeedback.error(context, context.l10n.vocabErrorWithMessage(e.toString()));
       }
     }
   }
@@ -109,6 +109,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
           ),
           actions: [
             StudentMobileUi.headerIconButton(
+              context: context,
               icon: Icons.help_outline_rounded,
               tooltip: t.vocabTutorialTooltip,
               onPressed: _showTutorial,
@@ -116,6 +117,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
             Padding(
               padding: const EdgeInsets.only(right: StudentMobileUi.pageHPadding),
               child: StudentMobileUi.headerIconButton(
+                context: context,
                 icon: Icons.search_rounded,
                 tooltip: t.vocabSearchDictionaryTooltip,
                 onPressed: () =>
@@ -159,7 +161,7 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
         body: BlocBuilder<VocabularyBloc, VocabularyState>(
           builder: (context, state) {
             if (state.status == VocabularyStatus.loading) {
-              return const Center(child: AppLoadingIndicator.center());
+              return StudentMobileUi.listLoading();
             }
             if (state.status == VocabularyStatus.error) {
               return Padding(

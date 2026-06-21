@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -139,7 +139,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
     if (mounted) setState(() => _loading = false);
     if (_status == 'closed' || _status == 'grading') {
       if (mounted) {
-        AppCornerToast.show(context, context.l10n.examSessionEndedByTeacher, error: true);
+        AppFeedback.error(context, context.l10n.examSessionEndedByTeacher, blocking: true);
         exitLiveExamFlow(context);
       }
       return;
@@ -254,7 +254,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
         visualDensity: VisualDensity.compact,
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       );
 
   ButtonStyle _compactOutlinedStyle() => OutlinedButton.styleFrom(
@@ -263,7 +263,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         side: const BorderSide(color: AppColors.outline),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       );
 
   Widget _buildBottomActions(BuildContext context, String st, AppLocalizations l10n) {
@@ -322,7 +322,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
       backgroundColor: AppColors.surface,
       appBar: StudentMobileUi.appBar(context, title: l10n.examModeRealtime),
       body: _loading
-          ? const Center(child: AppLoadingIndicator.center(color: AppColors.primary))
+          ? StudentMobileUi.lobbyLoading()
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

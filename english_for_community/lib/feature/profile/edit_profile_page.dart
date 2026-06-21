@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import '../../core/entity/user_entity.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -245,7 +245,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
           context.pop();
-          AppCornerToast.show(context, context.l10n.profileUpdatedSuccess);
+          AppFeedback.success(context, context.l10n.profileUpdatedSuccess);
         }
       },
       builder: (context, state) {
@@ -257,7 +257,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           backgroundColor: AppColors.surface,
           appBar: _buildAppBar(context, t, canSave, isLoading),
           body: _profile == null
-              ? const Center(child: AppLoadingIndicator.center(color: AppColors.primary))
+              ? StudentMobileUi.runnerLoading()
               : Form(
                   key: _formKey,
                   child: ListView(
@@ -581,7 +581,7 @@ class _ProfileFormField extends StatelessWidget {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    AppCornerToast.show(context, context.l10n.copiedToClipboard);
+                    AppFeedback.success(context, context.l10n.copiedToClipboard);
                   }
                 },
               ),

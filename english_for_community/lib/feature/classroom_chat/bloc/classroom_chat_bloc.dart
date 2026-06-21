@@ -1,6 +1,6 @@
 import 'dart:async';
-import 'dart:async';
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
+import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/repository/classroom_chat_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:flutter/foundation.dart';
@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'classroom_chat_event.dart';
 import 'classroom_chat_state.dart';
 import '../classroom_chat_session_cache.dart';
+import '../dock/classroom_chat_dock_controller.dart';
 
 class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
   final String classroomId;
@@ -233,6 +234,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
           pinnedMessage: settings.pinnedMessage,
           clearPinned: settings.pinnedMessage == null,
         ));
+        _syncGroupCover(settings.coverImageUrl.isNotEmpty ? settings.coverImageUrl : null);
       },
     );
   }
@@ -266,11 +268,15 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     );
     result.fold(
       (f) => emit(state.copyWith(isUpdatingSettings: false, errorMessage: f.message)),
-      (url) => emit(state.copyWith(
-        isUpdatingSettings: false,
-        coverImageUrl: url.isNotEmpty ? url : null,
-        clearError: true,
-      )),
+      (url) {
+        final cover = url.isNotEmpty ? url : null;
+        _syncGroupCover(cover);
+        emit(state.copyWith(
+          isUpdatingSettings: false,
+          coverImageUrl: cover,
+          clearError: true,
+        ));
+      },
     );
   }
 
@@ -550,10 +556,23 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
   }
 
   void _onSocketSettings(ClassroomChatSocketSettingsUpdated event, Emitter<ClassroomChatState> emit) {
+    final cover = event.coverImageUrl.isNotEmpty ? event.coverImageUrl : null;
+    _syncGroupCover(cover);
     emit(state.copyWith(
       groupName: event.name,
-      coverImageUrl: event.coverImageUrl.isNotEmpty ? event.coverImageUrl : null,
+      coverImageUrl: cover,
     ));
+  }
+
+  void _syncGroupCover(String? coverImageUrl) {
+    ClassroomChatSessionCache.seedMeta(
+      classroomId: classroomId,
+      coverImageUrl: coverImageUrl,
+      groupName: state.groupName,
+    );
+    if (getIt.isRegistered<ClassroomChatDockController>()) {
+      getIt<ClassroomChatDockController>().updateRoomCover(classroomId, coverImageUrl);
+    }
   }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────

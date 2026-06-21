@@ -1,5 +1,5 @@
 import 'package:english_for_community/core/entity/app_update_info_entity.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_bloc.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_event.dart';
@@ -120,7 +120,7 @@ class _UpdateDialogContent extends StatelessWidget {
         !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
       if (!context.mounted) return;
       final l10n = AppLocalizations.of(context)!;
-      AppCornerToast.show(context, l10n.updateLinkOpenFailed, error: true);
+      AppFeedback.error(context, l10n.updateLinkOpenFailed);
     }
   }
 

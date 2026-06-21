@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 
 import '../../../core/locale/l10n_context.dart';
@@ -19,40 +20,34 @@ class InteractiveDiffText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Regex tìm pattern: {{old||new||reason}}
-    // Group 1: old, Group 2: new, Group 3: reason
     final regex = RegExp(r'\{\{(.*?)\|\|(.*?)(?:\|\|(.*?))?\}\}');
     List<InlineSpan> spans = [];
     int lastMatchEnd = 0;
     bool hasValidCorrectionToken = false;
 
-    // Duyệt qua tất cả các lỗi tìm thấy trong chuỗi
     for (final Match match in regex.allMatches(text)) {
-      // 1. Thêm phần văn bản bình thường trước lỗi (nếu có)
       if (match.start > lastMatchEnd) {
         spans.add(TextSpan(
           text: text.substring(lastMatchEnd, match.start),
           style: const TextStyle(
             fontSize: 15,
             height: 1.6,
-            color: AppColors.textPrimary, // Màu đen chuẩn
+            color: AppColors.textPrimary,
           ),
         ));
       }
 
-      // 2. Lấy thông tin lỗi
       String oldText = match.group(1) ?? '';
       String newText = match.group(2) ?? '';
       String reason = match.group(3) ?? '';
       if (oldText.trim().toLowerCase() == newText.trim().toLowerCase()) {
         spans.add(TextSpan(
-          text: newText, // Hiển thị luôn từ đó bình thường
+          text: newText,
           style: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary),
         ));
         lastMatchEnd = match.end;
-        continue; // Bỏ qua, chạy vòng lặp tiếp theo
+        continue;
       }
-      // 3. Thêm Widget tương tác (Lỗi)
       hasValidCorrectionToken = true;
       spans.add(WidgetSpan(
         alignment: PlaceholderAlignment.middle,
@@ -66,7 +61,6 @@ class InteractiveDiffText extends StatelessWidget {
       lastMatchEnd = match.end;
     }
 
-    // 4. Thêm phần văn bản còn lại sau lỗi cuối cùng
     if (lastMatchEnd < text.length) {
       spans.add(TextSpan(
         text: text.substring(lastMatchEnd),
@@ -78,8 +72,6 @@ class InteractiveDiffText extends StatelessWidget {
       ));
     }
 
-    // Nếu không có token sửa hợp lệ, fallback sang diff trực tiếp giữa bài gốc và bài rewrite.
-    // Trường hợp backend trả token lỗi format/không hữu dụng thì vẫn có highlight đỏ/xanh.
     if (!hasValidCorrectionToken) {
       final oldText = _normalizeForDiff(originalText ?? '');
       final newText = _normalizeForDiff(text);
@@ -109,7 +101,6 @@ class InteractiveDiffText extends StatelessWidget {
   }
 }
 
-// Widget hiển thị cụm lỗi (Gạch đỏ -> Xanh)
 class _ErrorToken extends StatelessWidget {
   final String oldText;
   final String newText;
@@ -125,7 +116,6 @@ class _ErrorToken extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Hiển thị Dialog Cute
         showDialog(
           context: context,
           builder: (context) => Dialog(
@@ -139,20 +129,19 @@ class _ErrorToken extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
         decoration: BoxDecoration(
-          color: AppColors.dangerBg, // Nền đỏ rất nhạt
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: AppColors.dangerBg), // Viền đỏ nhạt
+          color: AppColors.dangerBg,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          border: Border.all(color: AppColors.dangerBg),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Từ sai (Gạch ngang)
             if (oldText.isNotEmpty) ...[
               Text(
                 oldText,
                 style: const TextStyle(
                   fontSize: 14,
-                  color: AppColors.danger, // Đỏ đậm
+                  color: AppColors.danger,
                   decoration: TextDecoration.lineThrough,
                   decorationColor: AppColors.danger,
                 ),
@@ -161,12 +150,11 @@ class _ErrorToken extends StatelessWidget {
               const Icon(Icons.arrow_right_alt, size: 14, color: Colors.grey),
               const SizedBox(width: 4),
             ],
-            // Từ đúng (Xanh lá)
             Text(
               newText,
               style: const TextStyle(
                 fontSize: 14,
-                color: AppColors.success, // Xanh lá đậm
+                color: AppColors.success,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -177,7 +165,6 @@ class _ErrorToken extends StatelessWidget {
   }
 }
 
-// Dialog hiển thị lý do
 class _CuteReasonPopup extends StatelessWidget {
   final String old;
   final String newT;
@@ -192,7 +179,7 @@ class _CuteReasonPopup extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
@@ -204,14 +191,13 @@ class _CuteReasonPopup extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Header
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: AppColors.infoBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                 ),
                 child: const Icon(Icons.auto_fix_high, color: AppColors.info),
               ),
@@ -223,13 +209,11 @@ class _CuteReasonPopup extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-
-          // So sánh
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.sheet),
               border: Border.all(color: AppColors.outline),
             ),
             child: Row(
@@ -247,7 +231,6 @@ class _CuteReasonPopup extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-
           Align(
             alignment: Alignment.centerLeft,
             child: Text(t.writingWhyCorrection, style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
@@ -259,8 +242,6 @@ class _CuteReasonPopup extends StatelessWidget {
             textAlign: TextAlign.left,
           ),
           const SizedBox(height: 24),
-
-          // Button Close
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -269,7 +250,7 @@ class _CuteReasonPopup extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
               ),
               child: Text(t.writingGotIt),
             ),

@@ -92,7 +92,7 @@ class WritingFeedbackPage extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: AppColors.outlineMuted,
-                                  borderRadius: BorderRadius.circular(6),
+                                  borderRadius: BorderRadius.circular(AppRadius.chip),
                                   border: Border.all(color: AppColors.outline),
                                 ),
                                 child: Text(
@@ -284,7 +284,7 @@ class _ScoreRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
             color: AppColors.outlineMuted,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
           ),
           child: Text(
             score?.toStringAsFixed(1) ?? '-',
@@ -325,7 +325,7 @@ class _CriteriaCard extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: AppColors.outline),
               ),
               child: Text(note!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
@@ -495,7 +495,7 @@ class _RewriteParagraphCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: hasToken ? AppColors.successBg : AppColors.infoBg,
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                   border: Border.all(
                     color: hasToken ? AppColors.success : AppColors.info,
                   ),
@@ -524,7 +524,7 @@ class _RewriteParagraphCard extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surfaceSubtle,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outline),
             ),
             child: InteractiveDiffText(

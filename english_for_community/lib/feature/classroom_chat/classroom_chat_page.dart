@@ -11,7 +11,7 @@ import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_event.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_state.dart';
 
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_settings_menu.dart';
 
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_app_bar.dart';
@@ -202,9 +202,9 @@ class _ClassroomChatScaffoldState extends State<_ClassroomChatScaffold> {
       listenWhen: (p, c) => p.isUpdatingSettings && !c.isUpdatingSettings,
       listener: (context, state) {
         if (state.errorMessage != null) {
-          AppCornerToast.show(context, state.errorMessage!, error: true);
+          AppFeedback.error(context, state.errorMessage!);
         } else {
-          AppCornerToast.show(context, 'Đã lưu cài đặt nhóm');
+          AppFeedback.success(context, 'Đã lưu cài đặt nhóm');
         }
       },
       child: Scaffold(

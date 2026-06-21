@@ -60,10 +60,10 @@ class MyClassesHubPage extends StatelessWidget {
                   StudentUnifiedJoinCard(onClassJoined: reload),
                   const SizedBox(height: StudentMobileUi.sectionGap),
                   if (loading)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 48),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 48),
                       child: Center(
-                        child: AppLoadingIndicator.center(color: AppColors.primary),
+                        child: StudentMobileUi.listLoading(),
                       ),
                     )
                   else if (error != null)

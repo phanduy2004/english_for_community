@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/widget/app_skeleton.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_bloc.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_event.dart';
@@ -167,7 +167,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
       listener: (context, state) {
         if (state.errorMessage != null && state.errorMessage != _prevErrorMessage) {
           final toastCtx = rootNavigatorKey.currentContext ?? context;
-          AppCornerToast.show(toastCtx, state.errorMessage!, error: true);
+          AppFeedback.error(toastCtx, state.errorMessage!);
         }
         _prevErrorMessage = state.errorMessage;
         _handleMessagesChanged(state);

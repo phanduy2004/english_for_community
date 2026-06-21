@@ -1,23 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/avatar_url.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
 
-/// GitHub profile URLs (e.g. github.com/shadcn.png) serve HTML, not image bytes.
-bool isUsableAvatarUrl(String? url) {
-  if (url == null || url.trim().isEmpty) return false;
-  final uri = Uri.tryParse(url.trim());
-  if (uri == null || !uri.hasScheme) return false;
-  final host = uri.host.toLowerCase();
-  if (host == 'github.com' || host == 'www.github.com') return false;
-  return true;
-}
-
-String avatarInitials(String? name, {String fallback = '?'}) {
-  final trimmed = name?.trim() ?? '';
-  if (trimmed.isEmpty) return fallback;
-  return trimmed[0].toUpperCase();
-}
+export 'package:english_for_community/core/ui/avatar_url.dart';
 
 /// Avatar with network load + fallback initials (no decode crash).
 class ChatAvatar extends StatelessWidget {

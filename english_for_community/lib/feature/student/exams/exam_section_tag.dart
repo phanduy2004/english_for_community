@@ -1,4 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:flutter/material.dart';
@@ -105,7 +107,7 @@ class ExamSectionTag extends StatelessWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(radius),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.fast,
           curve: Curves.easeOut,
           height: height,
           padding: EdgeInsets.symmetric(horizontal: _isSub ? 7 : 8),
@@ -182,7 +184,7 @@ class ExamResourcePickerChip extends StatelessWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(radius),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.fast,
           curve: Curves.easeOut,
           constraints: const BoxConstraints(maxWidth: 300),
           height: height,
@@ -261,7 +263,7 @@ class ExamNavNumberChip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(radius),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.fast,
           curve: Curves.easeOut,
           width: size,
           height: size,
@@ -343,7 +345,7 @@ class ExamListeningSubNavGroup extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Column(
@@ -357,7 +359,7 @@ class ExamListeningSubNavGroup extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
                   border: Border.all(color: AppColors.outlineMuted),
                 ),
                 child: Icon(Icons.headphones_outlined, size: 13, color: skillAccent.dark),

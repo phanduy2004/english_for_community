@@ -4,7 +4,7 @@ import 'package:english_for_community/core/datasource/classroom_chat_remote_data
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_attachment_staging.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
@@ -168,7 +168,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   void _showFeedback(String message, {bool error = false}) {
     final ctx = rootNavigatorKey.currentContext ?? context;
-    AppCornerToast.show(ctx, message, error: error);
+    AppFeedback.error(ctx, message);
   }
 
   void _deferPick(Future<void> Function() pick) {

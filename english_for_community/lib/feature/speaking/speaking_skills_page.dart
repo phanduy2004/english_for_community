@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:english_for_community/core/entity/speaking/sentence_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart' as theme_motion;
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
@@ -9,7 +11,7 @@ import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/spea
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_lesson_bloc/speaking_lesson_state.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
@@ -133,7 +135,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
   void initState() {
     super.initState();
     _isDisposed = false;
-    _micPulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+    _micPulseController = AnimationController(vsync: this, duration: theme_motion.AppMotion.pulse);
     _initSpeech();
     _initTts();
   }
@@ -221,7 +223,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
 
   void _showMicSnack(String message) {
     if (!mounted) return;
-    AppCornerToast.show(context, message, error: true);
+    AppFeedback.error(context, message);
   }
 
   // --- LOGIC GHI ÂM ĐƠN GIẢN (MANUAL STOP) ---
@@ -269,7 +271,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         if (mounted) setState(() => _isPlaying = false);
       }
       // Tránh xung đột audio session (đặc biệt iOS) giữa TTS và STT.
-      await Future<void>.delayed(const Duration(milliseconds: 350));
+      await Future<void>.delayed(theme_motion.AppMotion.debounce);
       if (!mounted) return;
 
       setState(() {
@@ -308,7 +310,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
           ),
         );
         // listen() trả về trước khi platform báo "listening" — đợi ngắn rồi kiểm tra.
-        await Future<void>.delayed(const Duration(milliseconds: 500));
+        await Future<void>.delayed(theme_motion.AppMotion.enter);
         if (!mounted) return;
         if (!_speech.isListening) {
           _showMicSnack(context.l10n.micOpenFailedSnack);
@@ -431,7 +433,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
       return;
     }
     _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
+      duration: theme_motion.AppMotion.effective(context, theme_motion.AppMotion.base),
       curve: Curves.easeInOut,
     );
   }
@@ -481,7 +483,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
             final compact = widget.embedded;
             final examCompact = _examCompact;
             if (state.status == LessonStatus.loading || _set == null) {
-              return const Center(child: AppLoadingIndicator.center());
+              return StudentMobileUi.runnerLoading();
             }
 
             return Column(
@@ -516,7 +518,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                       ),
                       SizedBox(height: examCompact ? 4 : 8),
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                         child: LinearProgressIndicator(
                           value: (_currentPageIndex + 1) / _set!.sentences.length,
                           minHeight: examCompact ? 4 : 6,
@@ -662,6 +664,12 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
         );
   }
 
+  bool _shouldBlockExit() {
+    if (widget.embedded) return false;
+    if (_currentPageIndex > 0) return true;
+    return _historyMap.values.any((attempts) => attempts.isNotEmpty);
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
@@ -669,14 +677,18 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     if (widget.embedded) {
       return body;
     }
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: StudentMobileUi.skillAppBar(
-        context,
-        title: _set?.title ?? t.practiceFallbackTitle,
-        skill: SkillType.speaking,
+    return StudentMobileUi.runnerPopScope(
+      context: context,
+      blockExit: _shouldBlockExit(),
+      child: Scaffold(
+        backgroundColor: AppColors.surface,
+        appBar: StudentMobileUi.skillAppBar(
+          context,
+          title: _set?.title ?? t.practiceFallbackTitle,
+          skill: SkillType.speaking,
+        ),
+        body: SafeArea(child: body),
       ),
-      body: SafeArea(child: body),
     );
   }
 
@@ -700,7 +712,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
     final playSize = examCompact ? 40.0 : 52.0;
 
     final micCore = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
+      duration: theme_motion.AppMotion.effective(context, theme_motion.AppMotion.page),
       width: micSize,
       height: micSize,
       decoration: BoxDecoration(
@@ -769,7 +781,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                 decoration: BoxDecoration(
                   color: AppColors.outlineMuted,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(AppRadius.card),
                   border: Border.all(color: AppColors.outline),
                 ),
                 child: Row(
@@ -898,7 +910,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
                   padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
                   decoration: BoxDecoration(
                     color: AppColors.outlineMuted,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppRadius.sheet),
                     border: Border.all(color: AppColors.outline),
                   ),
                   child: Column(
@@ -1056,7 +1068,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView> with SingleTic
           onTap: () {
             if (cleanWord.isNotEmpty) _showWordDialog(cleanWord);
           },
-          borderRadius: BorderRadius.circular(4),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 2.0, vertical: 2.0),
             child: Text(word, style: textStyle),
@@ -1106,7 +1118,7 @@ class _LevelPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
@@ -1123,7 +1135,7 @@ class _ScorePill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.input)),
       child: Text(scoreText, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 13)),
     );
   }

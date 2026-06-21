@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/listening_comp_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -137,9 +138,9 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
     final l10n = context.l10n;
 
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: AppLoadingIndicator.center()),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: StudentMobileUi.runnerLoading(),
       );
     }
 
@@ -179,7 +180,7 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outline),
             ),
             child: Column(
@@ -211,7 +212,7 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(2),
+                            borderRadius: BorderRadius.circular(AppRadius.xs),
                             child: LinearProgressIndicator(
                               value: _hasPlayed ? 1.0 : progress,
                               minHeight: 4,
@@ -264,7 +265,7 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
       ),
       child: Column(
@@ -308,14 +309,14 @@ class _ExamEmbeddedListeningCompPanelState extends State<ExamEmbeddedListeningCo
       padding: const EdgeInsets.only(bottom: 6),
       child: Material(
         color: isSelected ? AppColors.primaryTint : AppColors.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: InkWell(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           onTap: widget.locked ? null : () => _onAnswerSelected(q.id, optionIndex),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               border: Border.all(
                 color: isSelected ? AppColors.primary : AppColors.outlineMuted,
                 width: isSelected ? 1.5 : 1,

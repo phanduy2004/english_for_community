@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:flutter/material.dart';
@@ -106,7 +107,7 @@ class PracticeTab extends StatelessWidget {
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.dangerBg, borderRadius: BorderRadius.circular(8)),
+              decoration: BoxDecoration(color: AppColors.dangerBg, borderRadius: BorderRadius.circular(AppRadius.input)),
               child: Text(lastHint!, style: const TextStyle(color: AppColors.danger)),
             ),
           if (!examPracticeMode && isDone && cue?.meaning != null)
@@ -116,7 +117,7 @@ class PracticeTab extends StatelessWidget {
               width: double.infinity,
               decoration: BoxDecoration(
                 color: AppColors.infoBg,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: AppColors.info),
               ),
               child: Column(
@@ -149,7 +150,7 @@ class PracticeTab extends StatelessWidget {
                     backgroundColor: btnColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                   ),
                   icon: Icon(btnIcon, size: 18),
                   label: Text(btnText),
@@ -163,7 +164,7 @@ class PracticeTab extends StatelessWidget {
                     backgroundColor: btnColor,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                   ),
                   icon: Icon(btnIcon, size: 18),
                   label: Text(btnText),
@@ -173,7 +174,7 @@ class PracticeTab extends StatelessWidget {
                   onPressed: onReplay,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
                     foregroundColor: onReplay == null ? AppColors.textMuted : null,
                   ),
                   child: Icon(onReplay == null ? Icons.play_disabled : Icons.replay),

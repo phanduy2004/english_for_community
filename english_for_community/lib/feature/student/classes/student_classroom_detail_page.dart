@@ -5,7 +5,7 @@ import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/feature/classroom_chat/classroom_chat_page.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_bloc.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_event.dart';
 import 'package:english_for_community/feature/student/bloc/classroom_detail/student_classroom_detail_state.dart';
@@ -125,7 +125,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
     }
     final start = await getIt<TeacherExamRepository>().startExamAttempt(assignmentId);
     await start.fold(
-      (f) async => AppCornerToast.show(context, f.message, error: true),
+      (f) async => AppFeedback.error(context, f.message),
       (attempt) async {
         final map = Map<String, dynamic>.from(attempt as Map);
         final attemptId = map['id'] as String? ?? '';
@@ -308,7 +308,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                   )
                 : null,
             body: loading
-                ? const Center(child: AppLoadingIndicator.center(color: AppColors.primary))
+                ? StudentMobileUi.runnerLoading()
                 : error != null
                     ? Center(
                         child: Padding(

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
-import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/join/student_join_input.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -25,40 +25,40 @@ class StudentJoinCoordinator {
       case StudentJoinInputKind.empty:
         return false;
       case StudentJoinInputKind.invalid:
-        AppCornerToast.show(context, l10n.studentJoinInputInvalid, error: true);
+        AppFeedback.error(context, l10n.studentJoinInputInvalid);
         return false;
       case StudentJoinInputKind.examSession:
         final sid = input.sessionId ?? '';
         if (sid.isEmpty) return false;
-        AppCornerToast.show(context, l10n.studentJoinDetectedSession);
+        AppFeedback.success(context, l10n.studentJoinDetectedSession);
         await context.push('/student/exam-session/$sid');
         return true;
       case StudentJoinInputKind.classInviteCode:
-        AppCornerToast.show(context, l10n.studentJoinDetectedClass);
+        AppFeedback.success(context, l10n.studentJoinDetectedClass);
         final codeResult = await repo.joinClassByCode(input.value ?? '');
         if (!context.mounted) return false;
         return codeResult.fold(
           (f) {
-            AppCornerToast.show(context, f.message, error: true);
+            AppFeedback.error(context, f.message);
             return false;
           },
           (_) {
-            AppCornerToast.show(context, l10n.studentJoinClassSuccess);
+            AppFeedback.success(context, l10n.studentJoinClassSuccess);
             onClassJoined?.call();
             return true;
           },
         );
       case StudentJoinInputKind.classInviteToken:
-        AppCornerToast.show(context, l10n.studentJoinDetectedClass);
+        AppFeedback.success(context, l10n.studentJoinDetectedClass);
         final tokenResult = await repo.joinClassByToken(input.value ?? '');
         if (!context.mounted) return false;
         return tokenResult.fold(
           (f) {
-            AppCornerToast.show(context, f.message, error: true);
+            AppFeedback.error(context, f.message);
             return false;
           },
           (_) {
-            AppCornerToast.show(context, l10n.studentJoinClassSuccess);
+            AppFeedback.success(context, l10n.studentJoinClassSuccess);
             onClassJoined?.call();
             return true;
           },
@@ -73,13 +73,13 @@ class StudentJoinCoordinator {
     final l10n = context.l10n;
     final repo = getIt<TeacherExamRepository>();
 
-    AppCornerToast.show(context, l10n.studentJoinDetectedPublicExam);
+    AppFeedback.success(context, l10n.studentJoinDetectedPublicExam);
 
     Map<String, dynamic>? previewMap;
     final preview = await repo.previewPublicExam(token);
     if (!context.mounted) return false;
     preview.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
+      (f) => AppFeedback.error(context, f.message),
       (d) => previewMap = Map<String, dynamic>.from(d as Map),
     );
     if (previewMap == null) return false;
@@ -89,7 +89,7 @@ class StudentJoinCoordinator {
       if (!context.mounted) return false;
       return sessionResult.fold(
         (f) {
-          AppCornerToast.show(context, f.message, error: true);
+          AppFeedback.error(context, f.message);
           return false;
         },
         (payload) {
@@ -106,7 +106,7 @@ class StudentJoinCoordinator {
     if (!context.mounted) return false;
     return attemptResult.fold(
       (f) {
-        AppCornerToast.show(context, f.message, error: true);
+        AppFeedback.error(context, f.message);
         return false;
       },
       (attempt) {

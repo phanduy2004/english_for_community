@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/speaking/speaking_attempt_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -148,14 +149,14 @@ class _SentencePill extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         child: Container(
           width: 32,
           height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.input),
             border: Border.all(color: border, width: selected ? 1.5 : 1),
           ),
           child: Text(
@@ -192,7 +193,7 @@ class _ReviewBlock extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           border: Border.all(color: borderColor),
         ),
         child: Column(

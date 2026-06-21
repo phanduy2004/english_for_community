@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
@@ -12,14 +14,14 @@ import 'package:flutter/services.dart';
 /// Shared accent palette for grammar interactive elements (matching, MCQ, blanks, reorder).
 abstract final class GrammarAccentPalette {
   static const List<Color> colors = [
-    Color(0xFF2563EB),
-    Color(0xFF059669),
-    Color(0xFFD97706),
-    Color(0xFFDC2626),
-    Color(0xFF7C3AED),
-    Color(0xFF0891B2),
-    Color(0xFFDB2777),
-    Color(0xFF4F46E5),
+    AppColors.info,
+    AppColors.success,
+    AppColors.warning,
+    AppColors.danger,
+    AppColors.tertiary,
+    AppColors.accent,
+    AppColors.primary,
+    AppColors.secondary,
   ];
 
   static Color of(int index) => colors[index.abs() % colors.length];
@@ -53,7 +55,7 @@ class _GrammarMcqOption extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
         color: selected ? GrammarAccentPalette.fillBg(accent) : AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: InkWell(
           onTap: onTap == null
               ? null
@@ -61,10 +63,10 @@ class _GrammarMcqOption extends StatelessWidget {
                   HapticFeedback.selectionClick();
                   onTap!();
                 },
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
                 color: selected ? accent : AppColors.outlineMuted,
                 width: selected ? 1.5 : 1,
@@ -79,7 +81,7 @@ class _GrammarMcqOption extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: selected ? 0.18 : 0.1),
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(9)),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
                   ),
                   child: Text(
                     StudentMobileUi.mcqLetter(index),
@@ -121,32 +123,124 @@ class _GrammarMcqOption extends StatelessWidget {
   }
 }
 
-InputDecoration _grammarBlankDecoration({
+/// Inline blank — cùng kiểu viền accent + cột id như MCQ grammar.
+class _GrammarBlankField extends StatelessWidget {
+  const _GrammarBlankField({
+    required this.blankId,
+    required this.accent,
+    required this.controller,
+    required this.enabled,
+    this.onChanged,
+    this.width = 120,
+    this.fieldKey,
+  });
+
+  final String blankId;
+  final Color accent;
+  final TextEditingController controller;
+  final bool enabled;
+  final ValueChanged<String>? onChanged;
+  final double width;
+  final Key? fieldKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final filled = controller.text.trim().isNotEmpty;
+    return SizedBox(
+      width: width,
+      child: Material(
+        color: GrammarAccentPalette.fillBg(accent, alpha: filled ? 0.08 : 0.05),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: accent, width: 1.5),
+          ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  width: 30,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.15),
+                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
+                  ),
+                  child: Text(
+                    blankId,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                      fontSize: 12,
+                      height: 1,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: TextField(
+                    key: fieldKey,
+                    enabled: enabled,
+                    controller: controller,
+                    onChanged: onChanged,
+                    style: ExamSystemUi.captionSecondary,
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      disabledBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Read-only chip for review (gap / cloze inline).
+Widget _grammarAccentAnswerChip({
+  required String label,
+  required String text,
   required Color accent,
-  required bool filled,
-  String? hint,
 }) {
-  final borderColor = filled ? accent : AppColors.outlineMuted;
-  final borderWidth = filled ? 1.5 : 1.0;
-  final radius = BorderRadius.circular(8);
-  return InputDecoration(
-    isDense: true,
-    hintText: hint,
-    hintStyle: ExamSystemUi.captionMuted,
-    filled: true,
-    fillColor: filled ? GrammarAccentPalette.fillBg(accent) : AppColors.surfaceCard,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-    border: OutlineInputBorder(
-      borderRadius: radius,
-      borderSide: BorderSide(color: borderColor, width: borderWidth),
+  return Container(
+    constraints: const BoxConstraints(minWidth: 72),
+    decoration: BoxDecoration(
+      color: GrammarAccentPalette.fillBg(accent),
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      border: Border.all(color: accent, width: 1.5),
     ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: radius,
-      borderSide: BorderSide(color: borderColor, width: borderWidth),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: radius,
-      borderSide: BorderSide(color: accent, width: 1.5),
+    child: IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 30,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.15),
+              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(fontWeight: FontWeight.w700, color: accent, fontSize: 12, height: 1),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -187,7 +281,7 @@ class GrammarCorrectAnswerReviewPanel extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.primary.withValues(alpha: 0.22)),
       ),
       child: Column(
@@ -343,7 +437,12 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (passage.isNotEmpty) ...[
-            Text(passage, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 8,
+              children: _clozePassageReviewPieces(context, passage, defs, userBlanks, l10n.integratedExamReviewNotAnswered),
+            ),
             const SizedBox(height: 10),
           ],
           for (var i = 0; i < defs.length; i++) ...[
@@ -360,6 +459,41 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<Widget> _clozePassageReviewPieces(
+    BuildContext context,
+    String passage,
+    List<Map<String, dynamic>> defs,
+    Map<String, String> userBlanks,
+    String notAnsweredLabel,
+  ) {
+    final reg = RegExp(r'\{\{([0-9]+)\}\}');
+    final pieces = <Widget>[];
+    var start = 0;
+    for (final m in reg.allMatches(passage)) {
+      if (m.start > start) {
+        pieces.add(Text(passage.substring(start, m.start), style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)));
+      }
+      final id = m.group(1) ?? '0';
+      final accent = GrammarAccentPalette.of(GrammarAccentPalette.blankIndex(id));
+      final userText = (userBlanks[id] ?? '').trim();
+      pieces.add(
+        _grammarAccentAnswerChip(
+          label: id,
+          text: userText.isNotEmpty ? userText : notAnsweredLabel,
+          accent: accent,
+        ),
+      );
+      start = m.end;
+    }
+    if (start < passage.length) {
+      pieces.add(Text(passage.substring(start), style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)));
+    }
+    if (pieces.isEmpty && passage.isNotEmpty) {
+      pieces.add(Text(passage, style: ExamSystemUi.captionSecondary.copyWith(height: 1.45)));
+    }
+    return pieces;
   }
 
   Widget _buildGap(BuildContext context) {
@@ -383,8 +517,11 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
             runSpacing: 6,
             children: [
               if (before.isNotEmpty) Text(before, style: ExamSystemUi.captionSecondary),
-              _inlineAnswerChip(userText.isNotEmpty ? userText : l10n.integratedExamReviewNotAnswered,
-                  ok: userText.isNotEmpty && _grammarBlankOk(blankDef, userText)),
+              _grammarAccentAnswerChip(
+                label: blankId,
+                accent: GrammarAccentPalette.of(GrammarAccentPalette.blankIndex(blankId)),
+                text: userText.isNotEmpty ? userText : l10n.integratedExamReviewNotAnswered,
+              ),
               if (after.isNotEmpty) Text(after, style: ExamSystemUi.captionSecondary),
             ],
           ),
@@ -581,7 +718,7 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: border.withValues(alpha: showAsCorrect ? 0.45 : 1)),
       ),
       child: Column(
@@ -603,20 +740,6 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
     );
   }
 
-  Widget _inlineAnswerChip(String text, {required bool ok}) {
-    final border = ok ? AppColors.success : AppColors.danger;
-    final bg = ok ? AppColors.successBg : AppColors.dangerBg;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: border),
-      ),
-      child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
-    );
-  }
-
   Widget _orderLine(BuildContext context, {required int number, required String text, required bool ok, bool showAsCorrect = false}) {
     final color = showAsCorrect || ok ? AppColors.success : AppColors.danger;
     final bg = showAsCorrect || ok ? AppColors.successBg : AppColors.dangerBg;
@@ -624,7 +747,7 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: color.withValues(alpha: showAsCorrect ? 0.45 : 1)),
       ),
       child: Row(
@@ -1074,27 +1197,19 @@ class _ClozeBodyState extends State<_ClozeBody> {
       final id = m.group(1) ?? '0';
       final ctl = _controllers[id]!;
       final accent = GrammarAccentPalette.of(GrammarAccentPalette.blankIndex(id));
-      final filled = ctl.text.trim().isNotEmpty;
       pieces.add(
-        SizedBox(
-          width: 108,
-          child: TextField(
-            key: ValueKey('cloze_${widget.item['itemId']}_$id'),
-            enabled: !widget.locked,
-            controller: ctl,
-            onChanged: widget.locked
-                ? null
-                : (_) {
-                    setState(() {});
-                    _emitBlanks();
-                  },
-            style: ExamSystemUi.captionSecondary,
-            decoration: _grammarBlankDecoration(
-              accent: accent,
-              filled: filled,
-              hint: id,
-            ),
-          ),
+        _GrammarBlankField(
+          fieldKey: ValueKey('cloze_${widget.item['itemId']}_$id'),
+          blankId: id,
+          accent: accent,
+          enabled: !widget.locked,
+          controller: ctl,
+          onChanged: widget.locked
+              ? null
+              : (_) {
+                  setState(() {});
+                  _emitBlanks();
+                },
         ),
       );
       start = m.end;
@@ -1177,7 +1292,6 @@ class _GapBodyState extends State<_GapBody> {
     final before = '${widget.item['textBefore'] ?? ''}';
     final after = '${widget.item['textAfter'] ?? ''}';
     final accent = GrammarAccentPalette.of(0);
-    final filled = _ctl.text.trim().isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -1186,20 +1300,17 @@ class _GapBodyState extends State<_GapBody> {
         spacing: 8,
         children: [
           Text(before, style: ExamSystemUi.captionSecondary),
-          SizedBox(
-            width: 120,
-            child: TextField(
-              enabled: !widget.locked,
-              controller: _ctl,
-              onChanged: widget.locked
-                  ? null
-                  : (v) {
-                      setState(() {});
-                      widget.onPartialPatch({'blanks': {_blankId: v}});
-                    },
-              style: ExamSystemUi.captionSecondary,
-              decoration: _grammarBlankDecoration(accent: accent, filled: filled),
-            ),
+          _GrammarBlankField(
+            blankId: _blankId,
+            accent: accent,
+            enabled: !widget.locked,
+            controller: _ctl,
+            onChanged: widget.locked
+                ? null
+                : (v) {
+                    setState(() {});
+                    widget.onPartialPatch({'blanks': {_blankId: v}});
+                  },
           ),
           Text(after, style: ExamSystemUi.captionSecondary),
         ],
@@ -1403,15 +1514,15 @@ class _MatchingBodyState extends State<_MatchingBody> {
       color: selected
           ? AppColors.primaryTint
           : (paired ? pairColor!.withValues(alpha: 0.08) : AppColors.surface),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: widget.locked ? null : () => setState(() => _selectedLeftId = selected ? null : id),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: selected
                   ? AppColors.primary
@@ -1454,7 +1565,7 @@ class _MatchingBodyState extends State<_MatchingBody> {
       data: id,
       feedback: Material(
         elevation: 2,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         color: AppColors.surfaceCard,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1483,12 +1594,12 @@ class _MatchingBodyState extends State<_MatchingBody> {
     Widget card = Material(
       key: _rightKeys[id],
       color: isLinked ? pairColor!.withValues(alpha: 0.08) : AppColors.surface,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(
             color: isLinked
                 ? pairColor!
@@ -1511,12 +1622,12 @@ class _MatchingBodyState extends State<_MatchingBody> {
       builder: (context, candidate, _) {
         final active = candidate.isNotEmpty;
         return InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           onTap: _selectedLeftId == null ? null : () => _setPair(_selectedLeftId!, id),
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
+            duration: AppMotion.fast,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: active
                   ? Border.all(color: AppColors.primary.withValues(alpha: 0.45), width: 1.5)
                   : null,
@@ -1727,7 +1838,7 @@ class _GrammarReorderTile extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(AppRadius.chip),
             ),
             child: Text(
               '${displayIndex + 1}',
@@ -1737,10 +1848,10 @@ class _GrammarReorderTile extends StatelessWidget {
 
     return Material(
       color: GrammarAccentPalette.fillBg(accent),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           border: Border.all(color: accent, width: 1.5),
         ),
         child: Padding(
