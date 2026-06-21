@@ -1,7 +1,9 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/student/exams/student_exam_live_mirror_view.dart';
 import 'package:english_for_community/feature/teacher/bloc/student_live_screen/teacher_student_live_screen_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/student_live_screen/teacher_student_live_screen_event.dart';
@@ -100,7 +102,7 @@ class _TeacherStudentLiveScreenView extends StatelessWidget {
           scrollable: false,
           showBack: true,
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.table(rows: 8))
               : error
                   ? Center(
                       child: Column(
@@ -126,15 +128,12 @@ class _TeacherStudentLiveScreenView extends StatelessWidget {
                           child: DecoratedBox(
                             decoration: BoxDecoration(
                               color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(AppRadius.card),
                               border: Border.all(color: AppColors.outlineMuted),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: SizedBox(
-                                height: MediaQuery.sizeOf(context).height * 0.72,
-                                child: StudentExamLiveMirrorView(liveScreen: state.liveScreen!),
-                              ),
+                              padding: const EdgeInsets.all(AppSpacing.s4),
+                              child: StudentExamLiveMirrorView(liveScreen: state.liveScreen!),
                             ),
                           ),
                         ),
