@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, softDeletePlugin } from '../lib/mongoosePlugins.js';
+import { examScoresSubSchema, examIntegritySubSchema } from './sub/examAttemptSubSchemas.js';
 
 const examAttemptSchema = new mongoose.Schema(
   {
@@ -17,9 +19,9 @@ const examAttemptSchema = new mongoose.Schema(
       enum: ['pending_auto', 'pending_ai', 'pending_manual', 'finalized'],
       default: 'pending_auto',
     },
-    scores: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    scores: { type: examScoresSubSchema, default: () => ({}) },
     resultsReleased: { type: Boolean, default: false },
-    integrity: { type: mongoose.Schema.Types.Mixed, default: () => ({}) },
+    integrity: { type: examIntegritySubSchema, default: () => ({}) },
   },
   { timestamps: true }
 );
@@ -32,6 +34,10 @@ examAttemptSchema.index({ sessionId: 1, status: 1 });
 examAttemptSchema.index({ sessionId: 1, userId: 1, status: 1 });
 examAttemptSchema.index({ status: 1, attemptDeadlineAt: 1 });
 examAttemptSchema.index({ userId: 1, status: 1 });
+examAttemptSchema.index({ status: 1, gradingState: 1, resultsReleased: 1 });
+
+toJsonIdPlugin(examAttemptSchema);
+softDeletePlugin(examAttemptSchema, { useDestroyFlag: true });
 
 examAttemptSchema.set('toJSON', {
   transform: (doc, ret) => {
