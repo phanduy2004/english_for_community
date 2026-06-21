@@ -211,12 +211,7 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
 
                   if (_controller.loadingRooms && _controller.rooms.isEmpty) {
                     return SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(
-                        0,
-                        0,
-                        0,
-                        StudentMobileUi.pageBottomPadding,
-                      ),
+                      padding: const EdgeInsets.only(bottom: StudentMobileUi.pageBottomPadding),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (_, __) => const ConversationTileSkeleton(
@@ -268,12 +263,11 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
                             return Divider(
                               height: 1,
                               indent: dividerIndent,
-                              endIndent: StudentMobileUi.pageHPadding,
+                              endIndent: AppSpacing.s4,
                               color: AppColors.outlineMuted,
                             );
                           }
-                          final roomIndex = i ~/ 2;
-                          final room = filtered[roomIndex];
+                          final room = filtered[i ~/ 2];
                           return ConversationTile(
                             key: ValueKey(room.id),
                             room: room,

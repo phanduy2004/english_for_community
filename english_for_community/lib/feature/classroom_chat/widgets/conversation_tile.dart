@@ -1,6 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_skeleton.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
@@ -28,8 +27,7 @@ class ConversationTile extends StatefulWidget {
 
   static double dividerIndent(ConversationTileDensity density) {
     return switch (density) {
-      ConversationTileDensity.mobile =>
-        StudentMobileUi.pageHPadding + 48 + AppSpacing.s3,
+      ConversationTileDensity.mobile => AppSpacing.s4 + 48 + AppSpacing.s3,
       ConversationTileDensity.web => AppSpacing.s3 + 40 + AppSpacing.s3,
     };
   }
