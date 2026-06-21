@@ -1,5 +1,8 @@
 // app.js
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import listeningRoutes from './src/routes/listeningRoutes.js';
@@ -21,11 +24,45 @@ import classroomRoutes from "./src/routes/classroomRoutes.js";
 import examRoutes from "./src/routes/examRoutes.js";
 import classroomChatRoutes from "./src/routes/classroomChatRoutes.js";
 import classroomChatRootRoutes from "./src/routes/classroomChatRootRoutes.js";
+import { mongoSanitize } from "./src/middleware/sanitize.js";
+import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js';
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(helmet());
+app.use(compression());
+if (process.env.NODE_ENV !== 'test') {
+  app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+}
+
+// CORS: restrict browser origins when CORS_ALLOWED_ORIGINS is set
+// (comma-separated). Requests with no Origin header (mobile app, curl,
+// server-to-server) are always allowed — CORS only governs browsers, so the
+// Flutter mobile client is unaffected; this guards the web (teacher/admin) build.
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+if (allowedOrigins.length === 0) {
+  console.warn(
+    '⚠️  CORS is open to all origins. Set CORS_ALLOWED_ORIGINS (comma-separated) to restrict browser access.'
+  );
+  app.use(cors());
+} else {
+  app.use(
+    cors({
+      origin(origin, cb) {
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        return cb(new Error('Not allowed by CORS'));
+      },
+      credentials: true,
+    })
+  );
+}
+
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(mongoSanitize); // strip NoSQL operator injection from body/query
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/listening', listeningRoutes);
@@ -46,5 +83,8 @@ app.use('/api/classrooms', classroomRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/classroom-chat', classroomChatRootRoutes);
 app.use('/api/classroom-chat/:classroomId', classroomChatRoutes);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 export default app;

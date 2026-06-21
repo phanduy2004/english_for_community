@@ -55,7 +55,19 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const uploadCloud = multer({ storage });
+const ALLOWED_MIME = new Set([
+  'image/jpeg', 'image/png', 'image/jpg', 'image/webp',
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/m4a', 'audio/mp4',
+]);
+
+const uploadCloud = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (ALLOWED_MIME.has(file.mimetype)) return cb(null, true);
+    cb(new Error('Unsupported file type'));
+  },
+});
 
 // 🔥 THÊM DÒNG NÀY ĐỂ EXPORT BIẾN CLOUDINARY
 export { cloudinary };
