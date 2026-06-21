@@ -230,3 +230,16 @@ prefer_no_text_color_textSecondary:
 - Trong app Flutter cùng codebase, dùng `MediaQuery.sizeOf(context).width >= 1024 && kIsWeb` để quyết định layout web.
 - Hoặc widget riêng `core/layout/responsive_scope.dart` exposing `isWebDense` cho widget bên dưới chọn token.
 - KHÔNG đặt 2 layout chen vào 1 widget — tách `Mobile…Page` vs `Web…Page` qua `LayoutBuilder` + `if/else` ở entry route.
+
+## 8. Feedback & notifications (`docs/ui-ux-system/26`)
+
+| Doc / hành vi | Flutter |
+|---------------|---------|
+| Phân loại feedback (success / error nhẹ / blocking / inline) | `lib/core/ui/feedback/app_feedback.dart` → `AppFeedback.success/info/error/fieldError` |
+| Backend render SnackBar vs corner toast | `lib/core/ui/widget/app_corner_toast.dart` — `isStudentMobileFeedback(context)` = `!WorkspaceLayoutScope.isWebWorkspace(context)` |
+| Dedup 3s + không chồng dialog blocking | `AppFeedback._consumeDuplicate`, `_blockingDialogOpen` |
+| Banner in-app (foreground, màn khác) | `lib/core/ui/feedback/app_in_app_banner.dart` |
+| Socket `new_notification` → banner / push / tại chỗ | `lib/core/notification/app_notification_listener.dart` + `isStudentLearnerApp` |
+| Payload deeplink (classroomId, attemptId, …) | `lib/core/notification/notification_payload.dart` → `buildNotificationPayload` |
+| Tab badge unread (Home) | `home_page.dart` + `NotificationBloc.unreadCount` |
+| Corner toast **chỉ** teacher/admin web | Call site còn `AppCornerToast.show` trong `feature/teacher/**`, `feature/admin/**` |
