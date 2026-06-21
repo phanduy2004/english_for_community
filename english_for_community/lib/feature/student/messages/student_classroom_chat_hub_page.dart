@@ -7,13 +7,12 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_skeleton.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/classroom_chat/classroom_chat_page.dart';
 import 'package:english_for_community/feature/classroom_chat/classroom_chat_session_cache.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
-import 'package:english_for_community/feature/student/messages/student_messenger_conversation_tile.dart';
+import 'package:english_for_community/feature/classroom_chat/widgets/conversation_tile.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -79,7 +78,8 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
   }
 
   List<ClassroomChatRoomItem> _filteredRooms(List<ClassroomChatRoomItem> rooms) {
-    final key = '${rooms.length}|${rooms.map((r) => '${r.id}:${r.unreadCount}:${r.lastMessageAt?.millisecondsSinceEpoch}').join(';')}|$_query|$_filter';
+    final key =
+        '${rooms.length}|${rooms.map((r) => '${r.id}:${r.unreadCount}:${r.lastMessageAt?.millisecondsSinceEpoch}').join(';')}|$_query|$_filter';
     if (_cachedFiltered != null && _cachedFilterKey == key) {
       return _cachedFiltered!;
     }
@@ -130,6 +130,7 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
     super.build(context);
     final l10n = context.l10n;
     final hasQuery = _query.trim().isNotEmpty;
+    final dividerIndent = ConversationTile.dividerIndent(ConversationTileDensity.mobile);
 
     return Scaffold(
       backgroundColor: AppColors.surface,
@@ -211,14 +212,16 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
                   if (_controller.loadingRooms && _controller.rooms.isEmpty) {
                     return SliverPadding(
                       padding: const EdgeInsets.fromLTRB(
-                        StudentMobileUi.pageHPadding,
                         0,
-                        StudentMobileUi.pageHPadding,
+                        0,
+                        0,
                         StudentMobileUi.pageBottomPadding,
                       ),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
-                          (_, __) => const _ConversationTileSkeleton(),
+                          (_, __) => const ConversationTileSkeleton(
+                            density: ConversationTileDensity.mobile,
+                          ),
                           childCount: 5,
                         ),
                       ),
@@ -257,20 +260,28 @@ class _StudentClassroomChatHubPageState extends State<StudentClassroomChatHubPag
                   }
 
                   return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      StudentMobileUi.pageHPadding,
-                      0,
-                      StudentMobileUi.pageHPadding,
-                      StudentMobileUi.pageBottomPadding,
-                    ),
+                    padding: const EdgeInsets.only(bottom: StudentMobileUi.pageBottomPadding),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, i) => StudentMessengerConversationTile(
-                          key: ValueKey(filtered[i].id),
-                          room: filtered[i],
-                          onTap: () => _openChat(filtered[i]),
-                        ),
-                        childCount: filtered.length,
+                        (context, i) {
+                          if (i.isOdd) {
+                            return Divider(
+                              height: 1,
+                              indent: dividerIndent,
+                              endIndent: StudentMobileUi.pageHPadding,
+                              color: AppColors.outlineMuted,
+                            );
+                          }
+                          final roomIndex = i ~/ 2;
+                          final room = filtered[roomIndex];
+                          return ConversationTile(
+                            key: ValueKey(room.id),
+                            room: room,
+                            density: ConversationTileDensity.mobile,
+                            onTap: () => _openChat(room),
+                          );
+                        },
+                        childCount: filtered.length * 2 - 1,
                       ),
                     ),
                   );
@@ -313,44 +324,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ConversationTileSkeleton extends StatelessWidget {
-  const _ConversationTileSkeleton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.s2),
-      child: Material(
-        color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          child: Row(
-            children: [
-              AppSkeleton.box(
-                height: 48,
-                width: 48,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              const SizedBox(width: AppSpacing.s3),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppSkeleton.box(height: 14, width: 160),
-                    const SizedBox(height: AppSpacing.s2),
-                    AppSkeleton.box(height: 12, width: double.infinity),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
