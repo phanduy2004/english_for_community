@@ -1,5 +1,6 @@
 import User from '../models/User.js';
 import Report from '../models/Report.js';
+import { cascadeDeleteService } from './cascadeDeleteService.js';
 
 // --- MODELS CHO VIỆC TÍNH AI COST (USAGE) ---
 import WritingSubmission from '../models/WritingSubmission.js';
@@ -359,11 +360,13 @@ const deleteUser = async (id) => {
         isOnline: false,
         refreshToken: null,
         fcmTokens: [],
+        deletedAt: new Date(),
       },
     },
     { new: true }
   );
   if (!user) throw new Error('User not found');
+  await cascadeDeleteService.softCascadeUser(id);
   return true;
 };
 

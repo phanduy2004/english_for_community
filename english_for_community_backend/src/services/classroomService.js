@@ -1,14 +1,10 @@
 import crypto from 'crypto';
+import { httpError } from '../utils/AppError.js';
 import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import User from '../models/User.js';
+import { cascadeDeleteService } from './cascadeDeleteService.js';
 import { classroomActivityService } from './classroomActivityService.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 /** Works whether `teacherId` is an ObjectId or a populated User subdocument. */
 function classroomTeacherIdString(classroom) {
@@ -92,7 +88,9 @@ export const classroomService = {
     const classrooms = await Classroom.find({
       archived: false,
       $or: [{ teacherId }, { _id: { $in: coIds } }],
-    }).sort({ updatedAt: -1 });
+    })
+      .sort({ updatedAt: -1 })
+      .lean();
     if (classrooms.length === 0) return [];
     const ids = classrooms.map((c) => c._id);
     const agg = await ClassroomMember.aggregate([
@@ -101,7 +99,8 @@ export const classroomService = {
     ]);
     const countMap = Object.fromEntries(agg.map((x) => [String(x._id), x.n]));
     return classrooms.map((c) => {
-      const j = c.toJSON();
+      const j = { ...c, id: c._id.toString() };
+      delete j.__v;
       j.memberCountActive = countMap[String(c._id)] || 0;
       return j;
     });
@@ -302,11 +301,9 @@ export const classroomService = {
   },
 
   async archive(teacherId, classroomId) {
-    const { classroom, isOwner } = await this.assertCanManageClassroom(teacherId, classroomId);
+    const { isOwner } = await this.assertCanManageClassroom(teacherId, classroomId);
     if (!isOwner) throw httpError(403, 'Only the class owner can archive');
-    classroom.archived = true;
-    await classroom.save();
-    return classroom;
+    return cascadeDeleteService.softCascadeClassroom(classroomId);
   },
 
   async rotateInvite(teacherId, classroomId) {

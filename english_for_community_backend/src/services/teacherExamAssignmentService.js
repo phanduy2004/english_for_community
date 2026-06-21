@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { httpError } from '../utils/AppError.js';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import ExamAssignment from '../models/ExamAssignment.js';
@@ -7,6 +8,7 @@ import ExamSession from '../models/ExamSession.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import { classroomService } from './classroomService.js';
 import { teacherExamService } from './teacherExamService.js';
+import { cascadeDeleteService } from './cascadeDeleteService.js';
 import {
   applyStudentAttemptGate,
   buildAssignmentCardFields,
@@ -15,12 +17,6 @@ import {
   serializeActiveSession,
 } from './assignmentCardEnrichment.js';
 import { isRealtimeLobbyClosedForStudent } from './realtimeSchedule.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 export function normalizeAssignmentConfig(raw = {}) {
   const c = { ...raw };
@@ -582,10 +578,8 @@ export const teacherExamAssignmentService = {
         'Cannot delete this assignment: students have submitted attempts. Close it instead.'
       );
     }
-    await ExamAttempt.deleteMany({ assignmentId: a._id });
-    await ExamSession.deleteMany({ assignmentId: a._id });
-    await a.deleteOne();
-    return { deleted: true, assignmentId: assignmentId.toString() };
+    await cascadeDeleteService.softCascadeAssignment(a._id);
+    return { deleted: true, assignmentId: assignmentId.toString(), soft: true };
   },
 
   /** Invalidate old public URLs: new token, usesCount reset. */

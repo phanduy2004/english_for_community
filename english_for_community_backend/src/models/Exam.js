@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, softDeletePlugin } from '../lib/mongoosePlugins.js';
 
 const examSchema = new mongoose.Schema(
   {
@@ -14,6 +15,9 @@ const examSchema = new mongoose.Schema(
 );
 
 examSchema.index({ teacherId: 1, status: 1, updatedAt: -1 });
+
+toJsonIdPlugin(examSchema);
+softDeletePlugin(examSchema, { useDestroyFlag: false });
 
 examSchema.set('toJSON', {
   transform: (doc, ret) => {

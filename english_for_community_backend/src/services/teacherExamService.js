@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { httpError } from '../utils/AppError.js';
 import Exam from '../models/Exam.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
@@ -9,12 +10,7 @@ import SpeakingSet from '../models/SpeakingSet.js';
 import Reading from '../models/Reading.js';
 import WritingTopic from '../models/WritingTopics.js';
 import { primaryResourceIdFromSection } from './examSkillSectionResources.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
+import { cascadeDeleteService } from './cascadeDeleteService.js';
 
 export function walkItems(sections) {
   const out = [];
@@ -501,12 +497,9 @@ export const teacherExamService = {
           'Cannot delete this exam: students have submitted attempts. Archive the exam instead.'
         );
       }
-      await ExamAttempt.deleteMany({ assignmentId: { $in: assignmentIds } });
-      await ExamSession.deleteMany({ assignmentId: { $in: assignmentIds } });
-      await ExamAssignment.deleteMany({ _id: { $in: assignmentIds } });
     }
-    await exam.deleteOne();
-    return { deleted: true, examId: examId.toString() };
+    await cascadeDeleteService.softCascadeExam(exam._id);
+    return { deleted: true, examId: examId.toString(), soft: true };
   },
 
   async duplicateExam(teacherId, examId) {

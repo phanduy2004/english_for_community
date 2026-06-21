@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, softDeletePlugin } from '../lib/mongoosePlugins.js';
+
 const { Schema, model, Types } = mongoose;
 
 const QuestionTranslationSubSchema = new Schema({
@@ -41,6 +43,9 @@ const ReadingSchema = new Schema(
   },
   { timestamps: true }
 );
+
+toJsonIdPlugin(ReadingSchema);
+softDeletePlugin(ReadingSchema, { useDestroyFlag: true });
 
 const Reading = model('Reading', ReadingSchema);
 export default Reading;

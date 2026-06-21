@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, ttlIndexPlugin } from '../lib/mongoosePlugins.js';
 
 const classroomActivityLogSchema = new mongoose.Schema(
   {
@@ -28,6 +29,9 @@ const classroomActivityLogSchema = new mongoose.Schema(
 );
 
 classroomActivityLogSchema.index({ classroomId: 1, createdAt: -1 });
+
+toJsonIdPlugin(classroomActivityLogSchema);
+ttlIndexPlugin(classroomActivityLogSchema, { field: 'createdAt', expireAfterSeconds: 365 * 24 * 3600 });
 
 classroomActivityLogSchema.set('toJSON', {
   transform: (doc, ret) => {

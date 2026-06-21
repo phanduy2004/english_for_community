@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { toJsonIdPlugin, softDeletePlugin } from '../lib/mongoosePlugins.js';
 const { Schema, model, Types } = mongoose;
 
 // 1️⃣ Sub-Schema cho Cue (Tương tự Question trong Reading)
@@ -42,6 +43,9 @@ const ListeningSchema = new Schema(
 ListeningSchema.virtual('totalCues').get(function() {
   return this.cues ? this.cues.length : 0;
 });
+
+toJsonIdPlugin(ListeningSchema);
+softDeletePlugin(ListeningSchema, { useDestroyFlag: true });
 
 const Listening = model('Listening', ListeningSchema);
 export default Listening;
