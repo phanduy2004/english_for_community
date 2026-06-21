@@ -1,10 +1,10 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_room_tile.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
+import 'package:english_for_community/feature/classroom_chat/widgets/conversation_tile.dart';
 import 'package:flutter/material.dart';
 
 /// Panel trượt danh sách nhóm lớp — kiểu Messenger dropdown.
@@ -32,19 +32,15 @@ class _ClassroomChatListPanelState extends State<ClassroomChatListPanel> {
     super.dispose();
   }
 
-  List<ClassroomChatRoomItem> get _filtered {
+  List<ClassroomChatRoomItem> _filtered(List<ClassroomChatRoomItem> rooms) {
     final q = _query.trim().toLowerCase();
-    if (q.isEmpty) return widget.controller.rooms;
-    return widget.controller.rooms
-        .where((r) => r.name.toLowerCase().contains(q))
-        .toList();
+    if (q.isEmpty) return rooms;
+    return rooms.where((r) => r.name.toLowerCase().contains(q)).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
-    final filtered = _filtered;
-    final activeId = c.session?.classroomId;
 
     return Positioned(
       top: widget.topOffset,
@@ -84,46 +80,69 @@ class _ClassroomChatListPanelState extends State<ClassroomChatListPanel> {
                 ),
               ),
               Flexible(
-                child: c.loadingRooms
-                    ? const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Center(child: AppLoadingIndicator.center()),
-                      )
-                    : c.roomsError != null
-                        ? SingleChildScrollView(
-                            child: ClassroomChatRoomListError(
-                              message: c.roomsError!,
-                              onRetry: () => c.loadRooms(force: true),
-                            ),
-                          )
-                        : filtered.isEmpty
-                            ? SingleChildScrollView(
-                                child: ClassroomChatRoomListEmpty(
-                                  hasQuery: _query.trim().isNotEmpty,
-                                  compact: true,
-                                ),
-                              )
-                            : ListView.separated(
-                                padding: const EdgeInsets.only(bottom: AppSpacing.s2),
-                                itemCount: filtered.length,
-                                separatorBuilder: (_, __) => const Divider(
-                                  height: 1,
-                                  indent: 68,
-                                  endIndent: AppSpacing.s4,
-                                  color: AppColors.outlineMuted,
-                                ),
-                                itemBuilder: (_, i) {
-                                  final room = filtered[i];
-                                  return ClassroomChatRoomTile(
-                                    room: room,
-                                    isActive: room.id == activeId,
-                                    onTap: () => c.openChat(
-                                      classroomId: room.id,
-                                      classroomName: room.name,
-                                    ),
-                                  );
-                                },
-                              ),
+                child: ListenableBuilder(
+                  listenable: c,
+                  builder: (context, _) {
+                    final filtered = _filtered(c.rooms);
+                    final activeId = c.session?.classroomId;
+                    final dividerIndent = ConversationTile.dividerIndent(
+                      ConversationTileDensity.web,
+                    );
+
+                    if (c.loadingRooms && c.rooms.isEmpty) {
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s2),
+                        itemCount: 5,
+                        itemBuilder: (_, __) => const ConversationTileSkeleton(
+                          density: ConversationTileDensity.web,
+                        ),
+                      );
+                    }
+
+                    if (c.roomsError != null && c.rooms.isEmpty) {
+                      return SingleChildScrollView(
+                        child: ClassroomChatRoomListError(
+                          message: c.roomsError!,
+                          onRetry: () => c.loadRooms(force: true),
+                        ),
+                      );
+                    }
+
+                    if (filtered.isEmpty) {
+                      return SingleChildScrollView(
+                        child: ClassroomChatRoomListEmpty(
+                          hasQuery: _query.trim().isNotEmpty,
+                          compact: true,
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s2),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        indent: dividerIndent,
+                        endIndent: AppSpacing.s4,
+                        color: AppColors.outlineMuted,
+                      ),
+                      itemBuilder: (_, i) {
+                        final room = filtered[i];
+                        return ConversationTile(
+                          key: ValueKey(room.id),
+                          room: room,
+                          density: ConversationTileDensity.web,
+                          isActive: room.id == activeId,
+                          onTap: () => c.openChat(
+                            classroomId: room.id,
+                            classroomName: room.name,
+                            coverImageUrl: room.coverImageUrl,
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
