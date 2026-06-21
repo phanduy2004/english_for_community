@@ -173,7 +173,7 @@ abstract final class AppMotion {
 | 2026-05-16 | Khởi tạo bộ doc UI/UX mới (mobile + web split) | _(this PR)_ |
 | 2026-06-14 | Teacher web remediation (`18-teacher-web-audit`): token sweep, skeleton, sticky gradebook, save-state editors, inline validate, focusableTile, empty CTA | _(pending commit)_ |
 | 2026-06-21 | Student chat reverse list + scroll polish (`22-student-chat-scroll-and-conversation-list` §3A) | `eca074e` |
-| 2026-06-21 | Student conversation list redesign — shared ConversationTile web+mobile (`23`) | `0c9ac90`, `9ed4cfb`, _(23-3/4)_ |
+| 2026-06-21 | Student conversation list redesign — shared ConversationTile web+mobile (`23`) | `0c9ac90`, `9ed4cfb`, `503bc2b`, `66d05fb`, `c478cb9` |
 
 ## 5.1 Teacher dialogs (`14-teacher-dialogs.md`)
 
