@@ -47,9 +47,8 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
 
   bool _stickToBottom = true;
   int _prevMessageCount = 0;
-  ClassroomChatStatus? _prevStatus;
-  _ScrollAnchor? _loadMoreAnchor;
   String? _prevErrorMessage;
+  final Map<String, GlobalKey> _messageKeys = {};
 
   @override
   void initState() {
@@ -67,8 +66,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
 
   bool get _isNearBottom {
     if (!_scrollCtrl.hasClients) return true;
-    final pos = _scrollCtrl.position;
-    return pos.maxScrollExtent - pos.pixels <= _nearBottomThreshold;
+    return _scrollCtrl.offset <= _nearBottomThreshold;
   }
 
   void _onScroll() {
@@ -76,46 +74,51 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
     if (!_scrollCtrl.hasClients) return;
 
     final pos = _scrollCtrl.position;
-    _stickToBottom = pos.maxScrollExtent - pos.pixels <= _nearBottomThreshold;
+    _stickToBottom = pos.pixels <= _nearBottomThreshold;
 
-    if (pos.pixels > _loadMoreThreshold) return;
+    if (pos.maxScrollExtent - pos.pixels > _loadMoreThreshold) return;
 
     final bloc = context.read<ClassroomChatBloc>();
     final st = bloc.state;
     if (!st.hasMore || st.status == ClassroomChatStatus.loadingMore) return;
 
-    _loadMoreAnchor ??= _ScrollAnchor(
-      maxExtent: pos.maxScrollExtent,
-      pixels: pos.pixels,
-    );
     bloc.add(const ClassroomChatLoadMore());
   }
 
   void _scrollToBottom({bool animated = true}) {
     if (!_scrollCtrl.hasClients) return;
-    final max = _scrollCtrl.position.maxScrollExtent;
     if (animated) {
       _scrollCtrl.animateTo(
-        max,
+        0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeOut,
       );
     } else {
-      _scrollCtrl.jumpTo(max);
+      _scrollCtrl.jumpTo(0);
     }
     _stickToBottom = true;
   }
 
   void _scrollToMessage(String messageId, List<ClassroomChatMessage> messages, bool hasMore) {
     final idx = messages.indexWhere((m) => m.id == messageId);
-    if (idx < 0 || !_scrollCtrl.hasClients) return;
-    final itemIndex = hasMore ? idx + 1 : idx;
-    const estItemHeight = 72.0;
-    final target = (itemIndex * estItemHeight).clamp(0.0, _scrollCtrl.position.maxScrollExtent);
-    _scrollCtrl.animateTo(
-      target,
+    if (idx < 0) return;
+
+    final bloc = context.read<ClassroomChatBloc>();
+    if (hasMore && idx < messages.length ~/ 4) {
+      bloc.add(const ClassroomChatLoadMore());
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureMessageVisible(messageId));
+  }
+
+  void _ensureMessageVisible(String messageId) {
+    final ctx = _messageKeys[messageId]?.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOut,
+      alignment: 0.5,
     );
   }
 
@@ -128,55 +131,12 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
     }
   }
 
-  void _restoreScrollAfterLoadMore() {
-    final anchor = _loadMoreAnchor;
-    if (anchor == null) return;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_scrollCtrl.hasClients) return;
-      final newMax = _scrollCtrl.position.maxScrollExtent;
-      _scrollCtrl.jumpTo(anchor.pixels + (newMax - anchor.maxExtent));
-      _loadMoreAnchor = null;
-    });
-  }
-
   void _handleMessagesChanged(ClassroomChatState state) {
     final count = state.messages.length;
     final countDelta = count - _prevMessageCount;
 
-    if (_prevMessageCount == 0 &&
-        count > 0 &&
-        state.status == ClassroomChatStatus.ready) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom(animated: false));
-      _prevMessageCount = count;
-      _prevStatus = state.status;
-      return;
-    }
-
-    if (_prevStatus == ClassroomChatStatus.loading &&
-        state.status == ClassroomChatStatus.ready &&
-        count > 0) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom(animated: false));
-      _prevMessageCount = count;
-      _prevStatus = state.status;
-      return;
-    }
-
     if (countDelta <= 0) {
-      if (_prevStatus == ClassroomChatStatus.loadingMore &&
-          state.status == ClassroomChatStatus.ready) {
-        _loadMoreAnchor = null;
-      }
       _prevMessageCount = count;
-      _prevStatus = state.status;
-      return;
-    }
-
-    if (_loadMoreAnchor != null &&
-        _prevStatus == ClassroomChatStatus.loadingMore &&
-        state.status == ClassroomChatStatus.ready) {
-      _restoreScrollAfterLoadMore();
-      _prevMessageCount = count;
-      _prevStatus = state.status;
       return;
     }
 
@@ -191,7 +151,6 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
     }
 
     _prevMessageCount = count;
-    _prevStatus = state.status;
   }
 
   @override
@@ -308,6 +267,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                     canPin: state.isClassOwner(widget.currentUserId),
                     pinnedMessageId: state.pinnedMessage?.id,
                     members: state.members,
+                    messageKeys: _messageKeys,
                     onReply: (msg) => setState(() => _replyTo = msg),
                     onReact: (msg, emoji) => context.read<ClassroomChatBloc>().add(
                           ClassroomChatReact(messageId: msg.id, emoji: emoji),
@@ -433,6 +393,7 @@ class _MessageList extends StatelessWidget {
     required this.onEdit,
     this.onPin,
     this.members = const [],
+    required this.messageKeys,
   });
 
   final List<ClassroomChatMessage> messages;
@@ -451,6 +412,7 @@ class _MessageList extends StatelessWidget {
   final void Function(ClassroomChatMessage) onEdit;
   final void Function(ClassroomChatMessage)? onPin;
   final List<ChatMember> members;
+  final Map<String, GlobalKey> messageKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -490,13 +452,15 @@ class _MessageList extends StatelessWidget {
 
     return ListView.builder(
       controller: scrollController,
+      reverse: true,
       clipBehavior: Clip.hardEdge,
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      cacheExtent: 480,
+      addAutomaticKeepAlives: false,
+      cacheExtent: 800,
       padding: ClassroomChatUi.messageListPadding(compact: compact, mobile: mobile),
       itemCount: messages.length + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index == 0 && hasMore) {
+        if (hasMore && index == messages.length) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: isLoadingMore
@@ -520,8 +484,9 @@ class _MessageList extends StatelessWidget {
           );
         }
 
-        final msgIndex = hasMore ? index - 1 : index;
+        final msgIndex = messages.length - 1 - index;
         final msg = messages[msgIndex];
+        final itemKey = messageKeys.putIfAbsent(msg.id, GlobalKey.new);
         final isMe = msg.senderId == currentUserId;
         final showSenderInfo =
             !isMe && _isFirstInGroup(messages, msgIndex, _isSameDay);
@@ -530,31 +495,35 @@ class _MessageList extends StatelessWidget {
         final showDate = msgIndex == 0 ||
             !_isSameDay(msg.createdAt, messages[msgIndex - 1].createdAt);
 
-        return Column(
-          children: [
-            if (showDate) _DateSeparator(date: msg.createdAt),
-            RepaintBoundary(
-              child: ChatMessageBubble(
-                message: msg,
-                isMe: isMe,
-                showSenderInfo: showSenderInfo,
-                showAvatar: showAvatar,
-                showTail: showTail,
-                currentUserId: currentUserId,
-                compact: compact,
-                highlightTeacherMessages: highlightTeacherMessages,
-                interactionLock: interactionLock,
-                members: members,
-                onReply: onReply,
-                onReact: onReact,
-                onDelete: onDelete,
-                onEdit: onEdit,
-                canPin: canPin,
-                isPinned: pinnedMessageId == msg.id,
-                onPin: onPin,
+        return KeyedSubtree(
+          key: ValueKey(msg.id),
+          child: Column(
+            key: itemKey,
+            children: [
+              if (showDate) _DateSeparator(date: msg.createdAt),
+              RepaintBoundary(
+                child: ChatMessageBubble(
+                  message: msg,
+                  isMe: isMe,
+                  showSenderInfo: showSenderInfo,
+                  showAvatar: showAvatar,
+                  showTail: showTail,
+                  currentUserId: currentUserId,
+                  compact: compact,
+                  highlightTeacherMessages: highlightTeacherMessages,
+                  interactionLock: interactionLock,
+                  members: members,
+                  onReply: onReply,
+                  onReact: onReact,
+                  onDelete: onDelete,
+                  onEdit: onEdit,
+                  canPin: canPin,
+                  isPinned: pinnedMessageId == msg.id,
+                  onPin: onPin,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -754,13 +723,6 @@ class _TypingDotsState extends State<_TypingDots> with SingleTickerProviderState
       },
     );
   }
-}
-
-class _ScrollAnchor {
-  const _ScrollAnchor({required this.maxExtent, required this.pixels});
-
-  final double maxExtent;
-  final double pixels;
 }
 
 class _ChatLoadingShell extends StatelessWidget {
