@@ -4,12 +4,12 @@ Tài liệu này là **bản tóm tắt nghiệp vụ cấp sản phẩm** cho h
 
 | Miền | Thư mục chi tiết |
 |------|------------------|
-| **Giáo viên – Lớp học – Thi trực tuyến** | [`docs/teacher-exam-system/`](teacher-exam-system/README.md) |
-| **Phát hành bản app & thông báo cập nhật** | [`docs/auto-update/`](auto-update/README.md) |
+| **Giáo viên – Lớp học – Thi trực tuyến** | [`../teacher-exam-system/`](../teacher-exam-system/README.md) |
+| **Phát hành bản app & thông báo cập nhật** | [`../auto-update/`](../auto-update/README.md) |
 
 **Cách dùng:** đọc file này để nắm **luồng nghiệp vụ đầy đủ** và **còn thiếu gì**; đọc các file `01–11` trong từng thư mục để có **đặc tả kỹ thuật / màn hình / API** đầy đủ.
 
-**Agent tự chạy qua đêm:** playbook detect → fix → verify và backlog đầy đủ → [`agent-autonomous-workflow.md`](agent-autonomous-workflow.md).
+**Agent tự chạy qua đêm:** playbook detect → fix → verify và backlog đầy đủ → [`../dev/agent-autonomous-workflow.md`](../dev/agent-autonomous-workflow.md).
 
 ---
 
@@ -148,4 +148,4 @@ Bảng dưới đây **tổng hợp khoảng trống** đã được phân tích
 ## 5) Bảo trì tài liệu
 
 - Khi ship một mảng (ví dụ F6 xong hết gap), cập nhật [`11-detailed-feature-implementation-plan.md`](teacher-exam-system/11-detailed-feature-implementation-plan.md): **Gap → Done** và ghi commit/PR.  
-- File **này** (`00-nghiep-vu-tong-hop-va-khoang-trong.md`) nên chỉnh **định kỳ** (ví dụ mỗi sprint) để ma trận mục 3 phản ánh đúng backlog thực tế.
+- File **này** (`product/nghiep-vu-tong-hop-va-khoang-trong.md`) nên chỉnh **định kỳ** (ví dụ mỗi sprint) để ma trận mục 3 phản ánh đúng backlog thực tế.

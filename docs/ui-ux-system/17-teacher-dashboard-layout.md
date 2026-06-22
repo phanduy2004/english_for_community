@@ -1,7 +1,7 @@
 # 17 — Teacher dashboard layout (v5 — stats-only)
 
 > Spec cho `/teacher`. Bổ sung [`08-web-screens.md`](08-web-screens.md) §A1.
-> Coding: xem [`../flutter-coding-structure.md`](../flutter-coding-structure.md).
+> Coding: xem [`../dev/flutter-coding-structure.md`](../dev/flutter-coding-structure.md).
 
 ---
 

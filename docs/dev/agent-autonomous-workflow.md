@@ -9,13 +9,13 @@
 | Tài liệu | Đường dẫn |
 |----------|-----------|
 | Project context | `.cursor/rules/project.mdc` |
-| Nghiệp vụ & gap | `docs/00-nghiep-vu-tong-hop-va-khoang-trong.md` |
+| Nghiệp vụ & gap | `docs/product/nghiep-vu-tong-hop-va-khoang-trong.md` |
 | UI guardrails | `docs/ui-ux-system/12-ai-guardrails.md` |
 | Token → code | `docs/ui-ux-system/11-implementation-mapping.md` |
 | Mobile screens | `docs/ui-ux-system/05-mobile-screens.md` |
 | Smart patterns | `docs/ui-ux-system/15-mobile-smart-patterns.md` |
-| Thông báo | `docs/notifications-teacher-student.md` |
-| Seed test | `docs/seed-hoangdong-accounts.md`, `docs/seed-test-accounts.md` |
+| Thông báo | `docs/product/notifications-teacher-student.md` |
+| Seed test | `docs/dev/seeds/seed-hoangdong-accounts.md`, `docs/dev/seeds/seed-test-accounts.md` |
 
 ---
 
@@ -208,7 +208,7 @@ flowchart TD
 
 ```powershell
 cd d:\Workspace\english_for_community\english_for_community
-flutter analyze 2>&1 | Tee-Object -FilePath ..\docs\.agent-analyze-last.txt
+flutter analyze 2>&1 | Tee-Object -FilePath ..\docs\dev\artifacts\.agent-analyze-last.txt
 ```
 
 **Grep nhanh — pattern hay gây lỗi:**
@@ -345,7 +345,7 @@ YYYY-MM-DD HH:mm | <ID> | DONE|BLOCKED|IN_PROGRESS | <1 dòng mô tả> | analyz
 Copy vào Cursor Agent (để chạy lâu):
 
 ```text
-Đọc và làm theo đúng thứ tự docs/agent-autonomous-workflow.md.
+Đọc và làm theo đúng thứ tự docs/dev/agent-autonomous-workflow.md.
 
 Quy tắc:
 - Tuân .cursor/rules/project.mdc và docs/ui-ux-system/12-ai-guardrails.md
@@ -366,7 +366,7 @@ Trong terminal Cursor (Windows), có thể arm loop (user tự chạy — agent 
 # Ví dụ: mỗi 30 phút đánh thức agent (user paste prompt §9.1 khi thấy tick)
 while ($true) {
   Start-Sleep -Seconds 1800
-  Write-Output 'AGENT_LOOP_TICK_E4C {"prompt":"Tiếp tục docs/agent-autonomous-workflow.md §4: chọn task OPEN tiếp theo, Detect→Fix→Verify, cập nhật §8 log."}'
+  Write-Output 'AGENT_LOOP_TICK_E4C {"prompt":"Tiếp tục docs/dev/agent-autonomous-workflow.md §4: chọn task OPEN tiếp theo, Detect→Fix→Verify, cập nhật §8 log."}'
 }
 ```
 
@@ -375,7 +375,7 @@ Hoặc dùng Cursor **`/loop 30m`** + prompt §9.1.
 ### 9.3 Khi user thức dậy
 
 ```text
-Đọc docs/agent-autonomous-workflow.md §8 Progress log và docs/.agent-analyze-last.txt (nếu có).
+Đọc docs/dev/agent-autonomous-workflow.md §8 Progress log và docs/dev/artifacts/.agent-analyze-last.txt (nếu có).
 Tóm tắt: đã DONE gì, BLOCKED gì, cần tôi test thủ công màn nào.
 ```
 
@@ -412,7 +412,7 @@ Tóm tắt: đã DONE gì, BLOCKED gì, cần tôi test thủ công màn nào.
 Khi ship xong một mảng lớn, cập nhật:
 
 - `docs/ui-ux-system/11-implementation-mapping.md` — Migration log
-- `docs/00-nghiep-vu-tong-hop-va-khoang-trong.md` — Đổi gap → Done (F3, F6, …)
+- `docs/product/nghiep-vu-tong-hop-va-khoang-trong.md` — Đổi gap → Done (F3, F6, …)
 - `docs/teacher-exam-system/11-detailed-feature-implementation-plan.md` — nếu có
 
 ---

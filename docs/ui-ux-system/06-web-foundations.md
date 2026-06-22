@@ -1,6 +1,8 @@
 # 06 — Web foundations (cho teacher & admin)
 
 > Đối tượng: trình duyệt desktop & laptop (1024–2560 px). Trải nghiệm chính của giáo viên & admin.
+>
+> ⚠️ **Số liệu đã đồng bộ với compact v3** (`00-compact-density-v3.md`) và code `TeacherWebUi`/`AdminWebUi` (06/2026): sidebar **212 / 48**, top bar **44**, nav item **30**, button **32**, row default **40**. Các con số v2 cũ (240/56/36/44) đã thay. Đánh giá hiện trạng & tiêu chuẩn bổ sung: [`18-teacher-web-audit-and-standards.md`](18-teacher-web-audit-and-standards.md).
 
 ## 1. Breakpoints web
 
@@ -31,11 +33,11 @@
 ```
 
 ### 2.1 Sidebar
-- Width **240px** (fixed). Collapsed: **56px** (icon-only) — toggle bằng `[`.
+- Width **212px** (`TeacherWebUi.sidebarWidth`). Collapsed: **48px** icon-rail (`sidebarCollapsedWidth`) — tự thu khi viewport < 1024, fallback mobile < 768.
 - Bg `surfaceCard`, viền phải 1px `outline`.
 - Logo 28 + tên app `web.h3`. Khoảng cách dưới logo 24.
-- Group label `web.tableHead` 12/600 uppercase letterSpacing 0.4 textSecondary.
-- Item nav: 36 cao, padding 12 ngang, icon 18, label `web.body 13/400 textPrimary`.
+- Group label `web.tableHead` 11/600 letterSpacing 0.4 textSecondary (không uppercase — khớp `webTableHead`).
+- Item nav: **30 cao** (`sidebarItemHeight`), icon 18, label `web.body 13/400 textPrimary`. Active: bg `primaryTint`, fg `primaryDark` 13/600.
 - Item active: bg `primaryTint`, fg `primaryDark` 13/600, không indicator strip (subtle).
 - Footer sidebar: avatar 28 + tên + email truncate + nút **⋮** (`teacherAccountOpenMenu`).
 - Menu tài khoản (`showTeacherAccountMenu`): **dialog căn giữa** (mọi breakpoint), không bottom sheet mobile học sinh. Shell: `TeacherDialogShell` (`07` §4 — width 440, padding 24, nút đóng góc phải).
@@ -45,7 +47,7 @@
 - Teacher đăng nhập → redirect `/teacher` (dashboard), không vào shell học sinh (`/homePage`).
 
 ### 2.2 Top bar
-- 56h, bg `surfaceCard`, viền dưới 1px `outline`. Sticky top.
+- **44h** (`TeacherWebUi.topBarHeight`), bg `surfaceCard`, viền dưới 1px `outline`. Sticky top.
 - Trái: breadcrumb hoặc page context. Giữa: search global (chỉ admin) hoặc trống.
 - Phải: icon `notification` 18 + avatar 28 menu.
 - Search global mở `Cmd+K` palette (Linear-style).
@@ -131,13 +133,13 @@
 
 ## 9. Table density
 
-| Density | Row height | Use |
-|---------|------------|-----|
-| Compact | 36 | Admin audit log, large data |
-| Default | 44 | Hầu hết bảng (lớp, học sinh, bài) |
-| Comfortable | 52 | Bảng có 2 dòng nội dung mỗi cell |
+| Density | Row height | Token | Use |
+|---------|------------|-------|-----|
+| Compact | 32 | `tableRowCompact` | Admin audit log, gradebook lớp đông |
+| Default | 40 | `tableRowDefault` | Hầu hết bảng (lớp, học sinh, bài) |
+| Comfortable | 52 | — | Bảng có 2 dòng nội dung mỗi cell |
 
-> Mặc định **default 44**.
+> Mặc định **default 40** (`TeacherWebUi.tableRowDefault`). Spec đầy đủ data-table: [`18`](18-teacher-web-audit-and-standards.md) §5.5.
 
 ## 10. Saving & autosave indicators
 

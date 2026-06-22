@@ -27,7 +27,7 @@ This documentation set is the **single implementation reference** for adding a *
 
 | File | Purpose |
 |------|---------|
-| [`../00-nghiep-vu-tong-hop-va-khoang-trong.md`](../00-nghiep-vu-tong-hop-va-khoang-trong.md) | **Tóm tắt nghiệp vụ** (giáo viên–lớp–thi + cập nhật app) và **ma trận chức năng còn thiếu**; đọc trước khi lên kế hoạch sprint. |
+| [`../product/nghiep-vu-tong-hop-va-khoang-trong.md`](../product/nghiep-vu-tong-hop-va-khoang-trong.md) | **Tóm tắt nghiệp vụ** (giáo viên–lớp–thi + cập nhật app) và **ma trận chức năng còn thiếu**; đọc trước khi lên kế hoạch sprint. |
 | [`01-business-requirements.md`](01-business-requirements.md) | Problem, actors, use cases, NFRs, acceptance at business level. |
 | [`02-teacher-role-and-permissions.md`](02-teacher-role-and-permissions.md) | Role lifecycle, RBAC permissions, backend/Flutter touchpoints. |
 | [`03-classroom-system-design.md`](03-classroom-system-design.md) | Classroom model, membership, join flows, APIs. |
@@ -46,7 +46,7 @@ This documentation set is the **single implementation reference** for adding a *
 
 ## Recommended reading order (implement)
 
-0. **`../00-nghiep-vu-tong-hop-va-khoang-trong.md`** — bản tóm tắt nghiệp vụ + gap tổng thể (nếu làm việc đa miền).
+0. **`../product/nghiep-vu-tong-hop-va-khoang-trong.md`** — bản tóm tắt nghiệp vụ + gap tổng thể (nếu làm việc đa miền).
 1. `01-business-requirements.md`
 2. `02-teacher-role-and-permissions.md`
 3. `07-technical-architecture.md` (skim data model + route map)

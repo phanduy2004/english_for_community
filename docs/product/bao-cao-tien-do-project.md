@@ -528,11 +528,11 @@ Request → Route → Middleware (Auth/RBAC) → Controller → Service → Mode
 
 | File/Folder | Nội dung |
 |---|---|
-| `docs/00-nghiep-vu-tong-hop-va-khoang-trong.md` | Nghiệp vụ tổng hợp & gap analysis |
-| `docs/agent-autonomous-workflow.md` | Playbook autonomous QA workflow |
+| `docs/product/nghiep-vu-tong-hop-va-khoang-trong.md` | Nghiệp vụ tổng hợp & gap analysis |
+| `docs/dev/agent-autonomous-workflow.md` | Playbook autonomous QA workflow |
 | `docs/ui-ux-system/` | 15 file thiết kế UI/UX system |
-| `docs/notifications-teacher-student.md` | Spec hệ thống thông báo |
-| `docs/seed-hoangdong-accounts.md` | Test data specification |
+| `docs/product/notifications-teacher-student.md` | Spec hệ thống thông báo |
+| `docs/dev/seeds/seed-hoangdong-accounts.md` | Test data specification |
 | `.cursor/rules/project.mdc` | AI coding rules & conventions |
 
 ---

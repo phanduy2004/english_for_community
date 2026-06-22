@@ -25,4 +25,4 @@
 | `teacher-use-case.puml` | 2.4.1.3 Teacher |
 | `admin-use-case.puml` | 2.4.1.4 Admin |
 
-Markdown + Mermaid: [../use-cases-uml.md](../use-cases-uml.md)
+Markdown + Mermaid: [../use-cases/use-cases-uml.md](../use-cases/use-cases-uml.md)

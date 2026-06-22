@@ -46,7 +46,7 @@ Bộ tài liệu này mô tả đầy đủ phạm vi, kiến trúc, và kế ho
 
 ## Tóm tắt nghiệp vụ chéo miền
 
-- Bản tổng hợp nghiệp vụ + ma trận khoảng trống (Giáo viên–Thi **và** Cập nhật app): [`../00-nghiep-vu-tong-hop-va-khoang-trong.md`](../00-nghiep-vu-tong-hop-va-khoang-trong.md).
+- Bản tổng hợp nghiệp vụ + ma trận khoảng trống (Giáo viên–Thi **và** Cập nhật app): [`../product/nghiep-vu-tong-hop-va-khoang-trong.md`](../product/nghiep-vu-tong-hop-va-khoang-trong.md).
 
 ## Định hướng cập nhật
 
@@ -64,7 +64,7 @@ Hệ thống hỗ trợ 2 chế độ:
 
 ## Đọc theo thứ tự để implement
 
-0. **`../00-nghiep-vu-tong-hop-va-khoang-trong.md`** — tóm tắt nghiệp vụ + khoảng trống chéo miền (nếu cần).
+0. **`../product/nghiep-vu-tong-hop-va-khoang-trong.md`** — tóm tắt nghiệp vụ + khoảng trống chéo miền (nếu cần).
 1. Đọc `01-business-requirements.md`.
 2. Đọc `02-technical-architecture.md`.
 3. Đọc `06-admin-approval-business-flow.md`.
