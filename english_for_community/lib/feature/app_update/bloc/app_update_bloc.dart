@@ -3,7 +3,7 @@ import 'package:english_for_community/core/repository/app_update_repository.dart
 import 'package:english_for_community/feature/app_update/bloc/app_update_event.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_state.dart';
 import 'package:flutter/foundation.dart'
-    show TargetPlatform, defaultTargetPlatform, kIsWeb;
+    show TargetPlatform, debugPrint, defaultTargetPlatform, kDebugMode, kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
 
 class AppUpdateBloc extends Bloc<AppUpdateEvent, AppUpdateState> {
@@ -50,13 +50,20 @@ class AppUpdateBloc extends Bloc<AppUpdateEvent, AppUpdateState> {
     );
 
     result.fold(
-      (failure) => emit(
-        state.copyWith(
-          isChecking: false,
-          errorMessage: failure.message,
-          lastCheckedAt: DateTime.now(),
-        ),
-      ),
+      (failure) {
+        // Lỗi version-check (sai base URL, server down, rate-limit...) trước đây bị
+        // nuốt im lặng → không có dialog. Log khi debug để dễ chẩn đoán.
+        if (kDebugMode) {
+          debugPrint('[AppUpdate] version-check failed: ${failure.message}');
+        }
+        emit(
+          state.copyWith(
+            isChecking: false,
+            errorMessage: failure.message,
+            lastCheckedAt: DateTime.now(),
+          ),
+        );
+      },
       (info) => emit(
         state.copyWith(
           isChecking: false,

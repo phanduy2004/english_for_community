@@ -376,6 +376,12 @@ async function checkVersion(rawQuery) {
     .lean();
 
   if (!latestRelease) {
+    // Không có release published+active khớp platform/environment → client sẽ thấy
+    // 'up_to_date'. Log để ops phát hiện (vd release còn pending_approval, env lệch,
+    // hoặc row mồ côi ở DB cũ) thay vì im lặng.
+    console.warn(
+      `[version-check] no published+active release for platform=${parsed.platform} environment=${parsed.environment}`
+    );
     return {
       status: 'up_to_date',
       latestVersionName: null,

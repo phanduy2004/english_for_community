@@ -184,6 +184,9 @@ jobs:
           CI_RELEASE_TOKEN: ${{ secrets.CI_RELEASE_TOKEN }}
           VERSION_NAME: ${{ steps.version.outputs.version_name }}
           VERSION_CODE: ${{ steps.version.outputs.version_code }}
+          # Floor cho force-update. Mặc định 1 (soft update). Đặt repo variable
+          # MIN_SUPPORTED_VERSION_CODE khi muốn ÉP buộc cập nhật từ một mốc nào đó.
+          MIN_SUPPORTED_VERSION_CODE: ${{ vars.MIN_SUPPORTED_VERSION_CODE }}
           DOWNLOAD_URL: ${{ steps.apk_host.outputs.download_url }}
         run: |
           if [ -z "$BACKEND_BASE_URL" ] || [ -z "$CI_RELEASE_TOKEN" ]; then
@@ -207,7 +210,7 @@ jobs:
               \"environment\": \"production\",
               \"versionName\": \"${VERSION_NAME}\",
               \"versionCode\": ${VERSION_CODE},
-              \"minSupportedVersionCode\": ${VERSION_CODE},
+              \"minSupportedVersionCode\": ${MIN_SUPPORTED_VERSION_CODE:-1},
               \"updateType\": \"soft\",
               \"buildSource\": \"main\",
               \"gitSha\": \"${GITHUB_SHA}\",
