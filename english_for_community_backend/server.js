@@ -15,7 +15,13 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-await mongoose.connect(MONGO_URI);
+await mongoose.connect(MONGO_URI, {
+  maxPoolSize: 20,
+  minPoolSize: 5,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+  retryWrites: true,
+});
 console.log(`✅ Connected to MongoDB (${getMongoUriForLog(MONGO_URI)})`);
 
 // 1. Tạo HTTP Server từ Express App
@@ -31,4 +37,29 @@ const PORT = Number(process.env.PORT ?? 3000);
 httpServer.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
   console.log(`🔌 Socket.IO ready`);
+});
+
+const shutdown = async (signal) => {
+  console.log(`\n${signal} received — shutting down gracefully`);
+  httpServer.close(() => {
+    console.log('HTTP server closed');
+  });
+  try {
+    await mongoose.connection.close(false);
+    console.log('MongoDB connection closed');
+  } catch (err) {
+    console.error('Error closing MongoDB:', err?.message || err);
+  }
+  process.exit(0);
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+process.on('unhandledRejection', (reason) => {
+  console.error('💥 Unhandled promise rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('💥 Uncaught exception:', err);
 });

@@ -1,5 +1,5 @@
 import { listeningCompService } from '../services/listeningCompService.js';
-import { trackUserProgress } from "../untils/progressTracker.js";
+import { trackUserProgress } from "../utils/progressTracker.js";
 import mongoose from 'mongoose';
 
 const getAllListenings = async (req, res) => {
@@ -45,10 +45,19 @@ const submitAttempt = async (req, res) => {
 
     // 🔥 GỌI HÀM TRACKING VÀO BẢNG TIẾN ĐỘ HÀNG NGÀY
     // Dùng type 'dictation' để nó ăn vào biến lessonsCompleted.listening trong progressTracker
+    // Score is computed server-side in the service (result.attempt.score), so it
+    // is trusted. Duration comes from the client and only feeds time-spent stats,
+    // so clamp it to a sane range to stop inflated/garbage values.
     let normalizedScore = result.attempt.score / 100; // Đưa về hệ số 0-1 nếu tracker của bạn đang dùng 0-1
 
+    const MAX_ATTEMPT_SECONDS = 2 * 60 * 60; // 2h sanity cap for a single attempt
+    const rawDuration = Number(payload?.durationInSeconds);
+    const safeDuration = Number.isFinite(rawDuration)
+      ? Math.min(Math.max(rawDuration, 0), MAX_ATTEMPT_SECONDS)
+      : 0;
+
     await trackUserProgress(userId, 'dictation', {
-      duration: payload.durationInSeconds || 0,
+      duration: safeDuration,
       score: normalizedScore,
       isLessonJustFinished: result.isLessonJustFinished
     });

@@ -1,5 +1,5 @@
 import { speakingService } from "../services/speakingService.js";
-import {trackUserProgress} from "../untils/progressTracker.js";
+import {trackUserProgress} from "../utils/progressTracker.js";
 import mongoose from "mongoose";
 const sanitizeSentences = (sentences) => {
   if (!Array.isArray(sentences)) return [];

@@ -83,15 +83,9 @@ export async function ensureAssignmentFrozenSnapshot(assignmentId, { exam } = {}
 }
 
 /**
- * Heal snapshot từ live exam; persist lên assignment (+ dual-write attempt/session nếu có).
+ * Heal snapshot từ live exam; persist chỉ lên assignment (D4 contract).
  */
-export async function healPersistSnapshot({
-  assignmentId,
-  attemptDoc,
-  sessionDoc,
-  snapshot,
-  liveExam,
-}) {
+export async function healPersistSnapshot({ assignmentId, snapshot, liveExam }) {
   let snap = normalizeExamSnapshot(snapshot);
   if (liveExam) {
     snap = healExamSnapshotFromLiveExam(snap, liveExam);
@@ -109,26 +103,14 @@ export async function healPersistSnapshot({
     }
   }
 
-  if (attemptDoc?.save && attemptDoc.examSnapshot != null) {
-    const before = stableSnapshotString(attemptDoc.examSnapshot);
-    const after = stableSnapshotString(snap);
-    if (before !== after) {
-      attemptDoc.examSnapshot = snap;
-      attemptDoc.markModified('examSnapshot');
-      await attemptDoc.save();
-    }
-  }
+  return snap;
+}
 
-  if (sessionDoc?.save && sessionDoc.examSnapshot != null) {
-    const before = stableSnapshotString(sessionDoc.examSnapshot);
-    const after = stableSnapshotString(snap);
-    if (before !== after) {
-      sessionDoc.examSnapshot = snap;
-      sessionDoc.markModified('examSnapshot');
-      await sessionDoc.save();
-    }
-  }
-
+/** Gắn snapshot từ assignment lên doc in-memory (không ghi DB). */
+export async function loadSnapshotOntoAttemptDoc(attemptDoc, { heal = true } = {}) {
+  if (!attemptDoc) return null;
+  const snap = await resolveSnapshotForAttemptDoc(attemptDoc, { heal });
+  if (snap) attemptDoc.examSnapshot = snap;
   return snap;
 }
 
@@ -157,10 +139,9 @@ export async function resolveSnapshotForAttemptDoc(attemptDoc, { heal = true } =
         ? assignment.examId._id
         : assignment.examId;
     const liveExam = examId ? await Exam.findById(examId).lean() : null;
-    if (liveExam && attemptDoc?.save) {
+    if (liveExam) {
       return healPersistSnapshot({
         assignmentId,
-        attemptDoc,
         snapshot: snap,
         liveExam,
       });
@@ -193,11 +174,3 @@ export async function hydrateLeanAttemptSnapshot(attempt) {
   return attempt;
 }
 
-export function dualWriteSnapshotFields(target, snapshot) {
-  if (!target || !snapshot) return target;
-  target.examSnapshot = snapshot;
-  if (typeof target.markModified === 'function') {
-    target.markModified('examSnapshot');
-  }
-  return target;
-}

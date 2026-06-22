@@ -11,11 +11,13 @@ export const authenticate = async (req, res, next) => {
   if (!valid) return res.status(401).json({ message: 'Invalid token' });
 
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(userId)
+      .select('_id role _destroy isBanned banExpiresAt banReason fullName username email avatarUrl')
+      .lean();
     if (!user) return res.status(401).json({ message: 'User not found' });
     if (user._destroy) return res.status(403).json({ message: 'Account disabled' });
 
-    req.user = user;
+    req.user = { ...user, id: user._id.toString() };
     req.userId = user._id;
     next();
   } catch (e) {

@@ -24,6 +24,7 @@
     "migrate:cms": "node src/scripts/migrateCmsContent.js",
     "migrate": "node migrations/runner.js",
     "migrate:dry": "node migrations/runner.js --dry",
+    "backup:pre-migrate": "node scripts/backupPreMigration.js",
     "golden:capture": "node scripts/goldenCapture.js",
     "audit:t1": "node scripts/auditT1.js",
     "audit:d4": "node scripts/auditD4.js",

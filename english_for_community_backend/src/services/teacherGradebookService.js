@@ -1,15 +1,10 @@
 import mongoose from 'mongoose';
+import { httpError } from '../utils/AppError.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import { classroomService } from './classroomService.js';
 import { percentFromScore, scoreOfAttempt } from '../lib/examAttemptScoreUtils.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 function shortTitle(title, max = 36) {
   const t = String(title || 'Exam').trim();

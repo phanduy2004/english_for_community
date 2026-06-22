@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { httpError } from '../utils/AppError.js';
 import Notification from '../models/Notification.js';
 import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
@@ -7,12 +8,6 @@ import {
   notifyCoTeacherInviteAccepted,
   notifyCoTeacherInviteDeclined,
 } from './teacherNotificationHelper.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 function actionPending(data) {
   const status = data?.actionStatus;

@@ -83,29 +83,37 @@ const normalUsers = [
 ];
 
 /** Tài khoản admin để test console (đăng nhập → redirect /admin). */
+const DEFAULT_ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'adminpassword123';
+const DEFAULT_USER_PASSWORD = process.env.SEED_USER_PASSWORD || '123456';
+const BCRYPT_ROUNDS = 12;
+
+if (!process.env.SEED_ADMIN_PASSWORD) {
+  console.warn('⚠️  SEED_ADMIN_PASSWORD not set — using default dev password for admin accounts.');
+}
+
 const ADMIN_ACCOUNTS = [
   {
     fullName: 'Super Admin',
     username: 'admin',
     email: 'admin@englishapp.com',
-    password: 'adminpassword123',
+    password: DEFAULT_ADMIN_PASSWORD,
   },
   {
     fullName: 'Test Admin',
     username: 'testuser_admin',
     email: 'testuser@example.com',
-    password: 'Test@1234',
+    password: process.env.SEED_TEST_ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD,
   },
   {
     fullName: 'Test Admin (legacy email)',
     username: 'test_admin',
     email: 'test@example.com',
-    password: 'Test@1234',
+    password: process.env.SEED_TEST_ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD,
   },
 ];
 
-async function upsertAdminAccount(spec, salt) {
-  const hashed = await bcrypt.hash(spec.password, salt);
+async function upsertAdminAccount(spec) {
+  const hashed = await bcrypt.hash(spec.password, BCRYPT_ROUNDS);
   let user = await User.findOne({ email: spec.email });
   if (!user) {
     user = await User.create({
@@ -144,22 +152,20 @@ mongoose.connect(mongoUri)
     console.log(`🔌 Connected to DB (${getMongoUriForLog(mongoUri)})`);
 
     // --- PHẦN 1: ADMIN (console) ---
-    const salt = await bcrypt.genSalt(10);
     for (const spec of ADMIN_ACCOUNTS) {
-      await upsertAdminAccount(spec, salt);
+      await upsertAdminAccount(spec);
     }
 
     // --- PHẦN 2: TẠO USER THƯỜNG ---
     console.log('🌱 Starting to seed normal users...');
-    const commonPassword = '123456'; // Mật khẩu chung
+    const commonPassword = DEFAULT_USER_PASSWORD;
 
     for (const user of normalUsers) {
       const userExists = await User.findOne({ email: user.email });
 
       if (!userExists) {
         // TẠO MỚI
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(commonPassword, salt);
+        const hashedPassword = await bcrypt.hash(commonPassword, BCRYPT_ROUNDS);
 
         await User.create({
           fullName: user.fullName,
@@ -175,8 +181,7 @@ mongoose.connect(mongoUri)
         });
         console.log(`✅ Created user: ${user.username} (${user.gender}, Born: ${user.dateOfBirth.getFullYear()})`);
       } else {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(commonPassword, salt);
+        const hashedPassword = await bcrypt.hash(commonPassword, BCRYPT_ROUNDS);
         userExists.password = hashedPassword;
         userExists.isVerified = true;
         userExists.totalPoints = user.totalPoints;

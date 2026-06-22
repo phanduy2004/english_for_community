@@ -1,7 +1,7 @@
 import WritingSubmission from '../models/WritingSubmission.js';
 import WritingTopic from '../models/WritingTopics.js';
 import { updateGamificationStats } from './gamificationService.js';
-import { trackUserProgress } from '../untils/progressTracker.js';
+import { trackUserProgress } from '../utils/progressTracker.js';
 import { aiService } from './aiService.js';
 import WritingTopicVersion from '../models/WritingTopicVersion.js';
 

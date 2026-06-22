@@ -1,5 +1,5 @@
 import { listeningService } from '../services/listeningService.js';
-import { trackUserProgress } from "../untils/progressTracker.js";
+import { trackUserProgress } from "../utils/progressTracker.js";
 import { updateGamificationStats } from '../services/gamificationService.js';
 import mongoose from 'mongoose';
 import {getIO} from "../socket/socketManager.js";

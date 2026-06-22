@@ -140,8 +140,102 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
     }
 
     // ======================================================
-    // ENRICH DATA VỚI NULL CHECK KỸ LƯỠNG
+    // ENRICH DATA — batch duration lookups (avoid N+1 aggregations)
     // ======================================================
+
+    const readingKeys = new Map();
+    const speakingKeys = new Map();
+    const dictationKeys = new Map();
+
+    for (const item of rawItems) {
+      const userIdStr = item.userId?._id;
+      if (!userIdStr) continue;
+      if (item.type === 'reading' && item.readingId?._id) {
+        const key = `${userIdStr}-${item.readingId._id}`;
+        readingKeys.set(key, { userId: userIdStr, readingId: item.readingId._id });
+      }
+      if (item.type === 'speaking' && item.speakingSetId) {
+        let setId = item.speakingSetId._id || item.speakingSetId;
+        if (setId && typeof setId === 'object') setId = setId.toString();
+        if (setId) {
+          const key = `${userIdStr}-${setId}`;
+          speakingKeys.set(key, { userId: userIdStr, speakingSetId: setId });
+        }
+      }
+      if (item.type === 'dictation' && item.listeningId?._id) {
+        const key = `${userIdStr}-${item.listeningId._id}`;
+        dictationKeys.set(key, { userId: userIdStr, listeningId: item.listeningId._id });
+      }
+    }
+
+    const readingDurationMap = new Map();
+    if (readingKeys.size > 0) {
+      const or = [...readingKeys.values()].map((p) => ({
+        userId: p.userId,
+        readingId: p.readingId,
+      }));
+      const rows = await ReadingAttempt.aggregate([
+        { $match: { $or: or } },
+        {
+          $group: {
+            _id: { userId: '$userId', readingId: '$readingId' },
+            total: { $sum: '$durationInSeconds' },
+          },
+        },
+      ]);
+      for (const row of rows) {
+        readingDurationMap.set(
+          `${row._id.userId}-${row._id.readingId}`,
+          row.total,
+        );
+      }
+    }
+
+    const speakingDurationMap = new Map();
+    if (speakingKeys.size > 0) {
+      const or = [...speakingKeys.values()].map((p) => ({
+        userId: p.userId,
+        speakingSetId: p.speakingSetId,
+      }));
+      const rows = await SpeakingAttempt.aggregate([
+        { $match: { $or: or } },
+        {
+          $group: {
+            _id: { userId: '$userId', speakingSetId: '$speakingSetId' },
+            total: { $sum: '$audioDurationSeconds' },
+          },
+        },
+      ]);
+      for (const row of rows) {
+        speakingDurationMap.set(
+          `${row._id.userId}-${row._id.speakingSetId}`,
+          row.total,
+        );
+      }
+    }
+
+    const dictationDurationMap = new Map();
+    if (dictationKeys.size > 0) {
+      const or = [...dictationKeys.values()].map((p) => ({
+        userId: p.userId,
+        listeningId: p.listeningId,
+      }));
+      const rows = await DictationAttempt.aggregate([
+        { $match: { $or: or } },
+        {
+          $group: {
+            _id: { userId: '$userId', listeningId: '$listeningId' },
+            total: { $sum: '$durationInSeconds' },
+          },
+        },
+      ]);
+      for (const row of rows) {
+        dictationDurationMap.set(
+          `${row._id.userId}-${row._id.listeningId}`,
+          row.total,
+        );
+      }
+    }
 
     const finalResults = await Promise.all(rawItems.map(async (item) => {
       const userObj = item.userId ? {
@@ -180,11 +274,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
         let totalDuration = 0;
         if (userIdStr) {
-          const timeAgg = await ReadingAttempt.aggregate([
-            { $match: { userId: userIdStr, readingId: item.readingId._id } },
-            { $group: { _id: null, total: { $sum: "$durationInSeconds" } } }
-          ]);
-          totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
+          totalDuration =
+            readingDurationMap.get(`${userIdStr}-${item.readingId._id}`) || 0;
         }
 
         const totalQ = item.readingId.questions?.length || 0;
@@ -210,11 +301,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
         let totalDuration = 0;
         if (userIdStr && setId) {
-          const timeAgg = await SpeakingAttempt.aggregate([
-            { $match: { userId: userIdStr, speakingSetId: setId } },
-            { $group: { _id: null, total: { $sum: "$audioDurationSeconds" } } }
-          ]);
-          totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
+          totalDuration =
+            speakingDurationMap.get(`${userIdStr}-${setId}`) || 0;
         }
 
         const wer = item.averageWer ?? 1;
@@ -237,11 +325,8 @@ const getHistory = async (targetUserId, startDate, endDate, filterType) => {
 
         let totalDuration = 0;
         if (userIdStr) {
-          const timeAgg = await DictationAttempt.aggregate([
-            { $match: { userId: userIdStr, listeningId: item.listeningId._id } },
-            { $group: { _id: null, total: { $sum: "$durationInSeconds" } } }
-          ]);
-          totalDuration = timeAgg.length > 0 ? timeAgg[0].total : 0;
+          totalDuration =
+            dictationDurationMap.get(`${userIdStr}-${item.listeningId._id}`) || 0;
         }
 
         const scoreVal = Math.round((item.progress || 0) * 100);

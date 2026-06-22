@@ -26,7 +26,10 @@ const getAllReadings = async (userId, difficulty, page, limit) => {
   const attemptsMap = new Map(
     attemptsAgg.map((item) => [item._id.toString(), item.attemptsCount]),
   );
-  const userProgress = await ReadingProgress.find({ userId }).lean();
+  const userProgress =
+    readingIds.length > 0
+      ? await ReadingProgress.find({ userId, readingId: { $in: readingIds } }).lean()
+      : [];
   const progressMap = new Map();
   for (const progress of userProgress) {
     progressMap.set(progress.readingId.toString(), progress);

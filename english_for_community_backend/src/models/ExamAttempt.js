@@ -7,7 +7,8 @@ const examAttemptSchema = new mongoose.Schema(
     assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExamAssignment', required: true, index: true },
     sessionId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExamSession', default: null, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    examSnapshot: { type: mongoose.Schema.Types.Mixed, required: true },
+  /** Resolved at runtime from ExamAssignment.examSnapshot (D4 contract — not stored per attempt). */
+    examSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
     status: { type: String, enum: ['in_progress', 'submitted', 'expired', 'void'], default: 'in_progress' },
     startedAt: { type: Date, default: Date.now },
     submittedAt: { type: Date, default: null },

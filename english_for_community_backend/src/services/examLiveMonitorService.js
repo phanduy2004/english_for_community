@@ -1,4 +1,5 @@
 import ExamSession from '../models/ExamSession.js';
+import { httpError } from '../utils/AppError.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import {
   buildAttemptLiveProgressRow,
@@ -9,12 +10,6 @@ import {
   emitExamSessionEvent,
   emitExamSessionLiveScreen,
 } from '../socket/examSocketEmit.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 function summarizeStudents(students) {
   const total = students.length;

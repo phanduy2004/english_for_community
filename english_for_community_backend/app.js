@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './src/routes/authRoutes.js';
 import userRoutes from './src/routes/userRoutes.js';
 import listeningRoutes from './src/routes/listeningRoutes.js';
@@ -27,6 +28,26 @@ import classroomChatRootRoutes from "./src/routes/classroomChatRootRoutes.js";
 import { mongoSanitize } from "./src/middleware/sanitize.js";
 import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js';
 const app = express();
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 600,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests. Please slow down.' },
+});
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many chat requests. Please slow down.' },
+});
+
+app.get('/healthz', (_req, res) => {
+  res.status(200).json({ ok: true, uptime: process.uptime() });
+});
 
 app.use(helmet());
 app.use(compression());
@@ -62,7 +83,8 @@ if (allowedOrigins.length === 0) {
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
-app.use(mongoSanitize); // strip NoSQL operator injection from body/query
+app.use(globalLimiter);
+app.use(mongoSanitize); // strip NoSQL operator injection from body/query/params
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/listening', listeningRoutes);
@@ -71,7 +93,7 @@ app.use('/api/speaking', speakingRoutes);
 app.use('/api/reading', readingRoutes);
 app.use('/api/vocab', vocabRoutes);
 app.use('/api/progress', progressRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/chat', chatLimiter, chatRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/notifications', notificationRoutes);

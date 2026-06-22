@@ -3,8 +3,10 @@ import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
+import { createTtlCache } from '../utils/ttlCache.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const gradingCountCache = createTtlCache(10_000);
 
 const toObjectId = (id) =>
   id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(String(id));
@@ -109,6 +111,10 @@ async function getGradingQueue(teacherId, limit = 15) {
 }
 
 async function countNeedsGrading(teacherId) {
+  const cacheKey = String(teacherId);
+  const cached = gradingCountCache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   const tid = toObjectId(teacherId);
   const agg = await ExamAttempt.aggregate([
     { $match: gradingAttentionMatch },
@@ -124,7 +130,9 @@ async function countNeedsGrading(teacherId) {
     { $match: { 'assignment.teacherId': tid } },
     { $count: 'total' },
   ]);
-  return agg[0]?.total || 0;
+  const total = agg[0]?.total || 0;
+  gradingCountCache.set(cacheKey, total);
+  return total;
 }
 
 async function buildAttemptStatsByAssignment(assignmentIds) {
@@ -265,14 +273,15 @@ export const teacherDashboardService = {
 
     const assignments = await ExamAssignment.find({ teacherId })
       .populate('examId', 'title')
-      .populate('classroomId', 'name');
+      .populate('classroomId', 'name')
+      .lean();
 
     const events = [];
     for (const a of assignments) {
       const examTitle = a.examId?.title || 'Exam';
       const classroomName = a.classroomId?.name || '';
-      const classroomId = a.classroomId?._id?.toString() || '';
-      const examId = a.examId?._id?.toString() || '';
+      const classroomId = a.classroomId?._id?.toString() || String(a.classroomId ?? '');
+      const examId = a.examId?._id?.toString() || String(a.examId ?? '');
       const label = classroomName ? `${examTitle} · ${classroomName}` : examTitle;
       const cfg = a.config || {};
       const base = {

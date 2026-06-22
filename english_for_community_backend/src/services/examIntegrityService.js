@@ -1,12 +1,7 @@
 import ExamAttempt from '../models/ExamAttempt.js';
+import { httpError } from '../utils/AppError.js';
 import { classroomActivityService } from './classroomActivityService.js';
 import { broadcastAttemptProgress } from './examLiveMonitorService.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 const RISK_TAB_SWITCHES = 5;
 const RISK_FOCUS_LOSS_SEC = 120;

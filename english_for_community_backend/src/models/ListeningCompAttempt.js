@@ -26,6 +26,7 @@ const ListeningCompAttemptSchema = new mongoose.Schema(
 // Giúp backend lấy ra điểm cao nhất hoặc check xem user đã làm bài chưa cực nhanh
 // Cú pháp query sau này sẽ là: find({ userId, listeningId }).sort({ score: -1 }).limit(1)
 ListeningCompAttemptSchema.index({ userId: 1, listeningId: 1, score: -1 });
+ListeningCompAttemptSchema.index({ userId: 1, createdAt: -1 });
 
 const ListeningCompAttempt = mongoose.model('ListeningCompAttempt', ListeningCompAttemptSchema);
 export default ListeningCompAttempt;

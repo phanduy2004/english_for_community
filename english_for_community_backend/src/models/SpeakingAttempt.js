@@ -24,5 +24,7 @@ const SpeakingAttemptSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+SpeakingAttemptSchema.index({ userId: 1, speakingSetId: 1, submittedAt: -1 });
+
 const SpeakingAttempt = mongoose.model('SpeakingAttempt', SpeakingAttemptSchema);
 export default SpeakingAttempt;

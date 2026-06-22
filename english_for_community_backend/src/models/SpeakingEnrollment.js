@@ -15,6 +15,7 @@ const SpeakingEnrollmentSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 SpeakingEnrollmentSchema.index({ userId: 1, speakingSetId: 1 }, { unique: true });
+SpeakingEnrollmentSchema.index({ userId: 1, lastAccessedAt: -1 });
 
 const SpeakingEnrollment = mongoose.model('SpeakingEnrollment', SpeakingEnrollmentSchema);
 export default SpeakingEnrollment;

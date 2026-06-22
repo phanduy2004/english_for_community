@@ -12,7 +12,6 @@ import { assertRealtimeLobbyOpenForStudent } from './realtimeSchedule.js';
 import { broadcastAllSessionAttempts, examLiveMonitorService } from './examLiveMonitorService.js';
 import { normalizeExamSnapshot } from './examSkillSectionResources.js';
 import {
-  dualWriteSnapshotFields,
   ensureAssignmentFrozenSnapshot,
   healPersistSnapshot,
   buildSnapshotFromExam,
@@ -314,7 +313,7 @@ export const examSessionService = {
     if (assignment.mode !== 'realtime') throw httpError(400, 'Assignment must be realtime mode');
     const exam = assignment.examId;
     if (!exam) throw httpError(500, 'Exam not populated');
-    const snapshot = await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
+    await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
 
     const existing = await ExamSession.findOne({ assignmentId: assignment._id, status: 'lobby' });
     if (existing) {
@@ -325,7 +324,6 @@ export const examSessionService = {
     const session = await ExamSession.create({
       assignmentId: assignment._id,
       leaderTeacherId: teacherId,
-      examSnapshot: snapshot,
       status: 'lobby',
       roomCode: randomRoomCode(),
       joinedUserIds: [],
@@ -441,10 +439,8 @@ export const examSessionService = {
     if (!exam) {
       exam = buildSnapshotFromExam(examDoc);
     }
-    session.examSnapshot = exam;
     exam = await healPersistSnapshot({
       assignmentId: assignment._id,
-      sessionDoc: session,
       snapshot: exam,
       liveExam: examDoc.toObject ? examDoc.toObject() : examDoc,
     });
@@ -465,15 +461,12 @@ export const examSessionService = {
         status: 'in_progress',
       });
       if (existing) {
-        dualWriteSnapshotFields(existing, exam);
-        await existing.save();
         continue;
       }
       await ExamAttempt.create({
         assignmentId: assignment._id,
         sessionId: session._id,
         userId: uid,
-        examSnapshot: exam,
         status: 'in_progress',
         startedAt,
         attemptDeadlineAt,
@@ -491,7 +484,7 @@ export const examSessionService = {
         './teacherNotificationHelper.js'
       );
       const examTitle =
-        exam?.title || session.examSnapshot?.title || (await assignmentNotificationContext(assignment)).examTitle;
+        exam?.title || (await assignmentNotificationContext(assignment)).examTitle;
       const studentIds = (joined || [])
         .map((uid) => uid.toString())
         .filter((id) => id !== session.leaderTeacherId.toString());

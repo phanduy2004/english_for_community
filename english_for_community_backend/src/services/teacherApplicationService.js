@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { httpError } from '../utils/AppError.js';
 import TeacherApplication from '../models/TeacherApplication.js';
 import User from '../models/User.js';
 
@@ -12,12 +13,6 @@ const applicationPayloadSchema = z.object({
 const rejectBodySchema = z.object({
   reason: z.string().min(1).max(1000),
 });
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 async function promoteUserToTeacher(userId, payload = {}, { source = 'application' } = {}) {
   const user = await User.findById(userId);

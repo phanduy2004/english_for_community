@@ -48,6 +48,7 @@ const WritingSubmissionSchema = new Schema({
 });
 
 WritingSubmissionSchema.index({ userId: 1, topicId: 1, createdAt: -1 });
+WritingSubmissionSchema.index({ userId: 1, createdAt: -1 });
 
 const WritingSubmission = mongoose.model('WritingSubmission', WritingSubmissionSchema, 'writingsubmissions');
 export default WritingSubmission;

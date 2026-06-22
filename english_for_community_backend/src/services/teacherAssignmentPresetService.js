@@ -1,11 +1,6 @@
 import TeacherAssignmentPreset from '../models/TeacherAssignmentPreset.js';
+import { httpError } from '../utils/AppError.js';
 import { normalizeAssignmentConfig } from './teacherExamAssignmentService.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 export const teacherAssignmentPresetService = {
   async list(teacherId) {

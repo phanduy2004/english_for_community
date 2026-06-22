@@ -1,10 +1,12 @@
 /**
  * Migration runner — ghi nhận đã chạy vào collection `migrations`.
  *
- * Usage (staging only — prod [MANUAL]):
+ * Usage:
  *   node migrations/runner.js --dry
  *   node migrations/runner.js
- *   node migrations/runner.js --only 001-user-updated-at-backfill
+ *   node migrations/runner.js --only 003-unset-duplicate-exam-snapshot
+ *
+ * Prod: backup Atlas snapshot / mongodump trước khi chạy thật.
  */
 import fs from 'fs';
 import path from 'path';

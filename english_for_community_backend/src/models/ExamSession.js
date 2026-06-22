@@ -5,7 +5,8 @@ const examSessionSchema = new mongoose.Schema(
   {
     assignmentId: { type: mongoose.Schema.Types.ObjectId, ref: 'ExamAssignment', required: true, index: true },
     leaderTeacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    examSnapshot: { type: mongoose.Schema.Types.Mixed, required: true },
+  /** Resolved at runtime from ExamAssignment.examSnapshot (D4 contract — not stored per session). */
+    examSnapshot: { type: mongoose.Schema.Types.Mixed, default: null },
     status: {
       type: String,
       enum: ['lobby', 'live', 'grading', 'closed', 'canceled'],

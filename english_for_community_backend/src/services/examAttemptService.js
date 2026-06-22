@@ -17,8 +17,8 @@ import { wordErrorRate } from '../utils/scoring.js';
 import { withLeanApiId, withLeanNestedIds } from '../lib/leanApiSerialize.js';
 import {
   attachResolvedSnapshotToPlain,
-  dualWriteSnapshotFields,
   ensureAssignmentFrozenSnapshot,
+  loadSnapshotOntoAttemptDoc,
   resolveSnapshotForAttemptDoc,
 } from './examSnapshotStore.js';
 import { teacherExamService } from './teacherExamService.js';
@@ -1017,7 +1017,7 @@ function resolveListeningCompRecordForGrading(compDoc, attemptDoc, secAns) {
 
 /** Rebuild per-skill 0–10 scores when legacy attempts lack `skillScores`. */
 async function ensureIntegratedScoresOnAttempt(attemptDoc) {
-  const exam = attemptDoc.examSnapshot;
+  const exam = (await loadSnapshotOntoAttemptDoc(attemptDoc, { heal: false })) || {};
   const fmt = exam?.settings?.examFormat;
   if (fmt !== 'integrated_four_skills' && fmt !== 'skills_exam') return attemptDoc;
   if (!['submitted', 'expired'].includes(attemptDoc.status)) return attemptDoc;
@@ -1522,7 +1522,7 @@ export const examAttemptService = {
       await teacherExamAssignmentService.consumePublicStartSlot(assignment._id);
     }
 
-    const snapshot = await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
+    await ensureAssignmentFrozenSnapshot(assignment._id, { exam });
 
     const startedAt = new Date();
     const attemptDeadlineAt = computeAttemptDeadline(assignment, startedAt);
@@ -1530,7 +1530,6 @@ export const examAttemptService = {
     const attempt = await ExamAttempt.create({
       assignmentId: assignment._id,
       userId,
-      examSnapshot: snapshot,
       status: 'in_progress',
       startedAt,
       attemptDeadlineAt,
@@ -1562,8 +1561,9 @@ export const examAttemptService = {
     attempt.answers = { ...(attempt.answers || {}), ...(answersPatch || {}) };
     const prevMeta = attempt.meta && typeof attempt.meta === 'object' ? { ...attempt.meta } : {};
     const prevLiveView = prevMeta.liveView && typeof prevMeta.liveView === 'object' ? { ...prevMeta.liveView } : {};
-    if (isAdaptiveExamSnapshot(attempt.examSnapshot)) {
-      const items = walkItems(attempt.examSnapshot.sections || []);
+    const snap = await loadSnapshotOntoAttemptDoc(attempt, { heal: true });
+    if (snap && isAdaptiveExamSnapshot(snap)) {
+      const items = walkItems(snap.sections || []);
       attempt.meta = { ...computeAdaptiveState(attempt, items), liveView: prevLiveView };
     }
     await attempt.save();
@@ -1585,7 +1585,7 @@ export const examAttemptService = {
     }
 
     const assignment = await ExamAssignment.findById(attempt.assignmentId);
-    const exam = attempt.examSnapshot;
+    const exam = (await loadSnapshotOntoAttemptDoc(attempt, { heal: true })) || {};
 
     if (!force) {
       if (attempt.attemptDeadlineAt && new Date(attempt.attemptDeadlineAt).getTime() < Date.now()) {

@@ -1,11 +1,6 @@
 import ClassroomActivityLog from '../models/ClassroomActivityLog.js';
+import { httpError } from '../utils/AppError.js';
 import { classroomService } from './classroomService.js';
-
-function httpError(statusCode, message) {
-  const e = new Error(message);
-  e.statusCode = statusCode;
-  return e;
-}
 
 export const classroomActivityService = {
   async log({ classroomId, actorId = null, type, message = '', meta = {} }) {

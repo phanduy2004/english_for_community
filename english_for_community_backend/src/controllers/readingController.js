@@ -1,5 +1,5 @@
 import { readingService } from '../services/readingService.js';
-import {trackUserProgress} from "../untils/progressTracker.js";
+import {trackUserProgress} from "../utils/progressTracker.js";
 
 const getReadingById = async (req, res) => {
   try {

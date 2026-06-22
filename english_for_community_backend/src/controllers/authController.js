@@ -116,9 +116,9 @@ const refreshToken = async (req, res) => {
     const { refreshToken } = req.body;
 
     // Gọi service xử lý logic
-    const newAccessToken = await authService.refreshToken(refreshToken);
+    const tokens = await authService.refreshToken(refreshToken);
 
-    return res.status(200).json({ accessToken: newAccessToken });
+    return res.status(200).json(tokens);
   } catch (err) {
     const status = getStatusCode(err);
     // 401/403 được service xử lý chi tiết

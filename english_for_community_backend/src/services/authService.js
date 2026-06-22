@@ -1,8 +1,10 @@
 import { setUserOfflineAndNotify } from '../socket/socketManager.js';
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../lib/jwt_token.js';
-import sendMail from '../untils/sendMailUtil.js';
+import sendMail from '../utils/sendMailUtil.js';
+import { hashRefreshToken } from '../utils/tokenHash.js';
 import admin from "firebase-admin";
 const FIREBASE_CONFIG_BASE64 = process.env.FIREBASE_CONFIG_BASE64;
 
@@ -41,10 +43,12 @@ const createError = (status, message, reason = null) => {
   return err;
 };
 
-// Helper sinh OTP
+// Helper sinh OTP (cryptographically secure)
 const generateOtp = (length = 6) => {
   let otp = '';
-  for (let i = 0; i < length; i++) otp += Math.floor(Math.random() * 10);
+  for (let i = 0; i < length; i++) {
+    otp += crypto.randomInt(0, 10).toString();
+  }
   return otp;
 };
 
@@ -137,8 +141,6 @@ const registerUser = async (data) => {
   const text = `Your verification OTP is ${otp}. It expires in 10 minutes.`;
   await sendMail(email, "Mã xác thực đăng ký", text);
 
-  console.log(`[DEBUG] 📧 OTP sent to ${email}: ${otp}`); // Log để debug nhanh
-
   return user;
 };
 
@@ -165,19 +167,14 @@ const requestSignupVerification = async (email) => {
   // 🔥 TÁI KÍCH HOẠT GỬI MAIL
   const text = `Your new verification OTP is ${otp}. It expires in 10 minutes.`;
   await sendMail(email, "Mã xác thực đăng ký", text);
-  console.log(`[DEBUG] 📧 Resent OTP for ${email}: ${otp}`);
 };
 
 // --- 3. Verify OTP (Chung) ---
 const verifyOtp = async (email, otp, purpose) => {
   const user = await User.findOne({ email });
   if (!user) {
-    console.log(`[VERIFY FAIL] User not found for email: ${email}`);
     throw createError(404, 'User not found');
   }
-
-  // 🔥 DEBUG CHECK: Kiểm tra trạng thái hiện tại của OTP
-  console.log(`[VERIFY CHECK] User OTP: ${user.resetOtp}, Client OTP: ${otp}, Purpose: ${purpose}`);
 
   // Check hiệu lực OTP và mục đích
   if (!user.resetOtp || !user.resetOtpExpiresAt || user.otpPurpose !== purpose) {
@@ -189,7 +186,6 @@ const verifyOtp = async (email, otp, purpose) => {
 
   // Check hết hạn
   if (Date.now() > user.resetOtpExpiresAt.getTime()) {
-    console.log('[VERIFY FAIL] OTP expired by time.');
     user.resetOtp = null;
     await user.save();
     throw createError(400, 'OTP expired. Please request a new one');
@@ -204,12 +200,10 @@ const verifyOtp = async (email, otp, purpose) => {
   if (user.resetOtp !== otp) {
     user.resetOtpAttempts += 1;
     await user.save();
-    console.log(`[VERIFY FAIL] Invalid OTP. Attempts left: ${OTP_MAX_ATTEMPTS - user.resetOtpAttempts}`);
     throw createError(400, 'Invalid OTP');
   }
 
   // --> OTP ĐÚNG
-  console.log('[VERIFY SUCCESS] OTP matched.');
   user.resetOtp = null;
   user.resetOtpExpiresAt = null;
   user.resetOtpAttempts = 0;
@@ -263,7 +257,7 @@ const loginUser = async (email, password) => {
   const refreshToken = generateRefreshToken(user._id);
 
   // Cập nhật trạng thái DB (Vẫn giữ lại isOnline/lastActivityDate)
-  user.refreshToken = refreshToken;
+  user.refreshToken = hashRefreshToken(refreshToken);
   user.lastActivityDate = new Date();
   await user.save();
 
@@ -313,7 +307,7 @@ const requestPasswordReset = async (email) => {
   await user.save();
   const text = `Your password reset OTP is ${otp}. It expires in 10 minutes.`;
   await sendMail(email, "Mã đặt lại mật khẩu", text);
-  console.log(`[DEBUG] 📧 Forgot Password OTP sent to ${email}: ${otp}`);};
+};
 
 // --- 7. Quên mật khẩu: Reset Pass (Giữ nguyên) ---
 const resetPassword = async (email, otp, newPassword) => {
@@ -355,18 +349,22 @@ const refreshToken = async (token) => {
     throw createError(404, 'User not found');
   }
 
-  // 3. Logic bảo mật: Token gửi lên phải khớp với token trong DB
-  if (user.refreshToken !== token) {
-    // Hủy token trong DB (revoked)
+  // 3. Token gửi lên phải khớp hash trong DB (legacy plaintext vẫn chấp nhận 1 lần)
+  const tokenHash = hashRefreshToken(token);
+  const stored = user.refreshToken;
+  const validStored = stored === tokenHash || stored === token;
+  if (!validStored) {
     user.refreshToken = null;
     await user.save();
     throw createError(403, 'Refresh token is not valid (revoked)');
   }
 
-  // 4. Tạo Access Token mới và trả về
   const newAccessToken = generateAccessToken(user._id);
+  const newRefreshToken = generateRefreshToken(user._id);
+  user.refreshToken = hashRefreshToken(newRefreshToken);
+  await user.save();
 
-  return newAccessToken;
+  return { accessToken: newAccessToken, refreshToken: newRefreshToken };
 };
 const loginWithGoogle = async (idToken) => {
   try {
@@ -398,16 +396,16 @@ const loginWithGoogle = async (idToken) => {
     }
 
     const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const refreshTokenValue = generateRefreshToken(user._id);
 
-    user.refreshToken = refreshToken;
+    user.refreshToken = hashRefreshToken(refreshTokenValue);
     user.lastActivityDate = new Date();
     await user.save();
 
     return {
       user: user.toJSON(),
       accessToken: accessToken,
-      refreshToken: refreshToken
+      refreshToken: refreshTokenValue
     };
 
   } catch (error) {

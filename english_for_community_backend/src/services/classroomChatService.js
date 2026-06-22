@@ -151,6 +151,17 @@ function emitToRoom(classroomId, event, payload) {
   }
 }
 
+async function emitInboxCoverUpdate(classroomId, coverImageUrl) {
+  const memberIds = await getClassroomMemberUserIds(classroomId);
+  const payload = {
+    classroomId: String(classroomId),
+    coverImageUrl: coverImageUrl ?? '',
+  };
+  for (const uid of memberIds) {
+    emitToUser(uid, 'classroom_chat_inbox_updated', payload);
+  }
+}
+
 async function emitInboxUpdates(classroomId, messageView, senderId) {
   const memberIds = await getClassroomMemberUserIds(classroomId);
   const senderName = senderDisplayName(messageView.senderId);
@@ -500,6 +511,9 @@ export async function updateChatSettings(classroomId, userId, patch) {
     coverImageUrl: classroom.coverImageUrl ?? '',
   };
   emitToRoom(classroomId, 'classroom_chat_settings_updated', payload);
+  if (patch.coverImageUrl != null) {
+    await emitInboxCoverUpdate(classroomId, classroom.coverImageUrl);
+  }
   return payload;
 }
 
@@ -526,6 +540,7 @@ export async function uploadChatAvatar(classroomId, userId, file) {
     coverImageUrl: classroom.coverImageUrl,
   };
   emitToRoom(classroomId, 'classroom_chat_settings_updated', payload);
+  await emitInboxCoverUpdate(classroomId, classroom.coverImageUrl);
   return payload;
 }
 
@@ -587,47 +602,107 @@ export async function getChatInbox(userId) {
   }
 
   const objectIds = classroomIds.map((id) => new mongoose.Types.ObjectId(id));
-  const readRows = await ClassroomChatReadState.find({
-    userId,
-    classroomId: { $in: objectIds },
-  }).lean();
-  const readMap = new Map(readRows.map((r) => [String(r.classroomId), r.lastReadAt]));
+  const uid = new mongoose.Types.ObjectId(userId);
+
+  const [roomsData, lastMsgRows, unreadAgg, memberAgg] = await Promise.all([
+    Classroom.find({ _id: { $in: objectIds }, archived: { $ne: true } }).lean(),
+    ClassroomMessage.aggregate([
+      { $match: { classroomId: { $in: objectIds }, deletedAt: null } },
+      { $sort: { createdAt: -1 } },
+      { $group: { _id: '$classroomId', doc: { $first: '$$ROOT' } } },
+    ]),
+    ClassroomMessage.aggregate([
+      {
+        $match: {
+          classroomId: { $in: objectIds },
+          deletedAt: null,
+          senderId: { $ne: uid },
+        },
+      },
+      {
+        $lookup: {
+          from: 'classroomchatreadstates',
+          let: { cid: '$classroomId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$classroomId', '$$cid'] },
+                    { $eq: ['$userId', uid] },
+                  ],
+                },
+              },
+            },
+            { $project: { lastReadAt: 1 } },
+          ],
+          as: 'readState',
+        },
+      },
+      {
+        $addFields: {
+          lastReadAt: { $arrayElemAt: ['$readState.lastReadAt', 0] },
+        },
+      },
+      {
+        $match: {
+          $expr: {
+            $or: [
+              { $eq: ['$lastReadAt', null] },
+              { $gt: ['$createdAt', '$lastReadAt'] },
+            ],
+          },
+        },
+      },
+      { $group: { _id: '$classroomId', unreadCount: { $sum: 1 } } },
+    ]),
+    ClassroomMember.aggregate([
+      { $match: { classroomId: { $in: objectIds }, status: 'active' } },
+      { $group: { _id: '$classroomId', n: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const lastMsgMap = new Map(lastMsgRows.map((r) => [String(r._id), r.doc]));
+  const unreadMap = new Map(unreadAgg.map((r) => [String(r._id), r.unreadCount]));
+  const memberMap = new Map(memberAgg.map((r) => [String(r._id), r.n]));
+
+  const senderIds = [
+    ...new Set(
+      lastMsgRows
+        .map((r) => r.doc?.senderId)
+        .filter(Boolean)
+        .map((id) => String(id)),
+    ),
+  ];
+  const senders =
+    senderIds.length > 0
+      ? await User.find({ _id: { $in: senderIds } }).select('fullName username').lean()
+      : [];
+  const senderMap = new Map(senders.map((s) => [String(s._id), s]));
 
   const rooms = [];
-  for (const cid of classroomIds) {
-    const room = await Classroom.findById(cid).lean();
-    if (!room || room.archived) continue;
-
-    const lastMsg = await ClassroomMessage.findOne({ classroomId: cid })
-      .sort({ createdAt: -1 })
-      .populate('senderId', 'fullName username')
-      .lean();
-
-    const lastReadAt = readMap.get(cid) ?? null;
-    const unreadQuery = {
-      classroomId: cid,
-      deletedAt: null,
-      senderId: { $ne: userId },
-    };
-    if (lastReadAt) unreadQuery.createdAt = { $gt: lastReadAt };
-
-    const unreadCount = await ClassroomMessage.countDocuments(unreadQuery);
-    const memberCount = await countActiveMembers(cid);
+  for (const room of roomsData) {
+    const cid = String(room._id);
+    const lastMsg = lastMsgMap.get(cid);
+    let lastMessage = null;
+    if (lastMsg) {
+      const senderId = String(lastMsg.senderId);
+      const sender = senderMap.get(senderId) ?? lastMsg.senderId;
+      lastMessage = {
+        preview: buildMessagePreview({ ...lastMsg, senderId: sender }),
+        senderName: senderDisplayName(sender),
+        senderId,
+        createdAt: lastMsg.createdAt,
+      };
+    }
 
     rooms.push({
       id: cid,
       name: room.name,
       coverImageUrl: room.coverImageUrl ?? '',
-      memberCount,
-      unreadCount,
-      lastMessage: lastMsg
-        ? {
-            preview: buildMessagePreview(lastMsg),
-            senderName: senderDisplayName(lastMsg.senderId),
-            senderId: String(lastMsg.senderId?._id ?? lastMsg.senderId),
-            createdAt: lastMsg.createdAt,
-          }
-        : null,
+      memberCount: (memberMap.get(cid) || 0) + 1,
+      unreadCount: unreadMap.get(cid) || 0,
+      lastMessage,
     });
   }
 

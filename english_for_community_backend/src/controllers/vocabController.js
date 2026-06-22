@@ -1,6 +1,6 @@
 // 🔽 ✍️ FILE: controllers/vocabController.js
 import { vocabService } from "../services/vocabularyService.js";
-import {trackUserProgress} from "../untils/progressTracker.js";
+import {trackUserProgress} from "../utils/progressTracker.js";
 
 // ✍️ Sửa lại: Nhận object từ vựng
 const startLearningWord = async (req, res) => {
