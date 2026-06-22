@@ -1,3 +1,8 @@
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
@@ -25,10 +30,10 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
   int _currentPage = 0; // 0: Stats, 1: Personal Info
 
   // Colors Palette
-  static const Color textMain = Color(0xFF09090B);
-  static const Color textMuted = Color(0xFF71717A);
-  static const Color borderCol = Color(0xFFE4E4E7);
-  static const Color bgSubtle = Color(0xFFF8FAFC);
+  static const Color textMain = AppColors.textPrimary;
+  static const Color textMuted = AppColors.textMuted;
+  static const Color borderCol = AppColors.outline;
+  static const Color bgSubtle = AppColors.surface;
 
   @override
   void initState() {
@@ -45,9 +50,9 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
   // Function to toggle between 2 pages
   void _togglePage() {
     if (_currentPage == 0) {
-      _pageController.animateToPage(1, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.animateToPage(1, duration: AppMotion.page, curve: Curves.easeInOut);
     } else {
-      _pageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.animateToPage(0, duration: AppMotion.page, curve: Curves.easeInOut);
     }
   }
 
@@ -56,7 +61,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     return Dialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750),
@@ -95,7 +100,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                 future: _userFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: AppLoadingIndicator.center());
+                    return AdminSkeleton.page(AdminSkeleton.cardList());
                   }
                   if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
@@ -231,7 +236,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           Container(
             height: 120,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: borderCol)),
+            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: borderCol)),
             child: LayoutBuilder( // Optional: Helps with constraints
                 builder: (context, constraints) {
                   final minutes = summary?.weeklyChart.minutes ?? [];
@@ -259,8 +264,8 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                                 // Ensure height is finite and valid
                                 height: h <= 0 ? 4 : h.toDouble(),
                                 decoration: BoxDecoration(
-                                    color: const Color(0xFF0F172A),
-                                    borderRadius: BorderRadius.circular(4)
+                                    color: AppColors.textPrimary,
+                                    borderRadius: BorderRadius.circular(AppRadius.xs)
                                 )
                             ),
                             const SizedBox(height: 8),
@@ -294,7 +299,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(8), border: Border.all(color: borderCol)),
+              decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: borderCol)),
               child: Text(user.bio!, style: const TextStyle(fontSize: 14, color: textMain, fontStyle: FontStyle.italic)),
             ),
             const SizedBox(height: 24),
@@ -305,7 +310,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: borderCol)),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: borderCol)),
             child: Column(
               children: [
                 _DetailRow(icon: Icons.alternate_email, label: 'Username', value: '@${user.username}'),
@@ -328,7 +333,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(12), border: Border.all(color: borderCol)),
+            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: borderCol)),
             child: Column(
               children: [
                 _DetailRow(icon: Icons.key, label: 'User ID', value: user.id, isCopyable: true),
@@ -378,7 +383,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         title: Text(
           newRole == 'admin' ? 'Promote to Admin?' : 'Demote to User?',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -418,12 +423,10 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
 
   // --- HELPERS ---
   Widget _buildAvatar(UserEntity user) {
-    return Container(
-      width: 60, height: 60,
-      decoration: BoxDecoration(shape: BoxShape.circle, color: bgSubtle, border: Border.all(color: borderCol),
-        image: (user.avatarUrl != null) ? DecorationImage(image: NetworkImage(user.avatarUrl!), fit: BoxFit.cover) : null,
-      ),
-      child: (user.avatarUrl == null) ? Center(child: Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: textMuted))) : null,
+    return AdminWebUi.userAvatarCircle(
+      avatarUrl: user.avatarUrl,
+      displayName: user.fullName,
+      radius: 30,
     );
   }
 
@@ -443,9 +446,9 @@ class _DetailRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: const Color(0xFF71717A)),
+          Icon(icon, size: 18, color: AppColors.textMuted),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF71717A))),
+          Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
           const Spacer(),
           Expanded(
             flex: 2,
@@ -460,11 +463,11 @@ class _DetailRow extends StatelessWidget {
                   Flexible(
                     child: Text(
                       (value == null || value!.isEmpty) ? 'N/A' : value!,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: valueColor ?? const Color(0xFF09090B)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: valueColor ?? AppColors.textPrimary),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isCopyable) ...[const SizedBox(width: 4), const Icon(Icons.copy, size: 12, color: Color(0xFF71717A))]
+                  if (isCopyable) ...[const SizedBox(width: 4), const Icon(Icons.copy, size: 12, color: AppColors.textMuted)]
                 ],
               ),
             ),
@@ -481,7 +484,7 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.label, required this.value, required this.icon, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE4E4E7)), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF09090B))), Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF71717A)))]));
+    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: AppColors.outline), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)), Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))]));
   }
 }
 class _StatSmallItem extends StatelessWidget {
@@ -489,7 +492,7 @@ class _StatSmallItem extends StatelessWidget {
   const _StatSmallItem({required this.icon, required this.label, required this.value, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))), child: Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: const Color(0xFFE2E8F0))), child: Icon(icon, size: 16, color: color)), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)), overflow: TextOverflow.ellipsis), Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis)]))]));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: AppColors.outline)), child: Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.outline)), child: Icon(icon, size: 16, color: color)), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis), Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)]))]));
   }
 }
 class _StatusBadge extends StatelessWidget {
@@ -497,6 +500,10 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.label, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)), child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)));
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppRadius.xs)), child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)));
   }
 }
+
+
+
+

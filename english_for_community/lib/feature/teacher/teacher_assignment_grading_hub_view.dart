@@ -122,6 +122,10 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
     return m['id'] as String? ?? '—';
   }
 
+  /// Attempt id — backend `.lean()` trả `_id`; phòng vệ các endpoint khác (`docs/ui-ux-system/25`).
+  String _attemptIdOf(Map<String, dynamic> m) =>
+      (m['id'] ?? m['attemptId'] ?? m['_id'])?.toString() ?? '';
+
   String? _studentEmail(Map<String, dynamic> m) {
     final user = m['userId'];
     if (user is Map) return (user['email'] as String?)?.trim();
@@ -256,26 +260,26 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
                     // past one card does not repaint the rest of the list.
                     return RepaintBoundary(
                       child: TeacherGradingAttemptCard(
-                        key: ValueKey(m['id'] ?? index),
+                        key: ValueKey(_attemptIdOf(m).isNotEmpty ? _attemptIdOf(m) : index),
                         attempt: m,
                         studentLabel: _studentLabel(m),
                         studentEmail: _studentEmail(m),
                         submittedLabel: _formatDate(context, m['submittedAt']),
                         startedLabel: _formatDate(context, m['startedAt']),
                         onOpen: () {
-                          final id = m['id'] as String? ?? '';
+                          final id = _attemptIdOf(m);
                           if (id.isEmpty) return;
                           context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
                         },
                         onAi: () {
-                          final id = m['id'] as String? ?? '';
+                          final id = _attemptIdOf(m);
                           if (id.isNotEmpty) {
                             context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
                             AppCornerToast.show(context, l10n.teacherExamRunAi);
                           }
                         },
                         onRelease: () async {
-                          final id = m['id'] as String? ?? '';
+                          final id = _attemptIdOf(m);
                           if (id.isEmpty) return;
                           final cfg = state.assignment?['config'];
                           final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;

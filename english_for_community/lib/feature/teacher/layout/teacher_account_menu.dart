@@ -80,6 +80,7 @@ class _TeacherAccountMenuDialogState extends State<TeacherAccountMenuDialog> {
               _AccountIdentityCard(
                 name: user.fullName,
                 email: user.email,
+                avatarUrl: user.avatarUrl,
                 roleLabel: l10n.teacherAccountRoleTeacher,
               ),
               const SizedBox(height: AppSpacing.s5),
@@ -317,11 +318,13 @@ class _AccountIdentityCard extends StatelessWidget {
     required this.name,
     required this.email,
     required this.roleLabel,
+    this.avatarUrl,
   });
 
   final String name;
   final String email;
   final String roleLabel;
+  final String? avatarUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -329,22 +332,15 @@ class _AccountIdentityCard extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Row(
         children: [
-          CircleAvatar(
+          TeacherWebUi.userAvatarCircle(
+            avatarUrl: avatarUrl,
+            displayName: name,
             radius: 22,
-            backgroundColor: AppColors.primaryTint,
-            child: Text(
-              name.isNotEmpty ? name[0].toUpperCase() : '?',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryDark,
-              ),
-            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -402,12 +398,12 @@ class _PickerChoiceTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
             color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(
               color: selected ? AppColors.primary : AppColors.outline,
               width: selected ? 1.5 : 1,

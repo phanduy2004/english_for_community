@@ -1,3 +1,6 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -128,10 +131,10 @@ class _EditorViewState extends State<_EditorView> {
 
   @override
   Widget build(BuildContext context) {
-    const kBgPage = Color(0xFFF9FAFB);
+    const kBgPage = AppColors.surface;
     const kWhite = Colors.white;
-    const kTextMain = Color(0xFF09090B);
-    const kBorder = Color(0xFFE4E4E7);
+    const kTextMain = AppColors.textPrimary;
+    const kBorder = AppColors.outline;
 
     return BlocListener<AdminWritingBloc, AdminWritingState>(
       listener: (context, state) {
@@ -168,7 +171,7 @@ class _EditorViewState extends State<_EditorView> {
         body: BlocBuilder<AdminWritingBloc, AdminWritingState>(
           builder: (context, state) {
             if (state.status == AdminWritingStatus.loading && widget.id != null && _nameCtrl.text.isEmpty) {
-              return const Center(child: AppLoadingIndicator.center());
+              return AdminSkeleton.page(AdminSkeleton.cardList());
             }
 
             return SingleChildScrollView(
@@ -288,14 +291,14 @@ class _EditorViewState extends State<_EditorView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF09090B))),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: const Color(0xFFE4E4E7)),
+            borderRadius: BorderRadius.circular(AppRadius.input),
+            border: Border.all(color: AppColors.outline),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -310,3 +313,6 @@ class _EditorViewState extends State<_EditorView> {
     );
   }
 }
+
+
+

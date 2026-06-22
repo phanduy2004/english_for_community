@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'dart:typed_data';
 
 import 'package:english_for_community/core/entity/user_entity.dart';
@@ -31,6 +32,7 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
   Uint8List? _pickedAvatarBytes;
   bool _isDirty = false;
   bool _awaitingSaveResult = false;
+  String? _serverError;
 
   final _fullName = TextEditingController();
   final _username = TextEditingController();
@@ -72,10 +74,6 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
     if (!_isDirty) setState(() => _isDirty = true);
   }
 
-  void _toast(String message, {bool error = false}) {
-    AppCornerToast.show(context, message, error: error);
-  }
-
   Future<void> _pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 800);
     if (picked == null || !mounted) return;
@@ -114,6 +112,7 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
 
   void _save() {
     if (!_formKey.currentState!.validate() || _profile == null) return;
+    setState(() => _serverError = null);
     final old = context.read<UserBloc>().state.userEntity;
     if (old == null) return;
     setState(() => _awaitingSaveResult = true);
@@ -152,8 +151,10 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
             _isDirty = false;
           });
         } else if (state.status == UserStatus.error && state.errorMessage != null) {
-          _toast(state.errorMessage!, error: true);
-          setState(() => _awaitingSaveResult = false);
+          setState(() {
+            _serverError = state.errorMessage;
+            _awaitingSaveResult = false;
+          });
         }
       },
       child: BlocBuilder<UserBloc, UserState>(
@@ -162,7 +163,7 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
             return TeacherDialogShell(
               title: t.editProfileTitle,
               icon: Icons.person_outline,
-              body: const Center(child: AppLoadingIndicator.center()),
+              body: TeacherSkeleton.page(TeacherSkeleton.cardList(n: 1, height: 120)),
             );
           }
 
@@ -179,6 +180,20 @@ class _TeacherEditProfileDialogState extends State<TeacherEditProfileDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_serverError != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: AppSpacing.s4),
+                      padding: const EdgeInsets.all(AppSpacing.s4),
+                      decoration: BoxDecoration(
+                        color: AppColors.dangerBg,
+                        borderRadius: BorderRadius.circular(AppRadius.input),
+                        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        _serverError!,
+                        style: TeacherWebUi.webBody(context).copyWith(color: AppColors.danger),
+                      ),
+                    ),
                   Center(child: _AvatarPicker(
                     profile: _profile!,
                     pickedBytes: _pickedAvatarBytes,
@@ -341,27 +356,25 @@ class _GenderChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected ? AppColors.primary : AppColors.outline,
-              width: selected ? 1.5 : 1,
-            ),
+    return TeacherWebUi.focusableTile(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      semanticLabel: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: selected ? AppColors.primary : AppColors.outline,
+            width: selected ? 1.5 : 1,
           ),
-          child: Text(
-            label,
-            style: TeacherWebUi.webBody(context).copyWith(
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-              color: selected ? AppColors.primaryDark : AppColors.textPrimary,
-            ),
+        ),
+        child: Text(
+          label,
+          style: TeacherWebUi.webBody(context).copyWith(
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+            color: selected ? AppColors.primaryDark : AppColors.textPrimary,
           ),
         ),
       ),
@@ -385,8 +398,8 @@ class _AvatarPicker extends StatelessWidget {
     ImageProvider? img;
     if (pickedBytes != null && pickedBytes!.isNotEmpty) {
       img = MemoryImage(pickedBytes!);
-    } else if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
-      img = NetworkImage(profile.avatarUrl!);
+    } else {
+      img = TeacherWebUi.networkAvatar(profile.avatarUrl, logicalSize: 72);
     }
 
     return Stack(

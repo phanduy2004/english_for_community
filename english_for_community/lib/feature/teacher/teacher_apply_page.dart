@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -173,7 +174,7 @@ class _TeacherApplyPageState extends State<TeacherApplyPage> {
                         child: ConstrainedBox(
                           constraints: BoxConstraints(maxWidth: maxW),
                           child: loading
-                              ? const Padding(padding: EdgeInsets.all(48), child: Center(child: AppLoadingIndicator.center()))
+                              ? TeacherSkeleton.page(TeacherSkeleton.cardList(n: 1, height: 160))
                               : Column(
                                   crossAxisAlignment: CrossAxisAlignment.stretch,
                                   children: [

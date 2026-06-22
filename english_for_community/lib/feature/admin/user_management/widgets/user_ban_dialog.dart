@@ -1,3 +1,5 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,9 +22,9 @@ class _UserBanDialogState extends State<UserBanDialog> {
   final TextEditingController _reasonController = TextEditingController();
 
   // Shadcn Colors
-  final textMain = const Color(0xFF09090B);
-  final textMuted = const Color(0xFF71717A);
-  final borderCol = const Color(0xFFE4E4E7);
+  final textMain = AppColors.textPrimary;
+  final textMuted = AppColors.textMuted;
+  final borderCol = AppColors.outline;
 
   final List<int> _durationOptions = [1, 6, 12, 24, 72, 168]; // Hours
 
@@ -37,13 +39,13 @@ class _UserBanDialogState extends State<UserBanDialog> {
     return AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
       titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
       contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       title: Row(
         children: [
-          const Icon(Icons.gpp_bad_outlined, color: Color(0xFFDC2626), size: 20),
+          const Icon(Icons.gpp_bad_outlined, color: AppColors.danger, size: 20),
           const SizedBox(width: 8),
           Text('Ban Account', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: textMain)),
         ],
@@ -61,7 +63,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
               Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: borderCol),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: RadioGroup<String>(
                   groupValue: _selectedType,
@@ -109,7 +111,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
                         fontSize: 12,
                       ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(AppRadius.chip),
                         side: BorderSide(color: isSelected ? textMain : borderCol),
                       ),
                     );
@@ -129,15 +131,15 @@ class _UserBanDialogState extends State<UserBanDialog> {
                   hintText: 'Ex: Spam messages, inappropriate language...',
                   hintStyle: TextStyle(color: textMuted, fontSize: 13),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     borderSide: BorderSide(color: borderCol),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     borderSide: BorderSide(color: borderCol),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     borderSide: BorderSide(color: textMain),
                   ),
                   contentPadding: const EdgeInsets.all(12),
@@ -153,7 +155,7 @@ class _UserBanDialogState extends State<UserBanDialog> {
           style: OutlinedButton.styleFrom(
             foregroundColor: textMain,
             side: BorderSide(color: borderCol),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
           ),
           child: const Text('Cancel'),
         ),
@@ -175,9 +177,9 @@ class _UserBanDialogState extends State<UserBanDialog> {
             Navigator.pop(context); // Close Dialog
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFDC2626), // Red-600
+            backgroundColor: AppColors.danger, // Red-600
             foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
           ),
           child: const Text('Confirm Ban'),
         ),
@@ -193,3 +195,4 @@ class _UserBanDialogState extends State<UserBanDialog> {
     return '$hours hours';
   }
 }
+

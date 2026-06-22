@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/repository/reading_repository.dart';
+import '../../../layout/admin_widgets.dart';
 import 'admin_reading_event.dart';
 import 'admin_reading_state.dart';
 
@@ -31,7 +32,7 @@ class AdminReadingBloc extends Bloc<AdminReadingEvent, AdminReadingState> {
           (success) {
         // 3. Xóa thành công -> Gọi lại event GetList để refresh danh sách
         // Lưu ý: Không cần emit success ở đây vì GetList sẽ tự emit success khi load xong
-        add(const GetAdminReadingListEvent(page: 1, limit: 9999));
+        add(GetAdminReadingListEvent(page: 1, limit: kAdminDefaultRowsPerPage));
       },
     );
   }

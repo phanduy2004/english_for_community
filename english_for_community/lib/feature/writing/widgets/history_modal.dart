@@ -1,5 +1,7 @@
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_bloc.dart';
 import 'package:english_for_community/feature/writing/bloc/writing_state.dart';
@@ -29,7 +31,7 @@ class HistoryModal extends StatelessWidget {
       height: MediaQuery.of(context).size.height * 0.7,
       decoration: const BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       child: Column(
         children: [
@@ -66,7 +68,7 @@ class HistoryModal extends StatelessWidget {
                   previous.historyList != current.historyList,
               builder: (context, state) {
                 if (state.historyStatus == WritingStatus.loading) {
-                  return const Center(child: AppLoadingIndicator.center());
+                  return StudentMobileUi.runnerLoading();
                 }
                 if (state.historyStatus == WritingStatus.error) {
                   return WritingErrorView(message: state.historyErrorMessage ?? t.writingHistoryLoadFailed);
@@ -158,13 +160,13 @@ class HistoryItemCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
           border: Border.all(color: AppColors.outline),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Row(
           children: [
             Container(
               width: 48, height: 48,
-              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.card)),
               child: Center(
                 child: Text(
                   score.toStringAsFixed(1),
@@ -192,7 +194,7 @@ class HistoryItemCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
                           color: isDraft ? AppColors.warningBg : AppColors.successBg,
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(AppRadius.chip),
                           border: Border.all(
                             color: isDraft ? AppColors.warningBg : AppColors.success,
                           ),

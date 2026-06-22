@@ -1,4 +1,8 @@
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'dart:async';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
@@ -45,7 +49,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
   // Xử lý tìm kiếm (Debounce để tránh spam API)
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(AppMotion.debounce, () {
       setState(() {
         _searchKeyword = query;
         _users.clear();
@@ -103,7 +107,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
       padding: const EdgeInsets.only(top: 16),
       decoration: const BoxDecoration(
         color: kWhite,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       child: Column(
         children: [
@@ -112,7 +116,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Column(
               children: [
-                Container(width: 40, height: 4, decoration: BoxDecoration(color: kBorder, borderRadius: BorderRadius.circular(2))),
+                Container(width: 40, height: 4, decoration: BoxDecoration(color: kBorder, borderRadius: BorderRadius.circular(AppRadius.xs))),
                 const SizedBox(height: 16),
                 const Text("Select User", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kTextMain)),
                 const SizedBox(height: 16),
@@ -125,7 +129,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
                     filled: true,
                     fillColor: kBgPage,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.card), borderSide: BorderSide.none),
                   ),
                 ),
               ],
@@ -144,7 +148,7 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 if (index == _users.length) {
-                  return const Center(child: Padding(padding: EdgeInsets.all(12), child: AppLoadingIndicator.center()));
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
                 final user = _users[index];
                 return _buildUserItem(user);
@@ -162,20 +166,20 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
         // Trả về user đã chọn và đóng sheet
         Navigator.pop(context, user);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: kWhite,
           border: Border.all(color: kBorder),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Row(
           children: [
-            CircleAvatar(
-              backgroundImage: NetworkImage(user.avatarUrl ?? ''),
-              backgroundColor: kBgPage,
-              onBackgroundImageError: (_,__) {},
+            AdminWebUi.userAvatarCircle(
+              avatarUrl: user.avatarUrl,
+              displayName: user.fullName,
+              radius: 20,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -194,3 +198,5 @@ class _UserSearchSheetState extends State<UserSearchSheet> {
     );
   }
 }
+
+

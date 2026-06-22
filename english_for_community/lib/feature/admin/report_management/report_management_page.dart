@@ -9,6 +9,8 @@ import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.d
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/report_management/widget/report_card.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/get_it/get_it.dart';
@@ -41,6 +43,8 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
 
   @override
   void initState() {
@@ -50,6 +54,7 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
 
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
+        setState(() => _page = 1);
         _fetchReports();
       }
     });
@@ -65,15 +70,18 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
     }
     context.read<AdminBloc>().add(GetReportsEvent(
       status: status,
-      page: 1,
-      limit: 20,
+      page: _page,
+      limit: _rowsPerPage,
       search: _searchController.text.trim().isEmpty ? null : _searchController.text.trim(),
     ));
   }
 
   void _onSearchChanged(String _) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 400), _fetchReports);
+    _debounce = Timer(AppMotion.base, () {
+      setState(() => _page = 1);
+      _fetchReports();
+    });
   }
 
   @override
@@ -131,20 +139,61 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
               },
               builder: (context, state) {
                 final reportsList = state.reports?.data ?? [];
+                final pagination = state.reports?.pagination;
 
                 if (state.status == AdminStatus.loading && reportsList.isEmpty) {
-                  return const Center(child: AppLoadingIndicator.center());
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
 
                 if (reportsList.isEmpty) {
-                  return AdminEmptyState(message: l10n.adminNoReportsFound);
+                  return Center(
+                    child: AdminEmptyCard(
+                      message: l10n.adminNoReportsFound,
+                      actionLabel: _searchController.text.trim().isNotEmpty ? l10n.retry : null,
+                      onAction: _searchController.text.trim().isNotEmpty
+                          ? () {
+                              _searchController.clear();
+                              setState(() => _page = 1);
+                              _fetchReports();
+                            }
+                          : null,
+                    ),
+                  );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.s7),
-                  itemCount: reportsList.length,
-                  separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
-                  itemBuilder: (context, index) => ReportCard(report: reportsList[index]),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                        itemCount: reportsList.length,
+                        separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
+                        itemBuilder: (context, index) => ReportCard(report: reportsList[index]),
+                      ),
+                    ),
+                    if (pagination != null && pagination.totalPages > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.s4, bottom: AppSpacing.s7),
+                        child: AdminPaginationBar(
+                          page: pagination.page,
+                          totalPages: pagination.totalPages,
+                          totalRows: pagination.total,
+                          rowsPerPage: _rowsPerPage,
+                          onRowsPerPageChanged: (v) {
+                            setState(() {
+                              _rowsPerPage = v;
+                              _page = 1;
+                            });
+                            _fetchReports();
+                          },
+                          onPageChanged: (p) {
+                            setState(() => _page = p);
+                            _fetchReports();
+                          },
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -154,3 +203,5 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
     );
   }
 }
+
+

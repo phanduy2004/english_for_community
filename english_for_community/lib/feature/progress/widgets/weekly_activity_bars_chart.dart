@@ -1,6 +1,7 @@
 import 'dart:ui' show PathMetric, Tangent;
 
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 
 /// Biểu đồ cột hoạt động theo ngày — **cùng implementation** với tab Progress (`Activity`).
@@ -138,7 +139,7 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart> {
                                       height: barHeight,
                                       decoration: BoxDecoration(
                                         color: c,
-                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                                        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.chip)),
                                       ),
                                     ),
                                     const SizedBox(height: xAxisGap),

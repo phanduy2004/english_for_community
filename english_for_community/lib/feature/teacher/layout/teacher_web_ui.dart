@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/ui/avatar_url.dart';
 import 'package:english_for_community/core/theme/app_fonts.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -65,6 +66,9 @@ abstract final class TeacherWebUi {
     BoxShadow(color: AppColors.shadowCard, blurRadius: 6, offset: Offset(0, 2)),
   ];
 
+  /// Elevated surface — dialog, popover, floating card only (border + shadow).
+  ///
+  /// List/dashboard tiles use [panelDecoration] (F-1 / visual polish).
   static BoxDecoration cardDecoration({Color? bg}) => BoxDecoration(
         color: bg ?? AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -81,10 +85,34 @@ abstract final class TeacherWebUi {
 
   /// Decode avatars at display size (P1-R6) — pass logical diameter in px.
   static ImageProvider? networkAvatar(String? url, {double logicalSize = 36}) {
-    if (url == null || url.isEmpty) return null;
+    if (!isUsableAvatarUrl(url)) return null;
     final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
     final px = (logicalSize * dpr).ceil();
-    return ResizeImage.resizeIfNeeded(px, px, NetworkImage(url));
+    return ResizeImage.resizeIfNeeded(px, px, NetworkImage(url!.trim()));
+  }
+
+  /// Circle avatar with network image + initials fallback.
+  static Widget userAvatarCircle({
+    required String? avatarUrl,
+    required String displayName,
+    double radius = 14,
+  }) {
+    final bg = networkAvatar(avatarUrl, logicalSize: radius * 2);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.primaryTint,
+      backgroundImage: bg,
+      child: bg == null
+          ? Text(
+              avatarInitials(displayName),
+              style: TextStyle(
+                fontSize: radius * 0.85,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryDark,
+              ),
+            )
+          : null,
+    );
   }
 
   /// Inline text action in data tables (Open, Grade, Copy…).

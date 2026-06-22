@@ -1,5 +1,7 @@
 import 'package:english_for_community/feature/admin/submission_managerment/reading_detail_view.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'bloc_detail/activity_detail_event.dart';
@@ -7,15 +9,14 @@ import 'bloc_detail/activity_detail_bloc.dart';
 import 'bloc_detail/activity_detail_state.dart';
 import 'model/activity_model.dart';
 
-// Import your detailed views
-import 'writing_detail_view.dart';
-import 'speaking_detail_view.dart';
-import 'listening_detail_view.dart'; // Dictation View
-import 'listening_comp_detail_view.dart'; // 🔥 IMPORT THÊM COMPREHENSION VIEW
+import 'package:english_for_community/feature/admin/submission_managerment/writing_detail_view.dart';
+import 'package:english_for_community/feature/admin/submission_managerment/speaking_detail_view.dart';
+import 'package:english_for_community/feature/admin/submission_managerment/listening_detail_view.dart';
+import 'package:english_for_community/feature/admin/submission_managerment/listening_comp_detail_view.dart';
 
-const Color kBgPage = Color(0xFFF1F5F9);
+const Color kBgPage = AppColors.surfaceSubtle;
 const Color kWhite = Colors.white;
-const Color kTextMain = Color(0xFF0F172A);
+const Color kTextMain = AppColors.textPrimary;
 
 class ActivityDetailPage extends StatelessWidget {
   final String id;
@@ -61,7 +62,7 @@ class ActivityDetailPage extends StatelessWidget {
         body: BlocBuilder<ActivityDetailBloc, ActivityDetailState>(
           builder: (context, state) {
             if (state.status == DetailStatus.loading) {
-              return const Center(child: AppLoadingIndicator.center());
+              return AdminSkeleton.page(AdminSkeleton.cardList());
             }
             if (state.status == DetailStatus.error) {
               return Center(child: Text("Error: ${state.errorMessage}"));
@@ -106,3 +107,4 @@ class ActivityDetailPage extends StatelessWidget {
     );
   }
 }
+

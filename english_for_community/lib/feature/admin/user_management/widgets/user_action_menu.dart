@@ -1,3 +1,5 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -17,12 +19,13 @@ class UserActionMenu extends StatelessWidget {
     final bool isBanned = user.isBanned;
 
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: Color(0xFFA1A1AA)), // Zinc-400
+      icon: const Icon(Icons.more_vert, color: AppColors.textMuted), // Zinc-400
+      tooltip: 'User actions',
       color: Colors.white,
       surfaceTintColor: Colors.white,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(color: Color(0xFFE4E4E7)),
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        side: const BorderSide(color: AppColors.outline),
       ),
       elevation: 4,
       onSelected: (value) => _handleAction(context, value, isBanned),
@@ -121,7 +124,7 @@ class UserActionMenu extends StatelessWidget {
         return AlertDialog(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
           titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
           contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -136,13 +139,13 @@ class UserActionMenu extends StatelessWidget {
               Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
             ],
           ),
-          content: Text(content, style: const TextStyle(fontSize: 13, color: Color(0xFF475569), height: 1.35)),
+          content: Text(content, style: const TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.35)),
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.pop(ctx),
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFFE2E8F0)),
-                foregroundColor: const Color(0xFF0F172A),
+                side: const BorderSide(color: AppColors.outline),
+                foregroundColor: AppColors.textPrimary,
               ),
               child: const Text('Cancel'),
             ),
@@ -163,3 +166,5 @@ class UserActionMenu extends StatelessWidget {
     );
   }
 }
+
+

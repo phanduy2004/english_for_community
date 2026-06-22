@@ -50,7 +50,7 @@ abstract final class TeacherMobileUi {
         minimumSize: const Size(double.infinity, primaryButtonHeight),
         maximumSize: Size(double.infinity, primaryButtonHeight),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -63,7 +63,7 @@ abstract final class TeacherMobileUi {
   static ButtonStyle mobileOutlinedStyle(BuildContext context) => OutlinedButton.styleFrom(
         minimumSize: const Size(double.infinity, secondaryButtonHeight),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         side: const BorderSide(color: AppColors.outline),
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w600,
@@ -77,7 +77,7 @@ abstract final class TeacherMobileUi {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
         foregroundColor: AppColors.danger,
         side: const BorderSide(color: AppColors.danger),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -91,13 +91,13 @@ abstract final class TeacherMobileUi {
   static ButtonStyle mobileFilledCompactStyle(BuildContext context) => FilledButton.styleFrom(
         minimumSize: const Size(0, secondaryButtonHeight),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       );
 
   static ButtonStyle mobileOutlinedCompactStyle(BuildContext context) => OutlinedButton.styleFrom(
         minimumSize: const Size(0, secondaryButtonHeight),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         side: const BorderSide(color: AppColors.outline),
       );
 }

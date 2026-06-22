@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,8 +52,9 @@ class _AdminReadingListBody extends StatefulWidget {
 }
 
 class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
-  final TextEditingController _searchCtrl = TextEditingController();
   final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
 
   @override
   void initState() {
@@ -58,9 +63,8 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
   }
 
   void _fetchData() {
-    // Lúc này context đã nằm dưới BlocProvider nên sẽ tìm thấy Bloc
     context.read<AdminReadingBloc>().add(
-      const GetAdminReadingListEvent(limit: 9999, page: 1),
+      GetAdminReadingListEvent(limit: _rowsPerPage, page: _page),
     );
   }
 
@@ -73,7 +77,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
 
     if (mounted) {
       context.read<AdminReadingBloc>().add(
-        const GetAdminReadingListEvent(limit: 9999, page: 1),
+        GetAdminReadingListEvent(limit: _rowsPerPage, page: _page),
       );
     }
   }
@@ -120,13 +124,12 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
       ),
       body: Column(
         children: [
-          _buildSearchBar(context),
           Expanded(
             child: BlocBuilder<AdminReadingBloc, AdminReadingState>(
               builder: (context, state) {
                 if (state.status == AdminReadingStatus.loading &&
                     state.readings.isEmpty) {
-                  return const Center(child: AppLoadingIndicator.center());
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
 
                 if (state.status == AdminReadingStatus.failure &&
@@ -137,86 +140,64 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
 
                 if (state.readings.isEmpty) {
                   return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                            Icons.menu_book, size: 64, color: kTextMuted),
-                        const SizedBox(height: 16),
-                        const Text("Chưa có bài đọc nào.",
-                            style: TextStyle(color: kTextMuted)),
-                        TextButton.icon(
-                          onPressed: () => _openEditor(context, null),
-                          icon: const Icon(Icons.add),
-                          label: const Text("Tạo bài đầu tiên"),
-                        )
-                      ],
+                    child: AdminEmptyCard(
+                      message: 'Chưa có bài đọc nào.',
+                      icon: Icons.menu_book_outlined,
+                      actionLabel: 'Tạo bài đầu tiên',
+                      onAction: () => _openEditor(context, null),
                     ),
                   );
                 }
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    context.read<AdminReadingBloc>().add(
-                      const GetAdminReadingListEvent(limit: 9999, page: 1),
-                    );
+                    _fetchData();
                   },
                   child: _buildListItems(context, state.readings),
                 );
               },
             ),
           ),
+          BlocBuilder<AdminReadingBloc, AdminReadingState>(
+            builder: (context, state) {
+              final p = state.pagination;
+              if (p.totalPages <= 1 && p.totalItems <= _rowsPerPage) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.s4),
+                child: AdminPaginationBar(
+                  page: p.currentPage,
+                  totalPages: p.totalPages.clamp(1, 9999),
+                  totalRows: p.totalItems,
+                  rowsPerPage: _rowsPerPage,
+                  onRowsPerPageChanged: (v) {
+                    setState(() {
+                      _rowsPerPage = v;
+                      _page = 1;
+                    });
+                    _fetchData();
+                  },
+                  onPageChanged: (p) {
+                    setState(() => _page = p);
+                    _fetchData();
+                  },
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: kWhite,
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kBorder),
-              ),
-              child: TextField(
-                controller: _searchCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Tìm kiếm bài tập...',
-                  prefixIcon: Icon(Icons.search, size: 18, color: kTextMuted),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-                border: Border.all(color: kBorder),
-                borderRadius: BorderRadius.circular(8)),
-            child:
-            const Center(child: Icon(Icons.filter_list, color: kTextMuted)),
-          )
-        ],
-      ),
-    );
-  }
   void _confirmDelete(BuildContext context, String id) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
@@ -226,7 +207,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
         ),
         content: const Text(
           "This action cannot be undone.",
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         actions: [
           OutlinedButton(
@@ -253,8 +234,8 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
       builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+          side: const BorderSide(color: AppColors.outline),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
@@ -265,7 +246,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const Icon(Icons.restore_from_trash_outlined, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     const Text('Deleted Reading Lessons', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -277,7 +258,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedReadings(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
+                      if (!snapshot.hasData) return AdminSkeleton.page(AdminSkeleton.cardList());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -334,8 +315,8 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
               Container(
                 width: 48, height: 48,
                 decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     image: (reading.imageUrl != null && reading.imageUrl!.startsWith('http'))
                         ? DecorationImage(image: NetworkImage(reading.imageUrl!), fit: BoxFit.cover)
                         : null
@@ -419,7 +400,7 @@ class _MetaBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(
         text,
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
@@ -427,3 +408,5 @@ class _MetaBadge extends StatelessWidget {
     );
   }
 }
+
+

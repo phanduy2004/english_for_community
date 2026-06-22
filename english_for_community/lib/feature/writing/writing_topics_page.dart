@@ -259,8 +259,8 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> {
             BlocBuilder<WritingBloc, WritingState>(
               builder: (context, state) {
                 if (state.status == WritingStatus.loading) {
-                  return const SliverFillRemaining(
-                    child: Center(child: AppLoadingIndicator.center()),
+                  return SliverFillRemaining(
+                    child: StudentMobileUi.listLoading(),
                   );
                 }
                 if (state.status == WritingStatus.error) {

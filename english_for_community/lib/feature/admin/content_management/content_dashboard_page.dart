@@ -157,7 +157,7 @@ class ContentDashboardPage extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AdminSkillPalette.listening.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
               ),
               child: Icon(icon, color: AdminSkillPalette.listening, size: 24),
             ),
@@ -178,3 +178,4 @@ class ContentDashboardPage extends StatelessWidget {
     );
   }
 }
+

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/api/token_storage.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
@@ -111,7 +112,7 @@ class TeacherExamSessionConsoleBloc
   ) {
     if (event.payload['sessionId']?.toString() != state.boundSessionId) return;
     _lobbyDebounce?.cancel();
-    _lobbyDebounce = Timer(const Duration(milliseconds: 120), () {
+    _lobbyDebounce = Timer(AppMotion.fast, () {
       if (isClosed) return;
       add(TeacherExamSessionConsoleLobbyApplied(event.payload));
     });

@@ -6,6 +6,9 @@ import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.d
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/submission_managerment/widget/user_dropdown_search.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -20,22 +23,22 @@ import 'model/activity_model.dart';
 import 'activity_detail_page.dart';
 
 // --- SHADCN COLOR PALETTE ---
-const Color kBgPage = Color(0xFFF1F5F9);      // Slate 100
+const Color kBgPage = AppColors.surfaceSubtle;      // Slate 100
 const Color kWhite = Colors.white;
-const Color kBorder = Color(0xFFE2E8F0);      // Slate 200
-const Color kTextMain = Color(0xFF0F172A);    // Slate 900
-const Color kTextMuted = Color(0xFF64748B);   // Slate 500
-const Color kPrimary = Color(0xFF0F172A);     // Slate 900
+const Color kBorder = AppColors.outline;      // Slate 200
+const Color kTextMain = AppColors.textPrimary;    // Slate 900
+const Color kTextMuted = AppColors.textMuted;   // Slate 500
+const Color kPrimary = AppColors.textPrimary;     // Slate 900
 
 // Skill Colors (Pastel & Bold versions)
-const Color kColWriting = Color(0xFFF43F5E);  // Rose
-const Color kColWritingBg = Color(0xFFFFF1F2);
-const Color kColReading = Color(0xFFF59E0B);  // Amber
-const Color kColReadingBg = Color(0xFFFFFBEB);
-const Color kColSpeaking = Color(0xFF3B82F6); // Blue
-const Color kColSpeakingBg = Color(0xFFEFF6FF);
-const Color kColListening = Color(0xFF8B5CF6);// Violet
-const Color kColListeningBg = Color(0xFFF5F3FF);
+const Color kColWriting = AppColors.danger;  // Rose
+const Color kColWritingBg = AppColors.dangerBg;
+const Color kColReading = AppColors.warning;  // Amber
+const Color kColReadingBg = AppColors.warningBg;
+const Color kColSpeaking = AppColors.info; // Blue
+const Color kColSpeakingBg = AppColors.infoBg;
+const Color kColListening = AppColors.info;// Violet
+const Color kColListeningBg = AppColors.infoBg;
 
 class ActivityHistoryPage extends StatelessWidget {
   static const String routeName = 'ActivityHistoryPage';
@@ -238,7 +241,7 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
               // 3. LIST CONTENT
               Expanded(
                 child: state.status == HistoryStatus.loading
-                    ? const Center(child: AppLoadingIndicator.center())
+                    ? AdminSkeleton.page(AdminSkeleton.cardList())
                     : filteredList.isEmpty
                     ? AdminEmptyState(message: l10n.noData, icon: Icons.history_outlined)
                     : ListView.separated(
@@ -264,19 +267,19 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
 
     return InkWell(
       onTap: () => _pickDateRange(context, range),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: kWhite,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           border: Border.all(color: kBorder),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: kBgPage, borderRadius: BorderRadius.circular(4)),
+              decoration: BoxDecoration(color: kBgPage, borderRadius: BorderRadius.circular(AppRadius.xs)),
               child: const Icon(Icons.calendar_today, size: 14, color: kTextMain),
             ),
             const SizedBox(width: 8),
@@ -325,7 +328,7 @@ class _AdminHistoryCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: kWhite,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: kBorder),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
@@ -348,7 +351,7 @@ class _AdminHistoryCard extends StatelessWidget {
                 ),
               ),
             );          },
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -358,11 +361,10 @@ class _AdminHistoryCard extends StatelessWidget {
                 if (item.user != null) ...[
                   Row(
                     children: [
-                      CircleAvatar(
+                      AdminWebUi.userAvatarCircle(
+                        avatarUrl: item.user!.avatar,
+                        displayName: item.user!.name,
                         radius: 14,
-                        backgroundImage: NetworkImage(item.user!.avatar),
-                        onBackgroundImageError: (_,__) {},
-                        backgroundColor: kBgPage,
                       ),
                       const SizedBox(width: 10),
                       Column(
@@ -389,7 +391,7 @@ class _AdminHistoryCard extends StatelessWidget {
                   children: [
                     Container(
                       width: 40, height: 40,
-                      decoration: BoxDecoration(color: accentBg, borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: accentBg, borderRadius: BorderRadius.circular(AppRadius.input)),
                       child: Icon(icon, color: accentColor, size: 20),
                     ),
                     const SizedBox(width: 12),
@@ -428,13 +430,13 @@ class _AdminHistoryCard extends StatelessWidget {
     String unit = item.type == ActivityType.writing ? 'Band' : '%';
 
     bool isGood = item.type == ActivityType.writing ? item.score >= 5.0 : item.score >= 50;
-    Color color = isGood ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+    Color color = isGood ? AppColors.success : AppColors.danger;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: kBgPage,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: kBorder),
       ),
       child: Column(
@@ -452,16 +454,19 @@ class _AdminHistoryCard extends StatelessWidget {
     Color bg;
 
     switch (status) {
-      case ActivityStatus.pending: text = 'Pending'; color = const Color(0xFFD97706); bg = const Color(0xFFFEF3C7); break;
-      case ActivityStatus.reviewed: text = 'Reviewed'; color = const Color(0xFF16A34A); bg = const Color(0xFFDCFCE7); break;
+      case ActivityStatus.pending: text = 'Pending'; color = AppColors.warning; bg = AppColors.warningBg; break;
+      case ActivityStatus.reviewed: text = 'Reviewed'; color = AppColors.success; bg = AppColors.successBg; break;
       case ActivityStatus.draft: text = 'Draft'; color = kTextMuted; bg = kBgPage; break;
       default: return const SizedBox.shrink();
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.chip)),
       child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
     );
   }
 }
+
+
+

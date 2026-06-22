@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../../../core/entity/reading/reading_entity.dart';
+import '../../../layout/admin_widgets.dart';
 
 abstract class AdminReadingEvent extends Equatable {
   const AdminReadingEvent();
@@ -26,7 +27,7 @@ class GetAdminReadingListEvent extends AdminReadingEvent {
 
   const GetAdminReadingListEvent({
     this.page = 1,
-    this.limit = 10000, // Mặc định lấy số lượng lớn
+    this.limit = kAdminDefaultRowsPerPage,
     this.difficulty = 'all',
   });
 

@@ -156,9 +156,9 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
             BlocBuilder<SpeakingBloc, SpeakingState>(
               builder: (context, state) {
                 if (state.status == SpeakingStatus.loading) {
-                  return const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
-                    child: Center(child: AppLoadingIndicator.center()),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                    child: StudentMobileUi.listLoading(),
                   );
                 }
                 if (state.status == SpeakingStatus.error) {

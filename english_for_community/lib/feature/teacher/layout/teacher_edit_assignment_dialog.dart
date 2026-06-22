@@ -248,12 +248,12 @@ class _TeacherEditAssignmentDialogState
             onPicked: (d) => setState(() => onPicked(d)),
             firstDate: firstDate,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Ink(
             decoration: BoxDecoration(
               color: AppColors.surfaceCard,
               border: Border.all(color: AppColors.outline),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
             ),
             child: Padding(
               padding: TeacherWebUi.formInputContentPadding,
@@ -620,7 +620,7 @@ class _ModeChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.outline),
       ),
       child: Text(

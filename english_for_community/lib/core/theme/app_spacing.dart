@@ -14,9 +14,13 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadius {
+  /// Rung nhỏ — progress bar, skeleton mảnh, chip mini (gồm 2–4px cũ).
+  static const double xs = 4;
   static const double chip = 6;
   static const double input = 8;
   static const double card = 10;
   static const double sheet = 14;
+  /// Rung lớn — card nổi / pill-chip cỡ to (gồm 18–22px cũ). KHÔNG phải pill tròn.
+  static const double lg = 20;
   static const double pill = 999;
 }

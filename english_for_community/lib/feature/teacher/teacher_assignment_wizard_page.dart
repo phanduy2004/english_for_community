@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_assign_exam_dialog.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
@@ -39,8 +40,8 @@ class _TeacherAssignmentWizardPageState extends State<TeacherAssignmentWizardPag
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: AppLoadingIndicator.center()),
+    return Scaffold(
+      body: TeacherSkeleton.page(TeacherSkeleton.cardList(n: 3)),
     );
   }
 }

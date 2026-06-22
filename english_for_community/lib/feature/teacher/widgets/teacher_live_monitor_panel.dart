@@ -1,6 +1,8 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_live_monitor_event.dart';
@@ -68,7 +70,7 @@ class TeacherLiveMonitorPanel extends StatelessWidget {
       buildWhen: teacherLiveMonitorSummaryBuildWhen,
       builder: (context, state) {
         if (state.status == TeacherLiveMonitorStatus.loading && state.students.isEmpty) {
-          return const Center(child: AppLoadingIndicator.center());
+          return TeacherSkeleton.page(TeacherSkeleton.table(rows: 6));
         }
         if (state.status == TeacherLiveMonitorStatus.error && state.students.isEmpty) {
           return Center(
@@ -260,7 +262,7 @@ class _StudentMonitorTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         side: BorderSide(color: AppColors.outlineMuted.withValues(alpha: 0.45)),
       ),
       child: Padding(
@@ -314,7 +316,7 @@ class _StudentMonitorTile extends StatelessWidget {
             if (inProgress) ...[
               const SizedBox(height: 6),
               ClipRRect(
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
                 child: LinearProgressIndicator(
                   value: pct.clamp(0, 1),
                   minHeight: 4,

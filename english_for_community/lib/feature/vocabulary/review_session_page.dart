@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/util/app_haptics.dart';
+import 'package:english_for_community/core/ui/motion/celebrate_burst.dart';
+import 'package:english_for_community/core/theme/app_motion.dart' as theme_motion;
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
@@ -55,112 +58,126 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
     final t = context.l10n;
     final vocab = AppSkillColors.vocabulary;
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: StudentMobileUi.skillAppBar(
+    return BlocConsumer<ReviewBloc, ReviewState>(
+      listener: (context, state) {},
+      builder: (context, state) {
+        final blockExit = state.status != ReviewStatus.loading &&
+            state.status != ReviewStatus.error &&
+            state.status != ReviewStatus.complete &&
+            state.currentWord != null;
+
+        return StudentMobileUi.runnerPopScope(
+          context: context,
+          blockExit: blockExit,
+          child: Scaffold(
+            backgroundColor: AppColors.surface,
+            appBar: StudentMobileUi.skillAppBar(
+              context,
+              title: t.vocabReviewSessionTitle,
+              skill: SkillType.vocabulary,
+            ),
+            body: _buildBody(context, state, t, vocab),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(
+    BuildContext context,
+    ReviewState state,
+    AppLocalizations t,
+    SkillColorSet vocab,
+  ) {
+    if (state.status == ReviewStatus.loading) {
+      return StudentMobileUi.flashcardLoading();
+    }
+    if (state.status == ReviewStatus.error) {
+      final msg = state.errorMessage;
+      return StudentMobileUi.errorRetry(
         context,
-        title: t.vocabReviewSessionTitle,
-        skill: SkillType.vocabulary,
-      ),
-      body: BlocConsumer<ReviewBloc, ReviewState>(
-        listener: (context, state) {},
-        builder: (context, state) {
-          if (state.status == ReviewStatus.loading) {
-            return const Center(child: AppLoadingIndicator.center());
-          }
-          if (state.status == ReviewStatus.error) {
-            final msg = state.errorMessage;
-            return Center(
-              child: Padding(
-                padding: StudentMobileUi.pagePadding,
-                child: StudentMobileUi.errorBanner(
-                  message: msg.isEmpty ? t.genericLoadError : msg,
-                  onRetry: () => context.read<ReviewBloc>().add(FetchReviewWords()),
-                  retryLabel: t.commonRetry,
-                ),
-              ),
-            );
-          }
-          if (state.status == ReviewStatus.complete || state.currentWord == null) {
-            return const _CompleteView();
-          }
+        message: msg.isEmpty ? t.genericLoadError : msg,
+        onRetry: () => context.read<ReviewBloc>().add(FetchReviewWords()),
+        retryLabel: t.commonRetry,
+      );
+    }
+    if (state.status == ReviewStatus.complete || state.currentWord == null) {
+      return const _CompleteView();
+    }
 
-          final word = state.currentWord!;
-          final total = state.wordsToReview.length;
-          final current = state.currentIndex + 1;
-          final progress = current / total;
+    final word = state.currentWord!;
+    final total = state.wordsToReview.length;
+    final current = state.currentIndex + 1;
+    final progress = current / total;
 
-          return Column(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            StudentMobileUi.pageHPadding,
+            AppSpacing.s4,
+            StudentMobileUi.pageHPadding,
+            AppSpacing.s4,
+          ),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  StudentMobileUi.pageHPadding,
-                  AppSpacing.s4,
-                  StudentMobileUi.pageHPadding,
-                  AppSpacing.s4,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '$current / $total',
-                          style: AppTypography.label(color: AppColors.textSecondary),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '${(progress * 100).round()}%',
-                          style: AppTypography.label(color: vocab.color),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.s3),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.chip),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: AppColors.outlineMuted,
-                        color: vocab.color,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    StudentMobileUi.pageHPadding,
-                    AppSpacing.s3,
-                    StudentMobileUi.pageHPadding,
-                    AppSpacing.s4,
+              Row(
+                children: [
+                  Text(
+                    '$current / $total',
+                    style: AppTypography.label(color: AppColors.textSecondary),
                   ),
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final minH = (constraints.maxHeight * 0.72).clamp(280.0, 420.0);
-                      return GestureDetector(
-                        onTap: () => context.read<ReviewBloc>().add(FlipCard()),
-                        child: _ReviewFlashcard(
-                          word: word.headword,
-                          ipa: word.ipa,
-                          definition: word.shortDefinition ?? '',
-                          isFlipped: state.isFlipped,
-                          tapHint: t.tapToSeeMeaning,
-                          minHeight: minH,
-                        ),
-                      );
-                    },
+                  const Spacer(),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: AppTypography.label(color: vocab.color),
                   ),
-                ),
+                ],
               ),
-              _buildButtons(context, state, t),
-              SizedBox(height: AppSpacing.s5 + MediaQuery.paddingOf(context).bottom),
+              const SizedBox(height: AppSpacing.s3),
+              StudentMobileUi.skillProgressBar(
+                context: context,
+                value: progress,
+                color: vocab.color,
+                height: 6,
+              ),
             ],
-          );
-        },
-      ),
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              StudentMobileUi.pageHPadding,
+              AppSpacing.s3,
+              StudentMobileUi.pageHPadding,
+              AppSpacing.s4,
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final minH = (constraints.maxHeight * 0.72).clamp(280.0, 420.0);
+                return GestureDetector(
+                  onTap: () {
+                    AppHaptics.select(context);
+                    context.read<ReviewBloc>().add(FlipCard());
+                  },
+                  child: _ReviewFlashcard(
+                    word: word.headword,
+                    ipa: word.ipa,
+                    definition: word.shortDefinition ?? '',
+                    isFlipped: state.isFlipped,
+                    tapHint: t.tapToSeeMeaning,
+                    minHeight: minH,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        _buildButtons(context, state, t),
+        SizedBox(height: AppSpacing.s5 + MediaQuery.paddingOf(context).bottom),
+      ],
     );
   }
 
@@ -171,7 +188,10 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: () => context.read<ReviewBloc>().add(FlipCard()),
+            onPressed: () {
+              AppHaptics.select(context);
+              context.read<ReviewBloc>().add(FlipCard());
+            },
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(48),
               backgroundColor: AppColors.primary,
@@ -195,13 +215,16 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
                 child: _FeedbackBtn(
                   label: t.srsHard,
                   accent: AppColors.danger,
-                  onPressed: () => context.read<ReviewBloc>().add(
-                        SubmitFeedback(
-                          feedback: 'hard',
-                          word: word,
-                          duration: _getElapsedSeconds(),
-                        ),
-                      ),
+                  onPressed: () {
+                    AppHaptics.confirm(context);
+                    context.read<ReviewBloc>().add(
+                          SubmitFeedback(
+                            feedback: 'hard',
+                            word: word,
+                            duration: _getElapsedSeconds(),
+                          ),
+                        );
+                  },
                 ),
               ),
               const SizedBox(width: AppSpacing.s3),
@@ -209,13 +232,16 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
                 child: _FeedbackBtn(
                   label: t.srsGood,
                   accent: AppColors.primary,
-                  onPressed: () => context.read<ReviewBloc>().add(
-                        SubmitFeedback(
-                          feedback: 'good',
-                          word: word,
-                          duration: _getElapsedSeconds(),
-                        ),
-                      ),
+                  onPressed: () {
+                    AppHaptics.confirm(context);
+                    context.read<ReviewBloc>().add(
+                          SubmitFeedback(
+                            feedback: 'good',
+                            word: word,
+                            duration: _getElapsedSeconds(),
+                          ),
+                        );
+                  },
                 ),
               ),
               const SizedBox(width: AppSpacing.s3),
@@ -223,13 +249,16 @@ class _ReviewSessionViewState extends State<_ReviewSessionView> {
                 child: _FeedbackBtn(
                   label: t.srsEasy,
                   accent: AppColors.success,
-                  onPressed: () => context.read<ReviewBloc>().add(
-                        SubmitFeedback(
-                          feedback: 'easy',
-                          word: word,
-                          duration: _getElapsedSeconds(),
-                        ),
-                      ),
+                  onPressed: () {
+                    AppHaptics.confirm(context);
+                    context.read<ReviewBloc>().add(
+                          SubmitFeedback(
+                            feedback: 'easy',
+                            word: word,
+                            duration: _getElapsedSeconds(),
+                          ),
+                        );
+                  },
                 ),
               ),
             ],
@@ -267,18 +296,18 @@ class _ReviewFlashcard extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
             border: Border.all(color: AppColors.outline),
             boxShadow: const [
               BoxShadow(
-                color: Color(0x0A000000),
+                color: AppColors.shadowCard,
                 blurRadius: 8,
                 offset: Offset(0, 2),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -293,7 +322,10 @@ class _ReviewFlashcard extends StatelessWidget {
                       vertical: AppSpacing.s7,
                     ),
                     child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
+                      duration: theme_motion.AppMotion.effective(
+                        context,
+                        theme_motion.AppMotion.page,
+                      ),
                       switchInCurve: Curves.easeOut,
                       switchOutCurve: Curves.easeIn,
                       child: isFlipped
@@ -412,7 +444,7 @@ class _BackFace extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.s5),
           decoration: BoxDecoration(
             color: AppColors.surfaceSubtle,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.outlineMuted),
           ),
           child: Text(
@@ -461,20 +493,38 @@ class _FeedbackBtn extends StatelessWidget {
   }
 }
 
-class _CompleteView extends StatelessWidget {
+class _CompleteView extends StatefulWidget {
   const _CompleteView();
+
+  @override
+  State<_CompleteView> createState() => _CompleteViewState();
+}
+
+class _CompleteViewState extends State<_CompleteView> {
+  bool _celebrate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _celebrate = true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    return StudentMobileUi.emptyState(
-      context,
-      icon: Icons.check_circle_outline_rounded,
-      title: t.vocabSessionCompleteTitle,
-      body: t.vocabSessionCompleteBody,
-      ctaLabel: t.backToHome,
-      onCta: () => Navigator.of(context).pop(),
-      skill: SkillType.vocabulary,
+    return CelebrateBurst(
+      trigger: _celebrate,
+      child: StudentMobileUi.emptyState(
+        context,
+        icon: Icons.check_circle_outline_rounded,
+        title: t.vocabSessionCompleteTitle,
+        body: t.vocabSessionCompleteBody,
+        ctaLabel: t.backToHome,
+        onCta: () => Navigator.of(context).pop(),
+        skill: SkillType.vocabulary,
+      ),
     );
   }
 }

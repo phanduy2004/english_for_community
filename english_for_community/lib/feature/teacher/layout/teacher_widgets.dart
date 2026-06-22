@@ -44,7 +44,7 @@ class TeacherKpiCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(value, style: TeacherWebUi.webKpiValue(context)),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.s1),
                 Text(label, style: TeacherWebUi.webCaption(context), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -53,12 +53,16 @@ class TeacherKpiCard extends StatelessWidget {
       ),
     );
     return RepaintBoundary(
-      child: TeacherWebUi.focusableTile(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Ink(
-          decoration: TeacherWebUi.cardDecoration(),
-          child: child,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          hoverColor: AppColors.hoverOverlay,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          child: Ink(
+            decoration: TeacherWebUi.panelDecoration(),
+            child: child,
+          ),
         ),
       ),
     );
@@ -87,7 +91,7 @@ class TeacherEmptyCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Row(
         children: [
           Icon(icon, size: 18, color: AppColors.textMuted),
@@ -206,10 +210,11 @@ class TeacherStatusPill extends StatelessWidget {
       TeacherStatusTone.warning => (AppColors.warningBg, AppColors.warning),
       TeacherStatusTone.danger => (AppColors.dangerBg, AppColors.danger),
       TeacherStatusTone.primary => (AppColors.primaryTint, AppColors.primaryDark),
+      TeacherStatusTone.secondary => (AppColors.surfaceSubtle, AppColors.textSecondary),
       TeacherStatusTone.neutral => (AppColors.outlineMuted, AppColors.textSecondary),
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(AppRadius.chip),
@@ -227,7 +232,7 @@ class TeacherStatusPill extends StatelessWidget {
   }
 }
 
-enum TeacherStatusTone { neutral, primary, success, warning, danger }
+enum TeacherStatusTone { neutral, secondary, primary, success, warning, danger }
 
 class TeacherFilterChip extends StatelessWidget {
   const TeacherFilterChip({

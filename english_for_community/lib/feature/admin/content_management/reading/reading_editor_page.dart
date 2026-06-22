@@ -1,3 +1,11 @@
+import 'dart:async';
+
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -38,6 +46,12 @@ class _ReadingEditorView extends StatefulWidget {
 
 class _ReadingEditorViewState extends State<_ReadingEditorView> {
   bool _isEditingMode = true;
+  AdminSaveState _saveState = AdminSaveState.idle;
+  DateTime? _savedAt;
+  bool _suppressNavigateOnSave = false;
+  String? _titleError;
+  String? _contentError;
+  Timer? _autosaveDebounce;
 
   // --- CONTROLLERS ---
   // General Info
@@ -68,10 +82,25 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
       _isEditingMode = true;
       _addNewQuestion(); // Add empty question
     }
+    _titleCtrl.addListener(_onFieldChanged);
+    _contentCtrl.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (_titleError != null && _titleCtrl.text.trim().isNotEmpty) {
+      setState(() => _titleError = null);
+    }
+    if (_contentError != null && _contentCtrl.text.trim().isNotEmpty) {
+      setState(() => _contentError = null);
+    }
+    if (widget.id == null || !_isEditingMode) return;
+    _autosaveDebounce?.cancel();
+    _autosaveDebounce = Timer(AppMotion.autosave, () => _onSubmit(autosave: true));
   }
 
   @override
   void dispose() {
+    _autosaveDebounce?.cancel();
     getIt<AdminReadingBloc>().add(ClearSelectedReadingEvent());
 
     _titleCtrl.dispose();
@@ -127,13 +156,26 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     }
   }
 
-  void _onSubmit() {
+  void _onSubmit({bool autosave = false}) {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    if (_titleCtrl.text.isEmpty || _contentCtrl.text.isEmpty) {
-      AppCornerToast.show(context, "Please enter title and content", error: true);
+    final titleEmpty = _titleCtrl.text.trim().isEmpty;
+    final contentEmpty = _contentCtrl.text.trim().isEmpty;
+    if (titleEmpty || contentEmpty) {
+      setState(() {
+        _titleError = titleEmpty ? 'Title is required' : null;
+        _contentError = contentEmpty ? 'Content is required' : null;
+        _saveState = AdminSaveState.error;
+      });
       return;
     }
+
+    setState(() {
+      _titleError = null;
+      _contentError = null;
+      _saveState = AdminSaveState.saving;
+      _suppressNavigateOnSave = autosave;
+    });
 
     List<ReadingQuestionEntity> questionEntities = [];
     try {
@@ -218,7 +260,12 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     return BlocListener<AdminReadingBloc, AdminReadingState>(
       listener: (context, state) {
         if (state.status == AdminReadingStatus.failure) {
-          AppCornerToast.show(context, "Error: ${state.errorMessage}", error: true);
+          if (mounted) {
+            setState(() => _saveState = AdminSaveState.error);
+          }
+          if (!_suppressNavigateOnSave) {
+            AppCornerToast.show(context, "Error: ${state.errorMessage}", error: true);
+          }
         }
 
         if (state.selectedReading != null && widget.id != null) {
@@ -229,8 +276,20 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         }
 
         if (state.status == AdminReadingStatus.saved) {
-          AppCornerToast.show(context, "Saved successfully!");
-          context.pop();
+          if (_suppressNavigateOnSave) {
+            setState(() {
+              _saveState = AdminSaveState.saved;
+              _savedAt = DateTime.now();
+              _suppressNavigateOnSave = false;
+            });
+          } else {
+            AppCornerToast.show(context, "Saved successfully!");
+            context.pop();
+          }
+        }
+
+        if (state.status == AdminReadingStatus.loading && _saveState == AdminSaveState.idle) {
+          setState(() => _saveState = AdminSaveState.saving);
         }
       },
       child: Scaffold(
@@ -244,21 +303,20 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
           title: Text(widget.id == null ? 'New Reading' : 'Edit Reading',
               style: const TextStyle(color: kTextMain, fontWeight: FontWeight.w700, fontSize: 16)),
           actions: [
-            BlocBuilder<AdminReadingBloc, AdminReadingState>(
-              builder: (context, state) {
-                if (state.status == AdminReadingStatus.loading) {
-                  return const Center(child: Padding(
-                    padding: EdgeInsets.only(right: 16),
-                    child: const AppLoadingIndicator.button(),
-                  ));
-                }
-                return TextButton(
-                  onPressed: _onSubmit,
-                  child: const Text('Save',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                );
-              },
-            )
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.s3),
+              child: AdminSaveStateIndicator(
+                state: _saveState,
+                savedAt: _savedAt,
+                onRetry: _saveState == AdminSaveState.error ? () => _onSubmit() : null,
+              ),
+            ),
+            TextButton(
+              onPressed: _saveState == AdminSaveState.saving ? null : () => _onSubmit(),
+              child: const Text('Save',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+            ),
+            const SizedBox(width: AppSpacing.s3),
           ],
           bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: kBorder, height: 1)),
         ),
@@ -266,7 +324,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         body: BlocBuilder<AdminReadingBloc, AdminReadingState>(
           builder: (context, state) {
             if (state.status == AdminReadingStatus.loading && widget.id != null && questions.isEmpty) {
-              return const Center(child: AppLoadingIndicator.center());
+              return AdminSkeleton.page(AdminSkeleton.cardList());
             }
 
             return SingleChildScrollView(
@@ -286,9 +344,9 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                             width: double.infinity,
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(AppRadius.input),
                                 border: Border.all(color: kBorder),
-                                color: const Color(0xFFF1F5F9),
+                                color: AppColors.surfaceSubtle,
                                 image: DecorationImage(
                                   image: NetworkImage(_imageUrlCtrl.text),
                                   fit: BoxFit.cover,
@@ -307,6 +365,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         const SizedBox(height: 16),
 
                         ShadcnInput(label: "Title (English) *", controller: _titleCtrl, isReadOnly: !_isEditingMode),
+                        AdminWebUi.formFieldError(context, _titleError),
                         const SizedBox(height: 16),
 
                         ShadcnInput(label: "Summary", controller: _summaryCtrl, maxLines: 2, isReadOnly: !_isEditingMode),
@@ -336,8 +395,8 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                                     height: 48,
                                     padding: const EdgeInsets.all(4),
                                     decoration: BoxDecoration(
-                                      color: _isEditingMode ? kWhite : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(8),
+                                      color: _isEditingMode ? kWhite : AppColors.surfaceSubtle,
+                                      borderRadius: BorderRadius.circular(AppRadius.input),
                                       border: Border.all(color: kBorder),
                                     ),
                                     child: Row(
@@ -350,7 +409,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                                               margin: const EdgeInsets.symmetric(horizontal: 2),
                                               decoration: BoxDecoration(
                                                 color: isSelected ? kTextMain : Colors.transparent,
-                                                borderRadius: BorderRadius.circular(6),
+                                                borderRadius: BorderRadius.circular(AppRadius.chip),
                                               ),
                                               alignment: Alignment.center,
                                               child: FittedBox(
@@ -390,16 +449,17 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFDBEAFE)),
+                            color: AppColors.infoBg,
+                            borderRadius: BorderRadius.circular(AppRadius.input),
+                            border: Border.all(color: AppColors.infoBg),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("🇬🇧 English Original", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF))),
+                              const Text("🇬🇧 English Original", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.info)),
                               const SizedBox(height: 8),
                               ShadcnInput(label: "", controller: _contentCtrl, maxLines: 8, isReadOnly: !_isEditingMode, hint: "Paste English text here..."),
+                              AdminWebUi.formFieldError(context, _contentError),
                             ],
                           ),
                         ),
@@ -407,14 +467,14 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF7ED),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFFFEDD5)),
+                            color: AppColors.warningBg,
+                            borderRadius: BorderRadius.circular(AppRadius.input),
+                            border: Border.all(color: AppColors.warningBg),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("🇻🇳 Vietnamese Translation", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF9A3412))),
+                              const Text("🇻🇳 Vietnamese Translation", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.warning)),
                               const SizedBox(height: 8),
                               ShadcnInput(label: "Translated Title", controller: _transTitleCtrl, isReadOnly: !_isEditingMode),
                               const SizedBox(height: 8),
@@ -484,7 +544,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         border: Border.all(color: kBorder),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         color: kWhite,
       ),
       child: Theme(
@@ -492,13 +552,13 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         child: ExpansionTile(
           initiallyExpanded: index == 0,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          backgroundColor: const Color(0xFFFAFAFA),
+          backgroundColor: AppColors.surfaceSubtle,
           collapsedBackgroundColor: kWhite,
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(6)),
+                decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(AppRadius.chip)),
                 child: Text("Q${index + 1}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
               const SizedBox(width: 12),
@@ -598,16 +658,16 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                        color: const Color(0xFFF0FDF4),
-                        border: Border.all(color: const Color(0xFFBBF7D0)),
-                        borderRadius: BorderRadius.circular(8)
+                        color: AppColors.successBg,
+                        border: Border.all(color: AppColors.successBg),
+                        borderRadius: BorderRadius.circular(AppRadius.input)
                     ),
                     child: Column(
                       children: [
                         Row(children: [
-                          const Icon(Icons.lightbulb, size: 18, color: Color(0xFF15803D)),
+                          const Icon(Icons.lightbulb, size: 18, color: AppColors.success),
                           const SizedBox(width: 8),
-                          const Text("Explanation / Feedback", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF15803D)))
+                          const Text("Explanation / Feedback", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.success))
                         ]),
                         const SizedBox(height: 12),
                         ShadcnInput(
@@ -655,3 +715,7 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
     );
   }
 }
+
+
+
+

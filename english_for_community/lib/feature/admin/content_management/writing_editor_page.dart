@@ -1,3 +1,5 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -89,7 +91,7 @@ class _WritingEditorPageState extends State<WritingEditorPage> {
                           suffixIcon: Container(
                             margin: const EdgeInsets.all(10),
                             width: 20, height: 20,
-                            decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(4)), // Demo color
+                            decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(AppRadius.xs)), // Demo color
                           ),
                         ),
                       ),
@@ -107,7 +109,7 @@ class _WritingEditorPageState extends State<WritingEditorPage> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(AppRadius.input)),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
@@ -126,3 +128,4 @@ class _WritingEditorPageState extends State<WritingEditorPage> {
     );
   }
 }
+

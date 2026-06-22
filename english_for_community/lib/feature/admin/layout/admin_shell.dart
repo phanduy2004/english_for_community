@@ -16,6 +16,7 @@ import 'package:english_for_community/feature/admin/user_management/user_managem
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -247,7 +248,7 @@ class _AdminSidebar extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppRadius.input),
                           ),
                           child: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.onPrimary),
                         ),
@@ -269,7 +270,7 @@ class _AdminSidebar extends StatelessWidget {
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(AppRadius.input),
                           ),
                           child: const Icon(Icons.admin_panel_settings_outlined, size: 16, color: AppColors.onPrimary),
                         ),
@@ -340,17 +341,20 @@ class _SidebarNavTile extends StatelessWidget {
     final bg = selected ? AppColors.primaryTint : Colors.transparent;
     final fg = selected ? AppColors.primaryDark : AppColors.textPrimary;
     final weight = selected ? FontWeight.w600 : FontWeight.w400;
+    final radius = BorderRadius.circular(AppRadius.input);
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
-      child: Material(
-        color: bg,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: SizedBox(
-            height: AdminWebUi.sidebarItemHeight,
-            child: Row(
+      child: AdminWebUi.focusableTile(
+        onTap: onTap,
+        borderRadius: radius,
+        semanticLabel: item.label,
+        child: ClipRRect(
+          borderRadius: radius,
+          child: ColoredBox(
+            color: bg,
+            child: SizedBox(
+              height: AdminWebUi.sidebarItemHeight,
+              child: Row(
               children: [
                 const SizedBox(width: 12),
                 Icon(selected ? item.selectedIcon : item.icon, size: 18, color: fg),
@@ -369,6 +373,7 @@ class _SidebarNavTile extends StatelessWidget {
                   ),
                 ],
               ],
+              ),
             ),
           ),
         ),
@@ -389,23 +394,21 @@ class _SidebarUserFooter extends StatelessWidget {
         final user = state.userEntity;
         final name = user?.fullName.trim().isNotEmpty == true ? user!.fullName : '—';
         final email = user?.email ?? '';
+        final avatarUrl = user?.avatarUrl;
         if (collapsed) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
             child: Center(
               child: Tooltip(
                 message: name,
-                waitDuration: const Duration(milliseconds: 400),
+                waitDuration: AppMotion.base,
                 child: InkWell(
                   onTap: () => showAdminAccountMenu(context),
-                  borderRadius: BorderRadius.circular(20),
-                  child: CircleAvatar(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: AdminWebUi.userAvatarCircle(
+                    avatarUrl: avatarUrl,
+                    displayName: name,
                     radius: 16,
-                    backgroundColor: AppColors.primaryTint,
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                    ),
                   ),
                 ),
               ),
@@ -416,13 +419,10 @@ class _SidebarUserFooter extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
           child: Row(
             children: [
-              CircleAvatar(
+              AdminWebUi.userAvatarCircle(
+                avatarUrl: avatarUrl,
+                displayName: name,
                 radius: 14,
-                backgroundColor: AppColors.primaryTint,
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -505,3 +505,6 @@ class _RouteContextLabel extends StatelessWidget {
     return l10n.adminConsoleTitle;
   }
 }
+
+
+

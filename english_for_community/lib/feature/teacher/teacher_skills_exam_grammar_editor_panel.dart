@@ -429,7 +429,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
             style: TeacherWebUi.webBody(context),
             icon: const Icon(Icons.expand_more_rounded, color: AppColors.textMuted),
             menuMaxHeight: 280,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             dropdownColor: AppColors.surfaceCard,
             selectedItemBuilder: (ctx) => [
               for (final opt in options)
@@ -486,7 +486,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         border: Border.all(color: AppColors.outlineMuted),
       ),
       child: Text(
@@ -736,7 +736,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           border: Border.all(color: AppColors.outline),
         ),
         child: Row(

@@ -1,8 +1,12 @@
+import 'package:english_for_community/core/theme/admin_status_palette.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -196,7 +200,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
             final dataCompletion = totalCells == 0 ? 100 : (((totalCells - emptyCells) / totalCells) * 100).round();
 
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
               backgroundColor: Colors.white,
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 700),
@@ -249,7 +253,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                                 dataRows.isEmpty
                                     ? '0 rows'
                                     : 'Rows ${start + 1}–$end of ${dataRows.length}',
-                                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                                style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
                               ),
                             ],
                           ),
@@ -270,7 +274,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                     // --- TABLE ---
                     Expanded(
                       child: Container(
-                        color: const Color(0xFFF8FAFC),
+                        color: AppColors.surface,
                         child: SingleChildScrollView(
                           scrollDirection: Axis.vertical,
                           child: SingleChildScrollView(
@@ -280,7 +284,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                               headingRowHeight: 44,
                               dataRowMinHeight: 40,
                               dataRowMaxHeight: 56,
-                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF1F5F9)),
+                              headingRowColor: WidgetStateProperty.all(AppColors.surfaceSubtle),
                               columns: displayHeaders
                                   .asMap()
                                   .entries
@@ -294,7 +298,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: hint.isEmpty ? 12 : 11,
-                                            color: const Color(0xFF0F172A),
+                                            color: AppColors.textPrimary,
                                           ),
                                         ),
                                       );
@@ -457,28 +461,16 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
   Widget _buildCsvDataCell(String rawHeader, String rawValue) {
     final formatted = _formatCsvCell(rawHeader, rawValue);
     final h = rawHeader.toLowerCase();
-    final lower = rawValue.toLowerCase();
     final isStatus = h.contains('status') || h.contains('decision');
     final isBoolean = rawValue == 'true' || rawValue == 'false';
     if (isStatus || isBoolean) {
-      Color bg = const Color(0xFFF1F5F9);
-      Color fg = const Color(0xFF334155);
-      if (lower == 'approved' || lower == 'resolved' || lower == 'active' || lower == 'true') {
-        bg = const Color(0xFFDCFCE7);
-        fg = const Color(0xFF166534);
-      } else if (lower == 'rejected' || lower == 'banned' || lower == 'deleted' || lower == 'false') {
-        bg = const Color(0xFFFEE2E2);
-        fg = const Color(0xFF991B1B);
-      } else if (lower == 'pending' || lower == 'inactive') {
-        bg = const Color(0xFFFEF3C7);
-        fg = const Color(0xFF92400E);
-      }
+      final colors = AdminStatusPalette.csvSemanticColors(rawValue);
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+        decoration: BoxDecoration(color: colors.bg, borderRadius: BorderRadius.circular(AppRadius.pill)),
         child: Text(
           formatted,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: colors.fg),
         ),
       );
     }
@@ -488,7 +480,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
       style: TextStyle(
         fontSize: 12,
         fontFamily: _isIdLikeColumn(rawHeader) ? 'monospace' : null,
-        color: const Color(0xFF334155),
+        color: AppColors.textSecondary,
       ),
     );
     if (formatted != rawValue && rawValue.length > 24) {
@@ -545,12 +537,12 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
       prefixIcon: const Icon(Icons.search, size: 18, color: Colors.black45),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        borderSide: const BorderSide(color: AppColors.outline),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(6),
-        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        borderSide: const BorderSide(color: AppColors.outline),
       ),
       filled: true,
       fillColor: Colors.white,
@@ -595,16 +587,16 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                       Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                       SizedBox(height: 4),
                       Text('Monitor moderation, roles, and export system data.',
-                          style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                          style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                     ],
                   ),
                 ),
                 Wrap(
                   spacing: 12,
                   children: [
-                    _MetricChip(label: 'Pending', value: _queue.length.toString(), color: const Color(0xFFE0E7FF), textColor: const Color(0xFF3730A3)),
-                    _MetricChip(label: 'High Priority', value: _highPriorityCount.toString(), color: const Color(0xFFFEE2E2), textColor: const Color(0xFF991B1B)),
-                    _MetricChip(label: 'SLA Breached', value: _breachedCount.toString(), color: const Color(0xFFFFEDD5), textColor: const Color(0xFF9A3412)),
+                    _MetricChip(label: 'Pending', value: _queue.length.toString(), color: AdminStatusPalette.scheduledBg, textColor: AdminStatusPalette.scheduledFg),
+                    _MetricChip(label: 'High Priority', value: _highPriorityCount.toString(), color: AdminStatusPalette.highBg, textColor: AdminStatusPalette.highFg),
+                    _MetricChip(label: 'SLA Breached', value: _breachedCount.toString(), color: AppColors.warningBg, textColor: AppColors.warning),
                   ],
                 ),
               ],
@@ -613,7 +605,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
             if (_error != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(AppRadius.input)),
                 child: Text(_error!, style: TextStyle(color: Colors.red.shade800, fontSize: 13)),
               ),
               const SizedBox(height: 16),
@@ -624,7 +616,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
               title: 'Moderation Queue',
               onRefresh: _loadQueue,
               child: _loadingQueue
-                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: AppLoadingIndicator.center()))
+                  ? AdminSkeleton.page(AdminSkeleton.cardList())
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -688,19 +680,19 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                         if (_queue.isEmpty)
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            child: Text('No pending items from the server.', style: TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                            child: Text('No pending items from the server.', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
                           )
                         else if (filteredQueue.isEmpty)
                           Padding(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                             child: Row(
                               children: [
-                                const Icon(Icons.filter_alt_off_outlined, size: 18, color: Color(0xFF64748B)),
+                                const Icon(Icons.filter_alt_off_outlined, size: 18, color: AppColors.textMuted),
                                 const SizedBox(width: 8),
                                 const Expanded(
                                   child: Text(
                                     'No rows match the current filters. Adjust search or filters, or clear them.',
-                                    style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+                                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
                                   ),
                                 ),
                               ],
@@ -714,7 +706,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                               headingRowHeight: 40,
                               dataRowMinHeight: 36,
                               dataRowMaxHeight: 46,
-                              headingRowColor: WidgetStateProperty.all(const Color(0xFFF8FAFC)),
+                              headingRowColor: WidgetStateProperty.all(AppColors.surface),
                               columns: const [
                                 DataColumn(label: Text('Title', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
                                 DataColumn(label: Text('Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
@@ -800,7 +792,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                           title: 'Active Users',
                           subtitle: 'Current user accounts',
                           icon: Icons.group_outlined,
-                          highlight: const Color(0xFFDBEAFE),
+                          highlight: AppColors.infoBg,
                           keyPoints: const ['Profile info', 'Learning status', 'Account flags'],
                           onTap: () => _previewCsv('users'),
                         ),
@@ -808,7 +800,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                           title: 'Deleted Users',
                           subtitle: 'Soft-deleted accounts',
                           icon: Icons.restore_from_trash_outlined,
-                          highlight: const Color(0xFFFFEDD5),
+                          highlight: AppColors.warningBg,
                           keyPoints: const ['Deletion time', 'Basic profile', 'Recovery check'],
                           onTap: () => _previewCsv('users', onlyDeleted: true),
                         ),
@@ -816,7 +808,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                           title: 'Issue Reports',
                           subtitle: 'User report tickets',
                           icon: Icons.bug_report_outlined,
-                          highlight: const Color(0xFFFEE2E2),
+                          highlight: AppColors.dangerBg,
                           keyPoints: const ['Report type', 'Current status', 'Admin response'],
                           onTap: () => _previewCsv('reports'),
                         ),
@@ -824,7 +816,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                           title: 'Audit Logs',
                           subtitle: 'Admin action history',
                           icon: Icons.fact_check_outlined,
-                          highlight: const Color(0xFFE0E7FF),
+                          highlight: AppColors.infoBg,
                           keyPoints: const ['Action', 'Actor', 'Target + time'],
                           onTap: () => _previewCsv('audit_logs'),
                         ),
@@ -841,11 +833,11 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
               title: 'Roles & Permissions',
               onRefresh: _loadPermissions,
               child: _loadingPerms
-                  ? const Center(child: Padding(padding: EdgeInsets.all(20), child: AppLoadingIndicator.center()))
+                  ? AdminSkeleton.page(AdminSkeleton.cardList())
                   : permissionRows.isEmpty
                       ? const Padding(
                           padding: EdgeInsets.all(20),
-                          child: Text('No permission data.', style: TextStyle(color: Color(0xFF64748B), fontSize: 14)),
+                          child: Text('No permission data.', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
                         )
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -899,8 +891,8 @@ class _CompactDropdown extends StatelessWidget {
       icon: const Icon(Icons.arrow_drop_down, size: 20),
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: const BorderSide(color: Color(0xFFCBD5E1))),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.chip), borderSide: const BorderSide(color: AppColors.outline)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.chip), borderSide: const BorderSide(color: AppColors.outline)),
         filled: true,
         fillColor: Colors.white,
         isDense: true,
@@ -922,7 +914,7 @@ class _MetricChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.chip)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -958,12 +950,12 @@ class _ExportDatasetCard extends StatelessWidget {
       child: Material(
         color: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: const BorderSide(color: AppColors.outline),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -973,8 +965,8 @@ class _ExportDatasetCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: highlight, borderRadius: BorderRadius.circular(8)),
-                      child: Icon(icon, size: 20, color: const Color(0xFF334155)),
+                      decoration: BoxDecoration(color: highlight, borderRadius: BorderRadius.circular(AppRadius.input)),
+                      child: Icon(icon, size: 20, color: AppColors.textSecondary),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -983,7 +975,7 @@ class _ExportDatasetCard extends StatelessWidget {
                         children: [
                           Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
-                          Text(subtitle, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                          Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                         ],
                       ),
                     ),
@@ -994,12 +986,12 @@ class _ExportDatasetCard extends StatelessWidget {
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
-                          const Icon(Icons.check_circle_outline, size: 13, color: Color(0xFF64748B)),
+                          const Icon(Icons.check_circle_outline, size: 13, color: AppColors.textMuted),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               point,
-                              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                             ),
                           ),
                         ],
@@ -1035,18 +1027,18 @@ class _DialogMetricPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.outline),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF64748B)),
+          Icon(icon, size: 14, color: AppColors.textMuted),
           const SizedBox(width: 6),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
         ],
       ),
     );
@@ -1064,8 +1056,8 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
         ],
@@ -1084,7 +1076,7 @@ class _SectionCard extends StatelessWidget {
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 8),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: AppColors.outline),
                       ),
                       onPressed: onRefresh,
                       icon: const Icon(Icons.refresh, size: 14, color: Colors.black87),
@@ -1177,15 +1169,15 @@ class _PriorityChip extends StatelessWidget {
     final Color fg;
     switch (priority) {
       case 'high':
-        bg = const Color(0xFFFEE2E2); fg = const Color(0xFFB91C1C); break;
+        bg = AppColors.dangerBg; fg = AppColors.danger; break;
       case 'medium':
-        bg = const Color(0xFFFEF3C7); fg = const Color(0xFF92400E); break;
+        bg = AppColors.warningBg; fg = AppColors.warning; break;
       default:
-        bg = const Color(0xFFDCFCE7); fg = const Color(0xFF166534);
+        bg = AppColors.successBg; fg = AppColors.success;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(priority.toUpperCase(), style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 10)),
     );
   }
@@ -1210,9 +1202,9 @@ class _RolePermissionTile extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.outline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1222,7 +1214,7 @@ class _RolePermissionTile extends StatelessWidget {
               Icon(
                 role == 'admin' ? Icons.admin_panel_settings : Icons.person_outline,
                 size: 18,
-                color: role == 'admin' ? const Color(0xFFB91C1C) : const Color(0xFF475569),
+                color: role == 'admin' ? AppColors.danger : AppColors.textMuted,
               ),
               const SizedBox(width: 8),
               Text(
@@ -1230,7 +1222,7 @@ class _RolePermissionTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: role == 'admin' ? const Color(0xFFB91C1C) : const Color(0xFF0F172A),
+                  color: role == 'admin' ? AppColors.danger : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(width: 8),
@@ -1238,24 +1230,24 @@ class _RolePermissionTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.dangerBg,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                   child: const Text(
                     'FULL ACCESS',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C)),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.danger),
                   ),
                 ),
               if (!isWildcard && permissions.isEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(4),
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                   child: const Text(
                     'NO ADMIN ACCESS',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted),
                   ),
                 ),
             ],
@@ -1295,10 +1287,10 @@ class _PermissionTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: granted ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(4),
+        color: granted ? AppColors.successBg : AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
         border: Border.all(
-          color: granted ? const Color(0xFF86EFAC) : const Color(0xFFE2E8F0),
+          color: granted ? AppColors.success : AppColors.outline,
         ),
       ),
       child: Text(
@@ -1306,9 +1298,11 @@ class _PermissionTag extends StatelessWidget {
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: granted ? const Color(0xFF166534) : const Color(0xFF94A3B8),
+          color: granted ? AppColors.success : AppColors.textMuted,
         ),
       ),
     );
   }
 }
+
+

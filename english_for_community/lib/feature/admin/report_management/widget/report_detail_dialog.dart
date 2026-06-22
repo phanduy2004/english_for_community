@@ -1,3 +1,6 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import '../../../../core/entity/report_entity.dart';
@@ -17,14 +20,14 @@ class ReportDetailDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const textMain = Color(0xFF09090B);
-    const textMuted = Color(0xFF71717A);
-    const borderCol = Color(0xFFE4E4E7);
+    const textMain = AppColors.textPrimary;
+    const textMuted = AppColors.textMuted;
+    const borderCol = AppColors.outline;
 
     return Dialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750), // Tăng maxHeight xíu vì layout dài hơn
@@ -64,8 +67,8 @@ class ReportDetailDialog extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                           border: Border.all(color: borderCol)
                       ),
                       child: Text(report.description, style: const TextStyle(color: textMain, height: 1.5, fontSize: 14)),
@@ -91,7 +94,7 @@ class ReportDetailDialog extends StatelessWidget {
                                   width: 100,
                                   height: 100,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(AppRadius.input),
                                     border: Border.all(color: borderCol),
                                     image: DecorationImage(
                                       image: NetworkImage(imageUrl),
@@ -113,7 +116,7 @@ class ReportDetailDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                         border: Border.all(color: borderCol),
                       ),
                       child: Column(
@@ -131,7 +134,7 @@ class ReportDetailDialog extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                         border: Border.all(color: borderCol),
                       ),
                       child: Column(
@@ -204,7 +207,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
-                      return const Center(child: AppLoadingIndicator.center(color: Colors.white));
+                      return AdminSkeleton.page(AdminSkeleton.cardList());
                     },
                   ),
                 ),
@@ -227,7 +230,7 @@ class _FullScreenImageViewerState extends State<_FullScreenImageViewer> {
           child: Center(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(AppRadius.lg)),
               child: Text('${_currentIndex + 1} / ${widget.images.length}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600, decoration: TextDecoration.none)),
             ),
           ),
@@ -245,7 +248,7 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF94A3B8), letterSpacing: 0.5)),
+      child: Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted, letterSpacing: 0.5)),
     );
   }
 }
@@ -257,9 +260,11 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(children: [
-      Icon(icon, size: 16, color: const Color(0xFF64748B)),
+      Icon(icon, size: 16, color: AppColors.textMuted),
       const SizedBox(width: 10),
-      Expanded(child: Text(text, style: const TextStyle(fontSize: 14, color: Color(0xFF0F172A), fontWeight: FontWeight.w500))),
+      Expanded(child: Text(text, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary, fontWeight: FontWeight.w500))),
     ]);
   }
 }
+
+

@@ -2,6 +2,7 @@
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/repository/listening_repository.dart';
+import '../../../layout/admin_widgets.dart';
 import 'admin_listening_event.dart';
 import 'admin_listening_state.dart';
 
@@ -27,7 +28,7 @@ class AdminListeningBloc extends Bloc<AdminListeningEvent, AdminListeningState> 
     final result = await _repository.deleteListening(event.id);
     result.fold(
           (failure) => emit(state.copyWith(status: AdminListeningStatus.failure, errorMessage: failure.message)),
-          (success) => add(const GetAdminListeningListEvent(page: 1, limit: 9999)),
+          (success) => add(GetAdminListeningListEvent(page: 1, limit: kAdminDefaultRowsPerPage)),
     );
   }
 

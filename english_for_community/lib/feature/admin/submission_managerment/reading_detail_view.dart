@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
-import '../../../../../../core/entity/reading/reading_attempt_entity.dart';
-import '../../../../../../core/entity/reading/reading_entity.dart'; // Import để dùng QuestionEntity
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/entity/reading/reading_attempt_entity.dart';
+import 'package:english_for_community/core/entity/reading/reading_entity.dart';
 
 class ReadingDetailView extends StatelessWidget {
   final ReadingAttemptEntity data;
@@ -9,7 +11,7 @@ class ReadingDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy thông tin bài đọc & câu hỏi từ readingDetail
+    // L?y th�ng tin b�i d?c & c�u h?i t? readingDetail
     final readingTitle = data.readingDetail?.title ?? 'Reading Passage';
     final readingContent = data.readingDetail?.content ?? '';
     final questions = data.readingDetail?.questions ?? [];
@@ -33,13 +35,13 @@ class ReadingDetailView extends StatelessWidget {
 
           // 2. READING PASSAGE (Expandable)
           if (readingContent.isNotEmpty) ...[
-            Text(readingTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+            Text(readingTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
@@ -49,11 +51,11 @@ class ReadingDetailView extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     readingContent,
-                    style: const TextStyle(fontSize: 14, height: 1.6, color: Color(0xFF334155)),
-                    maxLines: 10, // Giới hạn dòng ban đầu
+                    style: const TextStyle(fontSize: 14, height: 1.6, color: AppColors.textSecondary),
+                    maxLines: 10, // Gi?i h?n d�ng ban d?u
                     overflow: TextOverflow.ellipsis,
                   ),
-                  // Có thể thêm nút "Read more" nếu muốn
+                  // C� th? th�m n�t "Read more" n?u mu?n
                 ],
               ),
             ),
@@ -61,7 +63,7 @@ class ReadingDetailView extends StatelessWidget {
           ],
 
           // 3. DETAILED ANSWERS REVIEW
-          const Text("Detailed Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const Text("Detailed Review", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const SizedBox(height: 16),
 
           if (questions.isEmpty)
@@ -74,10 +76,10 @@ class ReadingDetailView extends StatelessWidget {
               separatorBuilder: (_, __) => const SizedBox(height: 24),
               itemBuilder: (context, index) {
                 final q = questions[index];
-                // Tìm câu trả lời của user cho câu hỏi này
-                // (Giả sử answers map theo questionId hoặc index)
+                // T�m c�u tr? l?i c?a user cho c�u h?i n�y
+                // (Gi? s? answers map theo questionId ho?c index)
                 final userAnswer = data.answers.firstWhere(
-                      (a) => a.questionId == q.id, // Cần đảm bảo QuestionEntity có id
+                      (a) => a.questionId == q.id, // C?n d?m b?o QuestionEntity c� id
                   orElse: () => const AnswerDetailEntity(questionId: '', chosenIndex: -1, isCorrect: false),
                 );
 
@@ -97,7 +99,7 @@ class ReadingDetailView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: isCorrect ? Colors.green.withValues(alpha: 0.3) : Colors.red.withValues(alpha: 0.3)),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
@@ -112,7 +114,7 @@ class ReadingDetailView extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: isCorrect ? Colors.green : (isSkipped ? Colors.grey : Colors.red),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
                 ),
                 child: Text("Q$index", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
               ),
@@ -149,7 +151,7 @@ class ReadingDetailView extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: bgColor,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: borderColor),
               ),
               child: Row(
@@ -170,26 +172,26 @@ class ReadingDetailView extends StatelessWidget {
               padding: const EdgeInsets.all(12),
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F9FF), // Light Blue
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFBAE6FD)),
+                color: AppColors.infoBg, // Light Blue
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                border: Border.all(color: AppColors.outline),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.lightbulb_outline, size: 16, color: Color(0xFF0284C7)),
+                      Icon(Icons.lightbulb_outline, size: 16, color: AppColors.info),
                       SizedBox(width: 6),
-                      Text("Explanation", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0284C7))),
+                      Text("Explanation", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.info)),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(q.feedback?.reasoning ?? '', style: const TextStyle(fontSize: 13, color: Color(0xFF0369A1))),
+                  Text(q.feedback?.reasoning ?? '', style: const TextStyle(fontSize: 13, color: AppColors.info)),
                   if (q.feedback?.keySentence != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
-                      child: Text("Key: \"${q.feedback!.keySentence}\"", style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Color(0xFF0284C7))),
+                      child: Text("Key: \"${q.feedback!.keySentence}\"", style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: AppColors.info)),
                     ),
                 ],
               ),
@@ -205,7 +207,7 @@ class ReadingDetailView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         children: [
@@ -223,3 +225,5 @@ class ReadingDetailView extends StatelessWidget {
     return '${m}m ${s}s';
   }
 }
+
+

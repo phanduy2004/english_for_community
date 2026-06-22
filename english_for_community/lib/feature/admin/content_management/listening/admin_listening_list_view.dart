@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,7 +33,7 @@ class _AdminListeningListViewState extends State<AdminListeningListView> {
   Widget build(BuildContext context) {
     // Bọc BlocProvider ở cấp cao nhất của widget build
     return BlocProvider(
-      create: (_) => getIt<AdminListeningBloc>()..add(const GetAdminListeningListEvent(limit: 9999, page: 1)),
+      create: (_) => getIt<AdminListeningBloc>()..add(GetAdminListeningListEvent(limit: kAdminDefaultRowsPerPage, page: 1)),
       child: const _AdminListeningListBody(),
     );
   }
@@ -44,6 +48,14 @@ class _AdminListeningListBody extends StatefulWidget {
 
 class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
   final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
+
+  void _fetchData() {
+    context.read<AdminListeningBloc>().add(
+      GetAdminListeningListEvent(limit: _rowsPerPage, page: _page),
+    );
+  }
 
   void _openEditor(BuildContext context, String? id) async {
 
@@ -54,10 +66,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
     );
 
     if (mounted) {
-      // ✅ Refresh listsdss sTẠdsI ĐÂY lsà an tosàn nhấst
-      context.read<AdminListeningBloc>().add(
-        const GetAdminListeningListEvent(limit: 9999, page: 1),
-      );
+      _fetchData();
     }
   }
 
@@ -99,47 +108,70 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
           )
         ],
       ),
-      body: BlocBuilder<AdminListeningBloc, AdminListeningState>(
-        builder: (context, state) {
-          if (state.status == AdminListeningStatus.loading && state.listenings.isEmpty) {
-            return const Center(child: AppLoadingIndicator.center());
-          }
+      body: Column(
+        children: [
+          Expanded(
+            child: BlocBuilder<AdminListeningBloc, AdminListeningState>(
+              builder: (context, state) {
+                if (state.status == AdminListeningStatus.loading && state.listenings.isEmpty) {
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                }
 
-          if (state.listenings.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.headphones, size: 64, color: kTextMuted),
-                  const SizedBox(height: 16),
-                  const Text("Chưa có bài nghe nào.", style: TextStyle(color: kTextMuted)),
-                  TextButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text("Tạo bài đầu tiên"),
-                    onPressed: () => _openEditor(context, null),
-                  )
-                ],
-              ),
-            );
-          }
+                if (state.listenings.isEmpty) {
+                  return Center(
+                    child: AdminEmptyCard(
+                      message: 'Chưa có bài nghe nào.',
+                      icon: Icons.headphones_outlined,
+                      actionLabel: 'Tạo bài đầu tiên',
+                      onAction: () => _openEditor(context, null),
+                    ),
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<AdminListeningBloc>().add(
-                const GetAdminListeningListEvent(limit: 9999, page: 1),
-              );
-            },
-            child: ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.listenings.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final item = state.listenings[index];
-                return _buildListItem(context, item);
+                return RefreshIndicator(
+                  onRefresh: () async => _fetchData(),
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: state.listenings.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = state.listenings[index];
+                      return _buildListItem(context, item);
+                    },
+                  ),
+                );
               },
             ),
-          );
-        },
+          ),
+          BlocBuilder<AdminListeningBloc, AdminListeningState>(
+            builder: (context, state) {
+              final p = state.pagination;
+              if (p.totalPages <= 1 && p.totalItems <= _rowsPerPage) {
+                return const SizedBox.shrink();
+              }
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.s4),
+                child: AdminPaginationBar(
+                  page: p.currentPage,
+                  totalPages: p.totalPages.clamp(1, 9999),
+                  totalRows: p.totalItems,
+                  rowsPerPage: _rowsPerPage,
+                  onRowsPerPageChanged: (v) {
+                    setState(() {
+                      _rowsPerPage = v;
+                      _page = 1;
+                    });
+                    _fetchData();
+                  },
+                  onPageChanged: (p) {
+                    setState(() => _page = p);
+                    _fetchData();
+                  },
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
@@ -150,7 +182,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
@@ -160,7 +192,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
         ),
         content: const Text(
           "This will remove this listening lesson and all related cues.",
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         actions: [
           OutlinedButton(
@@ -187,8 +219,8 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
       builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+          side: const BorderSide(color: AppColors.outline),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
@@ -199,7 +231,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const Icon(Icons.restore_from_trash_outlined, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     const Text('Deleted Listening Lessons', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -211,7 +243,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedListenings(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
+                      if (!snapshot.hasData) return AdminSkeleton.page(AdminSkeleton.cardList());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -229,9 +261,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
                                 await _adminRemote.restoreListening(id);
                                 if (!mounted) return;
                                 Navigator.pop(ctx);
-                                context.read<AdminListeningBloc>().add(
-                                  const GetAdminListeningListEvent(limit: 9999, page: 1),
-                                );
+                                _fetchData();
                                 AppCornerToast.show(context, 'Listening restored');
                               },
                               child: const Text('Restore'),
@@ -265,9 +295,9 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
           Container(
             width: 48, height: 48,
             decoration: BoxDecoration(
-              color: const Color(0xFFEFF6FF),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFDBEAFE)),
+              color: AppColors.infoBg,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              border: Border.all(color: AppColors.infoBg),
             ),
             child: const Icon(Icons.graphic_eq, color: Colors.blue),
           ),
@@ -343,7 +373,7 @@ class _MetaBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(
         text,
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
@@ -351,3 +381,6 @@ class _MetaBadge extends StatelessWidget {
     );
   }
 }
+
+
+

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
@@ -171,7 +173,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
     final t = context.l10n;
     return Dialog(
       backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -182,7 +184,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
           children: [
             Expanded(
               child: _isLoading
-                  ? const Center(child: AppLoadingIndicator.center())
+                  ? StudentMobileUi.runnerLoading()
                   : _error.isNotEmpty
                   ? _buildErrorState()
                   : _buildSuccessState(),
@@ -197,7 +199,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.textPrimary,
                   side: const BorderSide(color: AppColors.outline),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onPressed: () => Navigator.of(context).pop(),
@@ -271,7 +273,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
                 onPressed: _pronounceWord,
                 style: IconButton.styleFrom(
                   backgroundColor: primaryColor.withValues(alpha: 0.1),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                 ),
                 icon: Icon(Icons.volume_up_rounded, color: primaryColor),
               ),
@@ -285,7 +287,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: AppColors.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: AppColors.outline),
               ),
               child: Row(

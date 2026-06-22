@@ -144,7 +144,7 @@ class AppNavigationBar extends StatelessWidget {
         : currentIndex.clamp(0, items.length - 1);
 
     return SizedBox(
-      height: 54,
+      height: 60,
       child: NavigationBar(
         selectedIndex: safeIndex,
         labelBehavior: labelBehavior,

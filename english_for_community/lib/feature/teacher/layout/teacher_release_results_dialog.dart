@@ -1,7 +1,9 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Confirm what students may see when grades are published.
@@ -41,10 +43,9 @@ class _TeacherReleaseResultsDialogState extends State<TeacherReleaseResultsDialo
     final l10n = context.l10n;
     return TeacherDialogShell(
       title: l10n.teacherReleaseResultsDialogTitle,
-      subtitle: l10n.teacherReleaseResultsDialogSubtitle,
       icon: Icons.publish_outlined,
       width: 480,
-      maxBodyHeight: 320,
+      maxBodyHeight: 360,
       footer: TeacherDialogFooterActions(
         cancelLabel: l10n.cancel,
         primaryLabel: l10n.teacherExamReleaseResults,
@@ -54,6 +55,8 @@ class _TeacherReleaseResultsDialogState extends State<TeacherReleaseResultsDialo
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _ConsequenceBanner(message: l10n.teacherReleaseResultsDialogSubtitle),
+          const SizedBox(height: AppSpacing.s4),
           _DetailTile(
             selected: _detailLevel == 'score_only',
             icon: Icons.leaderboard_outlined,
@@ -68,6 +71,41 @@ class _TeacherReleaseResultsDialogState extends State<TeacherReleaseResultsDialo
             title: l10n.teacherResultsDetailFull,
             hint: l10n.teacherResultsDetailFullHint,
             onTap: () => setState(() => _detailLevel = 'full_detail'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Banner cảnh báo hệ quả cho hành động ảnh hưởng học sinh (`docs/ui-ux-system/18` §5.8).
+class _ConsequenceBanner extends StatelessWidget {
+  const _ConsequenceBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+      decoration: BoxDecoration(
+        color: AppColors.warningBg,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, size: 16, color: AppColors.warning),
+          const SizedBox(width: AppSpacing.s3),
+          Expanded(
+            child: Text(
+              message,
+              style: TeacherWebUi.webCaption(context).copyWith(
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),
@@ -96,9 +134,9 @@ class _DetailTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.segment,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
           child: Row(
@@ -109,7 +147,7 @@ class _DetailTile extends StatelessWidget {
                 height: 32,
                 decoration: BoxDecoration(
                   color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Icon(
                   icon,

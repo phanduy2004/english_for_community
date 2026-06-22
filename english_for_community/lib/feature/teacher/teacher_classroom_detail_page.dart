@@ -1236,10 +1236,11 @@ class _MemberRow extends StatelessWidget {
   }
 
   Widget _buildAvatar() {
-    if (avatar != null && avatar!.isNotEmpty) {
+    final bg = TeacherWebUi.networkAvatar(avatar, logicalSize: 36);
+    if (bg != null) {
       return CircleAvatar(
         radius: 18,
-        backgroundImage: TeacherWebUi.networkAvatar(avatar, logicalSize: 36),
+        backgroundImage: bg,
         backgroundColor: AppColors.surfaceSubtle,
       );
     }
@@ -2172,6 +2173,7 @@ class _CoTeacherSearchResultRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final username = _username();
+    final teacherAvatar = TeacherWebUi.networkAvatar(teacher['avatarUrl'] as String?, logicalSize: 36);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
@@ -2179,15 +2181,13 @@ class _CoTeacherSearchResultRow extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: AppColors.primaryTint,
-            backgroundImage: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
-                ? TeacherWebUi.networkAvatar(teacher['avatarUrl'] as String, logicalSize: 36)
-                : null,
-            child: (teacher['avatarUrl'] as String?)?.isNotEmpty == true
-                ? null
-                : Text(
+            backgroundImage: teacherAvatar,
+            child: teacherAvatar == null
+                ? Text(
                     _initial(),
                     style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w700),
-                  ),
+                  )
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2242,7 +2242,7 @@ class _SettingsSectionCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -2328,6 +2328,7 @@ class _TeacherPersonTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final memberAvatar = TeacherWebUi.networkAvatar(avatarUrl, logicalSize: 40);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -2340,8 +2341,8 @@ class _TeacherPersonTile extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: AppColors.primaryTint,
-            backgroundImage: TeacherWebUi.networkAvatar(avatarUrl, logicalSize: 36),
-            child: (avatarUrl == null || avatarUrl!.isEmpty)
+            backgroundImage: memberAvatar,
+            child: memberAvatar == null
                 ? Text(initial, style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w700))
                 : null,
           ),
@@ -2406,7 +2407,7 @@ class _DescriptionPanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2446,7 +2447,7 @@ class _InvitePanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

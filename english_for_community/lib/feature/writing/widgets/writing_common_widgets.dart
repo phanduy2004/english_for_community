@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 
 import '../../../core/locale/l10n_context.dart';
 import '../../../core/theme/app_color.dart';
@@ -13,7 +15,7 @@ class WritingHeader extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.sheet),
         color: AppColors.primary,
         boxShadow: [
           BoxShadow(
@@ -51,7 +53,7 @@ class WritingHeader extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: AppColors.onPrimary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.input),
                     border: Border.all(color: AppColors.onPrimary.withValues(alpha: 0.2)),
                   ),
                   child: Text(
@@ -89,7 +91,7 @@ class WritingSearchBox extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
@@ -110,7 +112,7 @@ class WritingSearchBox extends StatelessWidget {
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           isDense: true,
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             borderSide: BorderSide(color: primaryColor, width: 1.5),
           ),
         ),
@@ -148,11 +150,11 @@ class WritingFilterRow extends StatelessWidget {
             child: GestureDetector(
               onTap: () => onSelected(i),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: AppMotion.segment,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: selected ? primaryColor : AppColors.surfaceCard,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                   border: Border.all(
                     color: selected ? primaryColor : AppColors.outline,
                   ),

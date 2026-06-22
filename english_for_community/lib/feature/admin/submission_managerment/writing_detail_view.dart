@@ -1,11 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../../../../core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/entity/writing_submission_entity.dart';
 
-// Palette màu riêng cho Writing (Hồng/Đỏ)
-const Color kPrimaryWriting = Color(0xFFE11D48); // Rose 600
-const Color kBgWriting = Color(0xFFFFF1F2);      // Rose 50
-const Color kBorderWriting = Color(0xFFFECDD3);  // Rose 200
+// Palette m�u ri�ng cho Writing (H?ng/�?)
+const Color kPrimaryWriting = AppColors.danger; // Rose 600
+const Color kBgWriting = AppColors.dangerBg;      // Rose 50
+const Color kBorderWriting = AppColors.dangerBg;  // Rose 200
 
 class WritingDetailView extends StatelessWidget {
   final WritingSubmissionEntity data;
@@ -25,7 +27,7 @@ class WritingDetailView extends StatelessWidget {
           _buildScoreHeader(),
           const SizedBox(height: 24),
 
-          // 2. PROMPT (Đề bài)
+          // 2. PROMPT (�? b�i)
           if (data.generatedPrompt != null) ...[
             _buildSectionTitle("Topic"),
             Container(
@@ -33,7 +35,7 @@ class WritingDetailView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Column(
@@ -48,7 +50,7 @@ class WritingDetailView extends StatelessWidget {
                   // Badge Task Type
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(6)),
+                    decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(AppRadius.chip)),
                     child: Text(data.generatedPrompt?.taskType ?? "Essay",
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.blue.shade700)),
                   ),
@@ -85,12 +87,12 @@ class WritingDetailView extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: Text(
               data.content,
-              style: const TextStyle(fontSize: 15, height: 1.8, color: Color(0xFF334155), fontFamily: 'Roboto'),
+              style: const TextStyle(fontSize: 15, height: 1.8, color: AppColors.textSecondary, fontFamily: 'Roboto'),
             ),
           ),
           const SizedBox(height: 24),
@@ -108,8 +110,8 @@ class WritingDetailView extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF0FDF4), // Green 50
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.successBg, // Green 50
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: Colors.green.shade200),
               ),
               child: Text(
@@ -138,7 +140,7 @@ class WritingDetailView extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: kBgWriting,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: kBorderWriting),
       ),
       child: Row(
@@ -147,7 +149,7 @@ class WritingDetailView extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Overall Score", style: TextStyle(color: Color(0xFF9F1239), fontSize: 13, fontWeight: FontWeight.w600)),
+              const Text("Overall Score", style: TextStyle(color: AppColors.danger, fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -177,9 +179,9 @@ class WritingDetailView extends StatelessWidget {
   Widget _buildMetaRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF9F1239)),
+        Icon(icon, size: 14, color: AppColors.danger),
         const SizedBox(width: 6),
-        Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF881337))),
+        Text(text, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.danger)),
       ],
     );
   }
@@ -189,7 +191,7 @@ class WritingDetailView extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
       ),
@@ -202,7 +204,7 @@ class WritingDetailView extends StatelessWidget {
               Text(code, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.grey)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(color: kBgWriting, borderRadius: BorderRadius.circular(4)),
+                decoration: BoxDecoration(color: kBgWriting, borderRadius: BorderRadius.circular(AppRadius.xs)),
                 child: Text("${score ?? '-'}", style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryWriting)),
               )
             ],
@@ -219,7 +221,7 @@ class WritingDetailView extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: ExpansionTile(
@@ -227,7 +229,7 @@ class WritingDetailView extends StatelessWidget {
         subtitle: Text(p.comment ?? "", style: const TextStyle(fontSize: 12, color: Colors.grey), maxLines: 1, overflow: TextOverflow.ellipsis),
         backgroundColor: Colors.white,
         collapsedBackgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
         childrenPadding: const EdgeInsets.all(16),
         children: [
           const Align(alignment: Alignment.centerLeft, child: Text("SUGGESTED REWRITE:", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.purple))),
@@ -244,3 +246,5 @@ class WritingDetailView extends StatelessWidget {
     return '${m}m';
   }
 }
+
+

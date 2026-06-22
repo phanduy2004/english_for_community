@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
-import '../../../../../../core/entity/speaking/speaking_set_entity.dart';
-import '../../../../../../core/entity/speaking/sentence_entity.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
+import 'package:english_for_community/core/entity/speaking/sentence_entity.dart';
 
 class SpeakingDetailView extends StatelessWidget {
   final SpeakingSetEntity data;
@@ -9,16 +10,16 @@ class SpeakingDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tính điểm trung bình toàn bài
+    // T�nh di?m trung b�nh to�n b�i
     double totalScore = 0;
     int attemptedCount = 0;
 
     for (var s in data.sentences) {
       if (s.history.isNotEmpty) {
-        // Lấy attempt mới nhất
+        // L?y attempt m?i nh?t
         final latest = s.history.last;
         if (latest.score != null) {
-          // WER càng thấp càng tốt. Score = (1 - WER) * 100
+          // WER c�ng th?p c�ng t?t. Score = (1 - WER) * 100
           double wer = latest.score!.wer;
           double accuracy = (1.0 - wer).clamp(0.0, 1.0) * 100;
           totalScore += accuracy;
@@ -55,7 +56,7 @@ class SpeakingDetailView extends StatelessWidget {
   Widget _buildStatBox(String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppRadius.card)),
       child: Column(
         children: [
           Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color)),
@@ -66,7 +67,7 @@ class SpeakingDetailView extends StatelessWidget {
   }
 
   Widget _buildSentenceItem(SentenceEntity sentence) {
-    // Tìm attempt mới nhất của câu này
+    // T�m attempt m?i nh?t c?a c�u n�y
     final attempt = sentence.history.isNotEmpty ? sentence.history.last : null;
     final scoreVal = attempt?.score?.wer != null
         ? ((1.0 - attempt!.score!.wer) * 100).round()
@@ -77,7 +78,7 @@ class SpeakingDetailView extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
@@ -97,7 +98,7 @@ class SpeakingDetailView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getScoreColor(scoreVal).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
                   ),
                   child: Text("$scoreVal%", style: TextStyle(fontWeight: FontWeight.bold, color: _getScoreColor(scoreVal))),
                 )
@@ -117,7 +118,7 @@ class SpeakingDetailView extends StatelessWidget {
                 ),
               ],
             ),
-            // Nếu có audioUrl thì hiện nút Play (giả lập UI)
+            // N?u c� audioUrl th� hi?n n�t Play (gi? l?p UI)
             if (attempt.userAudioUrl != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8),

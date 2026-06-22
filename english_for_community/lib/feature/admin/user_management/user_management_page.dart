@@ -10,6 +10,8 @@ import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.d
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/user_management/widgets/user_card..dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -51,6 +53,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
 
   @override
   void initState() {
@@ -69,6 +73,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     // 2. Listen to Tab changes
     _tabController.addListener(() {
       if (!_tabController.indexIsChanging) {
+        setState(() => _page = 1);
         _fetchUsers();
       }
     });
@@ -110,8 +115,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     if (_tabController.index == 2) filter = 'online';
 
     context.read<AdminBloc>().add(GetAllUsersEvent(
-        page: 1,
-        limit: 20,
+        page: _page,
+        limit: _rowsPerPage,
         filter: filter,
         search: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null
     ));
@@ -119,7 +124,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(AppMotion.debounce, () {
+      setState(() => _page = 1);
       _fetchUsers();
     });
   }
@@ -133,8 +139,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
         return Dialog(
           backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
+            side: const BorderSide(color: AppColors.outline),
           ),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
@@ -145,7 +151,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.restore_from_trash_outlined, size: 20, color: Color(0xFF475569)),
+                      const Icon(Icons.restore_from_trash_outlined, size: 20, color: AppColors.textMuted),
                       const SizedBox(width: 8),
                       const Text('Deleted Users', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
                       const Spacer(),
@@ -158,7 +164,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                   ),
                   const Text(
                     'Restore user accounts that were soft-deleted.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                   const SizedBox(height: 12),
                   Expanded(
@@ -166,7 +172,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                       future: datasource.getDeletedUsers(page: 1, limit: 50),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) {
-                          return const Center(child: AppLoadingIndicator.center());
+                          return AdminSkeleton.page(AdminSkeleton.cardList());
                         }
                         final users = snapshot.data!.data;
                         if (users.isEmpty) {
@@ -178,9 +184,10 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                           itemBuilder: (_, index) {
                             final u = users[index];
                             return ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: (u.avatarUrl ?? '').isNotEmpty ? NetworkImage(u.avatarUrl!) : null,
-                                child: (u.avatarUrl ?? '').isEmpty ? const Icon(Icons.person_outline) : null,
+                              leading: AdminWebUi.userAvatarCircle(
+                                avatarUrl: u.avatarUrl,
+                                displayName: u.fullName,
+                                radius: 20,
                               ),
                               title: Text(u.fullName),
                               subtitle: Text(u.email),
@@ -205,7 +212,7 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(ctx),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: AppColors.outline),
                       ),
                       child: const Text('Close'),
                     ),
@@ -277,20 +284,62 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
             child: BlocBuilder<AdminBloc, AdminState>(
               builder: (context, state) {
                 if (state.status == AdminStatus.loading && state.users == null) {
-                  return const Center(child: AppLoadingIndicator.center());
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
 
                 final users = state.users?.data ?? [];
+                final pagination = state.users?.pagination;
 
                 if (users.isEmpty) {
-                  return AdminEmptyState(message: l10n.adminNoUsersFound, icon: Icons.search_off_rounded);
+                  return Center(
+                    child: AdminEmptyCard(
+                      message: l10n.adminNoUsersFound,
+                      icon: Icons.search_off_rounded,
+                      actionLabel: _searchController.text.trim().isNotEmpty ? l10n.retry : null,
+                      onAction: _searchController.text.trim().isNotEmpty
+                          ? () {
+                              _searchController.clear();
+                              setState(() => _page = 1);
+                              _fetchUsers();
+                            }
+                          : null,
+                    ),
+                  );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.s7),
-                  itemCount: users.length,
-                  separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
-                  itemBuilder: (context, index) => UserCard(user: users[index]),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: ListView.separated(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+                        itemCount: users.length,
+                        separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
+                        itemBuilder: (context, index) => UserCard(user: users[index]),
+                      ),
+                    ),
+                    if (pagination != null && pagination.totalPages > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.s4, bottom: AppSpacing.s7),
+                        child: AdminPaginationBar(
+                          page: pagination.page,
+                          totalPages: pagination.totalPages,
+                          totalRows: pagination.total,
+                          rowsPerPage: _rowsPerPage,
+                          onRowsPerPageChanged: (v) {
+                            setState(() {
+                              _rowsPerPage = v;
+                              _page = 1;
+                            });
+                            _fetchUsers();
+                          },
+                          onPageChanged: (p) {
+                            setState(() => _page = p);
+                            _fetchUsers();
+                          },
+                        ),
+                      ),
+                  ],
                 );
               },
             ),
@@ -300,3 +349,6 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     );
   }
 }
+
+
+

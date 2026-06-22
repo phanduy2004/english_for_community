@@ -1,12 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../../core/get_it/get_it.dart';
-import '../../../../../../core/entity/writing_submission_entity.dart';
-import '../../../../../../core/entity/reading/reading_attempt_entity.dart';
-import '../../../../../../core/entity/speaking/speaking_set_entity.dart';
-import '../../../../../../core/entity/dictation_attempt_entity.dart';
-import '../../../../../../core/entity/listening_comp_entity.dart';
+import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/entity/reading/reading_attempt_entity.dart';
+import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
+import 'package:english_for_community/core/entity/dictation_attempt_entity.dart';
+import 'package:english_for_community/core/entity/listening_comp_entity.dart';
 
-import '../../../../core/repository/history_repository.dart';
+import 'package:english_for_community/core/repository/history_repository.dart';
 import '../model/activity_model.dart';
 import 'activity_detail_event.dart'; // 🔥 NHỚ IMPORT TỪ FILE EVENT MỚI TẠO
 import 'activity_detail_state.dart';

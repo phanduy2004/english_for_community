@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_assignment_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_session_status_banner.dart';
@@ -79,7 +80,7 @@ class _TeacherExamSessionCompactStripState extends State<TeacherExamSessionCompa
       color: AppColors.surfaceCard,
       elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         side: const BorderSide(color: AppColors.outlineMuted),
       ),
       child: Column(
@@ -88,7 +89,7 @@ class _TeacherExamSessionCompactStripState extends State<TeacherExamSessionCompa
         children: [
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               child: Row(
@@ -97,7 +98,7 @@ class _TeacherExamSessionCompactStripState extends State<TeacherExamSessionCompa
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: statusColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                       border: Border.all(color: statusColor.withValues(alpha: 0.35)),
                     ),
                     child: Text(

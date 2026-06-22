@@ -1,4 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -13,10 +15,12 @@ import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffo
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
+import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_grading_hub_labels.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class TeacherCalendarPage extends StatelessWidget {
@@ -204,7 +208,7 @@ class _TeacherCalendarView extends StatelessWidget {
             ),
           ],
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.calendar())
               : error != null
                   ? Center(
                       child: Column(
@@ -329,7 +333,7 @@ class _CalendarLegendBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: TeacherWebUi.cardDecoration(bg: AppColors.surfaceSubtle),
+      decoration: TeacherWebUi.panelDecoration(bg: AppColors.surfaceSubtle),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
       child: Wrap(
         spacing: AppSpacing.s4,
@@ -620,7 +624,7 @@ class _CalendarMonthGrid extends StatelessWidget {
     });
 
     return Container(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       padding: const EdgeInsets.all(AppSpacing.s5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -694,7 +698,7 @@ class _CalendarWeekGrid extends StatelessWidget {
     final title = '${DateFormat.MMMd(locale).format(weekStart)} – ${DateFormat.MMMd(locale).format(weekEnd)}';
 
     return Container(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       padding: const EdgeInsets.all(AppSpacing.s5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -785,7 +789,7 @@ class _CalendarDayCell extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.chip),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.fast,
           height: 56,
           margin: const EdgeInsets.all(2),
           padding: const EdgeInsets.symmetric(vertical: 4),
@@ -861,7 +865,7 @@ class _CalendarWeekDayColumn extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.chip),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
+          duration: AppMotion.fast,
           constraints: const BoxConstraints(minHeight: 120),
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
@@ -962,7 +966,7 @@ class _CalendarAgendaPanel extends StatelessWidget {
     final isToday = teacherCalendarDateOnly(day) == teacherCalendarDateOnly(DateTime.now());
 
     return Container(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       padding: const EdgeInsets.all(AppSpacing.s5),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1003,7 +1007,12 @@ class _CalendarAgendaPanel extends StatelessWidget {
           if (groups.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
-              child: TeacherEmptyCard(message: l10n.teacherCalendarNoDayEvents, icon: Icons.event_busy_outlined),
+              child: TeacherEmptyCard(
+                message: l10n.teacherCalendarNoDayEvents,
+                icon: Icons.event_busy_outlined,
+                actionLabel: l10n.teacherEmptyCalendarCta,
+                onAction: () => context.push(TeacherExamsListPage.routePath),
+              ),
             )
           else
             ...groups.map(
@@ -1030,7 +1039,12 @@ class _ListScheduleBody extends StatelessWidget {
 
     if (state.visibleEvents.isEmpty) {
       return Center(
-        child: TeacherEmptyCard(message: l10n.teacherCalendarEmpty, icon: Icons.event_outlined),
+        child: TeacherEmptyCard(
+          message: l10n.teacherCalendarEmpty,
+          icon: Icons.event_outlined,
+          actionLabel: l10n.teacherEmptyCalendarCta,
+          onAction: () => context.push(TeacherExamsListPage.routePath),
+        ),
       );
     }
 

@@ -118,10 +118,10 @@ class _ReadingListPageState extends State<ReadingListPage> {
                   BlocBuilder<ReadingBloc, ReadingState>(
                     builder: (context, state) {
                       if (state.status == ReadingStatus.loading) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
                           child: Center(
-                            child: AppLoadingIndicator.center(),
+                            child: StudentMobileUi.listLoading(),
                           ),
                         );
                       }

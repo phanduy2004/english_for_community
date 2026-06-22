@@ -8,6 +8,8 @@ import 'package:english_for_community/feature/admin/layout/admin_skill_palette.d
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -70,7 +72,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 800),
+          duration: AppMotion.savedFade,
           curve: Curves.easeOutQuart,
         );
       }
@@ -107,7 +109,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
         },
         builder: (context, state) {
           if (state.status == AdminStatus.loading && state.stats == null) {
-            return const Center(child: AppLoadingIndicator.center());
+            return AdminSkeleton.page(AdminSkeleton.cardList());
           }
 
           if (state.stats == null) {
@@ -304,7 +306,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           icon: Icons.tune_outlined,
           title: l10n.adminNavOps,
           subtitle: 'Moderation, export, permissions',
-          accent: const Color(0xFF7C3AED),
+          accent: AppColors.info,
           onTap: () => context.pushNamed(AdminOpsCenterPage.routeName),
         ),
         AdminNavTile(
@@ -473,7 +475,7 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       toY: y,
       color: color,
       width: 6,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xs)),
       backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxY, color: AppColors.surfaceSubtle),
     );
   }
@@ -492,10 +494,14 @@ class _LegendItem extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-                color: color, borderRadius: BorderRadius.circular(2))),
+                color: color, borderRadius: BorderRadius.circular(AppRadius.xs))),
         const SizedBox(width: 6),
         Text(label, style: AdminWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600)),
       ],
     );
   }
 }
+
+
+
+

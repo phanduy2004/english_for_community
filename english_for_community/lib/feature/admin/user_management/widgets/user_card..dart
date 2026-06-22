@@ -1,5 +1,7 @@
-﻿import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/entity/user_entity.dart';
@@ -19,18 +21,18 @@ class UserCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isBanned ? const Color(0xFFFEF2F2) : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isBanned ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),
+        color: isBanned ? AppColors.dangerBg : Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: isBanned ? AppColors.dangerBg : AppColors.outline),
         boxShadow: [
-          BoxShadow(color: const Color(0xFF0F172A).withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(color: AppColors.textPrimary.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          // 🔥 CLICK CARD TO OPEN DIALOG
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          // ?? CLICK CARD TO OPEN DIALOG
           onTap: () {
             showDialog(
               context: context,
@@ -41,19 +43,10 @@ class UserCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Avatar
-                Container(
-                  width: 48, height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    shape: BoxShape.circle,
-                    image: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-                        ? DecorationImage(image: NetworkImage(user.avatarUrl!), fit: BoxFit.cover)
-                        : null,
-                  ),
-                  child: (user.avatarUrl == null || user.avatarUrl!.isEmpty)
-                      ? Center(child: Text(user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B))))
-                      : null,
+                AdminWebUi.userAvatarCircle(
+                  avatarUrl: user.avatarUrl,
+                  displayName: user.fullName,
+                  radius: 24,
                 ),
                 const SizedBox(width: 16),
 
@@ -70,7 +63,7 @@ class UserCard extends StatelessWidget {
                               style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isBanned ? const Color(0xFF991B1B) : const Color(0xFF0F172A),
+                                  color: isBanned ? AppColors.danger : AppColors.textPrimary,
                                   decoration: isBanned ? TextDecoration.lineThrough : null
                               ),
                               overflow: TextOverflow.ellipsis,
@@ -92,13 +85,13 @@ class UserCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         user.email.isNotEmpty ? user.email : 'No email',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 12, color: Color(0xFF94A3B8)),
+                          const Icon(Icons.access_time, size: 12, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             isOnline
@@ -106,7 +99,7 @@ class UserCard extends StatelessWidget {
                                 : (user.lastActivityDate != null
                                 ? t.adminUserLastActive(DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal()))
                                 : t.adminUserNeverActive),
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
                       )
@@ -135,31 +128,36 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isDot)
-            Container(
-              width: 6, height: 6,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            )
-          else if (icon != null)
-            Icon(icon, size: 10, color: color),
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDot)
+              Container(
+                width: 6, height: 6,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              )
+            else if (icon != null)
+              Icon(icon, size: 10, color: color),
 
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+

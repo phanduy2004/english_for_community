@@ -1,8 +1,9 @@
 // lib/core/api/api_client.dart
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb, kProfileMode;
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'api_config.dart';
+import 'app_api_error_log_interceptor.dart';
 import 'app_jwt_interceptor.dart';
 
 class ApiClient {
@@ -26,9 +27,11 @@ class ApiClient {
 
   Dio getDio({bool authorized = false}) {
     final dio = Dio(baseOptions(baseUrl: '${ApiConfig.Base_URL}api/'));
-    if (authorized)
+    if (authorized) {
       dio.interceptors.add(AppJwtInterceptor(dio: dio));
-    if (kDebugMode) {
+    }
+    if (kDebugMode || kProfileMode) {
+      dio.interceptors.add(AppApiErrorLogInterceptor());
       dio.interceptors.add(PrettyDioLogger(
         request: true,
         requestBody: false,

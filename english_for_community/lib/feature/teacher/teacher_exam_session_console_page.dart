@@ -1,8 +1,10 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_assignment_card.dart';
 import 'package:english_for_community/feature/teacher/bloc/exam_session_console/teacher_exam_session_console_bloc.dart';
@@ -14,6 +16,7 @@ import 'package:english_for_community/feature/teacher/bloc/live_monitor/teacher_
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_mobile_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_dialog_shell.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_compact_strip.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_session_timing.dart';
@@ -304,7 +307,7 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
                 if (inProgressLive) ...[
                   const SizedBox(height: 4),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       value: pct.clamp(0, 1),
                       minHeight: 4,
@@ -342,6 +345,15 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
     );
   }
 
+  /// Confirm hành động không thu hồi: kết thúc & nộp tất cả (`docs/ui-ux-system/18` §5.8).
+  Future<bool> _confirmEndSession(BuildContext context, int affectedCount) async {
+    final ok = await TeacherDialogShell.show<bool>(
+      context,
+      child: _EndSessionConfirmDialog(affectedCount: affectedCount),
+    );
+    return ok ?? false;
+  }
+
   List<Widget> _sessionHeaderActions(BuildContext context, TeacherExamSessionConsoleState state) {
     final l10n = context.l10n;
     final sid = state.sessionId ?? '';
@@ -370,9 +382,15 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
             label: l10n.teacherExamEndSession,
             onPressed: state.busy
                 ? null
-                : () => context
-                    .read<TeacherExamSessionConsoleBloc>()
-                    .add(const TeacherExamSessionConsoleEndRequested()),
+                : () async {
+                    final count = context.read<TeacherExamSessionConsoleBloc>().state.participants.length;
+                    final ok = await _confirmEndSession(context, count);
+                    if (ok && context.mounted) {
+                      context
+                          .read<TeacherExamSessionConsoleBloc>()
+                          .add(const TeacherExamSessionConsoleEndRequested());
+                    }
+                  },
           )
         : null;
 
@@ -517,7 +535,7 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
           actions: mobile ? const [] : sessionActions,
           bottomActions: mobile ? sessionActions : null,
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.table(rows: 10))
               : error != null
                   ? Center(
                       child: Padding(
@@ -553,6 +571,96 @@ class _TeacherExamSessionConsoleView extends StatelessWidget {
                         ),
         );
       },
+    );
+  }
+}
+
+/// Type-to-confirm dialog for irreversible end-session (`18` §5.8).
+class _EndSessionConfirmDialog extends StatefulWidget {
+  const _EndSessionConfirmDialog({required this.affectedCount});
+
+  final int affectedCount;
+
+  @override
+  State<_EndSessionConfirmDialog> createState() => _EndSessionConfirmDialogState();
+}
+
+class _EndSessionConfirmDialogState extends State<_EndSessionConfirmDialog> {
+  final _confirmCtrl = TextEditingController();
+  String? _fieldError;
+
+  @override
+  void dispose() {
+    _confirmCtrl.dispose();
+    super.dispose();
+  }
+
+  void _tryConfirm() {
+    final expected = '${widget.affectedCount}';
+    if (_confirmCtrl.text.trim() != expected) {
+      setState(() => _fieldError = context.l10n.teacherExamEndSessionTypePrompt(widget.affectedCount));
+      return;
+    }
+    Navigator.pop(context, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return TeacherDialogShell(
+      title: l10n.teacherExamEndSession,
+      icon: Icons.stop_circle_outlined,
+      width: 480,
+      maxBodyHeight: 280,
+      footer: TeacherDialogFooterActions(
+        cancelLabel: l10n.cancel,
+        primaryLabel: l10n.teacherExamEndSession,
+        destructive: true,
+        onCancel: () => Navigator.pop(context, false),
+        onPrimary: _tryConfirm,
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+            decoration: BoxDecoration(
+              color: AppColors.dangerBg,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 18, color: AppColors.danger),
+                const SizedBox(width: AppSpacing.s3),
+                Expanded(
+                  child: Text(
+                    l10n.teacherExamEndSessionConfirm,
+                    style: TeacherWebUi.webBody(context).copyWith(height: 1.45),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+          Text(
+            l10n.teacherExamEndSessionTypePrompt(widget.affectedCount),
+            style: TeacherWebUi.webBody(context),
+          ),
+          const SizedBox(height: AppSpacing.s3),
+          TextField(
+            controller: _confirmCtrl,
+            keyboardType: TextInputType.number,
+            decoration: TeacherWebUi.formInputDecoration(context),
+            onChanged: (_) {
+              if (_fieldError != null) setState(() => _fieldError = null);
+            },
+            onSubmitted: (_) => _tryConfirm(),
+          ),
+          TeacherWebUi.formFieldError(context, _fieldError),
+        ],
+      ),
     );
   }
 }

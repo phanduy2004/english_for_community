@@ -9,6 +9,7 @@ import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
 
 class AdminTeacherApplicationsPage extends StatefulWidget {
@@ -61,18 +62,41 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
 
   Future<void> _reject(String id) async {
     final ctrl = TextEditingController();
+    String? error;
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.adminTeacherReject),
-        content: TextField(
-          controller: ctrl,
-          decoration: InputDecoration(labelText: context.l10n.adminTeacherRejectReason),
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setDialogState) => AlertDialog(
+          title: Text(context.l10n.adminTeacherReject),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: ctrl,
+                decoration: AdminWebUi.formInputDecoration(
+                  context,
+                  hintText: context.l10n.adminTeacherRejectReason,
+                ),
+              ),
+              AdminWebUi.formFieldError(context, error),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(context.l10n.cancel)),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: () {
+                if (ctrl.text.trim().isEmpty) {
+                  setDialogState(() => error = context.l10n.adminTeacherRejectReason);
+                  return;
+                }
+                Navigator.of(ctx).pop(true);
+              },
+              child: Text(context.l10n.adminTeacherReject),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(context.l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(context.l10n.adminTeacherReject)),
-        ],
       ),
     );
     if (ok != true || !mounted) return;
@@ -107,7 +131,7 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
         ),
       ],
       body: _loading
-          ? const Center(child: AppLoadingIndicator.center())
+          ? AdminSkeleton.page(AdminSkeleton.cardList())
           : _error != null
               ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!)))
               : _items.isEmpty
@@ -150,3 +174,4 @@ class _AdminTeacherApplicationsPageState extends State<AdminTeacherApplicationsP
     );
   }
 }
+

@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -99,7 +100,7 @@ class TeacherExamParticipantStatusChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           color: colors.bg,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
           border: Border.all(color: colors.border),
         ),
         child: Row(

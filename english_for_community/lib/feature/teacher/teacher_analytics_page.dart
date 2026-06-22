@@ -64,7 +64,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
             ),
           ],
           body: loading
-              ? TeacherSkeleton.page(TeacherSkeleton.dashboard())
+              ? TeacherSkeleton.page(TeacherSkeleton.analytics())
               : error != null
                   ? Center(
                       child: Column(
@@ -95,7 +95,8 @@ class _TeacherAnalyticsView extends StatelessWidget {
                         const SizedBox(height: AppSpacing.s6),
                         _SectionTitle(l10n.teacherAnalyticsSubmissionsChart),
                         const SizedBox(height: AppSpacing.s4),
-                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState,
+                            (List<Map<String, dynamic>>, double)>(
                           selector: (s) => (s.submissionRows, s.submissionMaxY),
                           builder: (context, data) => SizedBox(
                             height: 200,
@@ -105,7 +106,8 @@ class _TeacherAnalyticsView extends StatelessWidget {
                         const SizedBox(height: AppSpacing.s6),
                         _SectionTitle(l10n.teacherAnalyticsScoreChart),
                         const SizedBox(height: AppSpacing.s4),
-                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState, (List, double)>(
+                        BlocSelector<TeacherAnalyticsBloc, TeacherAnalyticsState,
+                            (List<Map<String, dynamic>>, double)>(
                           selector: (s) => (s.scoreDistRows, s.scoreDistMaxY),
                           builder: (context, data) => SizedBox(
                             height: 200,

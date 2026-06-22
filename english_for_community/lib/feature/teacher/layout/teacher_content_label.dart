@@ -1,5 +1,7 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Parses optional bracket tags; strips `[SEED:…]` from display (legacy seed data).
@@ -83,7 +85,7 @@ class TeacherSeedTagChip extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: c.bg,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: c.border),
       ),
       child: Text(
@@ -193,9 +195,9 @@ class TeacherClassroomSelectTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.segment,
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
@@ -206,7 +208,7 @@ class TeacherClassroomSelectTile extends StatelessWidget {
                 height: 36,
                 decoration: BoxDecoration(
                   color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Icon(
                   Icons.class_outlined,

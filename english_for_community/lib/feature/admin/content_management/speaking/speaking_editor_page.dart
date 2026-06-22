@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -137,7 +141,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
             _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
+            duration: AppMotion.page,
             curve: Curves.easeOut
         );
       }
@@ -203,7 +207,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
         body: BlocBuilder<AdminSpeakingBloc, AdminSpeakingState>(
           builder: (context, state) {
             if (state.status == AdminSpeakingStatus.loading && widget.id != null && !_isDataLoaded) {
-              return const Center(child: AppLoadingIndicator.center());
+              return AdminSkeleton.page(AdminSkeleton.cardList());
             }
 
             return SingleChildScrollView(
@@ -253,7 +257,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
   Widget _buildMetadataCard() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: kBorder)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -284,7 +288,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
         Container(
           height: 48, // Chiều cao chuẩn cho touch target
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFFE2E8F0))),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: AppColors.outline)),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: value,
@@ -306,7 +310,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
           color: kWhite,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: kBorder),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))]
       ),
@@ -316,8 +320,8 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: const BoxDecoration(
-                color: Color(0xFFFAFAFA),
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                color: AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
                 border: Border(bottom: BorderSide(color: kBorder))
             ),
             child: Row(
@@ -325,7 +329,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(AppRadius.xs)),
                   child: Text("#${index + 1}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
                 InkWell(
@@ -424,12 +428,16 @@ class _CompactTableInputState extends State<_CompactTableInput> {
         hintText: widget.hint,
       hintStyle: const TextStyle(
           fontFamily: 'NotoSans', // Hoặc bỏ qua nếu font mặc định là NotoSans
-          color: Color(0xFF94A3B8),
+          color: AppColors.textMuted,
           fontSize: 12
       ),        filled: true, fillColor: Colors.white,
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.black, width: 1.5)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.input), borderSide: const BorderSide(color: AppColors.outline)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.input), borderSide: const BorderSide(color: Colors.black, width: 1.5)),
       ),
     );
   }
 }
+
+
+
+

@@ -141,9 +141,10 @@ class _ChartCard extends StatelessWidget {
             if (dailyGoal > 0) ...[
               const SizedBox(height: AppSpacing.s3),
               StudentMobileUi.skillProgressBar(
+                context: context,
                 value: dailyGoal > 0 ? dailyProgress / dailyGoal : 0,
-                color: AppColors.accent,
-                height: 6,
+                color: AppColors.chartBar,
+                height: AppSpacing.s2,
               ),
             ],
             if (summary.callout.message.isNotEmpty) ...[

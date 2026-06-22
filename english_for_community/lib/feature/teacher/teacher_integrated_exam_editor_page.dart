@@ -1202,7 +1202,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
     final totalListeningCount = resources.length + listeningCompRes.length;
 
     return DecoratedBox(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(
@@ -1739,7 +1739,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
         : (on ? l10n.teacherExamGrammarHint : null);
 
     return DecoratedBox(
-      decoration: TeacherWebUi.cardDecoration(),
+      decoration: TeacherWebUi.panelDecoration(),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(

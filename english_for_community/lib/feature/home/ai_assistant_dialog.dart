@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -47,7 +48,7 @@ class _AiAssistantViewState extends State<_AiAssistantView> {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent + 100,
-        duration: const Duration(milliseconds: 300),
+        duration: AppMotion.base,
         curve: Curves.easeOut,
       );
     }
@@ -204,10 +205,10 @@ class _MessageBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUser ? AppColors.primary : AppColors.surfaceSubtle,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: isUser ? const Radius.circular(18) : const Radius.circular(4),
-            bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(18),
+            topLeft: const Radius.circular(AppRadius.sheet),
+            topRight: const Radius.circular(AppRadius.sheet),
+            bottomLeft: isUser ? const Radius.circular(AppRadius.sheet) : const Radius.circular(AppRadius.xs),
+            bottomRight: isUser ? const Radius.circular(AppRadius.xs) : const Radius.circular(AppRadius.sheet),
           ),
           border: isUser ? null : Border.all(color: AppColors.outline),
         ),
@@ -274,9 +275,11 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: AppMotion.enter,
     )..repeat(reverse: true);
-    Future.delayed(Duration(milliseconds: widget.index * 200), () {
+    Future.delayed(
+      Duration(milliseconds: widget.index * AppMotion.staggerStep.inMilliseconds),
+      () {
       if (mounted) _controller.forward();
     });
   }

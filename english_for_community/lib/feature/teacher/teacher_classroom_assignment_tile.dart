@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_assignment_card.dart';
 import 'package:english_for_community/feature/teacher/teacher_assignment_grading_hub_view.dart';
@@ -128,7 +129,7 @@ class TeacherClassroomAssignmentTile extends StatelessWidget {
       useSafeArea: true,
       backgroundColor: AppColors.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       builder: (ctx) {
         return DraggableScrollableSheet(
@@ -145,7 +146,7 @@ class TeacherClassroomAssignmentTile extends StatelessWidget {
                   height: 4,
                   decoration: BoxDecoration(
                     color: AppColors.outlineMuted,
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                   ),
                 ),
                 Padding(

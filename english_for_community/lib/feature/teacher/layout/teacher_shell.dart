@@ -243,7 +243,9 @@ class _TeacherSidebar extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(collapsed ? 8 : 16, 16, collapsed ? 8 : 12, 8),
+              padding: collapsed
+                  ? const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: AppSpacing.s5)
+                  : const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s5, AppSpacing.s4, AppSpacing.s3),
               child: collapsed
                   ? Center(
                       child: Column(
@@ -439,13 +441,10 @@ class _SidebarUserFooter extends StatelessWidget {
                 child: InkWell(
                   onTap: () => showTeacherAccountMenu(context),
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  child: CircleAvatar(
+                  child: TeacherWebUi.userAvatarCircle(
+                    avatarUrl: user?.avatarUrl,
+                    displayName: name,
                     radius: 16,
-                    backgroundColor: AppColors.primaryTint,
-                    child: Text(
-                      name.isNotEmpty ? name[0].toUpperCase() : '?',
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                    ),
                   ),
                 ),
               ),
@@ -456,13 +455,10 @@ class _SidebarUserFooter extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(12, 10, 8, 12),
           child: Row(
             children: [
-              CircleAvatar(
+              TeacherWebUi.userAvatarCircle(
+                avatarUrl: user?.avatarUrl,
+                displayName: name,
                 radius: 14,
-                backgroundColor: AppColors.primaryTint,
-                child: Text(
-                  name.isNotEmpty ? name[0].toUpperCase() : '?',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                ),
               ),
               const SizedBox(width: 10),
               Expanded(

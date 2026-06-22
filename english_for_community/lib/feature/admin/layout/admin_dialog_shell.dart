@@ -41,7 +41,7 @@ class AdminDialogShell extends StatelessWidget {
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: width),
         child: Column(
@@ -60,7 +60,7 @@ class AdminDialogShell extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.primaryTint,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                       ),
                       child: Icon(icon, size: 20, color: AppColors.primaryDark),
                     ),
@@ -196,12 +196,12 @@ class AdminDialogOptionTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.outlineMuted),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
           ),
           child: Row(
             children: [
@@ -211,7 +211,7 @@ class AdminDialogOptionTile extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Icon(icon, size: 18, color: AppColors.textSecondary),
               ),
@@ -270,3 +270,4 @@ class AdminDialogSectionLabel extends StatelessWidget {
     );
   }
 }
+

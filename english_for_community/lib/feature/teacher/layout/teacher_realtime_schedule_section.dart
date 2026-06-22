@@ -2,6 +2,7 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Schedule picker for realtime (session) assignments: in-class vs calendar.
@@ -44,7 +45,7 @@ class TeacherRealtimeScheduleSection extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.infoBg,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
           ),
           child: Row(
@@ -138,9 +139,9 @@ class TeacherRealtimeScheduleSection extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onScheduleModeChanged(value),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: AppMotion.segment,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: TeacherWebUi.choiceTileDecoration(selected: selected),
           child: Column(
@@ -153,7 +154,7 @@ class TeacherRealtimeScheduleSection extends StatelessWidget {
                     height: 28,
                     decoration: BoxDecoration(
                       color: TeacherWebUi.choiceTileIconBoxColor(selected: selected),
-                      borderRadius: BorderRadius.circular(7),
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                     ),
                     child: Icon(
                       icon,
@@ -211,12 +212,12 @@ class TeacherRealtimeScheduleSection extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             child: Ink(
               decoration: BoxDecoration(
                 color: AppColors.surfaceCard,
                 border: Border.all(color: AppColors.outline),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
               ),
               padding: TeacherWebUi.formInputContentPadding,
               child: Row(

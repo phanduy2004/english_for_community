@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/teacher/bloc/exam_editor/teacher_exam_editor_bloc.dart';
@@ -10,11 +14,11 @@ import 'package:english_for_community/feature/teacher/bloc/exam_editor/teacher_e
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-
 /// Edit a draft exam (title, results policy, MCQ / essay items in one section).
 class TeacherExamEditorPage extends StatelessWidget {
   const TeacherExamEditorPage({super.key, required this.examId});
@@ -34,8 +38,63 @@ class TeacherExamEditorPage extends StatelessWidget {
   }
 }
 
-class _TeacherExamEditorView extends StatelessWidget {
+class _TeacherExamEditorView extends StatefulWidget {
   const _TeacherExamEditorView();
+
+  @override
+  State<_TeacherExamEditorView> createState() => _TeacherExamEditorViewState();
+}
+
+class _TeacherExamEditorViewState extends State<_TeacherExamEditorView> {
+  TeacherSaveState _saveState = TeacherSaveState.idle;
+  DateTime? _savedAt;
+  Timer? _autosaveTimer;
+  Timer? _savedFadeTimer;
+  String? _itemsError;
+  Map<int, String> _itemErrors = {};
+  bool _dirty = false;
+  String? _lastSnapshot;
+
+  @override
+  void dispose() {
+    _autosaveTimer?.cancel();
+    _savedFadeTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleAutosave(TeacherExamEditorState state) {
+    if (!state.isDraft || state.status != TeacherExamEditorStatus.success) return;
+    final snap = '${state.title}|${state.description}|${state.showResultsPolicy}|${state.items.length}';
+    if (_lastSnapshot == null) {
+      _lastSnapshot = snap;
+      return;
+    }
+    if (snap == _lastSnapshot) return;
+    _lastSnapshot = snap;
+    _dirty = true;
+    _autosaveTimer?.cancel();
+    _autosaveTimer = Timer(AppMotion.autosave, () {
+      if (!mounted || !_dirty) return;
+      _dirty = false;
+      setState(() => _saveState = TeacherSaveState.saving);
+      context.read<TeacherExamEditorBloc>().add(const TeacherExamEditorSaveDraftRequested());
+    });
+  }
+
+  void _onSaveSuccess() {
+    _savedFadeTimer?.cancel();
+    setState(() {
+      _saveState = TeacherSaveState.saved;
+      _savedAt = DateTime.now();
+    });
+    _savedFadeTimer = Timer(AppMotion.savedFade, () {
+      if (mounted) setState(() => _saveState = TeacherSaveState.idle);
+    });
+  }
+
+  void _onSaveError() {
+    setState(() => _saveState = TeacherSaveState.error);
+  }
 
   void _addMcq(BuildContext context, List<Map<String, dynamic>> items) {
     final n = items.length + 1;
@@ -77,22 +136,53 @@ class _TeacherExamEditorView extends StatelessWidget {
 
   bool _validatePublish(BuildContext context, TeacherExamEditorState state) {
     final l10n = context.l10n;
+    String? itemsError;
+    final itemErrors = <int, String>{};
     if (state.items.isEmpty) {
-      AppCornerToast.show(context, l10n.teacherExamPublishNeedItems, error: true);
-      return false;
+      itemsError = l10n.teacherExamPublishNeedItems;
     }
-    for (final it in state.items) {
+    for (var i = 0; i < state.items.length; i++) {
+      final it = state.items[i];
       final k = it['kind'] as String? ?? '';
       if (k == 'essay' && (it['prompt'] as String? ?? '').trim().isEmpty) {
-        AppCornerToast.show(context, l10n.teacherExamEssayNeedsPrompt, error: true);
-        return false;
+        itemErrors[i] = l10n.teacherExamEssayNeedsPrompt;
       }
       if ((k == 'mcq_single' || k == 'mcq_multi') && (it['stem'] as String? ?? '').trim().isEmpty) {
-        AppCornerToast.show(context, l10n.teacherExamMcqNeedsStem, error: true);
-        return false;
+        itemErrors[i] = l10n.teacherExamMcqNeedsStem;
       }
     }
-    return true;
+    setState(() {
+      _itemsError = itemsError;
+      _itemErrors = itemErrors;
+    });
+    return itemsError == null && itemErrors.isEmpty;
+  }
+
+  Widget _validationBanner(BuildContext context) {
+    if (_itemsError == null && _itemErrors.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: AppSpacing.s4),
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      decoration: BoxDecoration(
+        color: AppColors.dangerBg,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, size: 16, color: AppColors.danger),
+          const SizedBox(width: AppSpacing.s3),
+          Expanded(
+            child: Text(
+              context.l10n.teacherExamValidationBanner,
+              style: TeacherWebUi.webBody(context).copyWith(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -104,12 +194,17 @@ class _TeacherExamEditorView extends StatelessWidget {
           (curr.errorMessage != null && prev.errorMessage != curr.errorMessage) ||
           (curr.successMessage != null && prev.successMessage != curr.successMessage),
       listener: (context, state) {
-        if (state.errorMessage != null) {
-          AppCornerToast.show(context, state.errorMessage!, error: true);
+        _scheduleAutosave(state);
+        if (state.errorMessage != null && state.saving == false) {
+          if (_saveState == TeacherSaveState.saving) {
+            _onSaveError();
+          } else {
+            AppCornerToast.show(context, state.errorMessage!, error: true);
+          }
         }
         final success = state.successMessage;
         if (success == 'draft_saved') {
-          AppCornerToast.show(context, l10n.teacherExamDraftSaved);
+          _onSaveSuccess();
         } else if (success == 'published') {
           AppCornerToast.show(context, l10n.teacherExamPublished);
           context.pop();
@@ -127,6 +222,17 @@ class _TeacherExamEditorView extends StatelessWidget {
           showBack: true,
           actions: [
             if (isDraft) ...[
+              TeacherSaveStateIndicator(
+                state: state.saving ? TeacherSaveState.saving : _saveState,
+                savedAt: _savedAt,
+                onRetry: _saveState == TeacherSaveState.error
+                    ? () {
+                        setState(() => _saveState = TeacherSaveState.saving);
+                        context.read<TeacherExamEditorBloc>().add(const TeacherExamEditorSaveDraftRequested());
+                      }
+                    : null,
+              ),
+              const SizedBox(width: AppSpacing.s3),
               TextButton(
                 onPressed: state.saving
                     ? null
@@ -155,12 +261,13 @@ class _TeacherExamEditorView extends StatelessWidget {
             ],
           ],
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.cardList(n: 2, height: 120))
               : error != null
                   ? Center(child: Text(error, style: ExamSystemUi.captionSecondary))
                   : ListView(
                       padding: TeacherWebUi.pageScrollPadding(context),
                       children: [
+                        _validationBanner(context),
                         if (!isDraft)
                           Padding(
                             padding: const EdgeInsets.only(bottom: ExamSystemUi.blockGap),
@@ -230,6 +337,8 @@ class _TeacherExamEditorView extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: ExamSystemUi.cardGap),
+                        if (_itemsError != null)
+                          TeacherWebUi.formFieldError(context, _itemsError),
                         if (state.items.isEmpty)
                           AppCard(
                             variant: AppCardVariant.outline,
@@ -251,9 +360,13 @@ class _TeacherExamEditorView extends StatelessWidget {
                                   item: it,
                                   kind: kind,
                                   readOnly: !isDraft,
+                                  fieldError: _itemErrors[i],
                                   onChanged: (next) {
                                     final nextItems = List<Map<String, dynamic>>.from(state.items);
                                     nextItems[i] = next;
+                                    if (_itemErrors.containsKey(i)) {
+                                      setState(() => _itemErrors.remove(i));
+                                    }
                                     context.read<TeacherExamEditorBloc>().add(TeacherExamEditorItemsChanged(nextItems));
                                   },
                                   onRemove: isDraft ? () => _removeAt(context, state.items, i) : null,
@@ -333,6 +446,7 @@ class _ItemEditorTile extends StatefulWidget {
     required this.readOnly,
     required this.onChanged,
     this.onRemove,
+    this.fieldError,
   });
 
   final int index;
@@ -341,6 +455,7 @@ class _ItemEditorTile extends StatefulWidget {
   final bool readOnly;
   final void Function(Map<String, dynamic> next) onChanged;
   final VoidCallback? onRemove;
+  final String? fieldError;
 
   @override
   State<_ItemEditorTile> createState() => _ItemEditorTileState();
@@ -447,6 +562,7 @@ class _ItemEditorTileState extends State<_ItemEditorTile> {
             decoration: InputDecoration(labelText: l10n.teacherExamEssayPrompt),
             onChanged: widget.readOnly ? null : (_) => _emitEssay(),
           ),
+          TeacherWebUi.formFieldError(context, widget.fieldError),
           TextField(
             controller: _points,
             readOnly: widget.readOnly,
@@ -485,6 +601,7 @@ class _ItemEditorTileState extends State<_ItemEditorTile> {
           decoration: InputDecoration(labelText: l10n.teacherExamStemLabel),
           onChanged: widget.readOnly ? null : (_) => _emitMcq(),
         ),
+        TeacherWebUi.formFieldError(context, widget.fieldError),
         TextField(
           controller: _options,
           readOnly: widget.readOnly,

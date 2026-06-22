@@ -198,45 +198,58 @@ class _OverviewPanel extends StatelessWidget {
               child: LayoutBuilder(
                 builder: (context, c) {
                   final gap = AppSpacing.s3;
-                  final tileW = (c.maxWidth - gap) / 2;
-                  final tileH = ((c.maxHeight - gap) / 2).floorToDouble();
-                  return Wrap(
-                    spacing: gap,
-                    runSpacing: gap,
+                  return Column(
                     children: [
-                      _StatTile(
-                        width: tileW,
-                        height: tileH,
-                        icon: Icons.school_outlined,
-                        label: l10n.teacherDashboardStatStudents,
-                        value: '${stats.totalStudents}',
-                        accent: AppColors.primary,
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _StatTile(
+                                icon: Icons.school_outlined,
+                                label: l10n.teacherDashboardStatStudents,
+                                value: '${stats.totalStudents}',
+                                accent: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(width: gap),
+                            Expanded(
+                              child: _StatTile(
+                                icon: Icons.groups_outlined,
+                                label: l10n.teacherDashboardStatClasses,
+                                value: '$classCount',
+                                accent: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      _StatTile(
-                        width: tileW,
-                        height: tileH,
-                        icon: Icons.groups_outlined,
-                        label: l10n.teacherDashboardStatClasses,
-                        value: '$classCount',
-                        accent: AppColors.primary,
-                      ),
-                      _StatTile(
-                        width: tileW,
-                        height: tileH,
-                        icon: Icons.publish_outlined,
-                        label: l10n.teacherDashboardStatPublishedExams,
-                        value: '${stats.publishedExams}',
-                        accent: AppColors.success,
-                        onTap: onOpenExamBank,
-                      ),
-                      _StatTile(
-                        width: tileW,
-                        height: tileH,
-                        icon: Icons.edit_note_outlined,
-                        label: l10n.teacherDashboardStatDraftExams,
-                        value: '${stats.draftExams}',
-                        accent: AppColors.textSecondary,
-                        onTap: onOpenExamBank,
+                      SizedBox(height: gap),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: _StatTile(
+                                icon: Icons.publish_outlined,
+                                label: l10n.teacherDashboardStatPublishedExams,
+                                value: '${stats.publishedExams}',
+                                accent: AppColors.success,
+                                onTap: onOpenExamBank,
+                              ),
+                            ),
+                            SizedBox(width: gap),
+                            Expanded(
+                              child: _StatTile(
+                                icon: Icons.edit_note_outlined,
+                                label: l10n.teacherDashboardStatDraftExams,
+                                value: '${stats.draftExams}',
+                                accent: AppColors.textSecondary,
+                                onTap: onOpenExamBank,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   );
@@ -357,8 +370,6 @@ class _ActivityPanel extends StatelessWidget {
 
 class _StatTile extends StatelessWidget {
   const _StatTile({
-    required this.width,
-    required this.height,
     required this.icon,
     required this.label,
     required this.value,
@@ -366,8 +377,6 @@ class _StatTile extends StatelessWidget {
     this.onTap,
   });
 
-  final double width;
-  final double height;
   final IconData icon;
   final String label;
   final String value;
@@ -377,8 +386,8 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final child = Container(
-      width: width,
-      height: height,
+      width: double.infinity,
+      height: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.s4),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
@@ -406,7 +415,7 @@ class _StatTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.s1),
                     Text(
                       label,
                       style: TeacherWebUi.webCaption(context),

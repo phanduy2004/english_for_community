@@ -1,9 +1,9 @@
 import 'package:equatable/equatable.dart';
-import '../../../../../../core/entity/writing_submission_entity.dart';
-import '../../../../../../core/entity/reading/reading_attempt_entity.dart';
-import '../../../../../../core/entity/speaking/speaking_set_entity.dart';
-import '../../../../../../core/entity/dictation_attempt_entity.dart';
-import '../../../../../../core/entity/listening_comp_entity.dart'; // Bắt buộc phải có
+import 'package:english_for_community/core/entity/writing_submission_entity.dart';
+import 'package:english_for_community/core/entity/reading/reading_attempt_entity.dart';
+import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
+import 'package:english_for_community/core/entity/dictation_attempt_entity.dart';
+import 'package:english_for_community/core/entity/listening_comp_entity.dart';
 
 enum DetailStatus { initial, loading, success, error }
 

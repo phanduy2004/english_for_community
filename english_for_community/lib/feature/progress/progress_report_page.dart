@@ -3,8 +3,12 @@ import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart'
 import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/motion/celebrate_burst.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
+import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_bloc.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
@@ -147,8 +151,8 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 backgroundColor: AppColors.surfaceCard,
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.s7),
-                  child: const Center(
-                    child: AppLoadingIndicator.center(color: AppColors.primary),
+                  child: Center(
+                    child: StudentMobileUi.runnerLoading(),
                   ),
                 ),
               );
@@ -207,7 +211,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final bloc = context.read<ProgressBloc>();
     bloc.add(FetchProgressData(range: _rangeToString(_range)));
     bloc.add(FetchLeaderboard());
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(AppMotion.savedFade);
   }
 
   @override
@@ -235,7 +239,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
               if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
-                return StudentMobileUi.pageLoading(color: AppColors.primary);
+                return StudentMobileUi.listLoading();
               }
               if (state.status == ProgressStatus.error) {
                 return _buildErrorUI(context, state.errorMessage, t);
@@ -287,7 +291,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       t.progressFilterMonth,
     ];
 
-    return RefreshIndicator(
+    return BlocBuilder<UserBloc, UserState>(
+      builder: (context, userState) {
+        final user = userState.userEntity;
+        return GamificationCelebrateHost(
+          level: user?.level ?? 1,
+          streak: user?.currentStreak ?? 0,
+          child: RefreshIndicator(
       onRefresh: () => _onRefresh(context),
       color: AppColors.primary,
       backgroundColor: AppColors.surfaceCard,
@@ -340,6 +350,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(AppRadius.chip),
                     child: StudentMobileUi.skillProgressBar(
+                      context: context,
                       value: progress,
                       color: AppColors.accent,
                       height: 6,
@@ -483,14 +494,17 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           ],
         ),
       ),
+    ),
+        );
+      },
     );
   }
 
   Widget _buildLeaderboardContent(ProgressState state, AppLocalizations t) {
     if (state.leaderboardStatus == LeaderboardStatus.loading) {
-      return const Padding(
-        padding: EdgeInsets.all(AppSpacing.s6),
-        child: Center(child: AppLoadingIndicator.center(color: AppColors.primary)),
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.s6),
+        child: StudentMobileUi.runnerLoading(),
       );
     }
 

@@ -1,4 +1,8 @@
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'dart:async';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import '../../../../core/get_it/get_it.dart';
@@ -7,11 +11,11 @@ import '../../../../core/entity/user_entity.dart';
 
 // --- COLORS ---
 const Color kWhite = Colors.white;
-const Color kBorder = Color(0xFFE2E8F0);
-const Color kTextMain = Color(0xFF0F172A);
-const Color kTextMuted = Color(0xFF64748B);
-const Color kPrimary = Color(0xFF0F172A);
-const Color kBgPage = Color(0xFFF1F5F9);
+const Color kBorder = AppColors.outline;
+const Color kTextMain = AppColors.textPrimary;
+const Color kTextMuted = AppColors.textMuted;
+const Color kPrimary = AppColors.textPrimary;
+const Color kBgPage = AppColors.surfaceSubtle;
 
 class UserDropdownSearch extends StatefulWidget {
   final UserEntity? selectedUser;
@@ -62,7 +66,7 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
     if (_searchKeyword == query) return;
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(AppMotion.debounce, () {
       if (!mounted) return;
       setState(() {
         _searchKeyword = query;
@@ -124,22 +128,21 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
               controller.open();
             }
           },
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: hasUser ? kPrimary.withValues(alpha: 0.05) : kWhite,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.input),
               border: Border.all(color: hasUser ? kPrimary : kBorder),
             ),
             child: Row(
               children: [
                 if (hasUser)
-                  CircleAvatar(
+                  AdminWebUi.userAvatarCircle(
+                    avatarUrl: widget.selectedUser!.avatarUrl,
+                    displayName: widget.selectedUser!.fullName,
                     radius: 10,
-                    backgroundImage: NetworkImage(widget.selectedUser!.avatarUrl ?? ''),
-                    backgroundColor: kBgPage,
-                    onBackgroundImageError: (_,__) {},
                   )
                 else
                   const Icon(Icons.person_search_outlined, size: 18, color: kTextMain),
@@ -208,11 +211,10 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
                 onPressed: () => widget.onUserSelected(user),
                 child: Row(
                   children: [
-                    CircleAvatar(
+                    AdminWebUi.userAvatarCircle(
+                      avatarUrl: user.avatarUrl,
+                      displayName: user.fullName,
                       radius: 12,
-                      backgroundImage: NetworkImage(user.avatarUrl ?? ''),
-                      backgroundColor: kBgPage,
-                      onBackgroundImageError: (_,__) {},
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -234,3 +236,5 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
     );
   }
 }
+
+

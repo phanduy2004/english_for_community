@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/repository/dictionary_repository.dart';
@@ -50,7 +51,7 @@ class _DictDemoPageState extends State<DictDemoPage> {
 
   void _onSearchChanged() {
     if (_debouncer?.isActive ?? false) _debouncer!.cancel();
-    _debouncer = Timer(const Duration(milliseconds: 300), () {
+    _debouncer = Timer(AppMotion.base, () {
       _search(_controller.text);
     });
   }

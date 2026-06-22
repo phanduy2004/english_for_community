@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../util/app_haptics.dart';
 import '../theme/app_color.dart';
 import '../theme/app_skill_colors.dart';
+import '../theme/app_motion.dart' as theme_motion;
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 import 'interactive/scale_pressable.dart';
 import 'motion/app_lottie_preset.dart';
 import 'motion/app_lottie_view.dart';
-import 'motion/app_loading_indicator.dart';
 import 'motion/app_motion.dart';
+import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'widget/app_card.dart';
+import 'widget/student_mobile_skeleton.dart';
 
 /// Mobile UI helpers for student screens — `docs/ui-ux-system/03`, `04`, `05`, `15`.
 abstract final class StudentMobileUi {
@@ -137,55 +140,57 @@ abstract final class StudentMobileUi {
       ),
       child: Icon(icon, size: 28, color: iconColor),
     );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bottomInset = MediaQuery.paddingOf(context).bottom;
-        const verticalPad = AppSpacing.s10;
-        final minContentHeight = (constraints.maxHeight - verticalPad * 2 - bottomInset)
-            .clamp(0.0, double.infinity);
-
-        return SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            pageHPadding,
-            verticalPad,
-            pageHPadding,
-            verticalPad + bottomInset,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: minContentHeight),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (lottie != null)
-                  AppLottieView(
-                    preset: lottie,
-                    size: AppMotion.emptyLottieSize,
-                    fallback: iconFallback,
-                  )
-                else
-                  iconFallback,
-                const SizedBox(height: AppSpacing.s5),
-                Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
-                if (body.isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.s3),
-                  Text(body, style: bodyStyle, textAlign: TextAlign.center),
-                ],
-                if (ctaLabel != null && onCta != null) ...[
-                  const SizedBox(height: AppSpacing.s5),
-                  FilledButton(onPressed: onCta, child: Text(ctaLabel)),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    const verticalPad = AppSpacing.s10;
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (lottie != null)
+          AppLottieView(
+            preset: lottie,
+            size: AppMotion.emptyLottieSize,
+            fallback: iconFallback,
+          )
+        else
+          iconFallback,
+        const SizedBox(height: AppSpacing.s5),
+        Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
+        if (body.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.s3),
+          Text(body, style: bodyStyle, textAlign: TextAlign.center),
+        ],
+        if (ctaLabel != null && onCta != null) ...[
+          const SizedBox(height: AppSpacing.s5),
+          FilledButton(onPressed: onCta, child: Text(ctaLabel)),
+        ],
+      ],
+    );
+    // Avoid LayoutBuilder — incompatible with SliverFillRemaining intrinsics.
+    return Align(
+      alignment: Alignment.center,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(
+          pageHPadding,
+          verticalPad,
+          pageHPadding,
+          verticalPad + bottomInset,
+        ),
+        child: content,
+      ),
     );
   }
 
-  /// Centered page loading — Lottie on mobile, optional tint via [color].
-  static Widget pageLoading({Color? color}) {
-    return Center(child: AppLoadingIndicator.center(color: color));
-  }
+  /// Centered page loading — skeleton thay spinner (`20` §5.4).
+  static Widget pageLoading() => runnerLoading();
+
+  static Widget listLoading({int itemCount = 6}) =>
+      StudentMobileSkeleton.skillList(itemCount: itemCount);
+
+  static Widget runnerLoading() => StudentMobileSkeleton.runnerQuestion();
+
+  static Widget flashcardLoading() => StudentMobileSkeleton.flashcard();
+
+  static Widget lobbyLoading() => StudentMobileSkeleton.examLobby();
 
   static Widget errorBanner({
     required String message,
@@ -207,6 +212,79 @@ abstract final class StudentMobileUi {
         ],
       ),
     );
+  }
+
+  /// Full-page fetch error + retry — `docs/ui-ux-system/20` §5.9.
+  static Widget errorRetry(
+    BuildContext context, {
+    required String message,
+    required VoidCallback onRetry,
+    String? title,
+    String? retryLabel,
+  }) {
+    final label = retryLabel ?? 'Retry';
+    return Center(
+      child: Padding(
+        padding: pagePadding,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cloud_off_outlined, size: 48, color: AppColors.textMuted),
+            const SizedBox(height: AppSpacing.s5),
+            if (title != null) ...[
+              Text(title, style: sectionTitle(context), textAlign: TextAlign.center),
+              const SizedBox(height: AppSpacing.s2),
+            ],
+            Text(message, style: body(context), textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.s5),
+            FilledButton.icon(
+              onPressed: () {
+                AppHaptics.confirm(context);
+                onRetry();
+              },
+              icon: const Icon(Icons.refresh_rounded, size: 18),
+              label: Text(label),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Bọc icon-only / nút nhỏ — đảm bảo touch target ≥ [minSize] (doc 20 §5.1).
+  static Widget tappable({
+    required BuildContext context,
+    required Widget child,
+    required VoidCallback? onTap,
+    double minSize = 48,
+    String? tooltip,
+    String? semanticsLabel,
+    BorderRadius? borderRadius,
+  }) {
+    final label = semanticsLabel ?? tooltip;
+    Widget wrapped = ConstrainedBox(
+      constraints: BoxConstraints(minWidth: minSize, minHeight: minSize),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: onTap == null
+              ? null
+              : () {
+                  AppHaptics.select(context);
+                  onTap();
+                },
+          borderRadius: borderRadius ?? BorderRadius.circular(AppRadius.input),
+          child: Center(child: child),
+        ),
+      ),
+    );
+    if (tooltip != null && tooltip.isNotEmpty) {
+      wrapped = Tooltip(message: tooltip, child: wrapped);
+    }
+    if (label != null && label.isNotEmpty) {
+      wrapped = Semantics(label: label, button: true, child: wrapped);
+    }
+    return wrapped;
   }
 
   // ─── List tile (1-line / 2-line) ──────────────────────────────────────
@@ -466,13 +544,16 @@ abstract final class StudentMobileUi {
     );
   }
 
-  /// Card có viền trái 3px theo màu kỹ năng — tăng nhận diện trong list bài học.
+  /// Card có viền trái theo màu kỹ năng — tăng nhận diện trong list bài học.
+  ///
+  /// [emphasized] — một card nổi full màu; các card còn lại chỉ icon-tint nhẹ.
   static Widget skillAccentCard({
     required SkillType skill,
     required Widget child,
     VoidCallback? onTap,
     EdgeInsetsGeometry padding = const EdgeInsets.all(AppSpacing.s4),
     EdgeInsetsGeometry? margin,
+    bool emphasized = true,
   }) {
     final colors = AppSkillColors.of(skill);
     final radius = BorderRadius.circular(AppRadius.card + 2);
@@ -483,12 +564,14 @@ abstract final class StudentMobileUi {
         borderRadius: radius,
         border: Border.all(color: AppColors.outline),
       ),
-      foregroundDecoration: BoxDecoration(
-        borderRadius: radius,
-        border: Border(
-          left: BorderSide(color: colors.color, width: 3),
-        ),
-      ),
+      foregroundDecoration: emphasized
+          ? BoxDecoration(
+              borderRadius: radius,
+              border: Border(
+                left: BorderSide(color: colors.color, width: AppSpacing.s2),
+              ),
+            )
+          : null,
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -506,26 +589,40 @@ abstract final class StudentMobileUi {
     return card;
   }
 
-  /// Progress bar — mặc định accent; có thể truyền [skill] để dùng màu kỹ năng.
+  /// Progress bar — animated when [context] is set (`20` §5.7).
   static Widget skillProgressBar({
     required double value,
+    BuildContext? context,
     SkillType? skill,
     double height = 8,
     Color? color,
   }) {
+    final clamped = value.clamp(0.0, 1.0);
     final fill = color ??
         (skill != null
             ? AppSkillColors.of(skill).color
-            : (value >= 1.0 ? AppColors.success : AppColors.accent));
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.pill),
-      child: LinearProgressIndicator(
-        value: value.clamp(0.0, 1.0),
-        backgroundColor: AppColors.outlineMuted,
-        valueColor: AlwaysStoppedAnimation(fill),
-        minHeight: height,
-      ),
-    );
+            : (clamped >= 1.0 ? AppColors.success : AppColors.accent));
+
+    Widget bar(double v) => ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: LinearProgressIndicator(
+            value: v,
+            backgroundColor: AppColors.outlineMuted,
+            valueColor: AlwaysStoppedAnimation(fill),
+            minHeight: height,
+          ),
+        );
+
+    if (context != null) {
+      return TweenAnimationBuilder<double>(
+        key: ValueKey(clamped.toStringAsFixed(3)),
+        tween: Tween(begin: 0, end: clamped),
+        duration: theme_motion.AppMotion.effective(context, theme_motion.AppMotion.base),
+        curve: Curves.easeOutCubic,
+        builder: (_, v, __) => bar(v),
+      );
+    }
+    return bar(clamped);
   }
 
   /// Nút truy cập nhanh tròn — dùng màu kỹ năng hoặc accent.
@@ -541,7 +638,7 @@ abstract final class StudentMobileUi {
     final set = skill != null ? AppSkillColors.of(skill) : null;
     final fg = iconColor ?? set?.color ?? AppColors.primary;
     final bg = iconBg ?? set?.tint ?? AppColors.primaryTint;
-    const iconDiameter = 42.0;
+    const iconDiameter = 48.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -573,6 +670,8 @@ abstract final class StudentMobileUi {
   }
 
   /// Stat card nhỏ (streak / points / level) với icon màu.
+  ///
+  /// [compact] — home stats row: thấp hơn (~80dp), label `textMuted`.
   static Widget statCard({
     required BuildContext context,
     required IconData icon,
@@ -581,37 +680,47 @@ abstract final class StudentMobileUi {
     Color? iconColor,
     Color? iconBg,
     SkillType? skill,
+    bool compact = false,
   }) {
     final set = skill != null ? AppSkillColors.of(skill) : null;
     final fg = iconColor ?? set?.color ?? AppColors.textSecondary;
     final bg = iconBg ?? set?.tint ?? AppColors.primaryTint;
+    final iconBox = compact ? AppSpacing.s7 : AppSpacing.s8;
+    final iconGlyph = compact ? 14.0 : 15.0;
 
-    return AppCard(
-      variant: AppCardVariant.outline,
-      padding: const EdgeInsets.symmetric(
-        vertical: AppSpacing.s3,
-        horizontal: AppSpacing.s3,
-      ),
-      child: Column(
-        children: [
+    return SizedBox(
+      width: double.infinity,
+      child: AppCard(
+        variant: AppCardVariant.outline,
+        padding: EdgeInsets.symmetric(
+          vertical: compact ? AppSpacing.s2 : AppSpacing.s3,
+          horizontal: AppSpacing.s4,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
           Container(
-            width: 30,
-            height: 30,
+            width: iconBox,
+            height: iconBox,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, size: 15, color: fg),
+            child: Icon(icon, size: iconGlyph, color: fg),
           ),
-          const SizedBox(height: AppSpacing.s2),
+          SizedBox(height: compact ? AppSpacing.s1 : AppSpacing.s2),
           Text(value, style: kpi(context)),
           const SizedBox(height: AppSpacing.s1),
           Text(
             label,
-            style: caption(context),
+            style: compact
+                ? caption(context).copyWith(color: AppColors.textMuted)
+                : caption(context),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
+        ),
       ),
     );
   }
@@ -658,40 +767,106 @@ abstract final class StudentMobileUi {
     );
   }
 
-  /// Circular header action (notification, AI).
+  /// Circular header action (notification, AI) — touch target ≥44dp (`20` §4.1).
   static Widget headerIconButton({
+    required BuildContext context,
     required IconData icon,
     required VoidCallback onPressed,
     String? tooltip,
+    String? semanticsLabel,
     Widget? badge,
+    Color? backgroundColor,
+    Color? iconColor,
+    Color? borderColor,
   }) {
-    const size = 34.0;
+    const visualSize = 36.0;
+    const tapSize = 48.0;
     const iconSize = 18.0;
-    return SizedBox(
-      width: size,
-      height: size,
+    final label = semanticsLabel ?? tooltip;
+    Widget button = SizedBox(
+      width: tapSize,
+      height: tapSize,
       child: Stack(
         clipBehavior: Clip.none,
+        alignment: Alignment.center,
         children: [
           Material(
-            color: AppColors.surfaceCard,
-            shape: const CircleBorder(
-              side: BorderSide(color: AppColors.outline, width: 1),
+            color: backgroundColor ?? AppColors.surfaceCard,
+            shape: CircleBorder(
+              side: BorderSide(color: borderColor ?? AppColors.outline, width: 1),
             ),
             child: InkWell(
               customBorder: const CircleBorder(),
-              onTap: onPressed,
+              onTap: () {
+                AppHaptics.select(context);
+                onPressed();
+              },
               child: SizedBox(
-                width: size,
-                height: size,
-                child: Icon(icon, size: iconSize, color: AppColors.primary),
+                width: visualSize,
+                height: visualSize,
+                child: Icon(icon, size: iconSize, color: iconColor ?? AppColors.primary),
               ),
             ),
           ),
           if (badge != null)
-            Positioned(top: -2, right: -2, child: badge),
+            Positioned(top: 0, right: 0, child: badge),
         ],
       ),
+    );
+    if (tooltip != null) {
+      button = Tooltip(message: tooltip, child: button);
+    }
+    if (label != null) {
+      button = Semantics(button: true, label: label, child: button);
+    }
+    return button;
+  }
+
+  /// Exit-confirm dialog khi runner đang `in_progress` (`20` §5.8).
+  static Future<bool> confirmRunnerExit(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.studentRunnerExitTitle),
+        content: Text(l10n.studentRunnerExitMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.studentRunnerExitCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.studentRunnerExitConfirm),
+          ),
+        ],
+      ),
+    );
+    return ok == true;
+  }
+
+  /// `PopScope` + confirm thoát khi [blockExit] (`20` §5.8).
+  static Widget runnerPopScope({
+    required BuildContext context,
+    required bool blockExit,
+    required Widget child,
+    VoidCallback? onConfirmedExit,
+  }) {
+    return PopScope<Object?>(
+      canPop: !blockExit,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (!blockExit) return;
+        confirmRunnerExit(context).then((leave) {
+          if (!leave || !context.mounted) return;
+          if (onConfirmedExit != null) {
+            onConfirmedExit();
+          } else {
+            Navigator.of(context).pop();
+          }
+        });
+      },
+      child: child,
     );
   }
 
@@ -808,6 +983,58 @@ abstract final class StudentMobileUi {
     );
   }
 
+  // ─── MCQ pager (Phase 4 — swipe giữa câu, `20` §4.4) ───────────────────
+
+  /// Header hiển thị tiến độ câu hỏi (vd. `3 / 12`).
+  static Widget mcqPagerHeader(
+    BuildContext context, {
+    required int current,
+    required int total,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        pageHPadding,
+        AppSpacing.s3,
+        pageHPadding,
+        AppSpacing.s2,
+      ),
+      child: Row(
+        children: [
+          Text('$current / $total', style: caption(context)),
+          const Spacer(),
+          Text(
+            total > 0 ? '${((current / total) * 100).round()}%' : '0%',
+            style: caption(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Swipe [PageView] giữa câu MCQ — một câu mỗi trang; 1 câu → scroll đơn.
+  static Widget mcqQuestionPager({
+    required BuildContext context,
+    required PageController controller,
+    required int itemCount,
+    required ValueChanged<int> onPageChanged,
+    required IndexedWidgetBuilder itemBuilder,
+  }) {
+    if (itemCount <= 1) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: pagePadding,
+        child: itemBuilder(context, 0),
+      );
+    }
+    return PageView.builder(
+      controller: controller,
+      itemCount: itemCount,
+      onPageChanged: onPageChanged,
+      physics: const BouncingScrollPhysics(),
+      itemBuilder: itemBuilder,
+    );
+  }
+
   // ─── MCQ options (`04` §11) ─────────────────────────────────────────────
 
   static String mcqLetter(int index) => String.fromCharCode(65 + index);
@@ -849,10 +1076,16 @@ abstract final class StudentMobileUi {
     }
 
     final bodyStyle = body(context);
+    final semanticsLabel = '${mcqLetter(index)}. $text';
 
     return Padding(
       padding: margin,
-      child: Material(
+      child: Semantics(
+        button: onTap != null,
+        selected: selected || (multiSelect && checked),
+        inMutuallyExclusiveGroup: !multiSelect,
+        label: semanticsLabel,
+        child: Material(
         color: bg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.card),
@@ -862,7 +1095,7 @@ abstract final class StudentMobileUi {
           onTap: onTap == null
               ? null
               : () {
-                  HapticFeedback.selectionClick();
+                  AppHaptics.select(context);
                   onTap();
                 },
           borderRadius: BorderRadius.circular(AppRadius.card),
@@ -932,6 +1165,7 @@ abstract final class StudentMobileUi {
             ],
           ),
         ),
+      ),
       ),
     );
   }

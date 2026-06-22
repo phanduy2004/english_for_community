@@ -4,13 +4,17 @@ import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboa
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/entity/admin/app_release_admin_entity.dart';
 import '../../../core/get_it/get_it.dart';
-import '../../../core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/admin_status_palette.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'bloc/release_management_bloc.dart';
 import 'bloc/release_management_event.dart';
 import 'bloc/release_management_state.dart';
@@ -37,43 +41,9 @@ const _kStatusLabel = {
   'archived': 'Lưu trữ',
 };
 
-Color _statusBg(String s) {
-  switch (s) {
-    case 'approved':
-      return const Color(0xFFDCFCE7);
-    case 'published':
-      return const Color(0xFFD1FAE5);
-    case 'pending_approval':
-      return const Color(0xFFFEF3C7);
-    case 'scheduled':
-      return const Color(0xFFE0E7FF);
-    case 'rejected':
-      return const Color(0xFFFEE2E2);
-    case 'archived':
-      return const Color(0xFFF1F5F9);
-    default:
-      return const Color(0xFFF1F5F9);
-  }
-}
+Color _statusBg(String s) => AdminStatusPalette.releaseStatusBg(s);
 
-Color _statusFg(String s) {
-  switch (s) {
-    case 'approved':
-      return const Color(0xFF166534);
-    case 'published':
-      return const Color(0xFF065F46);
-    case 'pending_approval':
-      return const Color(0xFF92400E);
-    case 'scheduled':
-      return const Color(0xFF3730A3);
-    case 'rejected':
-      return const Color(0xFF991B1B);
-    case 'archived':
-      return const Color(0xFF475569);
-    default:
-      return const Color(0xFF334155);
-  }
-}
+Color _statusFg(String s) => AdminStatusPalette.releaseStatusFg(s);
 
 // ---------------------------------------------------------------------------
 // Page
@@ -114,41 +84,101 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
 
   Future<void> _rejectDialog(BuildContext context, String id) async {
     final ctrl = TextEditingController();
+    String? error;
     await showDialog<void>(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Từ chối release'),
-        content: TextField(
-          controller: ctrl,
-          decoration: const InputDecoration(
-            labelText: 'Lý do từ chối',
-            border: OutlineInputBorder(),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
+          title: const Text('Từ chối release'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: ctrl,
+                decoration: AdminWebUi.formInputDecoration(
+                  context,
+                  hintText: 'Nhập lý do từ chối',
+                ),
+                maxLines: 3,
+              ),
+              AdminWebUi.formFieldError(context, error),
+            ],
           ),
-          maxLines: 3,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              onPressed: () {
+                final reason = ctrl.text.trim();
+                if (reason.isEmpty) {
+                  setDialogState(() => error = 'Vui lòng nhập lý do từ chối.');
+                  return;
+                }
+                Navigator.pop(context);
+                context.read<ReleaseManagementBloc>().add(
+                      ReleaseActionRequested(
+                        action: 'reject',
+                        releaseId: id,
+                        payload: {'reason': reason},
+                      ),
+                    );
+              },
+              child: const Text('Từ chối'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _rollbackDialog(BuildContext context, String id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
+        title: const Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: AppColors.danger),
+            SizedBox(width: 8),
+            Text('Xác nhận rollback'),
+          ],
+        ),
+        content: Container(
+          width: 460,
+          padding: const EdgeInsets.all(AppSpacing.s3),
+          decoration: BoxDecoration(
+            color: AppColors.dangerBg,
+            borderRadius: BorderRadius.circular(AppRadius.input),
+            border: Border.all(color: AppColors.dangerBg),
+          ),
+          child: const Text(
+            'Rollback là hành động nhạy cảm và có thể tác động trực tiếp đến người dùng. '
+            'Chỉ tiếp tục khi bạn đã xác nhận ảnh hưởng và kế hoạch khắc phục.',
+            style: TextStyle(color: AppColors.danger),
+          ),
         ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy'),
+          ),
           FilledButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<ReleaseManagementBloc>().add(ReleaseActionRequested(
-                    action: 'reject',
-                    releaseId: id,
-                    payload: {
-                      'reason': ctrl.text.trim().isEmpty
-                          ? 'Rejected by admin'
-                          : ctrl.text.trim()
-                    },
-                  ));
-            },
-            child: const Text('Xác nhận'),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Rollback'),
           ),
         ],
       ),
     );
+    if (ok != true || !context.mounted) return;
+    context.read<ReleaseManagementBloc>().add(
+          ReleaseActionRequested(action: 'rollback', releaseId: id),
+        );
   }
 
   Future<void> _scheduleDialog(BuildContext context, String id) async {
@@ -186,9 +216,9 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
     final first = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: Row(children: const [
-          Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
+          Icon(Icons.warning_amber_rounded, color: AppColors.danger),
           SizedBox(width: 8),
           Text('Cảnh báo FORCE UPDATE'),
         ]),
@@ -202,7 +232,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
               child: const Text('Hủy')),
           FilledButton(
               style: FilledButton.styleFrom(
-                  backgroundColor: const Color(0xFFDC2626)),
+                  backgroundColor: AppColors.danger),
               onPressed: () => Navigator.pop(context, true),
               child: const Text('Tiếp tục')),
         ],
@@ -214,7 +244,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
     final second = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: const Text('Xác nhận bước 2'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -357,8 +387,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
                             onSchedule: (id) => _scheduleDialog(context, id),
                             onPublish: (item) =>
                                 _publishWithConfirm(context, item),
-                            onRollback: (id) => bloc.add(ReleaseActionRequested(
-                                action: 'rollback', releaseId: id)),
+                            onRollback: (id) => _rollbackDialog(context, id),
                           ),
                         ],
                       ),
@@ -408,21 +437,21 @@ class _OverviewHeader extends StatelessWidget {
             padding:
                 const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEF3C7),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0xFFFDE68A)),
+              color: AppColors.warningBg,
+              borderRadius: BorderRadius.circular(AppRadius.input),
+              border: Border.all(color: AppColors.warningBg),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.hourglass_top_rounded,
-                    size: 16, color: Color(0xFF92400E)),
+                    size: 16, color: AppColors.warning),
                 const SizedBox(width: 6),
                 Text('$pending chờ duyệt',
                     style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF92400E))),
+                        color: AppColors.warning)),
               ],
             ),
           ),
@@ -450,22 +479,22 @@ class _StatusTabBar extends StatelessWidget {
         children: _kStatuses.map((s) {
           final isSelected = s == selected;
           final count = counts[s] ?? 0;
-          final bg = isSelected ? _statusBg(s) : const Color(0xFFF1F5F9);
+          final bg = isSelected ? _statusBg(s) : AppColors.surfaceSubtle;
           final fg = isSelected ? _statusFg(s) : AppColors.textMuted;
           final border = isSelected
               ? Border.all(color: _statusFg(s).withValues(alpha: 0.35), width: 1.5)
-              : Border.all(color: const Color(0xFFE2E8F0));
+              : Border.all(color: AppColors.outline);
 
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
               onTap: () => onTap(s),
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 160),
+                duration: AppMotion.web,
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: bg,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                   border: border,
                 ),
                 child: Row(
@@ -487,7 +516,7 @@ class _StatusTabBar extends StatelessWidget {
                           color: isSelected
                               ? _statusFg(s)
                               : AppColors.textMuted,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
                         ),
                         child: Text('$count',
                             style: const TextStyle(
@@ -530,8 +559,8 @@ class _SearchSortBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline),
       ),
       child: Wrap(
         spacing: 12,
@@ -553,15 +582,15 @@ class _SearchSortBar extends StatelessWidget {
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 9),
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
                     borderSide:
-                        const BorderSide(color: Color(0xFFCBD5E1))),
+                        const BorderSide(color: AppColors.outline)),
                 enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(7),
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
                     borderSide:
-                        const BorderSide(color: Color(0xFFCBD5E1))),
+                        const BorderSide(color: AppColors.outline)),
                 filled: true,
-                fillColor: const Color(0xFFF8FAFC),
+                fillColor: AppColors.surface,
               ),
               onChanged: onSearch,
             ),
@@ -619,11 +648,11 @@ class _ReleaseListSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const _SectionCard(
+      return _SectionCard(
         title: 'Danh sách release',
         child: Padding(
-          padding: EdgeInsets.all(40),
-          child: Center(child: AppLoadingIndicator.center()),
+          padding: const EdgeInsets.all(40),
+          child: AdminSkeleton.page(AdminSkeleton.cardList()),
         ),
       );
     }
@@ -707,8 +736,8 @@ class _ReleaseItemCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(10),
+                      color: AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
                     ),
                     child: Icon(
                       item.platform.toLowerCase() == 'ios'
@@ -716,8 +745,8 @@ class _ReleaseItemCard extends StatelessWidget {
                           : Icons.android,
                       size: 22,
                       color: item.platform.toLowerCase() == 'ios'
-                          ? const Color(0xFF475569)
-                          : const Color(0xFF16A34A),
+                          ? AppColors.textMuted
+                          : AppColors.success,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -777,7 +806,7 @@ class _ReleaseItemCard extends StatelessWidget {
                     _ActionButton(
                       label: 'Approve',
                       icon: Icons.check_circle_outline,
-                      color: const Color(0xFF16A34A),
+                      color: AppColors.success,
                       onTap: () => onApprove(item.id),
                     ),
                   if (item.status == 'pending_approval' ||
@@ -786,7 +815,7 @@ class _ReleaseItemCard extends StatelessWidget {
                     _ActionButton(
                       label: 'Từ chối',
                       icon: Icons.cancel_outlined,
-                      color: const Color(0xFFDC2626),
+                      color: AppColors.danger,
                       outlined: true,
                       onTap: () => onReject(item.id),
                     ),
@@ -794,7 +823,7 @@ class _ReleaseItemCard extends StatelessWidget {
                     _ActionButton(
                       label: 'Lên lịch',
                       icon: Icons.event_outlined,
-                      color: const Color(0xFF6366F1),
+                      color: AppColors.info,
                       outlined: true,
                       onTap: () => onSchedule(item.id),
                     ),
@@ -803,7 +832,7 @@ class _ReleaseItemCard extends StatelessWidget {
                       label: item.isForce ? 'Publish (FORCE)' : 'Publish',
                       icon: Icons.rocket_launch_outlined,
                       color: item.isForce
-                          ? const Color(0xFFDC2626)
+                          ? AppColors.danger
                           : AppColors.primary,
                       onTap: () => onPublish(item),
                     ),
@@ -811,7 +840,7 @@ class _ReleaseItemCard extends StatelessWidget {
                     _ActionButton(
                       label: 'Rollback',
                       icon: Icons.history,
-                      color: const Color(0xFF92400E),
+                      color: AppColors.warning,
                       outlined: true,
                       onTap: () => onRollback(item.id),
                     ),
@@ -821,7 +850,7 @@ class _ReleaseItemCard extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+          const Divider(height: 1, color: AppColors.surfaceSubtle),
       ],
     );
   }
@@ -841,8 +870,8 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -876,18 +905,21 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-      decoration: BoxDecoration(
-        color: _statusBg(status),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        _kStatusLabel[status] ?? status,
-        style: TextStyle(
-            color: _statusFg(status),
-            fontSize: 11,
-            fontWeight: FontWeight.w700),
+    return Semantics(
+      label: _kStatusLabel[status] ?? status,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+        decoration: BoxDecoration(
+          color: _statusBg(status),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Text(
+          _kStatusLabel[status] ?? status,
+          style: TextStyle(
+              color: _statusFg(status),
+              fontSize: 11,
+              fontWeight: FontWeight.w700),
+        ),
       ),
     );
   }
@@ -899,13 +931,13 @@ class _ForceBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFFFEE2E2),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: const Color(0xFFFCA5A5)),
+        color: AppColors.dangerBg,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.dangerBg),
       ),
       child: const Text('FORCE',
           style: TextStyle(
-              color: Color(0xFF991B1B),
+              color: AppColors.danger,
               fontSize: 10,
               fontWeight: FontWeight.w800)),
     );
@@ -993,9 +1025,9 @@ class _CompactDropdown<T> extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: const Color(0xFFCBD5E1)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          border: Border.all(color: AppColors.outline),
         ),
         child: DropdownButton<T>(
           value: value,
@@ -1033,13 +1065,13 @@ class _IconToggleButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         child: Container(
           padding: const EdgeInsets.all(7),
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(7),
-            border: Border.all(color: const Color(0xFFCBD5E1)),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            border: Border.all(color: AppColors.outline),
           ),
           child: Icon(icon, size: 16, color: AppColors.textSecondary),
         ),
@@ -1047,3 +1079,8 @@ class _IconToggleButton extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

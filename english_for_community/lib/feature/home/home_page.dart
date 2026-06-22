@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -14,6 +15,7 @@ import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/ui/animation/animated_status_container.dart';
+import '../../core/ui/motion/celebrate_burst.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
@@ -24,7 +26,6 @@ import '../progress/bloc/progress_bloc.dart';
 import '../progress/bloc/progress_event.dart';
 import '../progress/bloc/progress_state.dart';
 import 'widgets/home_study_dashboard.dart';
-import '../../core/get_it/get_it.dart';
 import '../../core/notification/app_notification_listener.dart';
 import '../classroom_chat/dock/classroom_chat_dock_controller.dart';
 import '../../core/notification/notification_navigation.dart';
@@ -137,7 +138,7 @@ class _HomePageState extends State<HomePage> {
     if (type == 'PROGRESS_NUDGE') {
       _selectTab(_tabProgress);
     } else if (type == 'STREAK_RESCUE') {
-      Future.delayed(const Duration(milliseconds: 500), () {
+      Future.delayed(AppMotion.enter, () {
         if (mounted) showSpeakingModeDialog(context);
       });
     }
@@ -226,7 +227,7 @@ class _HomePageState extends State<HomePage> {
       barrierDismissible: true,
       barrierLabel: context.l10n.barrierDismiss,
       barrierColor: Colors.black.withValues(alpha: 0.2),
-      transitionDuration: const Duration(milliseconds: 250),
+      transitionDuration: AppMotion.page,
       pageBuilder: (context, anim1, anim2) => FadeTransition(
         opacity: anim1,
         child: const AiAssistantDialog(),
@@ -300,8 +301,10 @@ class _HomeHeaderNotificationButton extends StatelessWidget {
     return BlocBuilder<NotificationBloc, NotificationState>(
       builder: (context, state) {
         return StudentMobileUi.headerIconButton(
+          context: context,
           icon: Icons.notifications_outlined,
           onPressed: onPressed,
+          tooltip: AppLocalizations.of(context)!.notificationsTitle,
           badge: StudentMobileUi.notificationBadge(state.unreadCount),
         );
       },
@@ -316,19 +319,16 @@ class _HomeHeaderAiButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.primary,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onPressed,
-        splashColor: AppColors.onPrimary.withValues(alpha: 0.12),
-        child: const SizedBox(
-          width: 34,
-          height: 34,
-          child: Icon(Icons.auto_awesome, color: AppColors.onPrimary, size: 17),
-        ),
-      ),
+    final t = AppLocalizations.of(context)!;
+    return StudentMobileUi.headerIconButton(
+      context: context,
+      icon: Icons.auto_awesome,
+      iconColor: AppColors.onPrimary,
+      backgroundColor: AppColors.primary,
+      borderColor: AppColors.primary,
+      tooltip: t.aiAssistantTitle,
+      semanticsLabel: t.aiAssistantTitle,
+      onPressed: onPressed,
     );
   }
 }
@@ -389,7 +389,7 @@ class _HomeContentView extends StatelessWidget {
     if (state.status == UserStatus.error) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
+          padding: StudentMobileUi.pagePadding,
           child: SoftErrorBanner(
             message: state.errorMessage ?? t.homeLoadFailed,
             onRetry: () => context.read<UserBloc>().add(GetProfileEvent()),
@@ -430,7 +430,10 @@ class _HomeContentView extends StatelessWidget {
                       (s) => s.status != ProgressStatus.loading,
                     );
               },
-              child: SingleChildScrollView(
+              child: GamificationCelebrateHost(
+                streak: user.currentStreak ?? 0,
+                level: user.level ?? 1,
+                child: SingleChildScrollView(
                 primary: false,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: StudentMobileUi.pagePadding,
@@ -462,6 +465,7 @@ class _HomeContentView extends StatelessWidget {
                     _buildQuickActionsSection(scrollContext, t),
                   ],
                 ),
+              ),
               ),
             );
           },
@@ -495,8 +499,11 @@ class _HomeContentView extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: StudentMobileUi.greeting(context),
               ),
-              const SizedBox(height: AppSpacing.s2),
-              Text(t.homeReadySubtitle, style: StudentMobileUi.body(context)),
+              const SizedBox(height: AppSpacing.s3),
+              Text(
+                t.homeReadySubtitle,
+                style: StudentMobileUi.body(context).copyWith(color: AppColors.textSecondary),
+              ),
             ],
           ),
         ),
@@ -505,24 +512,24 @@ class _HomeContentView extends StatelessWidget {
         const SizedBox(width: AppSpacing.s3),
         _HomeHeaderAiButton(onPressed: onOpenAiAssistant),
         const SizedBox(width: AppSpacing.s3),
-        Material(
-          color: Colors.transparent,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onOpenProfile,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.outline, width: 1),
-                image: DecorationImage(
-                  image: (avatarUrl != null && avatarUrl.startsWith('http'))
-                      ? NetworkImage(avatarUrl)
-                      : const AssetImage('assets/avatar.png') as ImageProvider,
-                  fit: BoxFit.cover,
-                ),
+        StudentMobileUi.tappable(
+          context: context,
+          onTap: onOpenProfile,
+          minSize: 48,
+          tooltip: t.profileAndSettings,
+          semanticsLabel: t.profileAndSettings,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.outline, width: 1),
+              image: DecorationImage(
+                image: (avatarUrl != null && avatarUrl.startsWith('http'))
+                    ? NetworkImage(avatarUrl)
+                    : const AssetImage('assets/avatar.png') as ImageProvider,
+                fit: BoxFit.cover,
               ),
             ),
           ),
@@ -559,6 +566,7 @@ class _HomeContentView extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: AppSpacing.s2),
               Icon(Icons.emoji_events_outlined, color: AppColors.accent, size: 20),
             ],
           ),
@@ -570,16 +578,19 @@ class _HomeContentView extends StatelessWidget {
   }
 
   Widget _buildStatsRow(BuildContext context, dynamic user, AppLocalizations t) {
-    return Row(
-      children: [
-        Expanded(
-          child: StudentMobileUi.statCard(
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: StudentMobileUi.statCard(
             context: context,
             icon: Icons.local_fire_department_rounded,
             value: '${user.currentStreak ?? 0}',
             label: t.statStreak,
             iconColor: AppColors.accent,
             iconBg: AppColors.accentTint,
+            compact: true,
           ),
         ),
         const SizedBox(width: StudentMobileUi.cardGap),
@@ -589,7 +600,9 @@ class _HomeContentView extends StatelessWidget {
             icon: Icons.star_rounded,
             value: '${user.totalPoints ?? 0}',
             label: t.statPoints,
-            skill: SkillType.reading,
+            iconColor: AppColors.accent,
+            iconBg: AppColors.accentTint,
+            compact: true,
           ),
         ),
         const SizedBox(width: StudentMobileUi.cardGap),
@@ -599,10 +612,13 @@ class _HomeContentView extends StatelessWidget {
             icon: Icons.workspace_premium_rounded,
             value: 'Lv.${user.level ?? 1}',
             label: t.statLevelLabel,
-            skill: SkillType.writing,
+            iconColor: AppColors.primary,
+            iconBg: AppColors.primaryTint,
+            compact: true,
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -632,6 +648,7 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.headphones_outlined,
                   title: t.homeLessonListeningTitle,
                   subtitle: t.homeLessonListeningSubtitle,
+                  emphasized: true,
                 ),
                 const SizedBox(height: StudentMobileUi.cardGap),
                 _LessonCard(
@@ -639,6 +656,7 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.menu_book_outlined,
                   title: t.homeLessonReadingTitle,
                   subtitle: t.homeLessonReadingSubtitle,
+                  emphasized: false,
                 ),
                 const SizedBox(height: StudentMobileUi.cardGap),
                 _LessonCard(
@@ -646,6 +664,7 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.style_outlined,
                   title: t.homeLessonVocabTitle,
                   subtitle: t.homeLessonVocabSubtitle,
+                  emphasized: false,
                 ),
                 if (showAll) ...[
                   const SizedBox(height: StudentMobileUi.cardGap),
@@ -654,6 +673,7 @@ class _HomeContentView extends StatelessWidget {
                     icon: Icons.record_voice_over_outlined,
                     title: t.homeLessonSpeakingTitle,
                     subtitle: t.homeLessonSpeakingSubtitle,
+                    emphasized: false,
                   ),
                   const SizedBox(height: StudentMobileUi.cardGap),
                   _LessonCard(
@@ -661,6 +681,7 @@ class _HomeContentView extends StatelessWidget {
                     icon: Icons.edit_note_outlined,
                     title: t.homeLessonWritingTitle,
                     subtitle: t.homeLessonWritingSubtitle,
+                    emphasized: false,
                   ),
                 ],
               ],
@@ -677,70 +698,57 @@ class _HomeContentView extends StatelessWidget {
       children: [
         Text(t.homeQuickAccess, style: StudentMobileUi.sectionTitle(context)),
         const SizedBox(height: AppSpacing.s5),
-        Row(
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: AppSpacing.s4,
+          crossAxisSpacing: AppSpacing.s4,
+          childAspectRatio: 1.85,
           children: [
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.favorite_rounded,
-                label: t.homeQuickFavorites,
-                skill: SkillType.vocabulary,
-                onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 0}),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.favorite_rounded,
+              label: t.homeQuickFavorites,
+              skill: SkillType.vocabulary,
+              onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 0}),
             ),
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.style_rounded,
-                label: t.homeQuickFlashcards,
-                skill: SkillType.listening,
-                onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 1}),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.style_rounded,
+              label: t.homeQuickFlashcards,
+              skill: SkillType.listening,
+              onTap: () => context.pushNamed('VocabularyPage', extra: const {'initialTabIndex': 1}),
             ),
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.bar_chart_rounded,
-                label: t.homeQuickStats,
-                skill: SkillType.speaking,
-                onTap: () => context.pushNamed(ProgressReportPage.routeName),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.bar_chart_rounded,
+              label: t.homeQuickStats,
+              skill: SkillType.speaking,
+              onTap: () => context.pushNamed(ProgressReportPage.routeName),
             ),
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.history_rounded,
-                label: t.exerciseHistory,
-                skill: SkillType.writing,
-                onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.history_rounded,
+              label: t.exerciseHistory,
+              skill: SkillType.writing,
+              onTap: () => context.pushNamed(MyExerciseHistoryPage.routeName),
             ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.s4),
-        Row(
-          children: [
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.class_rounded,
-                label: t.homeQuickMyClasses,
-                iconColor: AppColors.accent,
-                iconBg: AppColors.accentTint,
-                onTap: () => context.push(MyClassesHubPage.routePath),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.class_rounded,
+              label: t.homeQuickMyClasses,
+              iconColor: AppColors.accent,
+              iconBg: AppColors.accentTint,
+              onTap: () => context.push(MyClassesHubPage.routePath),
             ),
-            Expanded(
-              child: StudentMobileUi.quickActionButton(
-                context: context,
-                icon: Icons.public_rounded,
-                label: t.homeQuickPublicExam,
-                skill: SkillType.reading,
-                onTap: () => context.push(MyClassesHubPage.routePath),
-              ),
+            StudentMobileUi.quickActionButton(
+              context: context,
+              icon: Icons.public_rounded,
+              label: t.homeQuickPublicExam,
+              skill: SkillType.reading,
+              onTap: () => context.push(MyClassesHubPage.routePath),
             ),
-            const Expanded(child: SizedBox()),
-            const Expanded(child: SizedBox()),
           ],
         ),
       ],
@@ -755,12 +763,14 @@ class _LessonCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final bool emphasized;
 
   const _LessonCard({
     required this.slot,
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.emphasized = false,
   });
 
   SkillType get _skillType {
@@ -780,8 +790,10 @@ class _LessonCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final skill = _skillType;
     return StudentMobileUi.skillAccentCard(
-      skill: _skillType,
+      skill: skill,
+      emphasized: emphasized,
       onTap: () {
         switch (slot) {
           case _HomeLessonSlot.listening:
@@ -803,7 +815,7 @@ class _LessonCard extends StatelessWidget {
       },
       child: Row(
         children: [
-          StudentMobileUi.skillIconBox(icon, skill: _skillType),
+          StudentMobileUi.skillIconBox(icon, skill: skill),
           const SizedBox(width: AppSpacing.s4),
           Expanded(
             child: Column(
@@ -815,7 +827,11 @@ class _LessonCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, color: AppSkillColors.of(_skillType).color, size: 18),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: emphasized ? AppSkillColors.of(skill).color : AppColors.textMuted,
+            size: 18,
+          ),
         ],
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'dart:convert';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
@@ -622,7 +623,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
           ),
           const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
             child: LinearProgressIndicator(
               value: max > 0 ? ratio : 0,
               minHeight: 8,
@@ -644,7 +645,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.warning.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
         ),
         child: Text(
           l10n.integratedSkillScorePending,
@@ -658,7 +659,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
         decoration: BoxDecoration(
           color: AppColors.success.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(AppRadius.chip),
         ),
         child: Text(
           '${_formatScore(display)} / 10',
@@ -1148,7 +1149,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primary.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(AppRadius.input),
                         ),
                         child: Text(
                           '$index',
@@ -1205,7 +1206,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceCard,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                         border: Border.all(color: AppColors.outline),
                       ),
                       child: SelectableText(
@@ -1397,7 +1398,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
             TeacherBreadcrumb(label: l10n.teacherGradingDetailTitle),
           ],
           body: loading
-              ? const Center(child: AppLoadingIndicator.center())
+              ? TeacherSkeleton.page(TeacherSkeleton.table(rows: 6))
               : error != null
                   ? Center(
                       child: Padding(
@@ -1465,7 +1466,7 @@ class _GradeChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(

@@ -1,4 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
@@ -116,7 +118,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
   void _nextPage(int stepCount) {
     if (_currentIndex < stepCount - 1) {
       _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
+        duration: AppMotion.tooltipWait,
         curve: Curves.fastOutSlowIn,
       );
     } else {
@@ -137,7 +139,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.transparent,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 360, maxHeight: 480),
         child: Column(
@@ -148,7 +150,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                 alignment: Alignment.center,
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
+                    duration: AppMotion.tooltipWait,
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                       gradient: LinearGradient(
@@ -162,7 +164,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                     ),
                   ),
                   AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppMotion.base,
                     transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
                     child: Container(
                       key: ValueKey<int>(_currentIndex),
@@ -239,19 +241,19 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                   Row(
                     children: List.generate(steps.length, (index) {
                       return AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
+                        duration: AppMotion.base,
                         margin: const EdgeInsets.only(right: 6),
                         height: 6,
                         width: _currentIndex == index ? 24 : 6,
                         decoration: BoxDecoration(
                           color: _currentIndex == index ? currentColor : AppColors.outline,
-                          borderRadius: BorderRadius.circular(3),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
                         ),
                       );
                     }),
                   ),
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
+                    duration: AppMotion.base,
                     child: ElevatedButton(
                       onPressed: () => _nextPage(steps.length),
                       style: ElevatedButton.styleFrom(
@@ -260,7 +262,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                       ),
                       child: Row(

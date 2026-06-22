@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,8 +37,9 @@ class _AdminWritingListBody extends StatefulWidget {
 }
 
 class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
-  final TextEditingController _searchCtrl = TextEditingController();
   final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
 
   void _openEditor(BuildContext context, String? id) async {
     await context.pushNamed(
@@ -53,7 +58,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
       builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
@@ -63,7 +68,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
         ),
         content: const Text(
           "This action can impact related learner submissions. You should only delete if the topic is invalid or duplicated.",
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         actions: [
           OutlinedButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
@@ -86,8 +91,8 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
       builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+          side: const BorderSide(color: AppColors.outline),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
@@ -98,7 +103,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const Icon(Icons.restore_from_trash_outlined, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     const Text('Deleted Writing Topics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -107,14 +112,14 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                 ),
                 const Text(
                   'Restore deleted topics back to active content.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                 ),
                 const SizedBox(height: 12),
                 Expanded(
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedWritingTopics(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
+                      if (!snapshot.hasData) return AdminSkeleton.page(AdminSkeleton.cardList());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -160,7 +165,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
         builder: (context, setLocalState) => AlertDialog(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
           title: Row(
             children: [
               const Icon(Icons.verified_outlined, color: Colors.indigo, size: 20),
@@ -198,7 +203,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
           actions: [
             OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFF0F172A)),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.textPrimary),
               onPressed: () => Navigator.pop(context, selected),
               child: const Text('Apply'),
             ),
@@ -223,12 +228,6 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
 
   @override
   Widget build(BuildContext context) {
-    const kBgPage = Color(0xFFF9FAFB);
-    const kWhite = Colors.white;
-    const kTextMain = Color(0xFF09090B);
-    const kTextMuted = Color(0xFF71717A);
-    const kBorder = Color(0xFFE4E4E7);
-
     return Scaffold(
       backgroundColor: kBgPage,
       appBar: AppBar(
@@ -264,53 +263,62 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
       ),
       body: Column(
         children: [
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: kWhite,
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: kBorder),
-              ),
-              child: TextField(
-                controller: _searchCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Tìm kiếm chủ đề...',
-                  prefixIcon: Icon(Icons.search, size: 18, color: kTextMuted),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 10),
-                ),
-                onChanged: (val) {},
-              ),
-            ),
-          ),
-
-          // List Items
           Expanded(
             child: BlocBuilder<AdminWritingBloc, AdminWritingState>(
               builder: (context, state) {
                 if (state.status == AdminWritingStatus.loading) {
-                  return const Center(child: AppLoadingIndicator.center());
+                  return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
 
                 if (state.topics.isEmpty) {
-                  return const Center(child: Text("Chưa có chủ đề nào.", style: TextStyle(color: kTextMuted)));
+                  return Center(
+                    child: AdminEmptyCard(
+                      message: 'Chưa có chủ đề nào.',
+                      icon: Icons.edit_note_outlined,
+                      actionLabel: 'Tạo chủ đề đầu tiên',
+                      onAction: () => _openEditor(context, null),
+                    ),
+                  );
                 }
+
+                final pageItems = state.topics
+                    .skip((_page - 1) * _rowsPerPage)
+                    .take(_rowsPerPage)
+                    .toList();
 
                 return ListView.separated(
                   padding: const EdgeInsets.all(16),
-                  itemCount: state.topics.length,
+                  itemCount: pageItems.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final topic = state.topics[index];
+                    final topic = pageItems[index];
                     return _buildTopicItem(context, topic, kTextMain, kTextMuted, kBorder);
                   },
                 );
               },
             ),
+          ),
+          BlocBuilder<AdminWritingBloc, AdminWritingState>(
+            builder: (context, state) {
+              if (state.topics.length <= _rowsPerPage) {
+                return const SizedBox.shrink();
+              }
+              final totalPages = (state.topics.length / _rowsPerPage).ceil().clamp(1, 9999);
+              return Padding(
+                padding: const EdgeInsets.all(AppSpacing.s4),
+                child: AdminPaginationBar(
+                  page: _page,
+                  totalPages: totalPages,
+                  totalRows: state.topics.length,
+                  rowsPerPage: _rowsPerPage,
+                  onRowsPerPageChanged: (v) => setState(() {
+                    _rowsPerPage = v;
+                    _page = 1;
+                  }),
+                  onPageChanged: (p) => setState(() => _page = p),
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -332,7 +340,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             width: 4, height: 40,
             decoration: BoxDecoration(
               color: topic.isActive ? Colors.green : Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
           const SizedBox(width: 16),
@@ -403,8 +411,10 @@ class _SmallBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textColor)),
     );
   }
 }
+
+

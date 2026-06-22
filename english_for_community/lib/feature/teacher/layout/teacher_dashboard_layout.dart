@@ -98,12 +98,7 @@ class _MetricCell extends StatelessWidget {
     final valueColor = metric.emphasis ? AppColors.accentDark : AppColors.textPrimary;
 
     final content = Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.s5,
-        compact ? AppSpacing.s4 : AppSpacing.s5,
-        AppSpacing.s4,
-        compact ? AppSpacing.s4 : AppSpacing.s5,
-      ),
+      padding: const EdgeInsets.all(AppSpacing.s4),
       child: Row(
         children: [
           if (metric.icon != null) ...[
@@ -117,17 +112,9 @@ class _MetricCell extends StatelessWidget {
               children: [
                 Text(
                   metric.value,
-                  style: TextStyle(
-                    fontFamily: AppFonts.fontFamily,
-                    fontSize: compact ? 22 : 26,
-                    fontWeight: FontWeight.w600,
-                    height: 1,
-                    letterSpacing: -0.5,
-                    color: valueColor,
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                  ),
+                  style: TeacherWebUi.webKpiValue(context).copyWith(color: valueColor),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.s1),
                 Text(metric.label, style: TeacherWebUi.webCaption(context)),
               ],
             ),
@@ -225,9 +212,9 @@ class TeacherDashboardAttentionStrip extends StatelessWidget {
         ],
         DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.surfaceSubtle,
+            color: AppColors.warningBg,
             borderRadius: BorderRadius.circular(AppRadius.chip),
-            border: Border.all(color: AppColors.outlineMuted),
+            border: Border.all(color: AppColors.outline),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -263,20 +250,20 @@ class _AttentionRow extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 24,
-                height: 24,
+                width: AppSpacing.s6,
+                height: AppSpacing.s6,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.chip),
                 ),
-                child: Icon(icon, size: 13, color: color),
+                child: Icon(icon, size: 14, color: color),
               ),
               const SizedBox(width: AppSpacing.s3),
               Expanded(
                 child: Text(
                   item.label,
-                  style: TeacherWebUi.webCaption(context).copyWith(
+                  style: TeacherWebUi.webBody(context).copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -364,7 +351,9 @@ class _QuickActionChip extends StatelessWidget {
     }
 
     return OutlinedButton.icon(
-      style: TeacherWebUi.compactOutlinedStyle(context),
+      style: TeacherWebUi.compactOutlinedStyle(context).copyWith(
+        backgroundColor: WidgetStateProperty.all(AppColors.surfaceSubtle),
+      ),
       onPressed: action.onTap,
       icon: icon ?? const SizedBox(width: 16),
       label: Text(action.label),
@@ -502,8 +491,8 @@ class _PanelHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: const BoxDecoration(
-        color: AppColors.surfaceSubtle,
-        border: Border(bottom: BorderSide(color: AppColors.outlineMuted)),
+        color: AppColors.surfaceCard,
+        border: Border(bottom: BorderSide(color: AppColors.outline)),
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
       child: Padding(
@@ -961,7 +950,7 @@ class TeacherDashboardInboxCard extends StatelessWidget {
   final TeacherDashboardInboxEntry entry;
 
   static TeacherStatusTone _toneForKind(TeacherDashboardInboxKind kind) => switch (kind) {
-        TeacherDashboardInboxKind.grading => TeacherStatusTone.warning,
+        TeacherDashboardInboxKind.grading => TeacherStatusTone.secondary,
         TeacherDashboardInboxKind.live => TeacherStatusTone.primary,
         TeacherDashboardInboxKind.dueSoon => TeacherStatusTone.danger,
         TeacherDashboardInboxKind.pendingJoin => TeacherStatusTone.success,
@@ -1005,7 +994,7 @@ class TeacherDashboardInboxCard extends StatelessWidget {
                         AppSpacing.s3,
                       ),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Container(
                             width: 36,
@@ -1041,7 +1030,7 @@ class TeacherDashboardInboxCard extends StatelessWidget {
                                   ],
                                 ),
                                 if (entry.subtitle != null && entry.subtitle!.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: AppSpacing.s2),
                                   Text(
                                     entry.subtitle!,
                                     style: TeacherWebUi.webBody(context),
@@ -1050,19 +1039,16 @@ class TeacherDashboardInboxCard extends StatelessWidget {
                                   ),
                                 ],
                                 if (contextLine != null) ...[
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: AppSpacing.s3),
                                   contextLine,
                                 ],
                               ],
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Icon(
-                              Icons.chevron_right,
-                              size: 18,
-                              color: AppColors.textMuted.withValues(alpha: 0.75),
-                            ),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: AppColors.textMuted.withValues(alpha: 0.75),
                           ),
                         ],
                       ),

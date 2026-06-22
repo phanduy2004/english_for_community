@@ -191,7 +191,7 @@ class _ContextChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: border),
       ),
       child: Row(
@@ -218,7 +218,7 @@ class _ContextChip extends StatelessWidget {
     if (onTap == null) return child;
     return Material(
       color: Colors.transparent,
-      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(20), child: child),
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(AppRadius.lg), child: child),
     );
   }
 }

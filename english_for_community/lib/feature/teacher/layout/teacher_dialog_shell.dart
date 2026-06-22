@@ -2,6 +2,7 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 
 /// Centered modal shell — `docs/ui-ux-system/07-web-components.md` §4.
@@ -41,7 +42,7 @@ class TeacherDialogShell extends StatelessWidget {
       elevation: 8,
       shadowColor: Colors.black.withValues(alpha: 0.12),
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: width),
         child: Column(
@@ -60,7 +61,7 @@ class TeacherDialogShell extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.primaryTint,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                       ),
                       child: Icon(icon, size: 20, color: AppColors.primaryDark),
                     ),
@@ -198,12 +199,12 @@ class TeacherDialogOptionTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.outlineMuted),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.card),
           ),
           child: Row(
             children: [
@@ -213,7 +214,7 @@ class TeacherDialogOptionTile extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.input),
                 ),
                 child: Icon(icon, size: 18, color: AppColors.textSecondary),
               ),
@@ -321,7 +322,7 @@ class _TeacherDialogExpandableSectionState
       child: Container(
         decoration: BoxDecoration(
           border: Border.all(color: AppColors.outlineMuted),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -330,8 +331,8 @@ class _TeacherDialogExpandableSectionState
             InkWell(
               onTap: _toggle,
               borderRadius: BorderRadius.vertical(
-                top: const Radius.circular(10),
-                bottom: _expanded ? Radius.zero : const Radius.circular(10),
+                top: const Radius.circular(AppRadius.card),
+                bottom: _expanded ? Radius.zero : const Radius.circular(AppRadius.card),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -343,7 +344,7 @@ class _TeacherDialogExpandableSectionState
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: AppColors.surfaceSubtle,
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(AppRadius.input),
                       ),
                       child: Icon(widget.icon, size: 18, color: AppColors.textSecondary),
                     ),
@@ -410,7 +411,7 @@ class _TeacherDialogExpandableSectionState
               ),
               crossFadeState:
                   _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-              duration: const Duration(milliseconds: 160),
+              duration: AppMotion.web,
               sizeCurve: Curves.easeOut,
             ),
           ],

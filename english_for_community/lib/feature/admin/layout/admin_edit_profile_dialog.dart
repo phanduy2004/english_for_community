@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:english_for_community/core/entity/user_entity.dart';
+import 'package:english_for_community/core/ui/avatar_url.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -11,6 +12,7 @@ import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_dialog_shell.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -162,7 +164,7 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
             return AdminDialogShell(
               title: t.editProfileTitle,
               icon: Icons.person_outline,
-              body: const Center(child: AppLoadingIndicator.center()),
+              body: AdminSkeleton.page(AdminSkeleton.cardList()),
             );
           }
 
@@ -345,12 +347,12 @@ class _GenderChip extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: selected ? AppColors.primaryTint : AppColors.surfaceCard,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: selected ? AppColors.primary : AppColors.outline,
               width: selected ? 1.5 : 1,
@@ -385,8 +387,8 @@ class _AvatarPicker extends StatelessWidget {
     ImageProvider? img;
     if (pickedBytes != null && pickedBytes!.isNotEmpty) {
       img = MemoryImage(pickedBytes!);
-    } else if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
-      img = NetworkImage(profile.avatarUrl!);
+    } else {
+      img = AdminWebUi.networkAvatar(profile.avatarUrl, logicalSize: 72);
     }
 
     return Stack(
@@ -398,7 +400,7 @@ class _AvatarPicker extends StatelessWidget {
           backgroundImage: img,
           child: img == null
               ? Text(
-                  profile.fullName.isNotEmpty ? profile.fullName[0].toUpperCase() : '?',
+                  avatarInitials(profile.fullName),
                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
                 )
               : null,
@@ -423,4 +425,6 @@ class _AvatarPicker extends StatelessWidget {
     );
   }
 }
+
+
 

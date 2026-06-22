@@ -46,6 +46,8 @@ abstract final class AppColors {
 
   // ─── Semantic ─────────────────────────────────────────────────────────
   static const Color success = Color(0xFF16A34A);
+  // audit-ignore: token gốc — translated text / success emphasis (doc 20 §3.1)
+  static const Color successDark = Color(0xFF166534);
   static const Color warning = Color(0xFFD97706);
   static const Color danger = Color(0xFFDC2626);
   static const Color info = Color(0xFF6366F1);
@@ -59,6 +61,28 @@ abstract final class AppColors {
 
   /// Tint amber (badge, KPI nổi).
   static Color get accentTint => const Color(0xFFF59E0B).withValues(alpha: 0.14);
+
+  // ─── Interaction overlays (đặt tên cho mọi alpha) ─────────────────────
+  /// Hover nền row/tile trên web. Xem `docs/ui-ux-system/18` §5.2.
+  static Color get hoverOverlay => const Color(0xFF0A0A0A).withValues(alpha: 0.04);
+
+  /// Press feedback.
+  static Color get pressOverlay => const Color(0xFF0A0A0A).withValues(alpha: 0.08);
+
+  /// Ring focus 2px (Tab) — mọi phần tử tap được.
+  static const Color focusRing = primary;
+
+  /// Backdrop dialog / scrim.
+  static const Color scrim = Color(0x66000000);
+
+  /// Bóng card chuẩn (= `TeacherWebUi.cardShadow` lớp 1).
+  static const Color shadowCard = Color(0x0A000000);
+
+  /// Bóng ambient mảnh (lớp 2 của card).
+  static const Color shadowAmbient = Color(0x04000000);
+
+  /// Đường hairline 1px kiểu bóng (panel phẳng).
+  static const Color shadowHairline = Color(0x06000000);
 
   /// Semantic backgrounds (theo `02-design-tokens.md` §1.5).
   static const Color successBg = Color(0xFFECFDF5);

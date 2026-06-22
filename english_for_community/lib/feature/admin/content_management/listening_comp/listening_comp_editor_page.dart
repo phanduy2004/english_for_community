@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -202,7 +205,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
                 onPressed: _onSubmit,
                 style: FilledButton.styleFrom(
                     backgroundColor: kTextMain,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10)
                 ),
                 child: Text(widget.id == null ? "Create" : "Update"),
@@ -213,7 +216,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
         body: BlocBuilder<AdminListeningCompBloc, AdminListeningCompState>(
           builder: (context, state) {
             if (state.status == AdminListeningCompStatus.loading && (_isLoadingDetail || (questions.isEmpty && widget.id != null))) {
-              return const Center(child: AppLoadingIndicator.center());
+              return AdminSkeleton.page(AdminSkeleton.cardList());
             }
 
             return SingleChildScrollView(
@@ -234,7 +237,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
                         style: OutlinedButton.styleFrom(
                             foregroundColor: kTextMain,
                             side: const BorderSide(color: kBorder),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10)
                         ),
                         icon: const Icon(Icons.add, size: 16),
@@ -257,7 +260,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
   Widget _buildGeneralInfo() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: kBorder)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -275,7 +278,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
                     const SizedBox(height: 8),
                     Container(
                       height: 40,
-                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder), color: const Color(0xFFF8F9FA)),
+                      decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: kBorder), color: AppColors.surfaceSubtle),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _difficulty,
@@ -310,15 +313,15 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
         const SizedBox(height: 8),
         InkWell(
           onTap: _pickAudio,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.input),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(8), border: Border.all(color: kBorder)),
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: kBorder)),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+                  decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(AppRadius.chip)),
                   child: const Icon(Icons.audio_file_outlined, size: 20, color: kTextMain),
                 ),
                 const SizedBox(width: 12),
@@ -360,18 +363,18 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
   Widget _buildQuestionCard(int index, Map<String, dynamic> q) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kBorder)),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: kBorder)),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: const BoxDecoration(color: Color(0xFFFAFAFA), borderRadius: BorderRadius.vertical(top: Radius.circular(12)), border: Border(bottom: BorderSide(color: kBorder))),
+            decoration: const BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.card)), border: Border(bottom: BorderSide(color: kBorder))),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(4)),
+                  decoration: BoxDecoration(color: kTextMain, borderRadius: BorderRadius.circular(AppRadius.xs)),
                   child: Text("#${index + 1}", style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                 ),
                 IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20), onPressed: () => setState(() => questions.removeAt(index)), padding: EdgeInsets.zero, constraints: const BoxConstraints()),
@@ -401,7 +404,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
                           children: [
                             Radio<int>(
                               value: optIdx,
-                              fillColor: const WidgetStatePropertyAll(Color(0xFF16A34A)),
+                              fillColor: const WidgetStatePropertyAll(AppColors.success),
                             ),
                             Expanded(
                               child: _CompactInput(
@@ -484,9 +487,11 @@ class _CompactInputState extends State<_CompactInput> {
         hintStyle: const TextStyle(color: kTextMuted),
         filled: true,
         fillColor: kWhite,
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kBorder)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kTextMain)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.input), borderSide: const BorderSide(color: kBorder)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.input), borderSide: const BorderSide(color: kTextMain)),
       ),
     );
   }
 }
+
+

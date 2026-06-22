@@ -218,7 +218,7 @@ class _Crumb extends StatelessWidget {
     if (isLast || item.location == null) return text;
     return InkWell(
       onTap: () => context.go(item.location!),
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1), child: text),
     );
   }
@@ -289,7 +289,7 @@ class AdminSegmentedControl<T> extends StatelessWidget {
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         border: Border.all(color: AppColors.outline),
       ),
       child: Row(
@@ -299,11 +299,11 @@ class AdminSegmentedControl<T> extends StatelessWidget {
           return Material(
             color: active ? AppColors.surfaceCard : Colors.transparent,
             elevation: active ? 1 : 0,
-            shadowColor: const Color(0x0A000000),
-            borderRadius: BorderRadius.circular(6),
+            shadowColor: AppColors.shadowCard,
+            borderRadius: BorderRadius.circular(AppRadius.chip),
             child: InkWell(
               onTap: () => onSelected(seg),
-              borderRadius: BorderRadius.circular(6),
+              borderRadius: BorderRadius.circular(AppRadius.chip),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 child: Text(

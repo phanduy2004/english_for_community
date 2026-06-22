@@ -1,3 +1,4 @@
+import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/entity/reading/reading_entity.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
@@ -100,7 +101,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: AppColors.infoBg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
             ),
             child: Row(
@@ -128,7 +129,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
       padding: const EdgeInsets.all(AppSpacing.s5),
       decoration: BoxDecoration(
         color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
       ),
       child: Row(
@@ -191,9 +192,9 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
     }
 
     if (_readingLoading[readingId] == true) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: AppLoadingIndicator.center()),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: TeacherSkeleton.page(TeacherSkeleton.cardList(n: 2, height: 80)),
       );
     }
 
@@ -235,7 +236,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.surfaceSubtle,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outlineMuted),
             ),
             child: Column(
@@ -283,7 +284,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: AppColors.outlineMuted),
               ),
               child: Column(
@@ -350,7 +351,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: AppColors.outlineMuted),
               ),
               child: Column(
@@ -392,7 +393,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.surfaceSubtle,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.card),
                 border: Border.all(color: AppColors.outlineMuted),
               ),
               child: Column(
@@ -441,7 +442,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.infoBg,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
             ),
             child: Column(
@@ -466,7 +467,7 @@ class _TeacherExamSkillWorkPanelState extends State<TeacherExamSkillWorkPanel> {
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: AppColors.info.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(AppRadius.xs),
                         ),
                         child: Text(
                           taskType,
@@ -554,7 +555,7 @@ class TeacherStatusChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColors.outline),
       ),
       child: Text(

@@ -1,6 +1,8 @@
 // lib/feature/admin/report_management/widget/report_action_menu.dart
 
 import 'package:english_for_community/feature/admin/report_management/widget/report_detail_dialog.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entity/report_entity.dart';
@@ -14,10 +16,11 @@ class ReportActionMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: Color(0xFFA1A1AA)),
+      icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
+      tooltip: 'Report actions',
       color: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: const BorderSide(color: Color(0xFFE4E4E7))),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input), side: const BorderSide(color: AppColors.outline)),
       elevation: 4,
       onSelected: (value) => _handleAction(context, value),
       itemBuilder: (context) {
@@ -79,3 +82,5 @@ class ReportActionMenu extends StatelessWidget {
     ));
   }
 }
+
+

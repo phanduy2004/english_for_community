@@ -1,3 +1,7 @@
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,7 +28,7 @@ class _AdminListeningCompListPageState extends State<AdminListeningCompListPage>
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => getIt<AdminListeningCompBloc>()..add(const GetAdminListeningCompListEvent(limit: 9999, page: 1)),
+      create: (_) => getIt<AdminListeningCompBloc>()..add(GetAdminListeningCompListEvent(limit: kAdminDefaultRowsPerPage, page: 1)),
       child: const _AdminListeningCompListBody(),
     );
   }
@@ -39,6 +43,14 @@ class _AdminListeningCompListBody extends StatefulWidget {
 
 class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody> {
   final AdminRemoteDatasource _adminRemote = getIt<AdminRemoteDatasource>();
+  int _page = 1;
+  int _rowsPerPage = kAdminDefaultRowsPerPage;
+
+  void _fetchData() {
+    context.read<AdminListeningCompBloc>().add(
+      GetAdminListeningCompListEvent(limit: _rowsPerPage, page: _page),
+    );
+  }
 
   void _openEditor(BuildContext context, String? id) async {
     await context.pushNamed(
@@ -48,7 +60,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
     );
 
     if (mounted) {
-      context.read<AdminListeningCompBloc>().add(const GetAdminListeningCompListEvent(limit: 9999, page: 1));
+      _fetchData();
     }
   }
 
@@ -58,7 +70,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
       builder: (ctx) => AlertDialog(
         backgroundColor: kWhite,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
         title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
@@ -68,7 +80,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
         ),
         content: const Text(
           "This will remove all questions and explanations in this quiz.",
-          style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+          style: TextStyle(fontSize: 13, color: AppColors.textMuted),
         ),
         actions: [
           OutlinedButton(
@@ -94,8 +106,8 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
       builder: (ctx) => Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFE2E8F0)),
+          borderRadius: BorderRadius.circular(AppRadius.sheet),
+          side: const BorderSide(color: AppColors.outline),
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 760, maxHeight: 560),
@@ -106,7 +118,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.restore_from_trash_outlined, color: Color(0xFF475569)),
+                    const Icon(Icons.restore_from_trash_outlined, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     const Text('Deleted Listening Quizzes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
                     const Spacer(),
@@ -118,7 +130,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
                   child: FutureBuilder<List<Map<String, dynamic>>>(
                     future: _adminRemote.getDeletedListeningComprehensions(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const Center(child: AppLoadingIndicator.center());
+                      if (!snapshot.hasData) return AdminSkeleton.page(AdminSkeleton.cardList());
                       final data = snapshot.data!;
                       if (data.isEmpty) return const Center(child: Text('Trash is empty'));
                       return ListView.separated(
@@ -136,7 +148,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
                                 await _adminRemote.restoreListeningComprehension(id);
                                 if (!mounted) return;
                                 Navigator.pop(ctx);
-                                context.read<AdminListeningCompBloc>().add(const GetAdminListeningCompListEvent(limit: 9999, page: 1));
+                                _fetchData();
                                 AppCornerToast.show(context, 'Listening quiz restored');
                               },
                               child: const Text('Restore'),
@@ -197,114 +209,119 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
           )
         ],
       ),
-        body: BlocConsumer<AdminListeningCompBloc, AdminListeningCompState>(
-          listener: (context, state) {
-            if (state.status == AdminListeningCompStatus.failure) {
-              AppCornerToast.show(context, state.errorMessage ?? "Có lỗi xảy ra!", error: true);
-            }
-          },
-          builder: (context, state) {
-            if (state.status == AdminListeningCompStatus.loading && state.listenings.isEmpty) {
-              return const Center(child: AppLoadingIndicator.center());
-            }
+        body: Column(
+          children: [
+            Expanded(
+              child: BlocConsumer<AdminListeningCompBloc, AdminListeningCompState>(
+                listener: (context, state) {
+                  if (state.status == AdminListeningCompStatus.failure) {
+                    AppCornerToast.show(context, state.errorMessage ?? 'Có lỗi xảy ra!', error: true);
+                  }
+                },
+                builder: (context, state) {
+                  if (state.status == AdminListeningCompStatus.loading && state.listenings.isEmpty) {
+                    return AdminSkeleton.page(AdminSkeleton.cardList());
+                  }
 
-            if (state.listenings.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.quiz_outlined, size: 64, color: kTextMuted),
-                    const SizedBox(height: 16),
-                    const Text("Chưa có bài tập trắc nghiệm nào.", style: TextStyle(color: kTextMuted)),
-                    TextButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text("Tạo bài đầu tiên"),
-                      onPressed: () => _openEditor(context, null),
-                    )
-                  ],
-                ),
-              );
-            }
+                  if (state.listenings.isEmpty) {
+                    return Center(
+                      child: AdminEmptyCard(
+                        message: 'Chưa có bài tập trắc nghiệm nào.',
+                        icon: Icons.quiz_outlined,
+                        actionLabel: 'Tạo bài đầu tiên',
+                        onAction: () => _openEditor(context, null),
+                      ),
+                    );
+                  }
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<AdminListeningCompBloc>().add(const GetAdminListeningCompListEvent(limit: 9999, page: 1));
-              },
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: state.listenings.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = state.listenings[index];
-                  return ShadcnCard(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    onTap: () => _openEditor(context, item.id),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48, height: 48,
-                          decoration: BoxDecoration(
-                              color: const Color(0xFFF3E8FF),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: const Color(0xFFE9D5FF))
-                          ),
-                          child: const Icon(Icons.quiz, color: Color(0xFF9333EA)),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  return RefreshIndicator(
+                    onRefresh: () async => _fetchData(),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: state.listenings.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final item = state.listenings[index];
+                        return ShadcnCard(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          onTap: () => _openEditor(context, item.id),
+                          child: Row(
                             children: [
-                              Text(
-                                  item.title,
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  color: AppColors.infoBg,
+                                  borderRadius: BorderRadius.circular(AppRadius.input),
+                                  border: Border.all(color: AppColors.outline),
+                                ),
+                                child: const Icon(Icons.quiz, color: AppColors.info),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                  "${item.difficulty.toUpperCase()} • ${item.minutesToComplete} Min",
-                                  style: const TextStyle(fontSize: 12, color: kTextMuted)
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.title,
+                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${item.difficulty.toUpperCase()} • ${item.minutesToComplete} Min',
+                                      style: const TextStyle(fontSize: 12, color: kTextMuted),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              const SizedBox(height: 6),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  _MetaBadge(
-                                    text: '${item.totalQuestions} questions',
-                                    color: Colors.purple.shade50,
-                                    textColor: Colors.purple.shade700,
-                                  ),
-                                  _MetaBadge(
-                                    text: '${item.attemptsCount} submissions',
-                                    color: Colors.orange.shade50,
-                                    textColor: Colors.orange.shade800,
-                                  ),
-                                  _MetaBadge(
-                                    text: item.adminStatus,
-                                    color: Colors.green.shade50,
-                                    textColor: Colors.green.shade700,
-                                  ),
-                                ],
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                onPressed: () => _confirmDelete(context, item.id),
                               ),
+                              const Icon(Icons.chevron_right, color: kTextMuted, size: 18),
                             ],
                           ),
-                        ),
-                        IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red),
-                            onPressed: () => _confirmDelete(context, item.id)
-                        ),
-                        const SizedBox(width: 4),
-                        const Icon(Icons.chevron_right, color: kTextMuted, size: 20),
-                      ],
+                        );
+                      },
                     ),
                   );
                 },
               ),
-            );
-          },
-        )
+            ),
+            BlocBuilder<AdminListeningCompBloc, AdminListeningCompState>(
+              builder: (context, state) {
+                if (state.totalPages <= 1 && state.listenings.length <= _rowsPerPage) {
+                  return const SizedBox.shrink();
+                }
+                final totalRows = state.currentPage >= state.totalPages
+                    ? (state.totalPages - 1) * _rowsPerPage + state.listenings.length
+                    : state.totalPages * _rowsPerPage;
+                return Padding(
+                  padding: const EdgeInsets.all(AppSpacing.s4),
+                  child: AdminPaginationBar(
+                    page: state.currentPage,
+                    totalPages: state.totalPages.clamp(1, 9999),
+                    totalRows: totalRows,
+                    rowsPerPage: _rowsPerPage,
+                    onRowsPerPageChanged: (v) {
+                      setState(() {
+                        _rowsPerPage = v;
+                        _page = 1;
+                      });
+                      _fetchData();
+                    },
+                    onPageChanged: (p) {
+                      setState(() => _page = p);
+                      _fetchData();
+                    },
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
     );
   }
 }
@@ -323,7 +340,7 @@ class _MetaBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.xs)),
       child: Text(
         text,
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: textColor),
@@ -331,3 +348,6 @@ class _MetaBadge extends StatelessWidget {
     );
   }
 }
+
+
+

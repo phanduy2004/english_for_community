@@ -126,7 +126,7 @@ class _TeacherPageHeader extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, c) {
-          final compact = mobile || c.maxWidth < 640;
+          final compact = mobile || c.maxWidth < 800;
           final crumbRow = breadcrumbs.isNotEmpty
               ? Padding(
                   padding: const EdgeInsets.only(bottom: 6),
@@ -136,8 +136,8 @@ class _TeacherPageHeader extends StatelessWidget {
 
           final actionBar = actions.isNotEmpty
               ? Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: AppSpacing.s3,
+                  runSpacing: AppSpacing.s5,
                   alignment: WrapAlignment.end,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: actions,
@@ -216,16 +216,19 @@ class _BreadcrumbTrail extends StatelessWidget {
     final style = (TeacherMobileUi.isMobileWorkspace(context)
             ? TeacherMobileUi.caption(context)
             : TeacherWebUi.webBreadcrumb(context))
-        .copyWith(fontSize: TeacherMobileUi.isMobileWorkspace(context) ? 12 : null);
-    final activeStyle = style.copyWith(color: AppColors.textPrimary);
+        .copyWith(
+          fontSize: TeacherMobileUi.isMobileWorkspace(context) ? 12 : null,
+          color: AppColors.textPrimary,
+        );
+    final activeStyle = style.copyWith(fontWeight: FontWeight.w600);
     return Wrap(
       crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 2,
+      spacing: AppSpacing.s2,
       children: [
         for (var i = 0; i < items.length; i++) ...[
           if (i > 0)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 2),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
               child: Icon(Icons.chevron_right, size: 14, color: AppColors.textMuted),
             ),
           _Crumb(
@@ -252,7 +255,7 @@ class _Crumb extends StatelessWidget {
     if (isLast || item.location == null) return text;
     return InkWell(
       onTap: () => context.go(item.location!),
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1), child: text),
     );
   }

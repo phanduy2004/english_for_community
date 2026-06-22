@@ -1,14 +1,18 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'package:english_for_community/core/theme/admin_status_palette.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
+import 'package:flutter/material.dart';
 
-// --- COLORS PALETTE (Shadcn / Slate Theme) ---
-const kBgPage = Color(0xFFF8FAFC);      // Slate-50
-const kWhite = Colors.white;
-const kTextMain = Color(0xFF0F172A);    // Slate-900
-const kTextMuted = Color(0xFF64748B);   // Slate-500
-const kBorder = Color(0xFFE2E8F0);      // Slate-200
-const kPrimary = Color(0xFF0F172A);     // Slate-900 (Primary Action)
+/// Semantic aliases — dùng `AppColors` trực tiếp ở code mới.
+const kBgPage = AppColors.surface;
+const kWhite = AppColors.surfaceCard;
+const kTextMain = AppColors.textPrimary;
+const kTextMuted = AppColors.textSecondary;
+const kBorder = AppColors.outline;
+const kPrimary = AppColors.textPrimary;
 
-// 1. Basic Card (Container trắng, bo góc, có bóng nhẹ)
+/// Card CMS — delegate `AdminWebUi.cardDecoration`.
 class ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -18,25 +22,15 @@ class ShadcnCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kBorder),
-        boxShadow: [
-          BoxShadow(
-              color: kTextMain.withValues(alpha: 0.04),
-              blurRadius: 4,
-              offset: const Offset(0, 2))
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Ink(
+          decoration: AdminWebUi.cardDecoration(),
           child: Padding(
-            padding: padding ?? const EdgeInsets.all(20),
+            padding: padding ?? const EdgeInsets.all(AppSpacing.s5),
             child: child,
           ),
         ),
@@ -45,7 +39,7 @@ class ShadcnCard extends StatelessWidget {
   }
 }
 
-// 2. Standard Input (Form Input chuẩn)
+/// Form input CMS — delegate `AdminWebUi`.
 class ShadcnInput extends StatelessWidget {
   final String label;
   final String hint;
@@ -74,32 +68,19 @@ class ShadcnInput extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label.isNotEmpty) ...[
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13, fontWeight: FontWeight.w600, color: kTextMain)),
-          const SizedBox(height: 6),
+          AdminWebUi.formFieldLabel(context, label),
+          const SizedBox(height: AppSpacing.s2),
         ],
-        Container(
-          decoration: BoxDecoration(
-            color: isReadOnly ? const Color(0xFFF1F5F9) : kWhite,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: kBorder),
-          ),
-          child: TextField(
-            controller: controller,
-            onChanged: onChanged,
-            maxLines: maxLines,
-            readOnly: isReadOnly,
-            keyboardType: keyboardType,
-            style: const TextStyle(fontSize: 14, color: kTextMain),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyle(color: kTextMuted.withValues(alpha: 0.6)),
-              border: InputBorder.none,
-              contentPadding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              suffixIcon: suffixIcon,
-            ),
+        TextField(
+          controller: controller,
+          onChanged: onChanged,
+          maxLines: maxLines,
+          readOnly: isReadOnly,
+          keyboardType: keyboardType,
+          style: AdminWebUi.webBody(context),
+          decoration: AdminWebUi.formInputDecoration(context, hintText: hint.isEmpty ? null : hint).copyWith(
+            suffixIcon: suffixIcon,
+            fillColor: isReadOnly ? AppColors.surfaceSubtle : AppColors.surfaceCard,
           ),
         ),
       ],
@@ -107,7 +88,6 @@ class ShadcnInput extends StatelessWidget {
   }
 }
 
-// 3. Section Header (Tiêu đề phần)
 class SectionHeader extends StatelessWidget {
   final String title;
   final Widget? action;
@@ -117,30 +97,28 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.bold, color: kTextMain),
+              style: AdminWebUi.webH3(context),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),
           ),
           if (action != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.s2),
             action!,
-          ]
+          ],
         ],
       ),
     );
   }
 }
 
-// 4. Status Badge (Nhãn trạng thái)
 class StatusBadge extends StatelessWidget {
   final String text;
   final Color color;
@@ -150,23 +128,26 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.active({required bool isActive}) {
     return StatusBadge(
       text: isActive ? 'Published' : 'Draft',
-      color: isActive ? const Color(0xFF166534) : kTextMuted,
+      color: isActive ? AdminStatusPalette.approvedFg : AppColors.textSecondary,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s2, vertical: AppSpacing.s1),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.chip),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Text(
         text,
         style: TextStyle(
-            fontSize: 11, fontWeight: FontWeight.w600, color: color),
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }

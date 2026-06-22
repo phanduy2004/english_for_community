@@ -1,4 +1,4 @@
-  import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,6 +6,8 @@ import 'package:forui/forui.dart';
 import 'package:rive/rive.dart' as rive;
 
 import 'core/api/api_config.dart';
+import 'core/debug/app_bloc_observer.dart';
+import 'core/debug/app_global_error_hooks.dart';
 import 'core/get_it/get_it.dart';
 import 'core/locale/app_locale_controller.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -28,23 +30,27 @@ import 'feature/app_update/app_update_guard.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await rive.RiveNative.init();
-  configureWebUrlStrategy();
-  await NotificationService.I.init();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await ApiConfig.init();
-  if (kDebugMode) {
-    debugPrint('[ApiConfig] API base: ${ApiConfig.Base_URL}');
-  }
-  setup(); // Khởi tạo Dependency Injection (GetIt)
-  //await DictDb.I.db;
-  //NotificationService.I.scheduleDaily9AMNotification();
-  await LocalNotificationService().init();
-  await getIt<AppLocaleController>().load();
-  runApp(MyApp());
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    AppLottieCache.warmUp();
+  await runAppWithErrorZone(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    installAppGlobalErrorHooks();
+    Bloc.observer = AppBlocObserver();
+    await rive.RiveNative.init();
+    configureWebUrlStrategy();
+    await NotificationService.I.init();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    await ApiConfig.init();
+    if (kDebugMode) {
+      debugPrint('[ApiConfig] API base: ${ApiConfig.Base_URL}');
+    }
+    setup(); // Khởi tạo Dependency Injection (GetIt)
+    //await DictDb.I.db;
+    //NotificationService.I.scheduleDaily9AMNotification();
+    await LocalNotificationService().init();
+    await getIt<AppLocaleController>().load();
+    runApp(MyApp());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppLottieCache.warmUp();
+    });
   });
 }
 

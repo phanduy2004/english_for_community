@@ -1,8 +1,11 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_fonts.dart';
+import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/avatar_url.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Web admin console — căn chỉnh teacher compact v3 (`docs/ui-ux-system/06-web-foundations.md`).
 abstract final class AdminWebUi {
@@ -38,8 +41,8 @@ abstract final class AdminWebUi {
   }
 
   static const List<BoxShadow> cardShadow = [
-    BoxShadow(color: Color(0x0A000000), blurRadius: 12, offset: Offset(0, 4)),
-    BoxShadow(color: Color(0x04000000), blurRadius: 1, offset: Offset(0, 1)),
+    BoxShadow(color: AppColors.shadowCard, blurRadius: 12, offset: Offset(0, 4)),
+    BoxShadow(color: AppColors.shadowAmbient, blurRadius: 1, offset: Offset(0, 1)),
   ];
 
   static BoxDecoration cardDecoration({Color? bg}) => BoxDecoration(
@@ -48,6 +51,45 @@ abstract final class AdminWebUi {
         border: Border.all(color: AppColors.outline, width: 1),
         boxShadow: cardShadow,
       );
+
+  /// Flat workspace panel — border only, no shadow.
+  static BoxDecoration panelDecoration({Color? bg}) => BoxDecoration(
+        color: bg ?? AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline, width: 1),
+      );
+
+  /// Decode avatars at display size — skips unusable URLs (e.g. github.com profile pages).
+  static ImageProvider? networkAvatar(String? url, {double logicalSize = 36}) {
+    if (!isUsableAvatarUrl(url)) return null;
+    final dpr = WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio;
+    final px = (logicalSize * dpr).ceil();
+    return ResizeImage.resizeIfNeeded(px, px, NetworkImage(url!.trim()));
+  }
+
+  /// Circle avatar with network image + initials fallback.
+  static Widget userAvatarCircle({
+    required String? avatarUrl,
+    required String displayName,
+    double radius = 14,
+  }) {
+    final bg = networkAvatar(avatarUrl, logicalSize: radius * 2);
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: AppColors.primaryTint,
+      backgroundImage: bg,
+      child: bg == null
+          ? Text(
+              avatarInitials(displayName),
+              style: TextStyle(
+                fontSize: radius * 0.85,
+                fontWeight: FontWeight.w600,
+                color: AppColors.primaryDark,
+              ),
+            )
+          : null,
+    );
+  }
 
   static TextStyle webPageTitle(BuildContext context) =>
       AppTypography.webTextTheme.headlineMedium!;
@@ -99,7 +141,7 @@ abstract final class AdminWebUi {
 
   static InputDecoration formInputDecoration(BuildContext context, {String? hintText}) {
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.input),
       borderSide: const BorderSide(color: AppColors.outline),
     );
     return InputDecoration(
@@ -112,7 +154,7 @@ abstract final class AdminWebUi {
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.input),
         borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
       ),
     );
@@ -157,4 +199,93 @@ abstract final class AdminWebUi {
         text,
         style: formControlLabelStyle(context),
       );
+
+  // --- A11y / validation helpers (`docs/ui-ux-system/19` §5.3) ---
+
+  /// Error text inline dưới field — KHÔNG dùng toast cho lỗi validate.
+  static Widget formFieldError(BuildContext context, String? message) {
+    if (message == null || message.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.s2),
+      child: Text(
+        message,
+        style: webCaption(context).copyWith(color: AppColors.danger),
+      ),
+    );
+  }
+
+  /// Bọc phần tử tap được để hiện **focus ring 2px** khi Tab + hover/press state.
+  static Widget focusableTile({
+    required Widget child,
+    required VoidCallback? onTap,
+    BorderRadius? borderRadius,
+    String? tooltip,
+    String? semanticLabel,
+  }) {
+    final radius = borderRadius ?? BorderRadius.circular(AppRadius.card);
+    Widget tile = _FocusableTile(
+      onTap: onTap,
+      radius: radius,
+      semanticLabel: semanticLabel,
+      child: child,
+    );
+    if (tooltip != null && tooltip.isNotEmpty) {
+      tile = Tooltip(message: tooltip, child: tile);
+    }
+    return tile;
+  }
+}
+
+/// Tile tap được có **focus ring 2px** (Tab) + hover/press overlay. `19` §5.3.
+class _FocusableTile extends StatefulWidget {
+  const _FocusableTile({
+    required this.child,
+    required this.onTap,
+    required this.radius,
+    this.semanticLabel,
+  });
+
+  final Widget child;
+  final VoidCallback? onTap;
+  final BorderRadius radius;
+  final String? semanticLabel;
+
+  @override
+  State<_FocusableTile> createState() => _FocusableTileState();
+}
+
+class _FocusableTileState extends State<_FocusableTile> {
+  bool _focused = false;
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final overlay = _hovered ? AppColors.hoverOverlay : Colors.transparent;
+    return Semantics(
+      button: widget.onTap != null,
+      label: widget.semanticLabel,
+      child: FocusableActionDetector(
+        enabled: widget.onTap != null,
+        onShowFocusHighlight: (v) => setState(() => _focused = v),
+        onShowHoverHighlight: (v) => setState(() => _hovered = v),
+        mouseCursor: widget.onTap != null ? SystemMouseCursors.click : MouseCursor.defer,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: AppMotion.effective(context, AppMotion.micro),
+            decoration: BoxDecoration(
+              color: overlay,
+              borderRadius: widget.radius,
+              border: Border.all(
+                color: _focused ? AppColors.focusRing : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: widget.child,
+          ),
+        ),
+      ),
+    );
+  }
 }
