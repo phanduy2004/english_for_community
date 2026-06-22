@@ -5,39 +5,34 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // ============================================================
-  // 1. CẤU HÌNH THÔNG SỐ (Sửa lại IP LAN của bạn ở đây)
+  // 1. NGUỒN CẤU HÌNH (ưu tiên compile-time define — KHÔNG sửa source để đổi môi trường)
   // ============================================================
 
-  // ☁️ Server Render (Online)
+  // ☁️ Production mặc định (dùng khi release / khi không truyền define)
   static const String _renderUrl = "https://english-for-community.onrender.com";
 
-  // 🏠 Server Local (Máy tính của bạn)
-  // LDPlayer / máy Android thật: dùng IPv4 Wi‑Fi/Ethernet (cmd: ipconfig → dòng IPv4, thường 192.168.x.x).
-  // Không dùng IP VMware/Hyper-V (192.168.163.x, 192.168.62.x).
-  static const String _localLanIp = "192.168.1.40";
-  static const int _localPort = 3000;
+  // 🔧 Override tường minh: --dart-define=API_BASE_URL=...
+  //    - Rỗng      → tự động theo build mode (debug = local, release = production).
+  //    - Có giá trị → DÙNG NGUYÊN giá trị này (CI prod, hoặc dev tự chỉ định).
+  static const String _envBaseUrl =
+      String.fromEnvironment('API_BASE_URL', defaultValue: '');
+
+  // 🏠 IP LAN máy dev — KHÔNG hardcode nữa. Truyền qua config/local.json (đã .gitignore):
+  //    flutter run --dart-define-from-file=config/local.json
+  //    LDPlayer / máy Android thật: dùng IPv4 Wi‑Fi/Ethernet (cmd: ipconfig → dòng IPv4, thường 192.168.x.x).
+  //    Không dùng IP VMware/Hyper-V (192.168.163.x, 192.168.62.x).
+  static const String _localLanIp =
+      String.fromEnvironment('LOCAL_LAN_IP', defaultValue: '192.168.1.72');
+  static const int _localPort =
+      int.fromEnvironment('LOCAL_PORT', defaultValue: 3000);
 
   // ============================================================
-  // 2. CÔNG TẮC CHUYỂN ĐỔI (CHỌN 1 TRONG 3 CÁCH)
+  // 2. CHỌN MÔI TRƯỜNG (tự động — không cần sửa tay)
   // ============================================================
-
-  /// ☁️ Luôn dùng server Render — bật khi deploy / test trên production.
-  /// Tắt (`false`) khi dev backend local trên máy (`npm run dev`).
-  static const bool _forceProductionApi = false;
-
-  /// 👉 CÁCH 1: Tự động theo build mode (khi [_forceProductionApi] = false)
-  /// - Debug (F5): Local — nhanh khi code.
-  /// - Release (APK/IPA): Render.
-  // static const bool _useLocalManual = kDebugMode;
-
-  /// 👉 CÁCH 2: Chỉnh tay (khi [_forceProductionApi] = false)
-  // static const bool _useLocalManual = true;  // local
-  // static const bool _useLocalManual = false; // Render
-
-  static bool get _useLocal {
-    if (_forceProductionApi) return false;
-    return kDebugMode;
-  }
+  //  - Có API_BASE_URL         → dùng URL đó.
+  //  - Debug (flutter run)     → local.
+  //  - Release/Profile (build) → production.
+  static bool get _useLocal => _envBaseUrl.isEmpty && kDebugMode;
 
   // ============================================================
   // 3. LOGIC XỬ LÝ (Không cần sửa gì ở dưới này)
@@ -85,7 +80,7 @@ class ApiConfig {
                   : 'AVD emulator';
           debugPrint('[ApiConfig] Android $kind → $host:$_localPort');
         } else {
-          final mode = _forceProductionApi ? 'Render (forced)' : 'Render (release)';
+          final mode = _envBaseUrl.isNotEmpty ? 'override (API_BASE_URL)' : 'Render (release)';
           debugPrint('[ApiConfig] API target: $mode → $Base_URL');
         }
       }
@@ -97,6 +92,11 @@ class ApiConfig {
   }
 
   static String get Base_URL {
+    // 0. Override tường minh (CI prod / dev tự chỉ định) — ưu tiên cao nhất.
+    if (_envBaseUrl.isNotEmpty) {
+      return _envBaseUrl.endsWith('/') ? _envBaseUrl : '$_envBaseUrl/';
+    }
+
     // A. Nếu dùng SERVER ONLINE (Render)
     if (!_useLocal) {
       return '$_renderUrl/';

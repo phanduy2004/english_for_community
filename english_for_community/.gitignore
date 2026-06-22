@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local-only API config (IP máy dev — KHÔNG commit). Dùng config/local.example.json làm mẫu.
+/config/local.json

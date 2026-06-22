@@ -1,0 +1,6 @@
+{
+  "_help": "Copy file này thành config/local.json (đã .gitignore), điền IP máy bạn rồi chạy: flutter run --dart-define-from-file=config/local.json",
+  "API_BASE_URL": "",
+  "LOCAL_LAN_IP": "192.168.1.72",
+  "LOCAL_PORT": 3000
+}

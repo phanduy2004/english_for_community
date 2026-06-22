@@ -131,7 +131,7 @@ jobs:
 
       - name: Build APK (release, universal multi-ABI)
         working-directory: english_for_community
-        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64
+        run: flutter build apk --release --target-platform android-arm,android-arm64,android-x64 --dart-define-from-file=config/prod.json
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
