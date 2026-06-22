@@ -29,6 +29,12 @@ import { mongoSanitize } from "./src/middleware/sanitize.js";
 import { notFoundHandler, errorHandler } from './src/middleware/errorHandler.js';
 const app = express();
 
+// Render (và hầu hết PaaS) đặt app sau 1 lớp proxy → gắn header X-Forwarded-For.
+// Phải bật trust proxy để Express lấy đúng IP client; nếu không, express-rate-limit
+// ném ERR_ERL_UNEXPECTED_X_FORWARDED_FOR và làm hỏng mọi route có rate-limit (login...).
+// Dùng số hop (1 = tin proxy đầu tiên) thay vì `true` để tránh IP spoofing.
+app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1));
+
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 600,
