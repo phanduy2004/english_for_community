@@ -7,7 +7,7 @@ import {initSmartNotificationJob} from "./src/jobs/smartNotificationJob.js";
 import { initAppReleaseSchedulerJob } from './src/jobs/appReleaseSchedulerJob.js';
 import { initExamAttemptExpireJob } from './src/jobs/examAttemptExpireJob.js';
 
-import { getMongoUri, getMongoUriForLog } from './src/lib/mongoUri.js';
+import { getMongoUri, getMongoUriForLog, getMongoDbName } from './src/lib/mongoUri.js';
 
 const MONGO_URI = getMongoUri();
 if (!MONGO_URI) {
@@ -15,14 +15,20 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
+// dbName tường minh: nếu URI thiếu path DB, Mongoose sẽ dùng 'test' → ép đúng DB ở đây.
+const MONGO_DB_NAME = getMongoDbName();
+
 await mongoose.connect(MONGO_URI, {
+  dbName: MONGO_DB_NAME,
   maxPoolSize: 20,
   minPoolSize: 5,
   serverSelectionTimeoutMS: 5000,
   socketTimeoutMS: 45000,
   retryWrites: true,
 });
-console.log(`✅ Connected to MongoDB (${getMongoUriForLog(MONGO_URI)})`);
+console.log(
+  `✅ Connected to MongoDB (${getMongoUriForLog(MONGO_URI)}) [db: ${MONGO_DB_NAME}]`
+);
 
 // 1. Tạo HTTP Server từ Express App
 const httpServer = http.createServer(app);
