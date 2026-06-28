@@ -15,6 +15,7 @@ class ExamAssignmentCard extends StatelessWidget {
     super.key,
     required this.assignment,
     this.isTeacherView = false,
+    this.compact = false,
     this.onPrimaryAction,
     this.primaryActionLabel,
     this.primaryActionEnabled = true,
@@ -22,6 +23,7 @@ class ExamAssignmentCard extends StatelessWidget {
 
   final Map<String, dynamic> assignment;
   final bool isTeacherView;
+  final bool compact;
   final VoidCallback? onPrimaryAction;
   final String? primaryActionLabel;
   final bool primaryActionEnabled;
@@ -359,7 +361,7 @@ class ExamAssignmentCard extends StatelessWidget {
             hintKey == 'session_ended');
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
+      padding: EdgeInsets.only(bottom: compact ? AppSpacing.s3 : StudentMobileUi.cardGap),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surfaceCard,
@@ -371,14 +373,19 @@ class ExamAssignmentCard extends StatelessWidget {
           border: Border(left: BorderSide(color: accent, width: 3)),
         ),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s4, AppSpacing.s4, AppSpacing.s3),
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.s4,
+            compact ? AppSpacing.s3 : AppSpacing.s4,
+            AppSpacing.s4,
+            compact ? AppSpacing.s2 : AppSpacing.s3,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _modeIconBox(mode, size: 40),
+                  _modeIconBox(mode, size: compact ? 36 : 40),
                   const SizedBox(width: AppSpacing.s3),
                   Expanded(
                     child: Column(
@@ -630,8 +637,8 @@ class ExamAssignmentCard extends StatelessWidget {
     final statusHint = _statusHintLabel(l10n);
     final hintColor = _statusHintColor(hintKey);
     final hintIcon = _statusHintIcon(hintKey);
-    final scheduleLines = _scheduleLines(context, l10n);
-    final statsLines = _statsLines(l10n);
+    final scheduleLines = compact ? _compactScheduleLines(context, l10n) : _scheduleLines(context, l10n);
+    final statsLines = compact ? const <String>[] : _statsLines(l10n);
     final attemptLine = _myAttemptLine(l10n);
     final teacherLine = _teacherStatsLine(l10n);
     final teacherClosedLine = _teacherClosedSessionLine(context, l10n);
@@ -667,8 +674,13 @@ class ExamAssignmentCard extends StatelessWidget {
       scheduleLines: scheduleLines,
       statsLines: statsLines,
       attemptLine: attemptLine,
-      desc: desc,
+      desc: compact ? '' : desc,
     );
+  }
+
+  List<String> _compactScheduleLines(BuildContext context, AppLocalizations l10n) {
+    final lines = _scheduleLines(context, l10n);
+    return lines.take(1).toList();
   }
 
   Widget _modeIconBox(String mode, {double size = 44}) {

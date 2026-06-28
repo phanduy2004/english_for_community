@@ -49,7 +49,7 @@ class SocketService {
       final url = ApiConfig.Socket_URL;
       print('🔌 [Socket] Connecting to: $url');
 
-      final transports = kIsWeb ? ['websocket', 'polling'] : ['websocket'];
+      final transports = kIsWeb ? ['websocket', 'polling'] : ['websocket', 'polling'];
       _socket = IO.io(
         url,
         IO.OptionBuilder()

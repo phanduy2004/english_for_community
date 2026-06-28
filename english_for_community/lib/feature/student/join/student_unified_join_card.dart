@@ -4,7 +4,6 @@ import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
-import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/join/student_join_coordinator.dart';
 import 'package:flutter/material.dart';
 
@@ -12,9 +11,13 @@ class StudentUnifiedJoinCard extends StatefulWidget {
   const StudentUnifiedJoinCard({
     super.key,
     this.onClassJoined,
+    this.compact = false,
   });
 
   final VoidCallback? onClassJoined;
+
+  /// Gọn hơn khi đã có lớp — nhường chỗ cho danh sách.
+  final bool compact;
 
   @override
   State<StudentUnifiedJoinCard> createState() => _StudentUnifiedJoinCardState();
@@ -47,86 +50,124 @@ class _StudentUnifiedJoinCardState extends State<StudentUnifiedJoinCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return AppCard(
-      variant: AppCardVariant.outline,
+    final accent = AppSkillColors.speaking;
+    final compact = widget.compact;
+
+    return Container(
+      padding: EdgeInsets.all(compact ? AppSpacing.s3 : AppSpacing.s4),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent.tint,
+            AppColors.surfaceCard,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.card + 2),
+        border: Border.all(color: accent.color.withValues(alpha: 0.22)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StudentMobileUi.skillIconBox(Icons.qr_code_scanner_rounded, size: 36, skill: SkillType.speaking),
-              const SizedBox(width: AppSpacing.s4),
+              StudentMobileUi.skillIconBox(
+                Icons.qr_code_scanner_rounded,
+                size: compact ? 32 : 36,
+                skill: SkillType.speaking,
+              ),
+              const SizedBox(width: AppSpacing.s3),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(l10n.studentUnifiedJoinTitle, style: StudentMobileUi.cardTitle(context)),
-                    const SizedBox(height: AppSpacing.s2),
-                    Text(
-                      l10n.studentUnifiedJoinSubtitle,
-                      style: StudentMobileUi.caption(context).copyWith(height: 1.4),
-                    ),
+                    if (!compact) ...[
+                      const SizedBox(height: AppSpacing.s2),
+                      Text(
+                        l10n.studentUnifiedJoinSubtitle,
+                        style: StudentMobileUi.caption(context).copyWith(height: 1.4),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.studentUnifiedJoinCompactHint,
+                        style: StudentMobileUi.caption(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.s4),
-          TextField(
-            controller: _inputCtrl,
-            maxLines: 3,
-            minLines: 2,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-            decoration: InputDecoration(
-              hintText: l10n.studentUnifiedJoinHint,
-              hintStyle: const TextStyle(
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w400,
-                fontSize: 12,
+          SizedBox(height: compact ? AppSpacing.s3 : AppSpacing.s4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _inputCtrl,
+                  maxLines: 1,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _submit(),
+                  style: StudentMobileUi.body(context).copyWith(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: l10n.studentUnifiedJoinHint,
+                    hintStyle: StudentMobileUi.caption(context).copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                    filled: true,
+                    fillColor: AppColors.surfaceCard.withValues(alpha: 0.9),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.content_paste_go_rounded,
+                      size: 18,
+                      color: AppColors.textMuted,
+                    ),
+                    prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                      borderSide: const BorderSide(color: AppColors.outline),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                      borderSide: BorderSide(color: accent.color, width: 1.5),
+                    ),
+                  ),
+                ),
               ),
-              filled: true,
-              fillColor: AppColors.surfaceSubtle,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              prefixIcon: const Icon(Icons.content_paste_go_rounded, size: 18, color: AppColors.textMuted),
-              prefixIconConstraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.input),
-                borderSide: const BorderSide(color: AppColors.outline),
+              const SizedBox(width: AppSpacing.s2),
+              SizedBox(
+                height: 44,
+                child: FilledButton(
+                  onPressed: _busy ? null : _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: AppColors.onPrimary,
+                    disabledBackgroundColor: AppColors.outlineStrong,
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                    ),
+                  ),
+                  child: _busy
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: AppLoadingIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(l10n.studentUnifiedJoinButton),
+                ),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.input),
-                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s3),
-          SizedBox(
-            height: 44,
-            child: FilledButton(
-              onPressed: _busy ? null : _submit,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.onPrimary,
-                disabledBackgroundColor: AppColors.outlineStrong,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-              child: _busy
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: AppLoadingIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : Text(l10n.studentUnifiedJoinButton),
-            ),
+            ],
           ),
         ],
       ),

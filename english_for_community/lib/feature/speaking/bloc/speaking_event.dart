@@ -15,14 +15,16 @@ class FetchSpeakingSetsEvent extends SpeakingEvent {
   final String level;
   final int page;
   final int limit;
+  final bool forceRefresh;
 
   const FetchSpeakingSetsEvent({
     required this.mode,
     required this.level,
     this.page = 1,
     this.limit = 10,
+    this.forceRefresh = false,
   });
 
   @override
-  List<Object> get props => [mode, level, page, limit];
+  List<Object> get props => [mode, level, page, limit, forceRefresh];
 }

@@ -26,7 +26,7 @@ import '../progress/bloc/progress_bloc.dart';
 import '../progress/bloc/progress_event.dart';
 import '../progress/bloc/progress_state.dart';
 import 'widgets/home_study_dashboard.dart';
-import '../../core/notification/app_notification_listener.dart';
+import 'notification_dialog.dart';
 import '../classroom_chat/dock/classroom_chat_dock_controller.dart';
 import '../../core/notification/notification_navigation.dart';
 
@@ -648,7 +648,6 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.headphones_outlined,
                   title: t.homeLessonListeningTitle,
                   subtitle: t.homeLessonListeningSubtitle,
-                  emphasized: true,
                 ),
                 const SizedBox(height: StudentMobileUi.cardGap),
                 _LessonCard(
@@ -656,7 +655,6 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.menu_book_outlined,
                   title: t.homeLessonReadingTitle,
                   subtitle: t.homeLessonReadingSubtitle,
-                  emphasized: false,
                 ),
                 const SizedBox(height: StudentMobileUi.cardGap),
                 _LessonCard(
@@ -664,7 +662,6 @@ class _HomeContentView extends StatelessWidget {
                   icon: Icons.style_outlined,
                   title: t.homeLessonVocabTitle,
                   subtitle: t.homeLessonVocabSubtitle,
-                  emphasized: false,
                 ),
                 if (showAll) ...[
                   const SizedBox(height: StudentMobileUi.cardGap),
@@ -673,7 +670,6 @@ class _HomeContentView extends StatelessWidget {
                     icon: Icons.record_voice_over_outlined,
                     title: t.homeLessonSpeakingTitle,
                     subtitle: t.homeLessonSpeakingSubtitle,
-                    emphasized: false,
                   ),
                   const SizedBox(height: StudentMobileUi.cardGap),
                   _LessonCard(
@@ -681,7 +677,6 @@ class _HomeContentView extends StatelessWidget {
                     icon: Icons.edit_note_outlined,
                     title: t.homeLessonWritingTitle,
                     subtitle: t.homeLessonWritingSubtitle,
-                    emphasized: false,
                   ),
                 ],
               ],
@@ -763,14 +758,12 @@ class _LessonCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final bool emphasized;
 
   const _LessonCard({
     required this.slot,
     required this.icon,
     required this.title,
     required this.subtitle,
-    this.emphasized = false,
   });
 
   SkillType get _skillType {
@@ -793,7 +786,7 @@ class _LessonCard extends StatelessWidget {
     final skill = _skillType;
     return StudentMobileUi.skillAccentCard(
       skill: skill,
-      emphasized: emphasized,
+      emphasized: false,
       onTap: () {
         switch (slot) {
           case _HomeLessonSlot.listening:
@@ -829,7 +822,7 @@ class _LessonCard extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right_rounded,
-            color: emphasized ? AppSkillColors.of(skill).color : AppColors.textMuted,
+            color: AppColors.textMuted,
             size: 18,
           ),
         ],

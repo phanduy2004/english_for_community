@@ -140,9 +140,11 @@
 
 ## 9. Notification center
 
-- AppBar: title `Thông báo` 16/600.
-- List 1 cột; mỗi item: icon 22 + title 14/600 1 dòng + body 13/400 textPrimary 2 dòng + thời gian 12/400 textSecondary.
-- Item chưa đọc: dot 6dp `primary` cạnh title; bg `surface`.
+- **Presentation:** dialog overlay (không full-screen route) — `NotificationDialog` + `showAppNotificationsDialog`.
+- Mobile: chiều cao ~75% viewport, bo góc `sheet+2`, nền mờ phía sau; đóng bằng nút **Đóng** hoặc tap outside.
+- Header dialog: title `Thông báo` 16/600 + action `Đánh dấu đã đọc`.
+- List 1 cột; mỗi item: avatar/icon 40 + title 14/600 1 dòng + body 13/400 textSecondary + thời gian 12/400 textSecondary.
+- Item chưa đọc: dot 8dp `accent` bên phải; nền `primaryTint`.
 
 ## 10. Dialog đặc thù
 

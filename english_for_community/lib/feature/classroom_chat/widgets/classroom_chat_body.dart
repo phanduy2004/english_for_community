@@ -15,6 +15,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
+/// Stable list identity for [ListView] children — prefer server id; index when needed.
+String classroomChatMessageListKey(
+  ClassroomChatMessage msg,
+  int indexInList,
+  List<ClassroomChatMessage> allMessages,
+) {
+  if (msg.id.isNotEmpty) {
+    final dupes = allMessages.where((m) => m.id == msg.id).length;
+    return dupes > 1 ? '${msg.id}_$indexInList' : msg.id;
+  }
+  final clientId = msg.clientId;
+  if (clientId != null && clientId.isNotEmpty) return 'client_$clientId';
+  return 'idx_$indexInList';
+}
+
 /// Reusable chat body — dùng cho full page hoặc mini window.
 class ClassroomChatBody extends StatefulWidget {
   const ClassroomChatBody({
@@ -48,7 +63,6 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
   bool _stickToBottom = true;
   int _prevMessageCount = 0;
   String? _prevErrorMessage;
-  final Map<String, GlobalKey> _messageKeys = {};
 
   @override
   void initState() {
@@ -70,6 +84,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
   }
 
   void _onScroll() {
+    if (!mounted) return;
     _interactionLock.clearAll();
     if (!_scrollCtrl.hasClients) return;
 
@@ -86,7 +101,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
   }
 
   void _scrollToBottom({bool animated = true}) {
-    if (!_scrollCtrl.hasClients) return;
+    if (!mounted || !_scrollCtrl.hasClients) return;
     if (animated) {
       _scrollCtrl.animateTo(
         0,
@@ -108,17 +123,28 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
       bloc.add(const ClassroomChatLoadMore());
     }
 
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureMessageVisible(messageId));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _ensureMessageVisible(messageId, messages);
+    });
   }
 
-  void _ensureMessageVisible(String messageId) {
-    final ctx = _messageKeys[messageId]?.currentContext;
-    if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
+  void _ensureMessageVisible(String messageId, List<ClassroomChatMessage> messages) {
+    if (!mounted) return;
+    final idx = messages.indexWhere((m) => m.id == messageId);
+    if (idx < 0 || !_scrollCtrl.hasClients) return;
+
+    // Reverse list: index 0 = newest at bottom (offset 0).
+    const estItemHeight = 96.0;
+    final listIndex = messages.length - 1 - idx;
+    final target = (listIndex * estItemHeight).clamp(
+      0.0,
+      _scrollCtrl.position.maxScrollExtent,
+    );
+    _scrollCtrl.animateTo(
+      target,
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOut,
-      alignment: 0.5,
     );
   }
 
@@ -147,7 +173,10 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
         _isNearBottom;
 
     if (shouldScroll) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _scrollToBottom();
+      });
     }
 
     _prevMessageCount = count;
@@ -165,9 +194,12 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
           p.isUploading != c.isUploading ||
           p.isSending != c.isSending,
       listener: (context, state) {
+        if (!context.mounted) return;
         if (state.errorMessage != null && state.errorMessage != _prevErrorMessage) {
           final toastCtx = rootNavigatorKey.currentContext ?? context;
-          AppFeedback.error(toastCtx, state.errorMessage!);
+          if (toastCtx.mounted) {
+            AppFeedback.error(toastCtx, state.errorMessage!);
+          }
         }
         _prevErrorMessage = state.errorMessage;
         _handleMessagesChanged(state);
@@ -267,7 +299,6 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                     canPin: state.isClassOwner(widget.currentUserId),
                     pinnedMessageId: state.pinnedMessage?.id,
                     members: state.members,
-                    messageKeys: _messageKeys,
                     onReply: (msg) => setState(() => _replyTo = msg),
                     onReact: (msg, emoji) => context.read<ClassroomChatBloc>().add(
                           ClassroomChatReact(messageId: msg.id, emoji: emoji),
@@ -296,7 +327,10 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                       mentionIds: mentionIds,
                     ));
                 setState(() => _replyTo = null);
-                WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  _scrollToBottom();
+                });
               },
               onSendFile: (payload) {
                 context.read<ClassroomChatBloc>().add(ClassroomChatSendMedia(
@@ -393,7 +427,6 @@ class _MessageList extends StatelessWidget {
     required this.onEdit,
     this.onPin,
     this.members = const [],
-    required this.messageKeys,
   });
 
   final List<ClassroomChatMessage> messages;
@@ -412,7 +445,6 @@ class _MessageList extends StatelessWidget {
   final void Function(ClassroomChatMessage) onEdit;
   final void Function(ClassroomChatMessage)? onPin;
   final List<ChatMember> members;
-  final Map<String, GlobalKey> messageKeys;
 
   @override
   Widget build(BuildContext context) {
@@ -486,23 +518,24 @@ class _MessageList extends StatelessWidget {
 
         final msgIndex = messages.length - 1 - index;
         final msg = messages[msgIndex];
-        final itemKey = messageKeys.putIfAbsent(msg.id, GlobalKey.new);
+        final listKey = classroomChatMessageListKey(msg, msgIndex, messages);
         final isMe = msg.senderId == currentUserId;
         final showSenderInfo =
             !isMe && _isFirstInGroup(messages, msgIndex, _isSameDay);
-        final showAvatar = !isMe && _isLastInGroup(messages, msgIndex, _isSameDay);
+        final showAvatar =
+            !isMe && _shouldShowAvatar(messages, msgIndex, _isSameDay);
         final showTail = _isLastInGroup(messages, msgIndex, _isSameDay);
         final showDate = msgIndex == 0 ||
             !_isSameDay(msg.createdAt, messages[msgIndex - 1].createdAt);
 
-        return KeyedSubtree(
-          key: ValueKey(msg.id),
-          child: Column(
-            key: itemKey,
-            children: [
-              if (showDate) _DateSeparator(date: msg.createdAt),
-              RepaintBoundary(
-                child: ChatMessageBubble(
+        return Column(
+          key: ValueKey(listKey),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showDate) _DateSeparator(date: msg.createdAt),
+            RepaintBoundary(
+              child: ChatMessageBubble(
                   message: msg,
                   isMe: isMe,
                   showSenderInfo: showSenderInfo,
@@ -519,11 +552,10 @@ class _MessageList extends StatelessWidget {
                   onEdit: onEdit,
                   canPin: canPin,
                   isPinned: pinnedMessageId == msg.id,
-                  onPin: onPin,
-                ),
+                onPin: onPin,
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -531,6 +563,50 @@ class _MessageList extends StatelessWidget {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+bool _sameGroup(
+  List<ClassroomChatMessage> messages,
+  int a,
+  int b,
+  bool Function(DateTime, DateTime) isSameDay,
+) {
+  final msgA = messages[a];
+  final msgB = messages[b];
+  if (msgA.senderId != msgB.senderId) return false;
+  if (!isSameDay(msgA.createdAt, msgB.createdAt)) return false;
+  final diff = msgB.createdAt.difference(msgA.createdAt).inMinutes.abs();
+  return diff <= 5;
+}
+
+/// Avatar anchors on the last non-deleted message in a sender group; if the
+/// whole group is deleted, falls back to the chronologically last row.
+int _avatarAnchorIndex(
+  List<ClassroomChatMessage> messages,
+  int index,
+  bool Function(DateTime, DateTime) isSameDay,
+) {
+  var groupStart = index;
+  while (groupStart > 0 && _sameGroup(messages, groupStart - 1, groupStart, isSameDay)) {
+    groupStart--;
+  }
+  var groupEnd = index;
+  while (groupEnd < messages.length - 1 &&
+      _sameGroup(messages, groupEnd, groupEnd + 1, isSameDay)) {
+    groupEnd++;
+  }
+  for (var i = groupEnd; i >= groupStart; i--) {
+    if (!messages[i].isDeleted) return i;
+  }
+  return groupEnd;
+}
+
+bool _shouldShowAvatar(
+  List<ClassroomChatMessage> messages,
+  int index,
+  bool Function(DateTime, DateTime) isSameDay,
+) {
+  return index == _avatarAnchorIndex(messages, index, isSameDay);
 }
 
 bool _isFirstInGroup(

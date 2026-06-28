@@ -19,10 +19,12 @@ class ClassroomChatSessionCache {
     String? nextCursor,
     String? coverImageUrl,
     String? groupName,
+    List<ChatMember> members = const [],
   }) {
     if (classroomId.isEmpty) return;
     _sessions[classroomId] = _CachedChatSession(
       messages: List<ClassroomChatMessage>.from(messages),
+      members: List<ChatMember>.from(members),
       hasMore: hasMore,
       nextCursor: nextCursor,
       coverImageUrl: coverImageUrl,
@@ -74,11 +76,15 @@ class ClassroomChatSessionCache {
     _prefetching.add(classroomId);
     unawaited(() async {
       try {
-        final result = await repo.getMessages(classroomId, limit: 25);
-        result.fold((_) {}, (r) {
+        final msgResult = await repo.getMessages(classroomId, limit: 25);
+        final memResult = await repo.getChatMembers(classroomId);
+        var members = peek(classroomId)?.members ?? const <ChatMember>[];
+        memResult.fold((_) {}, (m) => members = m);
+        msgResult.fold((_) {}, (r) {
           put(
             classroomId: classroomId,
             messages: r.messages,
+            members: members,
             hasMore: r.hasMore,
             nextCursor: r.nextCursor,
             coverImageUrl: coverImageUrl ?? peek(classroomId)?.coverImageUrl,
@@ -95,6 +101,7 @@ class ClassroomChatSessionCache {
 class _CachedChatSession {
   const _CachedChatSession({
     required this.messages,
+    this.members = const [],
     required this.hasMore,
     this.nextCursor,
     this.coverImageUrl,
@@ -103,6 +110,7 @@ class _CachedChatSession {
   });
 
   final List<ClassroomChatMessage> messages;
+  final List<ChatMember> members;
   final bool hasMore;
   final String? nextCursor;
   final String? coverImageUrl;
@@ -111,6 +119,7 @@ class _CachedChatSession {
 
   _CachedChatSession copyWith({
     List<ClassroomChatMessage>? messages,
+    List<ChatMember>? members,
     bool? hasMore,
     String? nextCursor,
     String? coverImageUrl,
@@ -119,6 +128,7 @@ class _CachedChatSession {
   }) =>
       _CachedChatSession(
         messages: messages ?? this.messages,
+        members: members ?? this.members,
         hasMore: hasMore ?? this.hasMore,
         nextCursor: nextCursor ?? this.nextCursor,
         coverImageUrl: coverImageUrl ?? this.coverImageUrl,

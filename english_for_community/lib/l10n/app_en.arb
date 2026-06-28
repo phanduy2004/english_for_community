@@ -1059,6 +1059,7 @@
   "studentUnifiedJoinTitle": "Join",
   "studentUnifiedJoinSubtitle": "Paste any code or link — the app detects the type and opens the right place.",
   "studentUnifiedJoinHint": "Class code · class link · public exam · live session link…",
+  "studentUnifiedJoinCompactHint": "Paste a code or link to join another class.",
   "studentUnifiedJoinButton": "Join",
   "studentJoinInputInvalid": "Could not recognize that code. Check with your teacher and try again.",
   "studentJoinDetectedClass": "Class invite detected — joining…",
@@ -1069,6 +1070,12 @@
   "studentJoinClassButton": "Join",
   "studentJoinClassSuccess": "Joined classroom",
   "studentMyClassesTitle": "Your classrooms",
+  "studentClassesHubListHint": "{count, plural, one{1 class — tap to open assignments and chat} other{{count} classes — tap to open assignments and chat}}",
+  "@studentClassesHubListHint": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "studentNoClasses": "You are not in any class yet.",
   "studentClassOpen": "Open class",
   "studentClassAssignmentsCount": "{count, plural, =0{No assignments} one{1 assignment} other{{count} assignments}}",
@@ -1131,6 +1138,61 @@
     }
   },
   "studentClassNoDescription": "No description for this class.",
+  "studentClassTabOverview": "Overview",
+  "studentClassTabAssignments": "Assignments",
+  "studentClassTabMembers": "Members",
+  "studentClassOpenChat": "Class chat",
+  "studentClassQuickActionChat": "Chat",
+  "studentClassQuickActionAssignments": "Assignments",
+  "studentClassQuickActionMembers": "Members",
+  "studentClassSegmentOpen": "Open",
+  "studentClassSegmentSubmitted": "Submitted",
+  "studentClassSegmentClosed": "Closed",
+  "studentClassOverviewRecentTitle": "Up next",
+  "studentClassViewAllAssignments": "View all",
+  "studentClassMembersEmpty": "No members yet.",
+  "studentClassMemberYou": "You",
+  "studentClassMemberTeacher": "Teacher",
+  "studentClassMemberCoTeacher": "Co-teacher",
+  "studentClassInviteCodeLabel": "Invite code",
+  "studentClassReadMore": "Read more",
+  "studentClassChatMemberCount": "{count, plural, one{1 member in chat} other{{count} members in chat}}",
+  "@studentClassChatMemberCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassOverviewActionHint": "{count, plural, one{1 assignment needs your attention} other{{count} assignments need your attention}}",
+  "@studentClassOverviewActionHint": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassOverviewEmptyBody": "When your teacher assigns work, it will show up here.",
+  "studentClassNoAssignmentsInSegment": "No assignments in this filter.",
+  "studentClassAssignmentsFilteredCount": "{count, plural, one{1 assignment} other{{count} assignments}}",
+  "@studentClassAssignmentsFilteredCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassSegmentGraded": "Graded",
+  "studentClassLiveBanner": "{count, plural, one{1 live exam in progress — open Assignments} other{{count} live exams in progress — open Assignments}}",
+  "@studentClassLiveBanner": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassSortPriority": "Sort by priority",
+  "studentClassSortDueDate": "Sort by due date",
+  "studentClassMembersSearchHint": "Search members…",
+  "studentClassMembersNoResults": "No members match your search.",
+  "studentClassMuteNotifications": "Mute notifications",
+  "studentClassMuteNotificationsHint": "Saved on this device only.",
+  "studentClassLeaveAction": "Leave class",
+  "studentClassLeaveConfirmTitle": "Leave this class?",
+  "studentClassLeaveConfirmBody": "You will lose access to assignments and chat for this class. Your teacher can invite you again.",
+  "studentClassLeaveSuccess": "You left the class.",
   "teacherClassDetailAssignmentsTitle": "Class assignments",
   "teacherClassDetailAssignmentsSubtitle": "Exams assigned to this class — schedule, format, and student progress.",
   "teacherClassDetailActiveTitle": "Active assignments",

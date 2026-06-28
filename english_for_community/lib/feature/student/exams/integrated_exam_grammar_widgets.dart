@@ -143,11 +143,14 @@ class _GrammarBlankField extends StatelessWidget {
   final double width;
   final Key? fieldKey;
 
+  static const double _blankHeight = 40;
+
   @override
   Widget build(BuildContext context) {
     final filled = controller.text.trim().isNotEmpty;
     return SizedBox(
       width: width,
+      height: _blankHeight,
       child: Material(
         color: GrammarAccentPalette.fillBg(accent, alpha: filled ? 0.08 : 0.05),
         borderRadius: BorderRadius.circular(AppRadius.card),
@@ -156,47 +159,45 @@ class _GrammarBlankField extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.card),
             border: Border.all(color: accent, width: 1.5),
           ),
-          child: IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  width: 30,
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.15),
-                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
-                  ),
-                  child: Text(
-                    blankId,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                      fontSize: 12,
-                      height: 1,
-                    ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.15),
+                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
+                ),
+                child: Text(
+                  blankId,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                    fontSize: 12,
+                    height: 1,
                   ),
                 ),
-                Expanded(
-                  child: TextField(
-                    key: fieldKey,
-                    enabled: enabled,
-                    controller: controller,
-                    onChanged: onChanged,
-                    style: ExamSystemUi.captionSecondary,
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      disabledBorder: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                    ),
+              ),
+              Expanded(
+                child: TextField(
+                  key: fieldKey,
+                  enabled: enabled,
+                  controller: controller,
+                  onChanged: onChanged,
+                  maxLines: 1,
+                  style: ExamSystemUi.captionSecondary,
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -217,30 +218,28 @@ Widget _grammarAccentAnswerChip({
       borderRadius: BorderRadius.circular(AppRadius.card),
       border: Border.all(color: accent, width: 1.5),
     ),
-    child: IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 30,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.15),
-              borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
-            ),
-            child: Text(
-              label,
-              style: TextStyle(fontWeight: FontWeight.w700, color: accent, fontSize: 12, height: 1),
-            ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 30,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.15),
+            borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+          child: Text(
+            label,
+            style: TextStyle(fontWeight: FontWeight.w700, color: accent, fontSize: 12, height: 1),
           ),
-        ],
-      ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+        ),
+      ],
     ),
   );
 }

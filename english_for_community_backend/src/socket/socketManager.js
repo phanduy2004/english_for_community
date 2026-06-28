@@ -9,6 +9,8 @@ let io;
 
 /** userId -> Set<socketId> — only mark offline when no active sockets remain. */
 const onlineSocketIdsByUser = new Map();
+const OFFLINE_GRACE_MS = 20000;
+const pendingOffline = new Map();
 
 const updateUserStatus = async (userId, isOnline) => {
   try {
@@ -27,6 +29,11 @@ const updateUserStatus = async (userId, isOnline) => {
 
 const addUserSocket = async (userId, socketId) => {
   const key = String(userId);
+  const pending = pendingOffline.get(key);
+  if (pending) {
+    clearTimeout(pending);
+    pendingOffline.delete(key);
+  }
   if (!onlineSocketIdsByUser.has(key)) {
     onlineSocketIdsByUser.set(key, new Set());
   }
@@ -45,7 +52,13 @@ const removeUserSocket = async (userId, socketId) => {
   set.delete(socketId);
   if (set.size === 0) {
     onlineSocketIdsByUser.delete(key);
-    await updateUserStatus(userId, false);
+    const t = setTimeout(async () => {
+      pendingOffline.delete(key);
+      if (!onlineSocketIdsByUser.has(key)) {
+        await updateUserStatus(userId, false);
+      }
+    }, OFFLINE_GRACE_MS);
+    pendingOffline.set(key, t);
   }
 };
 
@@ -53,6 +66,11 @@ const removeUserSocket = async (userId, socketId) => {
 export const setUserOfflineAndNotify = async (userId) => {
   if (!io) return;
   const key = String(userId);
+  const pending = pendingOffline.get(key);
+  if (pending) {
+    clearTimeout(pending);
+    pendingOffline.delete(key);
+  }
   const set = onlineSocketIdsByUser.get(key);
   if (set) {
     for (const socketId of [...set]) {

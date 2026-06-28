@@ -105,7 +105,10 @@ class _SafeScrollbarState extends State<_SafeScrollbar> {
   void _onFirstClient() {
     if (!_ready && widget.controller.hasClients && mounted) {
       widget.controller.removeListener(_onFirstClient);
-      setState(() => _ready = true);
+      // Tránh setState đồng bộ khi ScrollPosition attach — gây mouse_tracker assert trên web.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _ready = true);
+      });
     }
   }
 

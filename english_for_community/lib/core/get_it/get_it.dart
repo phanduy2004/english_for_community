@@ -382,6 +382,7 @@ void registerBloc() {
   getIt.registerFactoryParam<StudentClassroomDetailBloc, String, void>(
     (classroomId, _) => StudentClassroomDetailBloc(
       repository: getIt(),
+      chatRepository: getIt(),
       classroomId: classroomId,
     ),
   );

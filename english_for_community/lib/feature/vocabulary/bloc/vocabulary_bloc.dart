@@ -41,7 +41,7 @@ class VocabularyBloc extends Bloc<VocabularyEvent, VocabularyState> {
       Emitter<VocabularyState> emit,
       ) async {
     // 1. Phát trạng thái Loading
-    emit(state.copyWith(status: VocabularyStatus.loading));
+    emit(state.copyWith(status: VocabularyStatus.loading, errorMessage: null));
 
     // 2. Gọi đồng thời 3
     // phương thức repository

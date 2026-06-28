@@ -387,6 +387,23 @@ export const classroomService = {
     return m;
   },
 
+  /** Student self-leave — sets membership to removed (not teacher/co-teacher). */
+  async leaveClassroom(userId, classroomId) {
+    const { isTeacher } = await this.getByIdForUser(classroomId, userId);
+    if (isTeacher) throw httpError(400, 'Teachers cannot leave as student');
+    const m = await ClassroomMember.findOne({
+      classroomId,
+      userId,
+      roleInClass: 'student',
+      status: 'active',
+    });
+    if (!m) throw httpError(404, 'Not an active member');
+    m.status = 'removed';
+    m.leftAt = new Date();
+    await m.save();
+    return { ok: true };
+  },
+
   async joinByCode(userId, inviteCode) {
     const code = String(inviteCode || '').trim().toUpperCase();
     const classroom = await Classroom.findOne({ inviteCode: code, archived: false });

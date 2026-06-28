@@ -123,6 +123,18 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
+  Future<Either<Failure, void>> leaveClassroom(String classroomId) async {
+    try {
+      await remote.leaveClassroom(classroomId);
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(ServerFailure(message: _dioMsg(e)));
+    } catch (e) {
+      return Left(ServerFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, dynamic>> patchClassroom(String id, Map<String, dynamic> body) async {
     try {
       return Right(await remote.patchClassroom(id, body));

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/locale/l10n_context.dart';
@@ -7,12 +6,13 @@ import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/ui/e4c_scroll_behavior.dart';
+import '../../core/ui/skill_list_search_mixin.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../core/entity/reading/reading_entity.dart';
 import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
-import '../../core/repository/reading_repository.dart';
 import 'reading_detail_page.dart';
 import 'bloc/reading_bloc.dart';
 import 'bloc/reading_event.dart';
@@ -28,24 +28,26 @@ class ReadingListPage extends StatefulWidget {
   State<ReadingListPage> createState() => _ReadingListPageState();
 }
 
-class _ReadingListPageState extends State<ReadingListPage> {
+class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchMixin {
   String _selectedDifficulty = 'easy';
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  late final ReadingBloc _bloc;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text;
-      });
-    });
+    initSkillListSearch();
+    _bloc = getIt<ReadingBloc>()
+      ..add(FetchReadingListEvent(
+        difficulty: _selectedDifficulty,
+        page: 1,
+        limit: 10,
+      ));
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    disposeSkillListSearch();
+    _bloc.close();
     super.dispose();
   }
 
@@ -59,114 +61,142 @@ class _ReadingListPageState extends State<ReadingListPage> {
     ];
     const filterIds = ['easy', 'medium', 'hard'];
 
-    return BlocProvider(
-      create: (context) => ReadingBloc(
-        readingRepository: getIt<ReadingRepository>(),
-      )..add(FetchReadingListEvent(
-          difficulty: _selectedDifficulty,
-          page: 1,
-          limit: 10,
-        )),
-      child: Builder(
-        builder: (blocContext) {
+    return BlocProvider.value(
+      value: _bloc,
+      child: BlocBuilder<ReadingBloc, ReadingState>(
+        buildWhen: (prev, next) => prev.status != next.status,
+        builder: (context, state) {
           return Scaffold(
             backgroundColor: AppColors.surface,
             appBar: StudentMobileUi.skillAppBar(
               context,
               title: t.readingPracticeTitle,
               skill: SkillType.reading,
+              showLoading: state.status == ReadingStatus.loading,
             ),
             body: SafeArea(
-              child: ListView(
-                padding: StudentMobileUi.pagePadding,
-                children: [
-                  StudentMobileUi.skillHubBanner(
-                    context: context,
-                    title: t.readingSkillsHeaderTitle,
-                    subtitle: t.readingSkillsHeaderSubtitle,
-                    badge: t.readingDailyArticlesBadge,
-                    icon: Icons.menu_book_rounded,
-                    skill: SkillType.reading,
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  StudentMobileUi.filterRow(
-                    labels: filterLabels,
-                    selectedIndex: filterIds.indexOf(_selectedDifficulty),
-                    skill: SkillType.reading,
-                    onSelected: (i) {
-                      setState(() => _selectedDifficulty = filterIds[i]);
-                      blocContext.read<ReadingBloc>().add(
-                            FetchReadingListEvent(
-                              difficulty: _selectedDifficulty,
-                              page: 1,
-                              limit: 10,
+              child: e4cNoScrollbarScroll(
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: StudentMobileUi.pagePadding,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            StudentMobileUi.skillHubBanner(
+                              context: context,
+                              title: t.readingSkillsHeaderTitle,
+                              subtitle: t.readingSkillsHeaderSubtitle,
+                              badge: t.readingDailyArticlesBadge,
+                              icon: Icons.menu_book_rounded,
+                              skill: SkillType.reading,
+                            ),
+                            const SizedBox(height: StudentMobileUi.sectionGap),
+                            StudentMobileUi.filterRow(
+                              labels: filterLabels,
+                              selectedIndex: filterIds.indexOf(_selectedDifficulty),
+                              skill: SkillType.reading,
+                              onSelected: (i) {
+                                final next = filterIds[i];
+                                if (next == _selectedDifficulty) return;
+                                setState(() => _selectedDifficulty = next);
+                                _bloc.add(FetchReadingListEvent(
+                                  difficulty: _selectedDifficulty,
+                                  page: 1,
+                                  limit: 10,
+                                ));
+                              },
+                            ),
+                            const SizedBox(height: StudentMobileUi.cardGap),
+                            StudentMobileUi.searchField(
+                              controller: skillListSearchController,
+                              hintText: t.searchTopicHint,
+                              onClear: () => clearSkillListSearch(context),
+                            ),
+                            const SizedBox(height: StudentMobileUi.sectionGap),
+                          ],
+                        ),
+                      ),
+                    ),
+                    BlocBuilder<ReadingBloc, ReadingState>(
+                      builder: (context, state) {
+                        if (state.status == ReadingStatus.loading && state.readings.isEmpty) {
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                              child: Center(child: StudentMobileUi.listLoading()),
                             ),
                           );
-                    },
-                  ),
-                  const SizedBox(height: StudentMobileUi.cardGap),
-                  StudentMobileUi.searchField(
-                    controller: _searchController,
-                    hintText: t.searchTopicHint,
-                    showClear: _searchQuery.trim().isNotEmpty,
-                    onClear: () {
-                      _searchController.clear();
-                      FocusScope.of(context).unfocus();
-                    },
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  BlocBuilder<ReadingBloc, ReadingState>(
-                    builder: (context, state) {
-                      if (state.status == ReadingStatus.loading) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
-                          child: Center(
-                            child: StudentMobileUi.listLoading(),
+                        }
+                        if (state.status == ReadingStatus.error) {
+                          return SliverToBoxAdapter(
+                            child: Padding(
+                              padding: StudentMobileUi.pagePadding,
+                              child: StudentMobileUi.errorBanner(
+                                message: state.errorMessage ?? t.loadDataFailed,
+                                onRetry: _retry,
+                                retryLabel: t.commonRetry,
+                              ),
+                            ),
+                          );
+                        }
+
+                        final readings = state.readings
+                            .where((item) => skillListMatchesPrefix(
+                                  item.title,
+                                  skillListSearchQuery,
+                                ))
+                            .toList();
+
+                        if (readings.isEmpty) {
+                          return SliverFillRemaining(
+                            child: StudentMobileUi.emptyState(
+                              context,
+                              icon: Icons.article_outlined,
+                              title: t.noReadingArticlesFound,
+                              body: t.searchTopicHint,
+                              skill: SkillType.reading,
+                            ),
+                          );
+                        }
+
+                        return SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            StudentMobileUi.pageHPadding,
+                            0,
+                            StudentMobileUi.pageHPadding,
+                            StudentMobileUi.pageBottomPadding,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final reading = readings[index];
+                                return Padding(
+                                  key: ValueKey(reading.id),
+                                  padding: const EdgeInsets.only(
+                                    bottom: StudentMobileUi.cardGap,
+                                  ),
+                                  child: _ReadingCard(
+                                    t: t,
+                                    reading: reading,
+                                    onAction: (isRetake) => _handleAction(
+                                      context,
+                                      reading,
+                                      isRetake: isRetake,
+                                    ),
+                                  ),
+                                );
+                              },
+                              childCount: readings.length,
+                            ),
                           ),
                         );
-                      }
-                      if (state.status == ReadingStatus.error) {
-                        return StudentMobileUi.errorBanner(
-                          message: state.errorMessage ?? t.loadDataFailed,
-                          onRetry: () => _retry(blocContext),
-                          retryLabel: t.commonRetry,
-                        );
-                      }
-
-                      final readings = state.readings
-                          .where((item) => _matchesPrefix(item.title, _searchQuery))
-                          .toList();
-
-                      if (readings.isEmpty) {
-                        return StudentMobileUi.emptyState(
-                          context,
-                          icon: Icons.article_outlined,
-                          title: t.noReadingArticlesFound,
-                          body: t.searchTopicHint,
-                          skill: SkillType.reading,
-                        );
-                      }
-
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: readings.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: StudentMobileUi.cardGap),
-                        itemBuilder: (context, index) => _ReadingCard(
-                          t: t,
-                          reading: readings[index],
-                          onAction: (isRetake) => _handleAction(
-                            context,
-                            blocContext,
-                            readings[index],
-                            isRetake: isRetake,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -175,17 +205,17 @@ class _ReadingListPageState extends State<ReadingListPage> {
     );
   }
 
-  void _retry(BuildContext context) {
-    context.read<ReadingBloc>().add(FetchReadingListEvent(
-          difficulty: _selectedDifficulty,
-          page: 1,
-          limit: 10,
-        ));
+  void _retry() {
+    _bloc.add(FetchReadingListEvent(
+      difficulty: _selectedDifficulty,
+      page: 1,
+      limit: 10,
+      forceRefresh: true,
+    ));
   }
 
   void _handleAction(
     BuildContext context,
-    BuildContext blocContext,
     ReadingEntity reading, {
     bool isRetake = false,
   }) {
@@ -196,19 +226,14 @@ class _ReadingListPageState extends State<ReadingListPage> {
       ),
     ).then((_) {
       if (context.mounted) {
-        blocContext.read<ReadingBloc>().add(FetchReadingListEvent(
-              difficulty: _selectedDifficulty,
-              page: 1,
-              limit: 10,
-            ));
+        _bloc.add(FetchReadingListEvent(
+          difficulty: _selectedDifficulty,
+          page: 1,
+          limit: 10,
+          forceRefresh: true,
+        ));
       }
     });
-  }
-
-  bool _matchesPrefix(String source, String query) {
-    final normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.isEmpty) return true;
-    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 
@@ -260,6 +285,7 @@ class _ReadingCard extends StatelessWidget {
 
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.reading,
+      tapViaChildActionsOnWeb: true,
       onTap: () => onAction(false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,73 +340,58 @@ class _ReadingCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           const Divider(height: 1, color: AppColors.outlineMuted),
           const SizedBox(height: AppSpacing.s4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: AppSpacing.s4,
-                  runSpacing: AppSpacing.s2,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _IconText(
-                      icon: Icons.schedule,
-                      text: t.readingMinutesShort(reading.minutesToRead),
-                    ),
-                    if (reading.questions.isNotEmpty)
-                      _IconText(
-                        icon: Icons.quiz_outlined,
-                        text: t.readingQuizCount(reading.questions.length),
-                      ),
-                    if (scoreText != null)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            size: 14,
-                            color: AppColors.success,
-                          ),
-                          const SizedBox(width: AppSpacing.s2),
-                          Text(
-                            scoreText,
-                            style: AppTypography.label(color: AppColors.success),
-                          ),
-                        ],
-                      ),
-                  ],
+          StudentMobileUi.skillListCardFooter(
+            info: Wrap(
+              spacing: AppSpacing.s4,
+              runSpacing: AppSpacing.s2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                _IconText(
+                  icon: Icons.schedule,
+                  text: t.readingMinutesShort(reading.minutesToRead),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.s3),
-              if (isCompleted)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    StudentMobileUi.skillCardReviewButton(
-                      onPressed: () => onAction(false),
-                      label: t.reviewAction,
-                    ),
-                    const SizedBox(width: AppSpacing.s3),
-                    StudentMobileUi.skillCardRetakeButton(
-                      onPressed: () => onAction(true),
-                      label: t.retakeAction,
-                    ),
-                  ],
-                )
-              else
-                SizedBox(
-                  height: 32,
-                  child: FilledButton(
-                    onPressed: () => onAction(false),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5),
-                    ),
-                    child: Text(t.startAction, style: AppTypography.label(color: AppColors.onPrimary)),
+                if (reading.questions.isNotEmpty)
+                  _IconText(
+                    icon: Icons.quiz_outlined,
+                    text: t.readingQuizCount(reading.questions.length),
                   ),
-                ),
-            ],
+                if (scoreText != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        size: 14,
+                        color: AppColors.success,
+                      ),
+                      const SizedBox(width: AppSpacing.s2),
+                      Text(
+                        scoreText,
+                        style: AppTypography.label(color: AppColors.success),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+            actions: isCompleted
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      StudentMobileUi.skillCardReviewButton(
+                        onPressed: () => onAction(false),
+                        label: t.reviewAction,
+                      ),
+                      const SizedBox(width: AppSpacing.s3),
+                      StudentMobileUi.skillCardRetakeButton(
+                        onPressed: () => onAction(true),
+                        label: t.retakeAction,
+                      ),
+                    ],
+                  )
+                : StudentMobileUi.skillCardPrimaryButton(
+                    onPressed: () => onAction(false),
+                    label: t.startAction,
+                  ),
           ),
         ],
       ),

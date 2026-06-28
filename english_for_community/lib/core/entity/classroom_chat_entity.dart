@@ -370,6 +370,20 @@ class ChatMember extends Equatable {
   /// Chủ lớp (GV sở hữu lớp) — khác co_teacher.
   bool get isClassOwner => role == 'teacher';
 
+  /// Thứ tự hiển thị danh sách: teacher → co_teacher → student.
+  static int compareForMemberList(ChatMember a, ChatMember b) {
+    final ra = _memberListSortRank(a);
+    final rb = _memberListSortRank(b);
+    if (ra != rb) return ra.compareTo(rb);
+    return a.fullName.compareTo(b.fullName);
+  }
+
+  static int _memberListSortRank(ChatMember m) {
+    if (m.isClassOwner) return 0;
+    if (m.role == 'co_teacher') return 1;
+    return 2;
+  }
+
   @override
   List<Object?> get props => [id, fullName, username, avatarUrl, role];
 }

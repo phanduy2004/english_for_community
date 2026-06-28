@@ -12,6 +12,7 @@ abstract class TeacherExamRepository {
   Future<Either<Failure, dynamic>> getClassroom(String id);
   Future<Either<Failure, dynamic>> joinClassByCode(String inviteCode);
   Future<Either<Failure, dynamic>> joinClassByToken(String token);
+  Future<Either<Failure, void>> leaveClassroom(String classroomId);
 
   Future<Either<Failure, dynamic>> patchClassroom(String id, Map<String, dynamic> body);
   Future<Either<Failure, dynamic>> archiveClassroom(String id);

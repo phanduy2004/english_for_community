@@ -8,10 +8,12 @@ class StudentExamAssignmentTile extends StatelessWidget {
     super.key,
     required this.assignment,
     required this.onOpen,
+    this.compact = false,
   });
 
   final Map<String, dynamic> assignment;
   final Future<void> Function() onOpen;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +53,7 @@ class StudentExamAssignmentTile extends StatelessWidget {
 
     return ExamAssignmentCard(
       assignment: assignment,
+      compact: compact,
       primaryActionLabel: actionLabel,
       primaryActionEnabled: actionEnabled,
       onPrimaryAction: actionEnabled ? onOpen : null,

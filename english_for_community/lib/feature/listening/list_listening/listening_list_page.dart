@@ -1,10 +1,11 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_typography.dart';
+import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
+import 'package:english_for_community/core/ui/skill_list_search_mixin.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -28,24 +29,24 @@ class ListeningListPage extends StatefulWidget {
   State<ListeningListPage> createState() => _ListeningListPageState();
 }
 
-class _ListeningListPageState extends State<ListeningListPage> {
+class _ListeningListPageState extends State<ListeningListPage> with SkillListSearchMixin {
   int _selectedFilterIndex = 0;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
+  late final ListeningBloc _bloc;
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text;
-      });
-    });
+    initSkillListSearch();
+    _bloc = getIt<ListeningBloc>()
+      ..add(GetListListeningEvent(
+        difficulty: _getDifficultyForIndex(_selectedFilterIndex),
+      ));
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    disposeSkillListSearch();
+    _bloc.close();
     super.dispose();
   }
 
@@ -71,128 +72,151 @@ class _ListeningListPageState extends State<ListeningListPage> {
       t.difficultyAdvanced,
     ];
 
-    return BlocProvider<ListeningBloc>(
-      create: (_) => getIt<ListeningBloc>()
-        ..add(GetListListeningEvent(
-          difficulty: _getDifficultyForIndex(_selectedFilterIndex),
-        )),
-      child: Builder(
-        builder: (context) {
-          void refreshList() {
-            context.read<ListeningBloc>().add(
-                  GetListListeningEvent(
-                    difficulty: _getDifficultyForIndex(_selectedFilterIndex),
-                  ),
-                );
-          }
-
+    return BlocProvider.value(
+      value: _bloc,
+      child: BlocBuilder<ListeningBloc, ListeningState>(
+        buildWhen: (prev, next) => prev.status != next.status,
+        builder: (context, state) {
           return Scaffold(
             backgroundColor: AppColors.surface,
             appBar: StudentMobileUi.skillAppBar(
               context,
               title: t.listeningPracticeTitle,
               skill: SkillType.listening,
+              showLoading: state.status == ListeningStatus.loading,
             ),
             body: SafeArea(
-              child: ListView(
-                padding: StudentMobileUi.pagePadding,
-                clipBehavior: Clip.none,
-                children: [
-                  StudentMobileUi.skillHubBanner(
-                    context: context,
-                    title: t.listeningHeaderTitle,
-                    subtitle: t.listeningHeaderSubtitle,
-                    badge: t.listeningPremiumBadge,
-                    icon: Icons.headphones_rounded,
-                    skill: SkillType.listening,
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  StudentMobileUi.searchField(
-                    controller: _searchController,
-                    hintText: t.listeningSearchHint,
-                    showClear: _searchQuery.trim().isNotEmpty,
-                    onClear: () {
-                      _searchController.clear();
-                      FocusScope.of(context).unfocus();
-                    },
-                  ),
-                  const SizedBox(height: StudentMobileUi.cardGap),
-                  StudentMobileUi.filterRow(
-                    labels: filterLabels,
-                    selectedIndex: _selectedFilterIndex,
-                    skill: SkillType.listening,
-                    onSelected: (i) {
-                      setState(() => _selectedFilterIndex = i);
-                      context.read<ListeningBloc>().add(
-                            GetListListeningEvent(
+          child: e4cNoScrollbarScroll(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              clipBehavior: Clip.none,
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: StudentMobileUi.pagePadding,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        StudentMobileUi.skillHubBanner(
+                          context: context,
+                          title: t.listeningHeaderTitle,
+                          subtitle: t.listeningHeaderSubtitle,
+                          badge: t.listeningPremiumBadge,
+                          icon: Icons.headphones_rounded,
+                          skill: SkillType.listening,
+                        ),
+                        const SizedBox(height: StudentMobileUi.sectionGap),
+                        StudentMobileUi.searchField(
+                          controller: skillListSearchController,
+                          hintText: t.listeningSearchHint,
+                          onClear: () => clearSkillListSearch(context),
+                        ),
+                        const SizedBox(height: StudentMobileUi.cardGap),
+                        StudentMobileUi.filterRow(
+                          labels: filterLabels,
+                          selectedIndex: _selectedFilterIndex,
+                          skill: SkillType.listening,
+                          onSelected: (i) {
+                            if (i == _selectedFilterIndex) return;
+                            setState(() => _selectedFilterIndex = i);
+                            _bloc.add(GetListListeningEvent(
                               difficulty: _getDifficultyForIndex(i),
-                            ),
-                          );
-                    },
+                            ));
+                          },
+                        ),
+                        const SizedBox(height: StudentMobileUi.sectionGap),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  BlocBuilder<ListeningBloc, ListeningState>(
-                    builder: (context, state) {
-                      switch (state.status) {
-                        case ListeningStatus.loading:
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
-                            child: Center(
-                              child: StudentMobileUi.listLoading(),
+                ),
+                BlocBuilder<ListeningBloc, ListeningState>(
+                  builder: (context, state) {
+                    if (state.status == ListeningStatus.loading &&
+                        (state.listListeningEntity == null ||
+                            state.listListeningEntity!.isEmpty)) {
+                      return SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                          child: Center(child: StudentMobileUi.listLoading()),
+                        ),
+                      );
+                    }
+                    if (state.status == ListeningStatus.error) {
+                        return SliverToBoxAdapter(
+                          child: Padding(
+                            padding: StudentMobileUi.pagePadding,
+                            child: StudentMobileUi.errorBanner(
+                              message: state.errorMessage ?? t.loadDataFailed,
+                              onRetry: _refreshList,
+                              retryLabel: t.commonRetry,
                             ),
-                          );
-                        case ListeningStatus.error:
-                          return StudentMobileUi.errorBanner(
-                            message: state.errorMessage ?? t.loadDataFailed,
-                            onRetry: refreshList,
-                            retryLabel: t.commonRetry,
-                          );
-                        case ListeningStatus.success:
-                          final allItems =
-                              state.listListeningEntity ?? const <ListeningEntity>[];
-                          final items = allItems
-                              .where((item) => _matchesPrefix(item.title, _searchQuery))
-                              .toList();
-                          if (items.isEmpty) {
-                            return StudentMobileUi.emptyState(
+                          ),
+                        );
+                    }
+                    if (state.status == ListeningStatus.success) {
+                      final allItems =
+                          state.listListeningEntity ?? const <ListeningEntity>[];
+                      final items = allItems
+                            .where((item) => skillListMatchesPrefix(
+                                  item.title,
+                                  skillListSearchQuery,
+                                ))
+                            .toList();
+                        if (items.isEmpty) {
+                          return SliverFillRemaining(
+                            child: StudentMobileUi.emptyState(
                               context,
                               icon: Icons.headphones_outlined,
                               title: t.noListeningLessonsFound,
                               body: t.listeningSearchHint,
                               skill: SkillType.listening,
-                            );
-                          }
-
-                          return ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: items.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: StudentMobileUi.cardGap),
-                            itemBuilder: (context, index) => _ListeningCard(
-                              t: t,
-                              entity: items[index],
-                              onLessonFinished: refreshList,
                             ),
                           );
-                        default:
-                          return const SizedBox.shrink();
-                      }
-                    },
-                  ),
-                ],
-              ),
+                        }
+
+                        return SliverPadding(
+                          padding: EdgeInsets.fromLTRB(
+                            StudentMobileUi.pageHPadding,
+                            0,
+                            StudentMobileUi.pageHPadding,
+                            StudentMobileUi.pageBottomPadding,
+                          ),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) => Padding(
+                                key: ValueKey(items[index].id),
+                                padding: const EdgeInsets.only(
+                                  bottom: StudentMobileUi.cardGap,
+                                ),
+                                child: _ListeningCard(
+                                  t: t,
+                                  entity: items[index],
+                                  onLessonFinished: _refreshList,
+                                ),
+                              ),
+                              childCount: items.length,
+                            ),
+                          ),
+                        );
+                    }
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  },
+                ),
+              ],
             ),
-          );
+          ),
+        ),
+      );
         },
       ),
     );
   }
 
-  bool _matchesPrefix(String source, String query) {
-    final normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.isEmpty) return true;
-    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
+  void _refreshList() {
+    _bloc.add(GetListListeningEvent(
+      difficulty: _getDifficultyForIndex(_selectedFilterIndex),
+      forceRefresh: true,
+    ));
   }
 }
 
@@ -244,6 +268,7 @@ class _ListeningCard extends StatelessWidget {
 
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.listening,
+      tapViaChildActionsOnWeb: true,
       onTap: () => _handlePress(context, isRetake: false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,56 +339,41 @@ class _ListeningCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           const Divider(height: 1, color: AppColors.outlineMuted),
           const SizedBox(height: AppSpacing.s4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    StudentMobileUi.skillProgressBar(
-                      value: progress,
-                      skill: SkillType.listening,
-                      height: 4,
-                    ),
-                    const SizedBox(height: AppSpacing.s2),
-                    Text(
-                      t.progressPercentLabel((progress * 100).toInt()),
-                      style: StudentMobileUi.caption(context),
-                    ),
-                  ],
+          StudentMobileUi.skillListCardFooter(
+            info: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                StudentMobileUi.skillProgressBar(
+                  value: progress,
+                  skill: SkillType.listening,
+                  height: 4,
                 ),
-              ),
-              const SizedBox(width: AppSpacing.s5),
-              if (isCompleted)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    StudentMobileUi.skillCardReviewButton(
-                      onPressed: () => _handlePress(context, isRetake: false),
-                      label: t.reviewAction,
-                    ),
-                    const SizedBox(width: AppSpacing.s3),
-                    StudentMobileUi.skillCardRetakeButton(
-                      onPressed: () => _handlePress(context, isRetake: true),
-                      label: t.retakeAction,
-                    ),
-                  ],
-                )
-              else
-                SizedBox(
-                  height: 32,
-                  child: FilledButton(
+                const SizedBox(height: AppSpacing.s2),
+                Text(
+                  t.progressPercentLabel((progress * 100).toInt()),
+                  style: StudentMobileUi.caption(context),
+                ),
+              ],
+            ),
+            actions: isCompleted
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      StudentMobileUi.skillCardReviewButton(
+                        onPressed: () => _handlePress(context, isRetake: false),
+                        label: t.reviewAction,
+                      ),
+                      const SizedBox(width: AppSpacing.s3),
+                      StudentMobileUi.skillCardRetakeButton(
+                        onPressed: () => _handlePress(context, isRetake: true),
+                        label: t.retakeAction,
+                      ),
+                    ],
+                  )
+                : StudentMobileUi.skillCardPrimaryButton(
                     onPressed: () => _handlePress(context, isRetake: false),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5),
-                    ),
-                    child: Text(t.startAction, style: AppTypography.label(color: AppColors.onPrimary)),
+                    label: t.startAction,
                   ),
-                ),
-            ],
           ),
         ],
       ),

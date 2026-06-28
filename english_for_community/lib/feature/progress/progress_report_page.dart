@@ -209,7 +209,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
   Future<void> _onRefresh(BuildContext context) async {
     final bloc = context.read<ProgressBloc>();
-    bloc.add(FetchProgressData(range: _rangeToString(_range)));
+    bloc.add(FetchProgressData(range: _rangeToString(_range), forceRefresh: true));
     bloc.add(FetchLeaderboard());
     await Future.delayed(AppMotion.savedFade);
   }
@@ -227,6 +227,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         appBar: StudentMobileUi.appBar(
           context,
           title: t.learningProgressTitle,
+          showBack: false,
           actions: [
             IconButton(
               tooltip: t.reportIssueTooltip,
@@ -238,10 +239,11 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         body: SafeArea(
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
-              if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
+              if ((state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) &&
+                  state.summary == null) {
                 return StudentMobileUi.listLoading();
               }
-              if (state.status == ProgressStatus.error) {
+              if (state.status == ProgressStatus.error && state.summary == null) {
                 return _buildErrorUI(context, state.errorMessage, t);
               }
               if (state.summary != null) {

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -160,7 +161,10 @@ class _VocabularyHomePageState extends State<VocabularyHomePage>
         ),
         body: BlocBuilder<VocabularyBloc, VocabularyState>(
           builder: (context, state) {
-            if (state.status == VocabularyStatus.loading) {
+            final hasWords = state.recentWords.isNotEmpty ||
+                state.learningWords.isNotEmpty ||
+                state.savedWords.isNotEmpty;
+            if (state.status == VocabularyStatus.loading && !hasWords) {
               return StudentMobileUi.listLoading();
             }
             if (state.status == VocabularyStatus.error) {
@@ -404,17 +408,21 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final child = Container(
+      padding: const EdgeInsets.all(AppSpacing.s3),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+      ),
+      child: Icon(icon, color: color, size: 20),
+    );
+    if (kIsWeb) {
+      return GestureDetector(onTap: onPressed, child: child);
+    }
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(AppRadius.input),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.s3),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(AppRadius.input),
-        ),
-        child: Icon(icon, color: color, size: 20),
-      ),
+      child: child,
     );
   }
 }
@@ -441,6 +449,7 @@ class _WordCard extends StatelessWidget {
     final t = context.l10n;
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.vocabulary,
+      tapViaChildActionsOnWeb: action != null,
       onTap: onTap,
       child: Row(
         children: [

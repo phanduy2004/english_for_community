@@ -63,8 +63,6 @@ class _ProfilePageState extends State<ProfilePage> {
     showDialog(context: context, builder: (context) => const ChangePasswordDialog());
   }
 
-  void _goExportData() {}
-
   void _handleLogout() {
     GetIt.I<SocketService>().disconnect();
     context.read<UserBloc>().add(SignOutEvent());
@@ -470,13 +468,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           dark: AppColors.accentDark,
                         ),
                         onTap: _goChangePassword,
-                      ),
-                      const _GroupDivider(),
-                      _SettingsTile(
-                        icon: Icons.file_download_outlined,
-                        title: t.exportData,
-                        subtitle: t.exportDataSubtitle,
-                        onTap: _goExportData,
                       ),
                     ],
                   ),

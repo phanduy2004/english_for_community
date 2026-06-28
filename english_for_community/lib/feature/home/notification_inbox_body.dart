@@ -30,7 +30,7 @@ String formatNotificationTime(DateTime time, AppLocalizations t) {
   return DateFormat('dd/MM HH:mm').format(time);
 }
 
-/// Shared notification list — full page on student mobile, dialog on web/teacher.
+/// Shared notification list body — rendered inside [NotificationDialog].
 class NotificationInboxBody extends StatefulWidget {
   const NotificationInboxBody({super.key, this.closeBeforeNavigate = true});
 

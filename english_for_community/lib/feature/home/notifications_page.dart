@@ -1,46 +1,35 @@
-import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/ui/student_mobile_ui.dart';
-import 'package:english_for_community/feature/home/bloc_noti/notification_bloc.dart';
-import 'package:english_for_community/feature/home/bloc_noti/notification_event.dart';
-import 'package:english_for_community/feature/home/notification_inbox_body.dart';
+import 'package:english_for_community/feature/home/notification_dialog.dart';
+import 'package:english_for_community/feature/home/home_page.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-/// Full-screen notification inbox for student mobile (native Android/iOS).
-class NotificationsPage extends StatelessWidget {
+/// Deeplink target for `/notifications` — opens the shared dialog, then returns home.
+class NotificationsPage extends StatefulWidget {
   static const String routeName = 'NotificationsPage';
   static const String routePath = '/notifications';
 
   const NotificationsPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final t = context.l10n;
-    final bloc = getIt<NotificationBloc>();
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
 
-    return BlocProvider.value(
-      value: bloc,
-      child: Scaffold(
-        backgroundColor: AppColors.surface,
-        appBar: StudentMobileUi.appBar(
-          context,
-          title: t.notificationsTitle,
-          actions: [
-            TextButton(
-              onPressed: () {
-                context.read<NotificationBloc>().add(NotificationMarkAllRead());
-              },
-              child: Text(t.markAllRead),
-            ),
-          ],
-        ),
-        body: const SafeArea(
-          top: false,
-          child: NotificationInboxBody(closeBeforeNavigate: false),
-        ),
-      ),
-    );
+class _NotificationsPageState extends State<NotificationsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showAppNotificationsDialog(context);
+      final router = GoRouter.of(context);
+      if (router.canPop()) {
+        router.pop();
+      } else {
+        router.go(HomePage.routePath);
+      }
+    });
   }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

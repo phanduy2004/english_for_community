@@ -1,11 +1,28 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/repository/history_repository.dart';
+import '../../admin/submission_managerment/model/activity_model.dart';
 import 'my_exercise_history_event.dart';
 import 'my_exercise_history_state.dart';
 
+class _HistoryCacheEntry {
+  const _HistoryCacheEntry({
+    required this.items,
+    required this.page,
+    required this.total,
+    required this.hasMore,
+  });
+
+  final List<ActivityModel> items;
+  final int page;
+  final int total;
+  final bool hasMore;
+}
+
 class MyExerciseHistoryBloc extends Bloc<MyExerciseHistoryEvent, MyExerciseHistoryState> {
   final HistoryRepository _repository;
+  final Map<String, _HistoryCacheEntry> _cache = {};
 
   MyExerciseHistoryBloc({required HistoryRepository historyRepository})
       : _repository = historyRepository,
@@ -14,7 +31,30 @@ class MyExerciseHistoryBloc extends Bloc<MyExerciseHistoryEvent, MyExerciseHisto
     on<MyExerciseHistoryLoadMore>(_onLoadMore);
   }
 
+  String _cacheKey(DateTimeRange range, ActivityType? skillFilter) =>
+      '${range.start.millisecondsSinceEpoch}|${range.end.millisecondsSinceEpoch}|${skillFilter?.name ?? 'all'}';
+
   Future<void> _onFetch(MyExerciseHistoryFetch event, Emitter<MyExerciseHistoryState> emit) async {
+    final key = _cacheKey(event.dateRange, event.skillFilter);
+
+    if (event.forceRefresh) {
+      _cache.remove(key);
+    } else if (_cache.containsKey(key)) {
+      final cached = _cache[key]!;
+      emit(state.copyWith(
+        status: MyExerciseHistoryStatus.success,
+        errorMessage: null,
+        dateRange: event.dateRange,
+        skillFilter: event.skillFilter,
+        setSkillFilter: true,
+        page: cached.page,
+        items: List.of(cached.items),
+        total: cached.total,
+        hasMore: cached.hasMore,
+      ));
+      return;
+    }
+
     emit(state.copyWith(
       status: MyExerciseHistoryStatus.loading,
       errorMessage: null,
@@ -22,7 +62,7 @@ class MyExerciseHistoryBloc extends Bloc<MyExerciseHistoryEvent, MyExerciseHisto
       skillFilter: event.skillFilter,
       setSkillFilter: true,
       page: 1,
-      items: [],
+      items: const [],
       hasMore: false,
     ));
 
@@ -40,13 +80,21 @@ class MyExerciseHistoryBloc extends Bloc<MyExerciseHistoryEvent, MyExerciseHisto
         status: MyExerciseHistoryStatus.error,
         errorMessage: failure.message,
       )),
-      (data) => emit(state.copyWith(
-        status: MyExerciseHistoryStatus.success,
-        items: data.items,
-        page: data.page,
-        total: data.total,
-        hasMore: data.hasMore,
-      )),
+      (data) {
+        _cache[key] = _HistoryCacheEntry(
+          items: data.items,
+          page: data.page,
+          total: data.total,
+          hasMore: data.hasMore,
+        );
+        emit(state.copyWith(
+          status: MyExerciseHistoryStatus.success,
+          items: data.items,
+          page: data.page,
+          total: data.total,
+          hasMore: data.hasMore,
+        ));
+      },
     );
   }
 
@@ -75,6 +123,12 @@ class MyExerciseHistoryBloc extends Bloc<MyExerciseHistoryEvent, MyExerciseHisto
       )),
       (data) {
         final merged = [...state.items, ...data.items];
+        _cache[_cacheKey(state.dateRange, state.skillFilter)] = _HistoryCacheEntry(
+          items: merged,
+          page: data.page,
+          total: data.total,
+          hasMore: data.hasMore,
+        );
         emit(state.copyWith(
           isLoadingMore: false,
           status: MyExerciseHistoryStatus.success,

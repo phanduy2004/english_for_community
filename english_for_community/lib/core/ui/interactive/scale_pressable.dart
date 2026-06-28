@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// Thẻ / ô bấm: scale nhẹ khi highlight + ripple Material — micro-interaction mượt.
@@ -35,6 +36,20 @@ class _ScalePressableState extends State<ScalePressable> {
   @override
   Widget build(BuildContext context) {
     final radius = widget.borderRadius ?? BorderRadius.circular(14);
+    final padded = Padding(
+      padding: widget.padding,
+      child: widget.child,
+    );
+
+    // Web: tránh InkWell/MouseRegion — hay gây mouse_tracker assert khi hover.
+    if (kIsWeb) {
+      return GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: padded,
+      );
+    }
+
     return AnimatedScale(
       scale: _pressed ? widget.minScale : 1.0,
       duration: widget.duration,
@@ -49,10 +64,7 @@ class _ScalePressableState extends State<ScalePressable> {
           splashColor: widget.splashColor,
           highlightColor: widget.highlightColor,
           onHighlightChanged: (v) => setState(() => _pressed = v),
-          child: Padding(
-            padding: widget.padding,
-            child: widget.child,
-          ),
+          child: padded,
         ),
       ),
     );

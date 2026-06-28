@@ -6,6 +6,7 @@ import { initSocket } from './src/socket/socketManager.js';
 import {initSmartNotificationJob} from "./src/jobs/smartNotificationJob.js";
 import { initAppReleaseSchedulerJob } from './src/jobs/appReleaseSchedulerJob.js';
 import { initExamAttemptExpireJob } from './src/jobs/examAttemptExpireJob.js';
+import User from './src/models/User.js';
 
 import { getMongoUri, getMongoUriForLog, getMongoDbName } from './src/lib/mongoUri.js';
 
@@ -29,6 +30,14 @@ await mongoose.connect(MONGO_URI, {
 console.log(
   `✅ Connected to MongoDB (${getMongoUriForLog(MONGO_URI)}) [db: ${MONGO_DB_NAME}]`
 );
+
+// Cờ isOnline còn sót từ vòng đời process trước (Render restart/crash/spin-down) → reset.
+try {
+  const r = await User.updateMany({ isOnline: true }, { $set: { isOnline: false } });
+  console.log(`🧹 Presence boot-reset: ${r.modifiedCount} user(s) → offline`);
+} catch (e) {
+  console.error('Presence boot-reset failed:', e?.message || e);
+}
 
 // 1. Tạo HTTP Server từ Express App
 const httpServer = http.createServer(app);

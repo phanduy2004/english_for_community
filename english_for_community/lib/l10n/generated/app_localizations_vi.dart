@@ -2386,6 +2386,10 @@ class AppLocalizationsVi extends AppLocalizations {
       'Mã lớp · link lớp · bài thi công khai · phòng thi live…';
 
   @override
+  String get studentUnifiedJoinCompactHint =>
+      'Dán mã hoặc link để vào thêm lớp.';
+
+  @override
   String get studentUnifiedJoinButton => 'Tham gia';
 
   @override
@@ -2418,6 +2422,17 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studentMyClassesTitle => 'Các lớp bạn đang học';
+
+  @override
+  String studentClassesHubListHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lớp — chạm để xem bài tập và chat',
+      one: '1 lớp — chạm để xem bài tập và chat',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get studentNoClasses => 'Bạn chưa tham gia lớp nào.';
@@ -2518,6 +2533,146 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get studentClassNoDescription => 'Lớp này chưa có mô tả.';
+
+  @override
+  String get studentClassTabOverview => 'Tổng quan';
+
+  @override
+  String get studentClassTabAssignments => 'Bài tập';
+
+  @override
+  String get studentClassTabMembers => 'Thành viên';
+
+  @override
+  String get studentClassOpenChat => 'Nhóm chat';
+
+  @override
+  String get studentClassQuickActionChat => 'Chat';
+
+  @override
+  String get studentClassQuickActionAssignments => 'Bài tập';
+
+  @override
+  String get studentClassQuickActionMembers => 'Thành viên';
+
+  @override
+  String get studentClassSegmentOpen => 'Đang mở';
+
+  @override
+  String get studentClassSegmentSubmitted => 'Đã nộp';
+
+  @override
+  String get studentClassSegmentClosed => 'Hết hạn';
+
+  @override
+  String get studentClassOverviewRecentTitle => 'Cần làm';
+
+  @override
+  String get studentClassViewAllAssignments => 'Xem tất cả';
+
+  @override
+  String get studentClassMembersEmpty => 'Chưa có thành viên.';
+
+  @override
+  String get studentClassMemberYou => 'Bạn';
+
+  @override
+  String get studentClassMemberTeacher => 'Giáo viên';
+
+  @override
+  String get studentClassMemberCoTeacher => 'GV phụ';
+
+  @override
+  String get studentClassInviteCodeLabel => 'Mã mời lớp';
+
+  @override
+  String get studentClassReadMore => 'Xem thêm';
+
+  @override
+  String studentClassChatMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thành viên trong chat',
+      one: '1 thành viên trong chat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String studentClassOverviewActionHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bài cần bạn làm ngay',
+      one: '1 bài cần bạn làm ngay',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassOverviewEmptyBody =>
+      'Khi giáo viên giao bài, bài tập sẽ hiện ở đây.';
+
+  @override
+  String get studentClassNoAssignmentsInSegment =>
+      'Không có bài tập trong bộ lọc này.';
+
+  @override
+  String studentClassAssignmentsFilteredCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bài tập',
+      one: '1 bài tập',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassSegmentGraded => 'Đã chấm';
+
+  @override
+  String studentClassLiveBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bài thi trực tiếp đang diễn ra — mở tab Bài tập',
+      one: '1 bài thi trực tiếp đang diễn ra — mở tab Bài tập',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassSortPriority => 'Ưu tiên cần làm';
+
+  @override
+  String get studentClassSortDueDate => 'Sắp xếp theo hạn';
+
+  @override
+  String get studentClassMembersSearchHint => 'Tìm thành viên…';
+
+  @override
+  String get studentClassMembersNoResults => 'Không có thành viên phù hợp.';
+
+  @override
+  String get studentClassMuteNotifications => 'Tắt thông báo lớp';
+
+  @override
+  String get studentClassMuteNotificationsHint => 'Chỉ lưu trên thiết bị này.';
+
+  @override
+  String get studentClassLeaveAction => 'Rời lớp';
+
+  @override
+  String get studentClassLeaveConfirmTitle => 'Rời lớp học này?';
+
+  @override
+  String get studentClassLeaveConfirmBody =>
+      'Bạn sẽ mất quyền truy cập bài tập và chat của lớp. Giáo viên có thể mời bạn tham gia lại.';
+
+  @override
+  String get studentClassLeaveSuccess => 'Bạn đã rời lớp.';
 
   @override
   String get teacherClassDetailAssignmentsTitle => 'Bài được giao';

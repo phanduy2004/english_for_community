@@ -8,10 +8,13 @@ abstract class ProgressEvent extends Equatable {
 }
 
 class FetchProgressData extends ProgressEvent {
-  final String range; // 'day', 'week', 'month'
-  const FetchProgressData({this.range = 'week'}); // Mặc định là 'week'
+  final String range;
+  final bool forceRefresh;
+
+  const FetchProgressData({this.range = 'week', this.forceRefresh = false});
+
   @override
-  List<Object> get props => [range];
+  List<Object> get props => [range, forceRefresh];
 }
 class FetchStatDetail extends ProgressEvent {
   final String statKey; // 'reading', 'speaking', 'vocab',...

@@ -1,6 +1,6 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/notification/app_notification_listener.dart';
+import 'package:english_for_community/feature/home/notification_dialog.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_bloc.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_state.dart';
 import 'package:english_for_community/core/theme/app_color.dart';

@@ -10,8 +10,8 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 
 import '../utils/global_keys.dart';
+import 'package:english_for_community/feature/home/notification_dialog.dart';
 import 'notification_navigation.dart';
-import '../../feature/home/notifications_page.dart';
 
 class LocalNotificationService {
   // Singleton Pattern
@@ -117,11 +117,11 @@ class LocalNotificationService {
       final data = Map<String, dynamic>.from(jsonDecode(payload) as Map);
       final router = GoRouter.of(context);
       if (!navigateFromNotification(router, data: data)) {
-        router.push(NotificationsPage.routePath);
+        showAppNotificationsDialog(context);
       }
     } catch (e) {
       print('⚠️ Notification payload parse error: $e');
-      GoRouter.of(context).push(NotificationsPage.routePath);
+      showAppNotificationsDialog(context);
     }
   }
 

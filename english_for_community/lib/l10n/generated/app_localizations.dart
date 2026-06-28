@@ -4508,6 +4508,12 @@ abstract class AppLocalizations {
   /// **'Class code · class link · public exam · live session link…'**
   String get studentUnifiedJoinHint;
 
+  /// No description provided for @studentUnifiedJoinCompactHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste a code or link to join another class.'**
+  String get studentUnifiedJoinCompactHint;
+
   /// No description provided for @studentUnifiedJoinButton.
   ///
   /// In en, this message translates to:
@@ -4567,6 +4573,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your classrooms'**
   String get studentMyClassesTitle;
+
+  /// No description provided for @studentClassesHubListHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 class — tap to open assignments and chat} other{{count} classes — tap to open assignments and chat}}'**
+  String studentClassesHubListHint(int count);
 
   /// No description provided for @studentNoClasses.
   ///
@@ -4693,6 +4705,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No description for this class.'**
   String get studentClassNoDescription;
+
+  /// No description provided for @studentClassTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get studentClassTabOverview;
+
+  /// No description provided for @studentClassTabAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get studentClassTabAssignments;
+
+  /// No description provided for @studentClassTabMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get studentClassTabMembers;
+
+  /// No description provided for @studentClassOpenChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Class chat'**
+  String get studentClassOpenChat;
+
+  /// No description provided for @studentClassQuickActionChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get studentClassQuickActionChat;
+
+  /// No description provided for @studentClassQuickActionAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'Assignments'**
+  String get studentClassQuickActionAssignments;
+
+  /// No description provided for @studentClassQuickActionMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get studentClassQuickActionMembers;
+
+  /// No description provided for @studentClassSegmentOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get studentClassSegmentOpen;
+
+  /// No description provided for @studentClassSegmentSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get studentClassSegmentSubmitted;
+
+  /// No description provided for @studentClassSegmentClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get studentClassSegmentClosed;
+
+  /// No description provided for @studentClassOverviewRecentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Up next'**
+  String get studentClassOverviewRecentTitle;
+
+  /// No description provided for @studentClassViewAllAssignments.
+  ///
+  /// In en, this message translates to:
+  /// **'View all'**
+  String get studentClassViewAllAssignments;
+
+  /// No description provided for @studentClassMembersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No members yet.'**
+  String get studentClassMembersEmpty;
+
+  /// No description provided for @studentClassMemberYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get studentClassMemberYou;
+
+  /// No description provided for @studentClassMemberTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teacher'**
+  String get studentClassMemberTeacher;
+
+  /// No description provided for @studentClassMemberCoTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Co-teacher'**
+  String get studentClassMemberCoTeacher;
+
+  /// No description provided for @studentClassInviteCodeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite code'**
+  String get studentClassInviteCodeLabel;
+
+  /// No description provided for @studentClassReadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Read more'**
+  String get studentClassReadMore;
+
+  /// No description provided for @studentClassChatMemberCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 member in chat} other{{count} members in chat}}'**
+  String studentClassChatMemberCount(int count);
+
+  /// No description provided for @studentClassOverviewActionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 assignment needs your attention} other{{count} assignments need your attention}}'**
+  String studentClassOverviewActionHint(int count);
+
+  /// No description provided for @studentClassOverviewEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'When your teacher assigns work, it will show up here.'**
+  String get studentClassOverviewEmptyBody;
+
+  /// No description provided for @studentClassNoAssignmentsInSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'No assignments in this filter.'**
+  String get studentClassNoAssignmentsInSegment;
+
+  /// No description provided for @studentClassAssignmentsFilteredCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 assignment} other{{count} assignments}}'**
+  String studentClassAssignmentsFilteredCount(int count);
+
+  /// No description provided for @studentClassSegmentGraded.
+  ///
+  /// In en, this message translates to:
+  /// **'Graded'**
+  String get studentClassSegmentGraded;
+
+  /// No description provided for @studentClassLiveBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{1 live exam in progress — open Assignments} other{{count} live exams in progress — open Assignments}}'**
+  String studentClassLiveBanner(int count);
+
+  /// No description provided for @studentClassSortPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by priority'**
+  String get studentClassSortPriority;
+
+  /// No description provided for @studentClassSortDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by due date'**
+  String get studentClassSortDueDate;
+
+  /// No description provided for @studentClassMembersSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search members…'**
+  String get studentClassMembersSearchHint;
+
+  /// No description provided for @studentClassMembersNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No members match your search.'**
+  String get studentClassMembersNoResults;
+
+  /// No description provided for @studentClassMuteNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute notifications'**
+  String get studentClassMuteNotifications;
+
+  /// No description provided for @studentClassMuteNotificationsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device only.'**
+  String get studentClassMuteNotificationsHint;
+
+  /// No description provided for @studentClassLeaveAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave class'**
+  String get studentClassLeaveAction;
+
+  /// No description provided for @studentClassLeaveConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave this class?'**
+  String get studentClassLeaveConfirmTitle;
+
+  /// No description provided for @studentClassLeaveConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You will lose access to assignments and chat for this class. Your teacher can invite you again.'**
+  String get studentClassLeaveConfirmBody;
+
+  /// No description provided for @studentClassLeaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You left the class.'**
+  String get studentClassLeaveSuccess;
 
   /// No description provided for @teacherClassDetailAssignmentsTitle.
   ///

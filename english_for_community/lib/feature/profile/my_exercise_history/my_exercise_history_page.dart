@@ -243,6 +243,7 @@ class _MyExerciseHistoryViewState extends State<_MyExerciseHistoryView> with Sin
             onRetry: () => context.read<MyExerciseHistoryBloc>().add(MyExerciseHistoryFetch(
                   dateRange: state.dateRange,
                   skillFilter: state.skillFilter,
+                  forceRefresh: true,
                 )),
           ),
         ),

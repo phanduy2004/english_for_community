@@ -78,6 +78,7 @@
 - Có ảnh cover → hiển thị ảnh (đã có `ChatGroupCoverAvatar`).
 - Không ảnh → **initials trên màu suy ra từ hash tên** (palette 6–8 màu trung tính-tươi), KHÔNG icon nhóm xám. Mỗi lớp một màu ổn định → nhận diện nhanh (kiểu Telegram/Slack).
 - Bỏ "chấm xanh online" cho trạng thái active (W5) — chấm xanh **chỉ** dành cho presence thật (tương lai).
+- **06/2026 (impl):** palette = 8 cặp tint-nhạt/chữ-đậm cùng tông (`_avatarPalette` trong `classroom_chat_ui.dart`): slate, teal, indigo, violet, rose, sand, green, cyan. **Không** mượn `danger`/`warning` (tránh trông như cảnh báo) và bỏ entry trùng `dangerBg`.
 
 ### 3.4 Density (một component, 2 biến thể)
 

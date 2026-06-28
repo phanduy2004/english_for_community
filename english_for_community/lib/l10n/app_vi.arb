@@ -954,6 +954,7 @@
   "studentUnifiedJoinTitle": "Tham gia",
   "studentUnifiedJoinSubtitle": "Dán mã hoặc link — app tự nhận loại và mở đúng chỗ.",
   "studentUnifiedJoinHint": "Mã lớp · link lớp · bài thi công khai · phòng thi live…",
+  "studentUnifiedJoinCompactHint": "Dán mã hoặc link để vào thêm lớp.",
   "studentUnifiedJoinButton": "Tham gia",
   "studentJoinInputInvalid": "Không nhận dạng được mã. Kiểm tra lại hoặc hỏi giáo viên.",
   "studentJoinDetectedClass": "Nhận mã lớp — đang tham gia…",
@@ -964,6 +965,12 @@
   "studentJoinClassButton": "Vào lớp",
   "studentJoinClassSuccess": "Đã tham gia lớp",
   "studentMyClassesTitle": "Các lớp bạn đang học",
+  "studentClassesHubListHint": "{count, plural, one{1 lớp — chạm để xem bài tập và chat} other{{count} lớp — chạm để xem bài tập và chat}}",
+  "@studentClassesHubListHint": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "studentNoClasses": "Bạn chưa tham gia lớp nào.",
   "studentClassOpen": "Mở lớp",
   "studentClassAssignmentsCount": "{count, plural, =0{Chưa có bài tập} one{1 bài tập} other{{count} bài tập}}",
@@ -1026,6 +1033,61 @@
     }
   },
   "studentClassNoDescription": "Lớp này chưa có mô tả.",
+  "studentClassTabOverview": "Tổng quan",
+  "studentClassTabAssignments": "Bài tập",
+  "studentClassTabMembers": "Thành viên",
+  "studentClassOpenChat": "Nhóm chat",
+  "studentClassQuickActionChat": "Chat",
+  "studentClassQuickActionAssignments": "Bài tập",
+  "studentClassQuickActionMembers": "Thành viên",
+  "studentClassSegmentOpen": "Đang mở",
+  "studentClassSegmentSubmitted": "Đã nộp",
+  "studentClassSegmentClosed": "Hết hạn",
+  "studentClassOverviewRecentTitle": "Cần làm",
+  "studentClassViewAllAssignments": "Xem tất cả",
+  "studentClassMembersEmpty": "Chưa có thành viên.",
+  "studentClassMemberYou": "Bạn",
+  "studentClassMemberTeacher": "Giáo viên",
+  "studentClassMemberCoTeacher": "GV phụ",
+  "studentClassInviteCodeLabel": "Mã mời lớp",
+  "studentClassReadMore": "Xem thêm",
+  "studentClassChatMemberCount": "{count, plural, one{1 thành viên trong chat} other{{count} thành viên trong chat}}",
+  "@studentClassChatMemberCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassOverviewActionHint": "{count, plural, one{1 bài cần bạn làm ngay} other{{count} bài cần bạn làm ngay}}",
+  "@studentClassOverviewActionHint": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassOverviewEmptyBody": "Khi giáo viên giao bài, bài tập sẽ hiện ở đây.",
+  "studentClassNoAssignmentsInSegment": "Không có bài tập trong bộ lọc này.",
+  "studentClassAssignmentsFilteredCount": "{count, plural, one{1 bài tập} other{{count} bài tập}}",
+  "@studentClassAssignmentsFilteredCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassSegmentGraded": "Đã chấm",
+  "studentClassLiveBanner": "{count, plural, one{1 bài thi trực tiếp đang diễn ra — mở tab Bài tập} other{{count} bài thi trực tiếp đang diễn ra — mở tab Bài tập}}",
+  "@studentClassLiveBanner": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "studentClassSortPriority": "Ưu tiên cần làm",
+  "studentClassSortDueDate": "Sắp xếp theo hạn",
+  "studentClassMembersSearchHint": "Tìm thành viên…",
+  "studentClassMembersNoResults": "Không có thành viên phù hợp.",
+  "studentClassMuteNotifications": "Tắt thông báo lớp",
+  "studentClassMuteNotificationsHint": "Chỉ lưu trên thiết bị này.",
+  "studentClassLeaveAction": "Rời lớp",
+  "studentClassLeaveConfirmTitle": "Rời lớp học này?",
+  "studentClassLeaveConfirmBody": "Bạn sẽ mất quyền truy cập bài tập và chat của lớp. Giáo viên có thể mời bạn tham gia lại.",
+  "studentClassLeaveSuccess": "Bạn đã rời lớp.",
   "teacherClassDetailAssignmentsTitle": "Bài được giao",
   "teacherClassDetailAssignmentsSubtitle": "Các bài thi trong lớp — lịch, định dạng và tiến độ học sinh.",
   "teacherClassDetailActiveTitle": "Bài đang hoạt động",

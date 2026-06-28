@@ -15,7 +15,6 @@ import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_bloc.dart';
 import 'package:english_for_community/feature/home/bloc_noti/notification_event.dart';
 import 'package:english_for_community/feature/home/notification_dialog.dart';
-import 'package:english_for_community/feature/home/notifications_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -50,7 +49,7 @@ bool _notificationTargetsCurrentRoute(GoRouter router, Map<String, dynamic> payl
   if (sessionId != null && sessionId.isNotEmpty && location.contains(sessionId)) {
     return true;
   }
-  if (location.contains(NotificationsPage.routePath)) {
+  if (isNotificationDialogVisible) {
     return true;
   }
   return false;
@@ -101,8 +100,9 @@ class _AppNotificationListenerState extends State<AppNotificationListener> {
         dedupKey: noti.id,
         onTap: () {
           if (router == null) return;
-          if (!navigateFromNotification(router, item: noti, data: payloadMap)) {
-            router.push(NotificationsPage.routePath);
+          final ctx = rootNavigatorKey.currentContext;
+          if (!navigateFromNotification(router, item: noti, data: payloadMap) && ctx != null) {
+            showAppNotificationsDialog(ctx);
           }
         },
       );
@@ -194,22 +194,4 @@ class _AppNotificationListenerState extends State<AppNotificationListener> {
       child: widget.child,
     );
   }
-}
-
-void showAppNotificationsDialog(BuildContext context) {
-  final bloc = getIt<NotificationBloc>();
-  bloc.add(const NotificationLoadStarted(isRefresh: true));
-
-  if (isStudentLearnerApp(context)) {
-    GoRouter.of(context).push(NotificationsPage.routePath);
-    return;
-  }
-
-  showDialog<void>(
-    context: rootNavigatorKey.currentContext ?? context,
-    builder: (ctx) => BlocProvider.value(
-      value: bloc,
-      child: const NotificationDialog(),
-    ),
-  );
 }

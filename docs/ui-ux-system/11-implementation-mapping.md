@@ -176,6 +176,8 @@ abstract final class AppMotion {
 | 2026-06-21 | Student conversation list redesign — shared ConversationTile web+mobile (`23`) | `0c9ac90`, `9ed4cfb`, `503bc2b`, `66d05fb`, `c478cb9` |
 | 2026-06-21 | Teacher live mirror — full-height shell (`24` §S1) | `b8b80ac` |
 | 2026-06-21 | Teacher live mirror — active-section question map + collapse (`24` §S2) | `f6178ac` |
+| 2026-06-26 | Messages hub đồng bộ chrome với Progress/Profile — header → `StudentMobileUi.appBar(showBack:false)` (căn giữa, h2/14px); grouped card phẳng (1 hairline, radius 10); palette avatar trung tính-tươi (`messages-hub`, `23` §3.3) | _(pending commit)_ |
+| 2026-06-28 | Student classroom detail P1–3 — unread badge, pinned/live banner, graded segment, member search, cover, leave API, screen brief (`student-classroom-detail.md`) | _(pending commit)_ |
 
 ## 5.1 Teacher dialogs (`14-teacher-dialogs.md`)
 
@@ -242,4 +244,5 @@ prefer_no_text_color_textSecondary:
 | Socket `new_notification` → banner / push / tại chỗ | `lib/core/notification/app_notification_listener.dart` + `isStudentLearnerApp` |
 | Payload deeplink (classroomId, attemptId, …) | `lib/core/notification/notification_payload.dart` → `buildNotificationPayload` |
 | Tab badge unread (Home) | `home_page.dart` + `NotificationBloc.unreadCount` |
+| Inbox dialog (student + teacher) | `lib/feature/home/notification_dialog.dart` → `showAppNotificationsDialog` |
 | Corner toast **chỉ** teacher/admin web | Call site còn `AppCornerToast.show` trong `feature/teacher/**`, `feature/admin/**` |

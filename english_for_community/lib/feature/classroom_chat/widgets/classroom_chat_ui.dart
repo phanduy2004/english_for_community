@@ -328,23 +328,27 @@ abstract final class ClassroomChatUi {
     );
   }
 
+  /// Calm identity palette cho avatar nhóm — Telegram-style nhưng **trung tính-tươi**,
+  /// KHÔNG mượn màu status (danger/warning) để tránh trông như cảnh báo (`23` §3.3).
+  /// Mỗi cặp: nền tint nhạt + chữ đậm cùng tông (đủ tương phản initials).
+  static const List<({Color background, Color foreground})> _avatarPalette = [
+    (background: Color(0xFFEEF2F7), foreground: Color(0xFF475569)), // slate
+    (background: Color(0xFFE6F4F1), foreground: Color(0xFF0F766E)), // teal
+    (background: Color(0xFFEEF2FF), foreground: Color(0xFF4F46E5)), // indigo
+    (background: Color(0xFFF3EEFB), foreground: Color(0xFF7C3AED)), // violet
+    (background: Color(0xFFFCEEF1), foreground: Color(0xFFBE185D)), // rose
+    (background: Color(0xFFF1EDE5), foreground: Color(0xFF8A5A2B)), // sand
+    (background: Color(0xFFE9F5EC), foreground: Color(0xFF15803D)), // green
+    (background: Color(0xFFE3F2FB), foreground: Color(0xFF0369A1)), // cyan
+  ];
+
   /// Stable avatar tint from group name — Telegram-style identity (`23` §3.3).
   static ({Color background, Color foreground}) groupAvatarColors(String name) {
-    final palette = <({Color background, Color foreground})>[
-      (background: AppColors.infoBg, foreground: AppColors.info),
-      (background: AppColors.successBg, foreground: AppColors.successDark),
-      (background: AppColors.accentTint, foreground: AppColors.accentDark),
-      (background: AppColors.primaryTint, foreground: AppColors.primaryDark),
-      (background: AppColors.dangerBg, foreground: AppColors.danger),
-      (background: AppColors.warningBg, foreground: AppColors.warning),
-      (background: AppColors.surfaceSubtle, foreground: AppColors.textSecondary),
-      (background: AppColors.dangerBg, foreground: AppColors.textPrimary),
-    ];
     final trimmed = name.trim();
     var hash = 0;
     for (final codeUnit in trimmed.codeUnits) {
       hash = (hash * 31 + codeUnit) & 0x7FFFFFFF;
     }
-    return palette[hash % palette.length];
+    return _avatarPalette[hash % _avatarPalette.length];
   }
 }

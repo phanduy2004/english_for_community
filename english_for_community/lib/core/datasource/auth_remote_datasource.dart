@@ -102,11 +102,15 @@ class AuthRemoteDatasource {
     final res = await dio.post('auth/refresh', data: {
       'refreshToken': refreshToken,
     });
-    final newAccessToken = res.data['accessToken'] as String?;
-    if (newAccessToken == null) {
+    if (res.data is! Map) {
+      throw Exception('Refresh failed: invalid response');
+    }
+    final access = await TokenStorage.saveTokensFromAuthResponse(
+      Map<String, dynamic>.from(res.data as Map),
+    );
+    if (access == null) {
       throw Exception('Refresh failed: New access token not provided');
     }
-    await TokenStorage.saveAccessToken(newAccessToken);
-    return newAccessToken;
+    return access;
   }
 }

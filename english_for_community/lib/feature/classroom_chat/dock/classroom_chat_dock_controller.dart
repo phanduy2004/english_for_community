@@ -269,6 +269,14 @@ class ClassroomChatDockController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Unread count for a classroom inbox room (0 if not loaded yet).
+  int unreadCountFor(String classroomId) {
+    for (final r in rooms) {
+      if (r.id == classroomId) return r.unreadCount;
+    }
+    return 0;
+  }
+
   /// Đánh dấu đã đọc — cập nhật UI ngay, gọi API nền.
   Future<void> markConversationRead(String classroomId, {bool notify = true}) async {
     final idx = rooms.indexWhere((r) => r.id == classroomId);

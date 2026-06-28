@@ -2,11 +2,13 @@
 import 'package:english_for_community/feature/progress/bloc/progress_event.dart';
 import 'package:english_for_community/feature/progress/bloc/progress_state.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/entity/progress_summary_entity.dart';
 import '../../../core/repository/progress_repository.dart';
 
 
 class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
   final ProgressRepository progressRepository;
+  final Map<String, ProgressSummaryEntity> _summaryCache = {};
 
   ProgressBloc({required this.progressRepository})
       : super(ProgressState.initial()) {
@@ -46,7 +48,21 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
       FetchProgressData event,
       Emitter<ProgressState> emit,
       ) async {
-    emit(state.copyWith(status: ProgressStatus.loading));
+    if (event.forceRefresh) {
+      _summaryCache.remove(event.range);
+    } else if (_summaryCache.containsKey(event.range)) {
+      emit(state.copyWith(
+        status: ProgressStatus.success,
+        summary: _summaryCache[event.range],
+        errorMessage: null,
+      ));
+      return;
+    }
+
+    emit(state.copyWith(
+      status: ProgressStatus.loading,
+      errorMessage: null,
+    ));
 
     final result = await progressRepository.getProgressSummary(
       range: event.range,
@@ -60,6 +76,7 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
         ));
       },
           (summary) {
+        _summaryCache[event.range] = summary;
         emit(state.copyWith(
           status: ProgressStatus.success,
           summary: summary,

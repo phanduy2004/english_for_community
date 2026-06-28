@@ -45,6 +45,7 @@
 | [`24-teacher-live-mirror-work-cutoff.md`](24-teacher-live-mirror-work-cutoff.md) | **Live mirror teacher (06/2026):** bài làm học sinh bị bản đồ câu hỏi che/cắt — bỏ khoá 72% chiều cao + giới hạn/đồng bộ-tab/thu gọn bản đồ, bài làm vào `Expanded` |
 | [`25-grading-hub-open-attempt-bug.md`](25-grading-hub-open-attempt-bug.md) | **Bug grading hub (06/2026):** bấm thẻ/Grade không mở bài làm — lệch key `_id` (backend `.lean()`) ↔ `id` (frontend). Fix: backend map `id`, frontend đọc `id ?? attemptId ?? _id` |
 | [`26-mobile-feedback-and-notifications.md`](26-mobile-feedback-and-notifications.md) | **Feedback & thông báo mobile student (06/2026):** bỏ corner-toast trên student, `AppFeedback` định tuyến theo mức độ (SnackBar/dialog blocking/inline), realtime → banner/push; taxonomy + kế hoạch sweep 66 toast |
+| [`patterns/`](patterns/README.md) | **Pattern library (kiểu Mobbin):** catalog **blueprint màn theo archetype** (A1–A12) + reference apps để đào mẫu + map ngược về token/component. Dùng khi **dựng/redesign layout**. Index: [`patterns/README.md`](patterns/README.md), blueprints: [`patterns/01-screen-archetypes.md`](patterns/01-screen-archetypes.md) |
 | [`../dev/flutter-coding-structure.md`](../dev/flutter-coding-structure.md) | **Cấu trúc code Flutter** — import widget, file map, checklist tránh lỗi compile |
 
 ## Cách dùng tài liệu

@@ -76,7 +76,9 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             title: 'LearnLingo',
             theme: AppTheme.getTheme(),
-            scrollBehavior: const E4cScrollBehavior(),
+            scrollBehavior: kIsWeb
+                ? const E4cNoScrollbarScrollBehavior()
+                : const E4cScrollBehavior(),
             themeMode: ThemeMode.system,
             routerConfig: AppRouter.router,
 

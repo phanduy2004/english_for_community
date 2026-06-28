@@ -2394,6 +2394,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Class code · class link · public exam · live session link…';
 
   @override
+  String get studentUnifiedJoinCompactHint =>
+      'Paste a code or link to join another class.';
+
+  @override
   String get studentUnifiedJoinButton => 'Join';
 
   @override
@@ -2425,6 +2429,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studentMyClassesTitle => 'Your classrooms';
+
+  @override
+  String studentClassesHubListHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count classes — tap to open assignments and chat',
+      one: '1 class — tap to open assignments and chat',
+    );
+    return '$_temp0';
+  }
 
   @override
   String get studentNoClasses => 'You are not in any class yet.';
@@ -2527,6 +2542,146 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get studentClassNoDescription => 'No description for this class.';
+
+  @override
+  String get studentClassTabOverview => 'Overview';
+
+  @override
+  String get studentClassTabAssignments => 'Assignments';
+
+  @override
+  String get studentClassTabMembers => 'Members';
+
+  @override
+  String get studentClassOpenChat => 'Class chat';
+
+  @override
+  String get studentClassQuickActionChat => 'Chat';
+
+  @override
+  String get studentClassQuickActionAssignments => 'Assignments';
+
+  @override
+  String get studentClassQuickActionMembers => 'Members';
+
+  @override
+  String get studentClassSegmentOpen => 'Open';
+
+  @override
+  String get studentClassSegmentSubmitted => 'Submitted';
+
+  @override
+  String get studentClassSegmentClosed => 'Closed';
+
+  @override
+  String get studentClassOverviewRecentTitle => 'Up next';
+
+  @override
+  String get studentClassViewAllAssignments => 'View all';
+
+  @override
+  String get studentClassMembersEmpty => 'No members yet.';
+
+  @override
+  String get studentClassMemberYou => 'You';
+
+  @override
+  String get studentClassMemberTeacher => 'Teacher';
+
+  @override
+  String get studentClassMemberCoTeacher => 'Co-teacher';
+
+  @override
+  String get studentClassInviteCodeLabel => 'Invite code';
+
+  @override
+  String get studentClassReadMore => 'Read more';
+
+  @override
+  String studentClassChatMemberCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members in chat',
+      one: '1 member in chat',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String studentClassOverviewActionHint(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignments need your attention',
+      one: '1 assignment needs your attention',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassOverviewEmptyBody =>
+      'When your teacher assigns work, it will show up here.';
+
+  @override
+  String get studentClassNoAssignmentsInSegment =>
+      'No assignments in this filter.';
+
+  @override
+  String studentClassAssignmentsFilteredCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count assignments',
+      one: '1 assignment',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassSegmentGraded => 'Graded';
+
+  @override
+  String studentClassLiveBanner(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count live exams in progress — open Assignments',
+      one: '1 live exam in progress — open Assignments',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get studentClassSortPriority => 'Sort by priority';
+
+  @override
+  String get studentClassSortDueDate => 'Sort by due date';
+
+  @override
+  String get studentClassMembersSearchHint => 'Search members…';
+
+  @override
+  String get studentClassMembersNoResults => 'No members match your search.';
+
+  @override
+  String get studentClassMuteNotifications => 'Mute notifications';
+
+  @override
+  String get studentClassMuteNotificationsHint => 'Saved on this device only.';
+
+  @override
+  String get studentClassLeaveAction => 'Leave class';
+
+  @override
+  String get studentClassLeaveConfirmTitle => 'Leave this class?';
+
+  @override
+  String get studentClassLeaveConfirmBody =>
+      'You will lose access to assignments and chat for this class. Your teacher can invite you again.';
+
+  @override
+  String get studentClassLeaveSuccess => 'You left the class.';
 
   @override
   String get teacherClassDetailAssignmentsTitle => 'Class assignments';

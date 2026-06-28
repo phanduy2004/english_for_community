@@ -1,5 +1,4 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -10,6 +9,8 @@ import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/ui/e4c_scroll_behavior.dart';
+import '../../core/ui/skill_list_search_mixin.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../speaking/speaking_skills_page.dart';
@@ -71,34 +72,29 @@ class _SpeakingHubView extends StatefulWidget {
   State<_SpeakingHubView> createState() => _SpeakingHubViewState();
 }
 
-class _SpeakingHubViewState extends State<_SpeakingHubView> {
+class _SpeakingHubViewState extends State<_SpeakingHubView> with SkillListSearchMixin {
   int _selectedFilterIndex = 0;
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
 
   static const _apiLevels = ['Beginner', 'Intermediate', 'Advanced'];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text;
-      });
-    });
+    initSkillListSearch();
   }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    disposeSkillListSearch();
     super.dispose();
   }
 
-  void _fetchData() {
+  void _fetchData({bool forceRefresh = false}) {
     context.read<SpeakingBloc>().add(
           FetchSpeakingSetsEvent(
             mode: widget.mode,
             level: _apiLevels[_selectedFilterIndex],
+            forceRefresh: forceRefresh,
           ),
         );
   }
@@ -112,105 +108,134 @@ class _SpeakingHubViewState extends State<_SpeakingHubView> {
       t.difficultyAdvanced,
     ];
 
-    return Scaffold(
-      backgroundColor: AppColors.surface,
-      appBar: StudentMobileUi.skillAppBar(
-        context,
-        title: widget.mode.titleLocalized(t),
-        skill: SkillType.speaking,
-      ),
-      body: SafeArea(
-        child: ListView(
-          padding: StudentMobileUi.pagePadding,
-          clipBehavior: Clip.none,
-          children: [
-            StudentMobileUi.skillHubBanner(
-              context: context,
-              title: t.speakingMasteryTitle,
-              subtitle: t.speakingMasterySubtitle,
-              badge: t.aiPoweredBadge,
-              icon: Icons.mic_none_rounded,
-              skill: SkillType.speaking,
-            ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
-            StudentMobileUi.searchField(
-              controller: _searchController,
-              hintText: t.searchTopicHint,
-              showClear: _searchQuery.trim().isNotEmpty,
-              onClear: () {
-                _searchController.clear();
-                FocusScope.of(context).unfocus();
-              },
-            ),
-            const SizedBox(height: StudentMobileUi.cardGap),
-            StudentMobileUi.filterRow(
-              labels: levels,
-              selectedIndex: _selectedFilterIndex,
-              skill: SkillType.speaking,
-              onSelected: (i) {
-                setState(() => _selectedFilterIndex = i);
-                _fetchData();
-              },
-            ),
-            const SizedBox(height: StudentMobileUi.sectionGap),
-            BlocBuilder<SpeakingBloc, SpeakingState>(
-              builder: (context, state) {
-                if (state.status == SpeakingStatus.loading) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
-                    child: StudentMobileUi.listLoading(),
-                  );
-                }
-                if (state.status == SpeakingStatus.error) {
-                  return StudentMobileUi.errorBanner(
-                    message: state.errorMessage ?? t.loadDataFailed,
-                    onRetry: _fetchData,
-                    retryLabel: t.commonRetry,
-                  );
-                }
-                if (state.status == SpeakingStatus.success) {
-                  final sets = state.sets
-                      .where((set) => _matchesPrefix(set.title, _searchQuery))
-                      .toList();
-                  if (sets.isEmpty) {
-                    return StudentMobileUi.emptyState(
-                      context,
-                      icon: Icons.mic_off_outlined,
-                      title: t.noSpeakingLessonsFound,
-                      body: t.searchTopicHint,
-                      skill: SkillType.speaking,
+    return BlocBuilder<SpeakingBloc, SpeakingState>(
+      buildWhen: (prev, next) => prev.status != next.status,
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: AppColors.surface,
+          appBar: StudentMobileUi.skillAppBar(
+            context,
+            title: widget.mode.titleLocalized(t),
+            skill: SkillType.speaking,
+            showLoading: state.status == SpeakingStatus.loading,
+          ),
+          body: SafeArea(
+        child: e4cNoScrollbarScroll(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: StudentMobileUi.pagePadding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      StudentMobileUi.skillHubBanner(
+                        context: context,
+                        title: t.speakingMasteryTitle,
+                        subtitle: t.speakingMasterySubtitle,
+                        badge: t.aiPoweredBadge,
+                        icon: Icons.mic_none_rounded,
+                        skill: SkillType.speaking,
+                      ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+                      StudentMobileUi.searchField(
+                        controller: skillListSearchController,
+                        hintText: t.searchTopicHint,
+                        onClear: () => clearSkillListSearch(context),
+                      ),
+                      const SizedBox(height: StudentMobileUi.cardGap),
+                      StudentMobileUi.filterRow(
+                        labels: levels,
+                        selectedIndex: _selectedFilterIndex,
+                        skill: SkillType.speaking,
+                        onSelected: (i) {
+                          if (i == _selectedFilterIndex) return;
+                          setState(() => _selectedFilterIndex = i);
+                          _fetchData();
+                        },
+                      ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+                    ],
+                  ),
+                ),
+              ),
+              BlocBuilder<SpeakingBloc, SpeakingState>(
+                builder: (context, state) {
+                  if (state.status == SpeakingStatus.loading && state.sets.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s10),
+                        child: StudentMobileUi.listLoading(),
+                      ),
                     );
                   }
-
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: sets.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(height: StudentMobileUi.cardGap),
-                    itemBuilder: (context, index) {
-                      return _LessonCard(
-                        set: sets[index],
-                        levelApi: _apiLevels[_selectedFilterIndex],
-                        levelLabel: levels[_selectedFilterIndex],
-                        onReturn: _fetchData,
+                  if (state.status == SpeakingStatus.error) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: StudentMobileUi.pagePadding,
+                        child: StudentMobileUi.errorBanner(
+                          message: state.errorMessage ?? t.loadDataFailed,
+                          onRetry: () => _fetchData(forceRefresh: true),
+                          retryLabel: t.commonRetry,
+                        ),
+                      ),
+                    );
+                  }
+                  if (state.status == SpeakingStatus.success) {
+                    final sets = state.sets
+                        .where((set) => skillListMatchesPrefix(
+                              set.title,
+                              skillListSearchQuery,
+                            ))
+                        .toList();
+                    if (sets.isEmpty) {
+                      return SliverFillRemaining(
+                        child: StudentMobileUi.emptyState(
+                          context,
+                          icon: Icons.mic_off_outlined,
+                          title: t.noSpeakingLessonsFound,
+                          body: t.searchTopicHint,
+                          skill: SkillType.speaking,
+                        ),
                       );
-                    },
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
+                    }
+
+                    return SliverPadding(
+                      padding: EdgeInsets.fromLTRB(
+                        StudentMobileUi.pageHPadding,
+                        0,
+                        StudentMobileUi.pageHPadding,
+                        StudentMobileUi.pageBottomPadding,
+                      ),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => Padding(
+                            key: ValueKey(sets[index].id),
+                            padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
+                            child: _LessonCard(
+                              set: sets[index],
+                              levelApi: _apiLevels[_selectedFilterIndex],
+                              levelLabel: levels[_selectedFilterIndex],
+                              onReturn: () => _fetchData(forceRefresh: true),
+                            ),
+                          ),
+                          childCount: sets.length,
+                        ),
+                      ),
+                    );
+                  }
+                  return const SliverToBoxAdapter(child: SizedBox.shrink());
+                },
+              ),
+            ],
+          ),
         ),
       ),
+        );
+      },
     );
-  }
-
-  bool _matchesPrefix(String source, String query) {
-    final normalizedQuery = query.trim().toLowerCase();
-    if (normalizedQuery.isEmpty) return true;
-    return source.trimLeft().toLowerCase().startsWith(normalizedQuery);
   }
 }
 
@@ -238,6 +263,7 @@ class _LessonCard extends StatelessWidget {
 
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.speaking,
+      tapViaChildActionsOnWeb: true,
       onTap: () => _navigateToDetail(context, isRetake: false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,77 +311,63 @@ class _LessonCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           const Divider(height: 1, color: AppColors.outlineMuted),
           const SizedBox(height: AppSpacing.s4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.s3,
-                  vertical: AppSpacing.s2,
-                ),
-                decoration: BoxDecoration(
-                  color: hasScore ? AppColors.accentTint : AppColors.surfaceSubtle,
-                  borderRadius: BorderRadius.circular(AppRadius.chip),
-                  border: Border.all(color: AppColors.outline),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.emoji_events_outlined,
-                      size: 16,
-                      color: hasScore ? AppColors.accent : AppColors.textMuted,
-                    ),
-                    const SizedBox(width: AppSpacing.s2),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          t.bestScoreLabel,
-                          style: AppTypography.label(color: AppColors.textSecondary),
-                        ),
-                        Text(
-                          scoreText,
-                          style: AppTypography.label(
-                            color: hasScore ? AppColors.accentDark : AppColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+          StudentMobileUi.skillListCardFooter(
+            info: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.s3,
+                vertical: AppSpacing.s2,
               ),
-              if (isCompleted)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    StudentMobileUi.skillCardReviewButton(
-                      onPressed: () => _navigateToDetail(context, isRetake: false),
-                      label: t.reviewAction,
-                    ),
-                    const SizedBox(width: AppSpacing.s3),
-                    StudentMobileUi.skillCardRetakeButton(
-                      onPressed: () => _navigateToDetail(context, isRetake: true),
-                      label: t.retakeAction,
-                    ),
-                  ],
-                )
-              else
-                SizedBox(
-                  height: 36,
-                  child: FilledButton(
-                    onPressed: () => _navigateToDetail(context, isRetake: false),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6),
-                    ),
-                    child: Text(
-                      isResumed ? t.resumeAction : t.startAction,
-                      style: AppTypography.label(color: AppColors.onPrimary),
-                    ),
+              decoration: BoxDecoration(
+                color: hasScore ? AppColors.accentTint : AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.circular(AppRadius.chip),
+                border: Border.all(color: AppColors.outline),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.emoji_events_outlined,
+                    size: 16,
+                    color: hasScore ? AppColors.accent : AppColors.textMuted,
                   ),
-                ),
-            ],
+                  const SizedBox(width: AppSpacing.s2),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.bestScoreLabel,
+                        style: AppTypography.label(color: AppColors.textSecondary),
+                      ),
+                      Text(
+                        scoreText,
+                        style: AppTypography.label(
+                          color: hasScore ? AppColors.accentDark : AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            actions: isCompleted
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      StudentMobileUi.skillCardReviewButton(
+                        onPressed: () => _navigateToDetail(context, isRetake: false),
+                        label: t.reviewAction,
+                      ),
+                      const SizedBox(width: AppSpacing.s3),
+                      StudentMobileUi.skillCardRetakeButton(
+                        onPressed: () => _navigateToDetail(context, isRetake: true),
+                        label: t.retakeAction,
+                      ),
+                    ],
+                  )
+                : StudentMobileUi.skillCardPrimaryButton(
+                    onPressed: () => _navigateToDetail(context, isRetake: false),
+                    label: isResumed ? t.resumeAction : t.startAction,
+                  ),
           ),
         ],
       ),

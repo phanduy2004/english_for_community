@@ -36,12 +36,11 @@ class AppJwtInterceptor extends Interceptor {
   @override
   Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
     if (err.response?.statusCode == 401) {
-      // Nếu là lỗi từ chính endpoint /refresh, thì logout luôn
+      // Refresh endpoint failed — clear session (401 expired / 403 revoked).
       if (err.requestOptions.path.endsWith('auth/refresh')) {
         print("Refresh token failed, logging out.");
         await TokenStorage.clearAllTokens();
-        // await AuthService.logout(); // Gọi hàm logout
-        return handler.next(err); // Trả về lỗi
+        return handler.next(err);
       }
 
       // SỬA LỖI: Thêm cả `err` và `handler` vào hàng đợi
@@ -54,9 +53,7 @@ class AppJwtInterceptor extends Interceptor {
           final newAccessToken = await _performRefresh();
 
           if (newAccessToken != null) {
-            // Refresh thành công, lưu token mới
-            await TokenStorage.saveAccessToken(newAccessToken);
-            // Thử lại tất cả request trong hàng đợi với token mới
+            // Tokens already persisted in _performRefresh (access + rotated refresh).
             await _retryPendingRequests(newAccessToken);
           } else {
             // Refresh thất bại (do _performRefresh đã logout)
@@ -76,8 +73,12 @@ class AppJwtInterceptor extends Interceptor {
       }
       // Nếu đang refresh rồi, thì request này chỉ cần đợi
       // (đã được thêm vào _errorHandlers)
+    } else if (err.response?.statusCode == 403 &&
+        err.requestOptions.path.endsWith('auth/refresh')) {
+      print("Refresh token revoked, logging out.");
+      await TokenStorage.clearAllTokens();
+      handler.next(err);
     } else {
-      // Không phải lỗi 401, bỏ qua
       handler.next(err);
     }
   }
@@ -102,11 +103,12 @@ class AppJwtInterceptor extends Interceptor {
         data: {'refreshToken': refreshToken},
       );
 
-      if (response.statusCode == 200) {
-        return response.data['accessToken'];
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = Map<String, dynamic>.from(response.data as Map);
+        return TokenStorage.saveTokensFromAuthResponse(data);
       }
     } on DioException catch (e) {
-      print("Error during token refresh: $e");
+      print("Error during token refresh: ${e.response?.statusCode} ${e.message}");
       // Không ném lỗi ở đây, chỉ cần trả về null để logout
     }
 

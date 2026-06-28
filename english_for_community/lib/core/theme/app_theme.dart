@@ -60,6 +60,18 @@ class AppTheme {
         ),
         margin: EdgeInsets.zero,
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surfaceCard,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titleTextStyle: baseText.headlineMedium,
+        contentTextStyle: baseText.bodyMedium,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.surfaceInverse,
+        contentTextStyle: baseText.bodyMedium?.copyWith(color: AppColors.textInverse),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
         height: 54,
@@ -180,6 +192,10 @@ class AppTheme {
       appBarTheme: base.appBarTheme.copyWith(
         titleTextStyle: web.titleLarge,
         toolbarTextStyle: web.bodyMedium,
+      ),
+      dialogTheme: base.dialogTheme.copyWith(
+        titleTextStyle: web.headlineMedium,
+        contentTextStyle: web.bodyMedium,
       ),
       inputDecorationTheme: base.inputDecorationTheme.copyWith(
         hintStyle: web.bodySmall,

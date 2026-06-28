@@ -8,10 +8,12 @@ abstract class MyExerciseHistoryEvent {}
 class MyExerciseHistoryFetch extends MyExerciseHistoryEvent {
   final DateTimeRange dateRange;
   final ActivityType? skillFilter;
+  final bool forceRefresh;
 
   MyExerciseHistoryFetch({
     required this.dateRange,
     required this.skillFilter,
+    this.forceRefresh = false,
   });
 }
 

@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
 
 /// Preview tin trích dẫn — trong bubble hoặc input bar.
@@ -12,6 +13,7 @@ class ChatReplyPreview extends StatelessWidget {
     this.onDismiss,
     this.inInputBar = false,
     this.embeddedInBubble = false,
+    this.isTeacherBubble = false,
   });
 
   final ChatReplySnapshot snapshot;
@@ -19,11 +21,19 @@ class ChatReplyPreview extends StatelessWidget {
   final VoidCallback? onDismiss;
   final bool inInputBar;
   final bool embeddedInBubble;
+  /// Bubble ngoài đang dùng palette giáo viên (vàng kem).
+  final bool isTeacherBubble;
 
   @override
   Widget build(BuildContext context) {
     if (inInputBar) return _InputBarPreview(snapshot: snapshot, onDismiss: onDismiss);
-    if (embeddedInBubble) return _EmbeddedPreview(snapshot: snapshot, isMe: isMe);
+    if (embeddedInBubble) {
+      return _EmbeddedPreview(
+        snapshot: snapshot,
+        isMe: isMe,
+        isTeacherBubble: isTeacherBubble,
+      );
+    }
     return _StandalonePreview(snapshot: snapshot);
   }
 }
@@ -70,9 +80,44 @@ class _InputBarPreview extends StatelessWidget {
 }
 
 class _EmbeddedPreview extends StatelessWidget {
-  const _EmbeddedPreview({required this.snapshot, required this.isMe});
+  const _EmbeddedPreview({
+    required this.snapshot,
+    required this.isMe,
+    required this.isTeacherBubble,
+  });
   final ChatReplySnapshot snapshot;
   final bool isMe;
+  final bool isTeacherBubble;
+
+  BoxDecoration _decoration() {
+    if (isTeacherBubble) {
+      return BoxDecoration(
+        color: ClassroomChatUi.teacherRingMid.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(10),
+        border: Border(
+          left: BorderSide(color: ClassroomChatUi.teacherRingDark, width: 3),
+        ),
+      );
+    }
+    if (isMe) {
+      // Tin gửi (xanh): inset tối hơn bubble — chữ trắng dễ đọc (Messenger-style).
+      return BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(10),
+        border: const Border(
+          left: BorderSide(color: Colors.white, width: 3),
+        ),
+      );
+    }
+    // Tin nhận (xám): inset sáng — chữ tối.
+    return BoxDecoration(
+      color: Colors.white.withValues(alpha: 0.88),
+      borderRadius: BorderRadius.circular(10),
+      border: const Border(
+        left: BorderSide(color: ClassroomChatUi.bubbleSentDark, width: 3),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,25 +125,13 @@ class _EmbeddedPreview extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(8, 8, 8, 4),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: isMe
-            ? BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-                border: Border(
-                  left: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.85),
-                    width: 3,
-                  ),
-                ),
-              )
-            : BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(10),
-                border: const Border(
-                  left: BorderSide(color: AppColors.primary, width: 3),
-                ),
-              ),
-        child: _QuoteContent(snapshot: snapshot, inBubble: true, bubbleIsMe: isMe),
+        decoration: _decoration(),
+        child: _QuoteContent(
+          snapshot: snapshot,
+          inBubble: true,
+          bubbleIsMe: isMe,
+          isTeacherBubble: isTeacherBubble,
+        ),
       ),
     );
   }
@@ -130,23 +163,28 @@ class _QuoteContent extends StatelessWidget {
     required this.snapshot,
     this.inBubble = false,
     this.bubbleIsMe = true,
+    this.isTeacherBubble = false,
   });
 
   final ChatReplySnapshot snapshot;
   final bool inBubble;
   final bool bubbleIsMe;
+  final bool isTeacherBubble;
 
   @override
   Widget build(BuildContext context) {
     final Color nameColor;
     final Color textColor;
 
-    if (inBubble && !bubbleIsMe) {
-      nameColor = AppColors.primary;
-      textColor = AppColors.textSecondary;
+    if (inBubble && isTeacherBubble) {
+      nameColor = ClassroomChatUi.teacherRingDark;
+      textColor = ClassroomChatUi.teacherMessageText;
+    } else if (inBubble && !bubbleIsMe) {
+      nameColor = ClassroomChatUi.bubbleSentDark;
+      textColor = AppColors.textPrimary;
     } else if (inBubble) {
       nameColor = Colors.white;
-      textColor = Colors.white.withValues(alpha: 0.85);
+      textColor = Colors.white.withValues(alpha: 0.92);
     } else {
       nameColor = AppColors.primary;
       textColor = AppColors.textSecondary;
@@ -161,17 +199,22 @@ class _QuoteContent extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
             color: nameColor,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         Text(
           snapshot.contentPreview,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 12, height: 1.3, color: textColor),
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.35,
+            fontWeight: FontWeight.w500,
+            color: textColor,
+          ),
         ),
       ],
     );

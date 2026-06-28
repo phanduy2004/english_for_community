@@ -20,6 +20,7 @@ router.get(
   classroomController.searchTeachersForCoTeacher
 );
 router.get('/:id', authenticate, classroomController.getClassroom);
+router.post('/:id/leave', authenticate, classroomController.leaveClassroom);
 router.patch('/:id', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.updateClassroom);
 router.post('/:id/archive', authenticate, requirePermissions(Permission.TEACHER_CLASSROOM_MANAGE), classroomController.archiveClassroom);
 router.post(

@@ -49,46 +49,28 @@ class UserProfileDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Stack(
-                  children: [
-                    Container(
-                      width: 84,
-                      height: 84,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.outline, width: 2),
-                        color: AppColors.surfaceSubtle,
-                        image: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                            ? DecorationImage(
-                                image: NetworkImage(avatarUrl!),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                      ),
-                      child: (avatarUrl == null || avatarUrl!.isEmpty)
-                          ? Center(
-                              child: Text(
-                                fullName.isNotEmpty ? fullName[0].toUpperCase() : '?',
-                                style: StudentMobileUi.sectionTitle(context).copyWith(color: AppColors.textMuted),
-                              ),
-                            )
-                          : null,
-                    ),
-                    if (isOnline)
-                      Positioned(
-                        bottom: 4,
-                        right: 4,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.surfaceCard, width: 2),
+                Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.outline, width: 2),
+                    color: AppColors.surfaceSubtle,
+                    image: (avatarUrl != null && avatarUrl!.isNotEmpty)
+                        ? DecorationImage(
+                            image: NetworkImage(avatarUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: (avatarUrl == null || avatarUrl!.isEmpty)
+                      ? Center(
+                          child: Text(
+                            fullName.isNotEmpty ? fullName[0].toUpperCase() : '?',
+                            style: StudentMobileUi.sectionTitle(context).copyWith(color: AppColors.textMuted),
                           ),
-                        ),
-                      ),
-                  ],
+                        )
+                      : null,
                 ),
                 const SizedBox(height: AppSpacing.s5),
                 Text(fullName, textAlign: TextAlign.center, style: StudentMobileUi.sectionTitle(context)),

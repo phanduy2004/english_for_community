@@ -9,7 +9,6 @@ import 'package:just_audio/just_audio.dart' as ja;
 
 import '../../../core/api/api_config.dart';
 import '../../../core/locale/l10n_context.dart';
-import '../../../core/ui/feedback/app_feedback.dart';
 import '../../../core/theme/app_color.dart';
 import '../../../core/theme/app_skill_colors.dart';
 import '../../../core/ui/student_mobile_ui.dart';
@@ -264,13 +263,6 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
     }
 
     setState(() => _showHint = !result.passed);
-    if (!mounted) return;
-    final t = context.l10n;
-    if (result.passed) {
-      AppFeedback.success(context, '✅ ${t.dictationSnackCorrect}');
-    } else {
-      AppFeedback.error(context, '⚠️ ${t.dictationSnackTryAgain}');
-    }
   }
 
   Widget _buildCueContent(BuildContext context, String myUserId) {

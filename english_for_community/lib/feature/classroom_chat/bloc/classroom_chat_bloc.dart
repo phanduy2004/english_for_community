@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/model/either.dart';
+import 'package:english_for_community/core/model/failure.dart';
 import 'package:english_for_community/core/repository/classroom_chat_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:flutter/foundation.dart';
@@ -73,10 +75,11 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     String? initialGroupName,
   }) {
     final cached = ClassroomChatSessionCache.peek(classroomId);
-    if (cached != null && cached.messages.isNotEmpty) {
+    if (cached != null && cached.messages.isNotEmpty && cached.members.isNotEmpty) {
       return ClassroomChatState(
         status: ClassroomChatStatus.ready,
         messages: cached.messages,
+        members: cached.members,
         hasMore: cached.hasMore,
         nextCursor: cached.nextCursor,
         coverImageUrl: initialCoverImageUrl ?? cached.coverImageUrl,
@@ -95,6 +98,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     socket.joinClassroomChat(classroomId);
 
     _socketMessageHandler = (data) {
+      if (isClosed) return;
       try {
         final msg = ClassroomChatMessage.fromJson(Map<String, dynamic>.from(data as Map));
         add(ClassroomChatSocketMessage(msg));
@@ -103,6 +107,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       }
     };
     _socketReactHandler = (data) {
+      if (isClosed) return;
       try {
         final d = Map<String, dynamic>.from(data as Map);
         final mid = d['messageId'] as String;
@@ -113,18 +118,21 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       } catch (_) {}
     };
     _socketDeletedHandler = (data) {
+      if (isClosed) return;
       try {
         final mid = (data as Map)['messageId'] as String;
         add(ClassroomChatSocketDeleted(mid));
       } catch (_) {}
     };
     _socketEditedHandler = (data) {
+      if (isClosed) return;
       try {
         final msg = ClassroomChatMessage.fromJson(Map<String, dynamic>.from(data as Map));
         add(ClassroomChatSocketEdited(msg));
       } catch (_) {}
     };
     _socketTypingHandler = (data) {
+      if (isClosed) return;
       try {
         final d = Map<String, dynamic>.from(data as Map);
         final uid = d['userId'] as String;
@@ -134,6 +142,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       } catch (_) {}
     };
     _socketPinnedHandler = (data) {
+      if (isClosed) return;
       try {
         final d = Map<String, dynamic>.from(data as Map);
         final raw = d['pinnedMessage'];
@@ -145,6 +154,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       } catch (_) {}
     };
     _socketSettingsHandler = (data) {
+      if (isClosed) return;
       try {
         final d = Map<String, dynamic>.from(data as Map);
         add(ClassroomChatSocketSettingsUpdated(
@@ -168,10 +178,13 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
   Future<void> _onLoaded(ClassroomChatLoaded event, Emitter<ClassroomChatState> emit) async {
     final cached = ClassroomChatSessionCache.peek(classroomId);
     if (state.messages.isEmpty) {
-      if (cached != null && cached.messages.isNotEmpty) {
+      if (cached != null &&
+          cached.messages.isNotEmpty &&
+          cached.members.isNotEmpty) {
         emit(state.copyWith(
           status: ClassroomChatStatus.ready,
           messages: cached.messages,
+          members: cached.members,
           hasMore: cached.hasMore,
           nextCursor: cached.nextCursor,
           coverImageUrl: state.coverImageUrl ?? cached.coverImageUrl,
@@ -183,19 +196,41 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       }
     }
 
-    final result = await repo.getMessages(classroomId, limit: 25);
-    result.fold(
+    final msgFuture = repo.getMessages(classroomId, limit: 25);
+    final memFuture = repo.getChatMembers(classroomId);
+    final results = await Future.wait([msgFuture, memFuture]);
+    final msgResult = results[0]
+        as Either<Failure, ({List<ClassroomChatMessage> messages, bool hasMore, String? nextCursor})>;
+    final memResult = results[1] as Either<Failure, List<ChatMember>>;
+
+    var members = state.members;
+    memResult.fold((_) {}, (List<ChatMember> m) => members = m);
+
+    msgResult.fold(
       (f) {
+        if (isClosed) return;
+        final resolvedMembers = members.isNotEmpty ? members : state.members;
         if (state.messages.isEmpty) {
-          emit(state.copyWith(status: ClassroomChatStatus.error, errorMessage: f.message));
+          emit(state.copyWith(
+            status: ClassroomChatStatus.error,
+            errorMessage: f.message,
+            members: resolvedMembers,
+          ));
         } else {
-          emit(state.copyWith(status: ClassroomChatStatus.ready, errorMessage: f.message));
+          emit(state.copyWith(
+            status: ClassroomChatStatus.ready,
+            errorMessage: f.message,
+            members: resolvedMembers,
+          ));
         }
       },
       (r) {
+        if (isClosed) return;
+        final resolvedMembers = members.isNotEmpty ? members : state.members;
         ClassroomChatSessionCache.put(
           classroomId: classroomId,
           messages: r.messages,
+          members: resolvedMembers,
           hasMore: r.hasMore,
           nextCursor: r.nextCursor,
           coverImageUrl: state.coverImageUrl,
@@ -204,6 +239,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
         emit(state.copyWith(
           status: ClassroomChatStatus.ready,
           messages: r.messages,
+          members: resolvedMembers,
           hasMore: r.hasMore,
           nextCursor: r.nextCursor,
           clearError: true,
@@ -211,8 +247,9 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
         unawaited(repo.markChatRead(classroomId));
       },
     );
-    add(const ClassroomChatMembersLoaded());
-    add(const ClassroomChatSettingsLoaded());
+    if (!isClosed) {
+      add(const ClassroomChatSettingsLoaded());
+    }
   }
 
   Future<void> _onSettingsLoaded(
@@ -310,7 +347,18 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     final result = await repo.getChatMembers(classroomId);
     result.fold(
       (_) {},
-      (members) => emit(state.copyWith(members: members)),
+      (members) {
+        emit(state.copyWith(members: members));
+        ClassroomChatSessionCache.put(
+          classroomId: classroomId,
+          messages: state.messages,
+          members: members,
+          hasMore: state.hasMore,
+          nextCursor: state.nextCursor,
+          coverImageUrl: state.coverImageUrl,
+          groupName: state.groupName,
+        );
+      },
     );
   }
 
@@ -484,6 +532,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     ClassroomChatSessionCache.put(
       classroomId: classroomId,
       messages: messages,
+      members: state.members,
       hasMore: state.hasMore,
       nextCursor: state.nextCursor,
       coverImageUrl: state.coverImageUrl,

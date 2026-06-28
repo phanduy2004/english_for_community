@@ -1,0 +1,246 @@
+# Quy Trình Làm Việc AI — Brain / Implement / Audit (prompt chuẩn)
+
+**Version:** 1.3 · **Ngày:** 2026-06-28 · **Ngôn ngữ:** tiếng Việt (thuật ngữ kỹ thuật giữ tiếng Anh)
+
+> **Mục đích:** prompt chuẩn để khởi động MỌI task theo quy trình 3 vai:
+> **Opus (bộ não) PHÂN TÍCH + PLAN + AUDIT → Codex/Sonnet (Cursor) IMPLEMENT → Opus AUDIT lại khi xong.**
+>
+> **Nguyên tắc bắt buộc (mọi loại task):**
+> - **Chức năng + không regression** — đúng nghiệp vụ, không phá luồng cũ.
+> - **Hiệu năng** — tránh lag UI, load chậm, jank scroll, rebuild thừa, gọi API/socket dồn, memory leak.
+> - **UI/UX** (khi chạm layout/visual) — bám `docs/ui-ux-system/`, token/component có sẵn, đủ loading/empty/error.
+> - **Backend** (khi chạm API/socket/DB) — controller mỏng, logic ở service, validate Zod, tránh N+1.
+>
+> Task `PERF` tập trung sửa perf; task `BUG`/`FEATURE` vẫn phải **đánh giá perf + UI/UX + backend** (nếu chạm) trong plan/handoff/audit.
+>
+> **Cách dùng:**
+> 1. Task thường → copy **Khối prompt** → điền **Phần A** → gửi Opus → nhận work-order + handoff.
+> 2. Task **layout/redesign** → dùng thêm [`plantasks/_templates/uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
+> 3. Task **MICRO** (≤3 file) → xem mục [Chế độ MICRO](#chế-độ-micro) — gọn hơn, không cần tracker.
+> 4. Implementer xong → báo Opus *"implementer đã xong, audit đi"* → Phase 4.
+
+---
+
+## Khối prompt (copy nguyên khối)
+
+```text
+═══════════════════════════════════════════════════════════════
+PHẦN A — INPUT TASK (điền mỗi lần; thiếu trường nào Opus sẽ hỏi lại)
+═══════════════════════════════════════════════════════════════
+• Task ID:            (vd 20260622-<short-slug>; nếu trống Opus tự sinh theo ngày)
+• Loại:               BUG | FEATURE | PERF
+• Platform:           student mobile | teacher web | admin web | backend | full-stack
+• Mục tiêu:           (1 câu)
+• Phạm vi IN:         (file/màn/module được chạm)
+• Phạm vi OUT:        (tuyệt đối không chạm / defer)
+• Kỳ vọng đầu ra:     (điều kiện nghiệm thu — vd build 0 lỗi, test pass, hành vi X)
+• Màn / archetype:    (tuỳ chọn — vd Home A1, Messages A5; mở brief trong ui-ux-system)
+• Màn tham chiếu:     (tuỳ chọn — màn anh-em chrome đã chuẩn, vd Progress, Profile)
+• Ràng buộc perf:     (tuỳ chọn — trống → Opus tự suy từ phạm vi)
+• Ràng buộc UI/UX:    (tuỳ chọn — trống → Opus tự suy nếu chạm layout)
+• Hồi quy tối thiểu:  (tuỳ chọn — luồng smoke sau khi sửa; account test: docs/dev/seeds/)
+• Bối cảnh/log/lỗi:   (dán log, đường dẫn file, ảnh nếu có)
+
+═══════════════════════════════════════════════════════════════
+PHẦN B — QUY TRÌNH LÀM VIỆC (giữ nguyên mọi task)
+═══════════════════════════════════════════════════════════════
+VAI TRÒ: Bạn là Claude Opus = "BỘ NÃO". Quy trình 3 vai:
+  Opus PHÂN TÍCH + PLAN + AUDIT  →  Codex/Sonnet (Cursor) IMPLEMENT  →  Opus AUDIT lại khi xong.
+Bạn KHÔNG tự sửa code (trừ khi tôi nói rõ "Opus tự code"). Output của bạn là ARTIFACT để bàn giao.
+Audit cuối luôn do Opus (Phase 4). Cursor chỉ IMPLEMENT theo handoff — không tự kết luận APPROVED.
+
+PHASE 0 — READINESS (bắt buộc):
+  - Kiểm tra đủ 4 trường: Mục tiêu / Phạm vi IN / Phạm vi OUT / Kỳ vọng đầu ra. Thiếu → DỪNG, hỏi ngược, không đoán.
+  - Đọc convention: `.cursor/rules/project.mdc` (bắt buộc).
+      Flutter thêm file/import → `docs/dev/flutter-coding-structure.md`.
+      Backend → `english_for_community_backend/` theo pattern Route → Controller → Service → Model.
+  - Xác định **Platform** (field Phần A) → mở đúng doc (ui-ux-system / backend / cả hai nếu full-stack).
+  - Xác định sớm **perf risk**: list dài, tab/nested scroll, realtime, ảnh/audio, search/filter, bloc rebuild rộng.
+  - Xác định sớm **UI/UX scope** (nếu chạm layout/visual):
+      → Bắt buộc đọc `docs/ui-ux-system/` (bảng cuối doc này).
+      → Tối thiểu: `README.md` + `12-ai-guardrails.md` + `11-implementation-mapping.md`.
+      → Redesign: + `patterns/` + screen brief `patterns/04-screen-briefs/` nếu có.
+      → Doc thắng code khi mâu thuẫn.
+
+PHASE 1 — PHÂN TÍCH GROUND-TRUTH (không hallucinate):
+  - ĐỌC CODE THẬT trước khi kết luận. Mọi file/field/luồng phải verify (grep/read), không suy đoán từ trí nhớ.
+  - Nếu đụng field/hành vi dùng chung: AUDIT DOWNSTREAM (grep consumer) + bằng chứng.
+  - **PERF GATE (mọi loại task):** 4 câu — lag/jank? lazy/pagination/debounce/cache? rebuild thừa? memory leak?
+    → Có rủi ro → work-order mục "Ràng buộc hiệu năng".
+  - **UI/UX GATE (khi chạm layout/visual):** 4 câu — archetype A1–A12 + brief? đúng nhánh mobile/web? widget có sẵn? đủ loading/empty/error + guardrails `12`?
+    → Chưa rõ/redesign → work-order mục "Ràng buộc UI/UX" (+ brief mới nếu cần).
+  - **BACKEND GATE (khi Platform = backend | full-stack):** 4 câu —
+      1) Logic nằm service, controller mỏng?
+      2) Validate Zod + auth middleware (`authenticate` / `requireAdmin`) đúng route?
+      3) Query MongoDB: index, `.lean()`, tránh N+1 / loop query?
+      4) Socket: không duplicate handler; room/event naming khớp client?
+    → Có rủi ro → work-order mục "Ràng buộc backend".
+  - **L10N GATE (khi có string UI mới):** mọi text → `app_en.arb` + `app_vi.arb`; chạy `flutter gen-l10n`; không hardcode.
+  - Phân loại cỡ task:
+      • MICRO (≤3 file, <~50 LOC) → 1 work-order; xem chế độ MICRO (ngoài khối prompt).
+      • T1 → work-order + tracker tại `docs/plantasks/{Loại}/{Task ID}/`.
+      • T2 → role folder (`01-ba` … `06-performance`, `99-tracking`).
+
+PHASE 2 — VIẾT ARTIFACT (đặt tại docs/plantasks/{Loại}/{Task ID}/):
+  Work-order PHẢI có:
+    1) Vấn đề + nguyên nhân gốc (dẫn chứng code).
+    2) Audit downstream (bảng consumer nếu có).
+    3) Quyết định thiết kế + cảnh báo.
+    4) Scope IN/OUT + "chạm là DỪNG & hỏi".
+    5) Diff cụ thể: file + path + dòng ~ + code mẫu.
+    6) Ràng buộc hiệu năng (nếu PERF GATE có rủi ro).
+    6b) Ràng buộc UI/UX (nếu UI/UX GATE có chạm layout).
+    6c) Ràng buộc backend (nếu BACKEND GATE có rủi ro).
+    7) Hồi quy tối thiểu + account test (`docs/dev/seeds/` nếu cần login).
+    8) Lệnh verify (`dart analyze`, `flutter test`, `node`/API test nếu backend).
+    9) HANDOFF PROMPT (Phase 3).
+    10) Checklist OPUS AUDIT (Phase 4).
+  Tracker (T1/T2): trạng thái + nhật ký + bằng chứng build/test/smoke + kết quả Opus audit.
+
+PHASE 3 — HANDOFF cho Cursor IMPLEMENT (copy-paste, biên giới cứng):
+  - Liệt kê CHÍNH XÁC file được sửa; ngoài danh sách → DỪNG & hỏi.
+  - "TUYỆT ĐỐI KHÔNG": schema/migration không plan, đổi public signature, mở rộng scope, hardcode secret.
+  - PERF: ListView.builder, lazy tab, debounce ≥300ms, BlocSelector/buildWhen, dispose subscription, không API trong build.
+  - UI/UX: token-only, component có sẵn, skeleton/empty/error, đối chiếu màn tham chiếu + brief.
+  - Backend: service layer, Zod validate, không logic nặng trong controller, index query nếu list lớn.
+  - L10n: EN + VI nếu thêm string UI.
+  - Verify + smoke (perf + UI + hồi quy) → dán tracker → báo Opus audit.
+
+PHASE 4 — OPUS AUDIT (implementer báo xong):
+  - Đọc DIFF thật; đối chiếu plan; không scope-creep.
+  - Audit chức năng + perf + UI/UX (+ backend nếu có) — checklist chi tiết xem bảng cuối doc.
+  - Finding = BLOCKER; ghi file:line + fix cụ thể.
+  - Verdict: APPROVED | CHANGES REQUESTED → ghi tracker.
+
+QUY ƯỚC GIAO TIẾP:
+  - Tiếng Việt, ngắn gọn. Chat: Status + Artifacts (path) + Next action.
+  - No-regression; no placeholder/TODO trong code bàn giao.
+  - Thiếu mục GATE tương ứng trong work-order khi có rủi ro → audit FAIL.
+  - Yêu cầu ngoài scope → DỪNG, nêu rõ, chờ quyết.
+═══════════════════════════════════════════════════════════════
+```
+
+---
+
+## Prompt nhanh theo loại task (1–3 dòng)
+
+**BUG (logic/UI nhỏ):**
+```text
+Opus, theo docs/AI-Working-Process-vi.md (brain, không code): BUG · [platform] · [mục tiêu 1 câu].
+IN: [file]. OUT: [không chạm]. Kỳ vọng: analyze 0 lỗi + [hành vi]. Log: [dán].
+```
+
+**FEATURE (có layout):**
+```text
+Opus, theo docs/AI-Working-Process-vi.md + plantasks/_templates/uiux-layout-prompt.md: FEATURE · [platform] · màn [X] archetype [A?].
+Tham chiếu chrome: [màn anh-em]. Ra work-order + handoff Cursor.
+```
+
+**PERF / backend:**
+```text
+Opus, theo docs/AI-Working-Process-vi.md: PERF · [platform] · [triệu chứng lag/chậm/N+1].
+IN: [module]. Đo/smoke: [cách verify]. Ra work-order perf/backend gate.
+```
+
+---
+
+## Chế độ MICRO
+
+Áp khi ≤3 file, <~50 LOC, thay đổi cơ học (fix typo logic, 1 dialog, 1 prop).
+
+| Thường (T1+) | MICRO |
+| --- | --- |
+| work-order + tracker | **1 file** work-order |
+| 10 mục Phase 2 | Gộp: vấn đề + diff + verify + handoff + audit checklist ngắn |
+| GATE đầy đủ | Chỉ GATE có rủi ro (vd UI bug → UI/UX GATE; không chạm backend thì bỏ) |
+| Smoke dài | 3 bước hồi quy tối thiểu |
+
+Opus vẫn **đọc code thật** và **handoff biên giới cứng** — chỉ gộp file, không cắt não.
+
+---
+
+## Bảng phân cỡ task → artifact
+
+| Cỡ | Tiêu chí | Artifact |
+| --- | --- | --- |
+| **MICRO** | ≤3 file, <~50 LOC | 1 work-order |
+| **T1** | task nhỏ, 1 agent | work-order + tracker |
+| **T2** | >5 file / nhiều màn / perf+UI phức tạp | role folder `01-ba` … `99-tracking` |
+
+> Chọn mức **nhỏ nhất đủ dùng**. Nội dung audit + ràng buộc GATE luôn giữ — chỉ gộp file.
+
+---
+
+## Đọc `docs/ui-ux-system/` khi nào
+
+| Tình huống | Đọc tối thiểu |
+| --- | --- |
+| **Mọi task UI** | `README.md`, `00`, `02`, `12`, `11` |
+| **Student mobile** | + `03`, `04`, `05`, `20` |
+| **Teacher web** | + `06`, `07`, `08`, `18` |
+| **Admin web** | + `06`, `07`, `08`, `19` |
+| **Redesign layout** | + `patterns/`, brief `patterns/04-screen-briefs/` |
+| **Chat / realtime UI** | + `22`, `23`, `26` + code `lib/core/socket/` |
+| **Scroll perf teacher** | + `21` |
+| **Sheet / haptic** | + `15` |
+| **a11y** | + `10` |
+
+**Layout redesign:** dùng [`uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
+
+**Luồng:** archetype → brief → token `02` → component `04`/`07` → map `11` → guardrails `12` → perf overlap.
+
+---
+
+## Đọc backend khi nào
+
+| Tình huống | Kiểm tra |
+| --- | --- |
+| **API mới/sửa** | Route → `authenticate` → Controller → Service → Model; Zod trong service |
+| **List/query chậm** | Index MongoDB, `.lean()`, pagination, tránh loop `findById` |
+| **Socket event** | `socketManager.js`, room naming, không duplicate listener client |
+| **Auth/RBAC** | `middleware/auth.js`, `requirePermissions` |
+| **Full-stack** | Contract API ↔ entity Flutter; field `id` vs `_id` (xem doc `25` nếu grading) |
+
+---
+
+## Checklist audit chi tiết (Phase 4 — tham chiếu)
+
+### Hiệu năng (Flutter)
+
+| Vùng | Làm | Tránh |
+| --- | --- | --- |
+| List / grid | `ListView.builder`, pagination | `ListView(children: map)` khi N > ~20 |
+| State | `const`, `BlocSelector`, `buildWhen` | rebuild cả Scaffold |
+| Network | parallel, cache, pull-to-refresh có chủ đích | API trong `build()` |
+| Search | debounce ≥300ms | filter mỗi keystroke |
+| Realtime | patch tile | rebuild full list mỗi event |
+| Media | `cached_network_image` | full-res mọi tile |
+| Tab | lazy tab body | load cả tab khi mở màn |
+| Loading | skeleton | fullscreen spinner lâu |
+| Layout | viewport ~360px, ellipsis | Row overflow web hẹp |
+| Lifecycle | dispose controller/subscription | socket listener trùng |
+
+**Verify:** DevTools performance overlay (`p`); scroll, tab, search, socket.
+
+### UI/UX
+
+- [ ] Khớp archetype + brief + màn tham chiếu
+- [ ] Token-only; không hex/spacing magic
+- [ ] Component có sẵn; không duplicate card/button
+- [ ] `textPrimary` body; amber chỉ celebrate
+- [ ] loading / empty / error nếu list-page
+- [ ] l10n EN + VI
+- [ ] hit target ≥44dp (mobile)
+
+### Backend
+
+- [ ] Logic trong service; controller mỏng
+- [ ] Zod validate input
+- [ ] Auth middleware đúng route
+- [ ] Query có index / không N+1
+- [ ] Socket handler không leak / duplicate
+
+### Hồi quy
+
+- [ ] Smoke theo mục 7 work-order
+- [ ] Account test từ `docs/dev/seeds/` nếu cần login E2E

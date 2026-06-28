@@ -23,4 +23,16 @@ class TokenStorage {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
   }
+
+  /// Backend rotates refresh token on every `/auth/refresh` — must persist both.
+  static Future<String?> saveTokensFromAuthResponse(Map<String, dynamic> data) async {
+    final access = data['accessToken'] as String?;
+    final refresh = data['refreshToken'] as String?;
+    if (access == null || access.isEmpty) return null;
+    await saveAccessToken(access);
+    if (refresh != null && refresh.isNotEmpty) {
+      await saveRefreshToken(refresh);
+    }
+    return access;
+  }
 }

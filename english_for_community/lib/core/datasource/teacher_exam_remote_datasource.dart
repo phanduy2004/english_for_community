@@ -51,6 +51,10 @@ class TeacherExamRemoteDatasource {
     return r.data;
   }
 
+  Future<void> leaveClassroom(String classroomId) async {
+    await dio.post('classrooms/$classroomId/leave');
+  }
+
   Future<dynamic> patchClassroom(String id, Map<String, dynamic> body) async {
     final r = await dio.patch('classrooms/$id', data: body);
     return r.data;

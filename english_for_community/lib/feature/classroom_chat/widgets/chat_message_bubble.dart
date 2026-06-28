@@ -114,23 +114,21 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
 
   @override
   Widget build(BuildContext context) {
-    if (message.isDeleted) {
-      return _DeletedBubble(isMe: isMe, message: message);
-    }
-
+    final isDeleted = message.isDeleted;
     final lock = _lock;
 
     return ListenableBuilder(
       listenable: lock,
       builder: (context, _) {
-        final showPicker =
-            lock.reactionPickerOpen && lock.activeMessageId == message.id;
+        final showPicker = !isDeleted &&
+            lock.reactionPickerOpen &&
+            lock.activeMessageId == message.id;
         final hoverSupported = ClassroomChatUi.supportsHoverActions(context);
         final mobile = !widget.compact && ClassroomChatUi.isMobileLayout(context);
         final denseReaction = widget.compact || mobile;
         final avatarColumn = ClassroomChatUi.avatarColumnWidth;
         final reserveSideActionRail =
-            hoverSupported && lock.canHover(message.id);
+            !isDeleted && hoverSupported && lock.canHover(message.id);
         final showSideActions =
             reserveSideActionRail && (_hovered || showPicker);
 
@@ -144,24 +142,28 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           onMore: _openActionsMenu,
         );
 
-        Widget sideActionRail({required bool leading}) {
-          if (!reserveSideActionRail) return const SizedBox.shrink();
-          return Row(
-            mainAxisSize: MainAxisSize.min,
+        Widget sideActionsOverlay({required Widget child}) {
+          if (!showSideActions) return child;
+          final railW = ClassroomChatUi.messageSideRailWidth(compact: widget.compact);
+          final gap = ClassroomChatUi.messageSideRailGap(compact: widget.compact);
+          // Action rail hướng vào trong: tin mình (phải) → rail trái bubble; tin người khác (trái) → rail phải bubble.
+          return Stack(
+            clipBehavior: Clip.none,
             children: [
-              if (leading)
-                SizedBox(width: ClassroomChatUi.messageSideRailGap(compact: widget.compact)),
-              AnimatedOpacity(
-                opacity: showSideActions ? 1 : 0,
-                duration: ClassroomChatUi.hoverFade,
-                curve: ClassroomChatUi.hoverCurve,
-                child: IgnorePointer(
-                  ignoring: !showSideActions,
-                  child: sideActions,
+              Padding(
+                padding: EdgeInsets.only(
+                  left: isMe ? railW + gap : 0,
+                  right: isMe ? 0 : railW + gap,
                 ),
+                child: child,
               ),
-              if (!leading)
-                SizedBox(width: ClassroomChatUi.messageSideRailGap(compact: widget.compact)),
+              Positioned(
+                left: isMe ? 0 : null,
+                right: isMe ? null : 0,
+                top: 0,
+                bottom: 0,
+                child: Center(child: sideActions),
+              ),
             ],
           );
         }
@@ -183,15 +185,25 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                         avatarGap
                     : ClassroomChatUi.avatarColumnWidth)
                 : 0.0;
-            final contentW = (totalW - peerLeadingW).clamp(0.0, totalW);
+            final messageW = (totalW - peerLeadingW).clamp(0.0, totalW);
             final bubbleMaxW = ClassroomChatUi.bubbleContentMaxWidth(
-              parentMaxWidth: contentW,
+              parentMaxWidth: messageW,
               compact: widget.compact,
-              reserveSideActionRail: reserveSideActionRail,
+              reserveSideActionRail: false,
+            );
+
+            final bubble = ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: bubbleMaxW),
+              child: _BubbleBody(
+                message: message,
+                isMe: isMe,
+                isTeacher: _senderIsTeacher,
+                showTail: widget.showTail,
+                maxWidth: bubbleMaxW,
+              ),
             );
 
             return Row(
-              mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (!isMe) ...[
@@ -201,8 +213,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                     SizedBox(width: ClassroomChatUi.avatarColumnWidth),
                   if (showPeerAvatar) const SizedBox(width: avatarGap),
                 ],
-                SizedBox(
-                  width: contentW,
+                Expanded(
                   child: Column(
                     crossAxisAlignment:
                         isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -240,27 +251,10 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                             ),
                           ),
                         ),
-                      Row(
-                        mainAxisAlignment:
-                            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          if (isMe) sideActionRail(leading: false),
-                          Flexible(
-                            child: Align(
-                              alignment:
-                                  isMe ? Alignment.centerRight : Alignment.centerLeft,
-                              child: _BubbleBody(
-                                message: message,
-                                isMe: isMe,
-                                isTeacher: _senderIsTeacher,
-                                showTail: widget.showTail,
-                                maxWidth: bubbleMaxW,
-                              ),
-                            ),
-                          ),
-                          if (!isMe) sideActionRail(leading: true),
-                        ],
+                      Align(
+                        alignment:
+                            isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: sideActionsOverlay(child: bubble),
                       ),
                     ],
                   ),
@@ -270,17 +264,14 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
           },
         );
 
-        final bubbleRow = SizedBox(
-          width: double.infinity,
-          child: bubbleContent,
-        );
+        final useSwipeReply = mobile && !kIsWeb;
 
         return MouseRegion(
           onEnter: (_) => _handleEnter(),
           onExit: (_) => _handleExit(),
           child: GestureDetector(
-            onLongPress: _openActionsMenu,
-            onSecondaryTap: _openActionsMenu,
+            onLongPress: isDeleted ? null : _openActionsMenu,
+            onSecondaryTap: isDeleted ? null : _openActionsMenu,
             behavior: HitTestBehavior.deferToChild,
             child: Padding(
               padding: ClassroomChatUi.bubbleMargin(
@@ -290,26 +281,33 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 showSenderInfo: !isMe && widget.showSenderInfo,
               ),
               child: Column(
-                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (!isMe && widget.showSenderInfo)
-                    _SenderName(message: message, isTeacher: _senderIsTeacher),
-                  if (mobile)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _SenderName(message: message, isTeacher: _senderIsTeacher),
+                    ),
+                  if (useSwipeReply)
                     _SwipeToReply(
                       isMe: isMe,
                       onReply: () => widget.onReply(message),
-                      child: bubbleRow,
+                      child: bubbleContent,
                     )
                   else
-                    bubbleRow,
-                  if (message.reactions.isNotEmpty)
+                    bubbleContent,
+                  if (message.reactions.isNotEmpty && !isDeleted)
                     Padding(
                       padding: EdgeInsets.only(left: isMe ? 0 : avatarColumn, top: 2),
-                      child: ChatReactionBar(
-                        reactions: message.reactions,
-                        currentUserId: widget.currentUserId,
-                        isMe: isMe,
-                        onTap: (emoji) => widget.onReact(message, emoji),
+                      child: Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: ChatReactionBar(
+                          reactions: message.reactions,
+                          currentUserId: widget.currentUserId,
+                          isMe: isMe,
+                          onTap: (emoji) => widget.onReact(message, emoji),
+                        ),
                       ),
                     ),
                   if (message.isPending &&
@@ -325,7 +323,10 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                   else if (!message.isPending)
                     Padding(
                       padding: EdgeInsets.only(left: isMe ? 0 : avatarColumn, top: 2),
-                      child: _TimeStamp(message: message),
+                      child: Align(
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        child: _TimeStamp(message: message),
+                      ),
                     ),
                 ],
               ),
@@ -516,41 +517,53 @@ class _SwipeToReplyState extends State<_SwipeToReply> {
   Widget build(BuildContext context) {
     final progress = (_offset.abs() / _threshold).clamp(0.0, 1.0);
 
-    return SizedBox(
-      width: double.infinity,
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
-        children: [
-        Padding(
-          padding: EdgeInsets.only(
-            left: widget.isMe ? 0 : 12,
-            right: widget.isMe ? 12 : 0,
-          ),
-          child: Opacity(
-            opacity: progress,
-            child: Transform.scale(
-              scale: 0.85 + progress * 0.15,
-              child: Icon(
-                Icons.reply_rounded,
-                size: 22,
-                color: AppColors.primary.withValues(alpha: 0.45 + progress * 0.55),
+    return GestureDetector(
+      onHorizontalDragUpdate: _onDragUpdate,
+      onHorizontalDragEnd: _onDragEnd,
+      behavior: HitTestBehavior.translucent,
+      child: ClipRect(
+        child: Stack(
+          fit: StackFit.passthrough,
+          clipBehavior: Clip.hardEdge,
+          children: [
+            AnimatedContainer(
+              duration: _offset == 0 ? const Duration(milliseconds: 180) : Duration.zero,
+              curve: Curves.easeOutCubic,
+              transform: Matrix4.translationValues(_offset, 0, 0),
+              child: widget.child,
+            ),
+            Positioned(
+              left: widget.isMe ? null : 0,
+              right: widget.isMe ? 0 : null,
+              top: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: progress,
+                  child: Align(
+                    alignment:
+                        widget.isMe ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        left: widget.isMe ? 0 : 12,
+                        right: widget.isMe ? 12 : 0,
+                      ),
+                      child: Transform.scale(
+                        scale: 0.85 + progress * 0.15,
+                        child: Icon(
+                          Icons.reply_rounded,
+                          size: 22,
+                          color: AppColors.primary
+                              .withValues(alpha: 0.45 + progress * 0.55),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
+          ],
         ),
-        GestureDetector(
-          onHorizontalDragUpdate: _onDragUpdate,
-          onHorizontalDragEnd: _onDragEnd,
-          behavior: HitTestBehavior.translucent,
-          child: AnimatedContainer(
-            duration: _offset == 0 ? const Duration(milliseconds: 180) : Duration.zero,
-            curve: Curves.easeOutCubic,
-            transform: Matrix4.translationValues(_offset, 0, 0),
-            child: widget.child,
-          ),
-        ),
-      ],
       ),
     );
   }
@@ -804,6 +817,13 @@ class _BubbleBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.isDeleted) {
+      return ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: maxWidth ?? double.infinity),
+        child: const _DeletedBubbleContent(),
+      );
+    }
+
     final fg = isTeacher
         ? ClassroomChatUi.teacherMessageText
         : (isMe ? AppColors.textInverse : AppColors.textPrimary);
@@ -886,6 +906,7 @@ class _TextBubble extends StatelessWidget {
                 snapshot: message.replyTo!,
                 isMe: isMe,
                 embeddedInBubble: true,
+                isTeacherBubble: isTeacher,
               ),
             Padding(
               padding: EdgeInsets.fromLTRB(12, message.replyTo != null ? 4 : 10, 12, 10),
@@ -1008,6 +1029,7 @@ class _ImageBubble extends StatelessWidget {
             snapshot: message.replyTo!,
             isMe: isMe,
             embeddedInBubble: true,
+            isTeacherBubble: isTeacher,
           ),
           wrapImage(image),
         ],
@@ -1109,6 +1131,7 @@ class _VideoBubble extends StatelessWidget {
             snapshot: message.replyTo!,
             isMe: isMe,
             embeddedInBubble: true,
+            isTeacherBubble: isTeacher,
           ),
           preview,
         ],
@@ -1149,6 +1172,7 @@ class _FileBubble extends StatelessWidget {
             snapshot: message.replyTo!,
             isMe: isMe,
             embeddedInBubble: true,
+            isTeacherBubble: isTeacher,
           ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1157,7 +1181,8 @@ class _FileBubble extends StatelessWidget {
             children: [
               Icon(icon, color: fg, size: 28),
               const SizedBox(width: 10),
-              Flexible(
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: (maxWidth ?? 240) - 62),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -1207,43 +1232,28 @@ class _FileBubble extends StatelessWidget {
   }
 }
 
-class _DeletedBubble extends StatelessWidget {
-  const _DeletedBubble({required this.isMe, required this.message});
-  final bool isMe;
-  final ClassroomChatMessage message;
+class _DeletedBubbleContent extends StatelessWidget {
+  const _DeletedBubbleContent();
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: isMe ? 48 : 54,
-        right: isMe ? 8 : 48,
-        top: 4,
-        bottom: 4,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: AppColors.outline),
+        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.outline),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.not_interested, size: 14, color: AppColors.textMuted),
-                const SizedBox(width: 4),
-                Text(
-                  'Tin nhắn đã bị xóa',
-                  style: TextStyle(
-                    color: AppColors.textMuted,
-                    fontStyle: FontStyle.italic,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+          Icon(Icons.not_interested, size: 14, color: AppColors.textMuted),
+          const SizedBox(width: 4),
+          Text(
+            'Tin nhắn đã bị xóa',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontStyle: FontStyle.italic,
+              fontSize: 13,
             ),
           ),
         ],

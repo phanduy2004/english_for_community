@@ -27,7 +27,7 @@ class ConversationTile extends StatefulWidget {
 
   static double dividerIndent(ConversationTileDensity density) {
     return switch (density) {
-      ConversationTileDensity.mobile => AppSpacing.s4 + 48 + AppSpacing.s3,
+      ConversationTileDensity.mobile => AppSpacing.s4 + 40 + AppSpacing.s3,
       ConversationTileDensity.web => AppSpacing.s3 + 40 + AppSpacing.s3,
     };
   }
@@ -41,16 +41,16 @@ class _ConversationTileState extends State<ConversationTile> {
 
   bool get _isWeb => widget.density == ConversationTileDensity.web;
 
-  double get _rowHeight => _isWeb ? 58 : 72;
+  double get _rowHeight => _isWeb ? 58 : 64;
 
-  double get _avatarRadius => _isWeb ? 20 : 24;
+  double get _avatarRadius => 20;
 
   double get _horizontalPadding =>
       _isWeb ? AppSpacing.s3 : AppSpacing.s4;
 
-  double get _titleSize => _isWeb ? 14 : 15;
+  double get _titleSize => 14;
 
-  double get _previewSize => 13;
+  double get _previewSize => _isWeb ? 13 : 12;
 
   @override
   Widget build(BuildContext context) {
@@ -81,7 +81,7 @@ class _ConversationTileState extends State<ConversationTile> {
     );
 
     final timeStyle = TextStyle(
-      fontSize: 12,
+      fontSize: _isWeb ? 12 : 11,
       fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w500,
       color: hasUnread ? AppColors.primary : AppColors.textMuted,
     );
@@ -99,7 +99,7 @@ class _ConversationTileState extends State<ConversationTile> {
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: _horizontalPadding,
-              vertical: _isWeb ? AppSpacing.s2 : AppSpacing.s3,
+              vertical: AppSpacing.s2,
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -118,6 +118,7 @@ class _ConversationTileState extends State<ConversationTile> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,7 +137,7 @@ class _ConversationTileState extends State<ConversationTile> {
                           ],
                         ],
                       ),
-                      SizedBox(height: _isWeb ? AppSpacing.s1 : AppSpacing.s2),
+                      SizedBox(height: AppSpacing.s1),
                       Row(
                         children: [
                           Expanded(
@@ -218,8 +219,8 @@ class ConversationTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWeb = density == ConversationTileDensity.web;
-    final avatarSize = isWeb ? 40.0 : 48.0;
-    final rowHeight = isWeb ? 58.0 : 72.0;
+    const avatarSize = 40.0;
+    final rowHeight = isWeb ? 58.0 : 64.0;
     final horizontal = isWeb ? AppSpacing.s3 : AppSpacing.s4;
 
     return SizedBox(
@@ -239,9 +240,9 @@ class ConversationTileSkeleton extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppSkeleton.box(height: 14, width: 160),
-                  SizedBox(height: AppSpacing.s2),
-                  AppSkeleton.box(height: 12, width: double.infinity),
+                  AppSkeleton.box(height: isWeb ? 14 : 13, width: 160),
+                  SizedBox(height: AppSpacing.s1),
+                  AppSkeleton.box(height: isWeb ? 12 : 11, width: double.infinity),
                 ],
               ),
             ),

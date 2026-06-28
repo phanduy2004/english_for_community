@@ -45,6 +45,22 @@ abstract final class AppTypography {
   static TextTheme textThemeFor({required bool web}) => web ? webTextTheme : mobileTextTheme;
 
   static final TextTheme mobileTextTheme = TextTheme(
+    displayLarge: TextStyle(
+      fontFamily: _f,
+      fontSize: mobileDisplay,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.4,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
+    displayMedium: TextStyle(
+      fontFamily: _f,
+      fontSize: mobileDisplay,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.4,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
     displaySmall: TextStyle(
       fontFamily: _f,
       fontSize: mobileDisplay,
@@ -53,7 +69,23 @@ abstract final class AppTypography {
       height: 1.2,
       color: AppColors.textPrimary,
     ),
+    headlineLarge: TextStyle(
+      fontFamily: _f,
+      fontSize: mobileH1,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
+      height: 1.25,
+      color: AppColors.textPrimary,
+    ),
     headlineMedium: TextStyle(
+      fontFamily: _f,
+      fontSize: mobileH1,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
+      height: 1.25,
+      color: AppColors.textPrimary,
+    ),
+    headlineSmall: TextStyle(
       fontFamily: _f,
       fontSize: mobileH1,
       fontWeight: FontWeight.w600,
@@ -121,9 +153,33 @@ abstract final class AppTypography {
       height: 1.2,
       color: AppColors.textPrimary,
     ),
+    labelSmall: TextStyle(
+      fontFamily: _f,
+      fontSize: mobileLabel,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
   );
 
   static final TextTheme webTextTheme = TextTheme(
+    displayLarge: TextStyle(
+      fontFamily: _f,
+      fontSize: webDisplay,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.5,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
+    displayMedium: TextStyle(
+      fontFamily: _f,
+      fontSize: webDisplay,
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.5,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
     displaySmall: TextStyle(
       fontFamily: _f,
       fontSize: webDisplay,
@@ -132,7 +188,23 @@ abstract final class AppTypography {
       height: 1.2,
       color: AppColors.textPrimary,
     ),
+    headlineLarge: TextStyle(
+      fontFamily: _f,
+      fontSize: webPageTitle,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
+      height: 1.25,
+      color: AppColors.textPrimary,
+    ),
     headlineMedium: TextStyle(
+      fontFamily: _f,
+      fontSize: webPageTitle,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.3,
+      height: 1.25,
+      color: AppColors.textPrimary,
+    ),
+    headlineSmall: TextStyle(
       fontFamily: _f,
       fontSize: webPageTitle,
       fontWeight: FontWeight.w600,
@@ -197,6 +269,14 @@ abstract final class AppTypography {
       fontSize: webLabel,
       fontWeight: FontWeight.w600,
       letterSpacing: 0.15,
+      height: 1.2,
+      color: AppColors.textPrimary,
+    ),
+    labelSmall: TextStyle(
+      fontFamily: _f,
+      fontSize: webLabel,
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.1,
       height: 1.2,
       color: AppColors.textPrimary,
     ),

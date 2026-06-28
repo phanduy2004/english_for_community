@@ -10,16 +10,16 @@ abstract final class StudentMobileSkeleton {
 
   static BorderRadius get _cardRadius => BorderRadius.circular(AppRadius.card);
 
-  /// Danh sách bài (skill hub / list page).
+  /// Danh sách bài (skill hub / list page) — Column, không ListView lồng scroll.
   static Widget skillList({int itemCount = 6}) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.s5,
-        vertical: AppSpacing.s4,
-      ),
-      itemCount: itemCount,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s4),
-      itemBuilder: (_, __) => _listTile(),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < itemCount; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.s4),
+          _listTile(),
+        ],
+      ],
     );
   }
 

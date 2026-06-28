@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/locale/l10n_context.dart';
@@ -91,11 +92,19 @@ class WritingCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (onHistoryTap != null)
-                IconButton(
-                  icon: const Icon(Icons.history, color: AppColors.textMuted, size: 22),
-                  onPressed: onHistoryTap,
-                  constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                ),
+                kIsWeb
+                    ? GestureDetector(
+                        onTap: onHistoryTap,
+                        child: const Padding(
+                          padding: EdgeInsets.all(AppSpacing.s2),
+                          child: Icon(Icons.history, color: AppColors.textMuted, size: 22),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.history, color: AppColors.textMuted, size: 22),
+                        onPressed: onHistoryTap,
+                        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      ),
               if (avgScore != null) ...[
                 const SizedBox(height: AppSpacing.s3),
                 Container(
