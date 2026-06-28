@@ -7,14 +7,25 @@ on:
     paths:
       - "english_for_community/lib/**"
       - "english_for_community/android/**"
+      - "english_for_community/assets/**"
       - "english_for_community/pubspec.yaml"
       - "english_for_community/pubspec.lock"
+      - "english_for_community/config/prod.json"
+      - ".github/workflows/main-auto-build-candidate.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   build-candidate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.head_commit != null &&
+        !contains(github.event.head_commit.message, '[skip ci]') &&
+        !contains(github.event.head_commit.message, '[ci skip]')
+      )
     runs-on: ubuntu-latest
 
     steps:

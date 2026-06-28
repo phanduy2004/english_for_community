@@ -4,6 +4,17 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "english_for_community/lib/**"
+      - "english_for_community/web/**"
+      - "english_for_community/assets/**"
+      - "english_for_community/pubspec.yaml"
+      - "english_for_community/pubspec.lock"
+      - "english_for_community/config/prod.json"
+      - "english_for_community/firebase.json"
+      - "english_for_community/.firebaserc"
+      - ".github/workflows/firebase-hosting-merge.yml"
+  workflow_dispatch:
 
 permissions:
   checks: write
@@ -12,6 +23,13 @@ permissions:
 
 jobs:
   build_and_deploy:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.head_commit != null &&
+        !contains(github.event.head_commit.message, '[skip ci]') &&
+        !contains(github.event.head_commit.message, '[ci skip]')
+      )
     runs-on: ubuntu-latest
     defaults:
       run:
