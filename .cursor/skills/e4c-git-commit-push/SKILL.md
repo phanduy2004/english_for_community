@@ -98,6 +98,15 @@ PowerShell old versions: use `;` not `&&`. For git plumbing use **Git Bash**:
 
 ## Fix co-author injection
 
+**Important:** Cursor Agent may wrap `git commit` with `--trailer "Co-authored-by: Cursor …"`. When committing from Agent, prefer:
+
+```bash
+# Write message to a temp file, then:
+bash .cursor/skills/e4c-git-commit-push/scripts/commit-from-file.sh /tmp/commit-msg.txt
+```
+
+Or run commit inside a `.git/*.sh` bash script (not inline `git commit` in PowerShell).
+
 ### A. Prevention — install hook (once per clone)
 
 ```bash
