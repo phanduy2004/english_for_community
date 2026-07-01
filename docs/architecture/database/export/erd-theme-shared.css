@@ -1,0 +1,21 @@
+/* No row grid inside entity boxes; fields read as one continuous list */
+.er.attributeBoxOdd,
+.er.attributeBoxEven {
+  stroke: none !important;
+  stroke-width: 0 !important;
+}
+.er.attributeBoxOdd rect,
+.er.attributeBoxEven rect {
+  stroke: none !important;
+  fill: #ffffff !important;
+}
+.er.entityLabel text,
+.er.attributeBoxOdd text,
+.er.attributeBoxEven text {
+  fill: #000000 !important;
+  font-weight: 600 !important;
+}
+.er.relationshipLine {
+  stroke: #1565C0 !important;
+  stroke-width: 3px !important;
+}

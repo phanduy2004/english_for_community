@@ -1,0 +1,170 @@
+@startuml E4C_Database_Overview
+' So do tong quan — User giua, co thanh noi + cardinality, KHONG ghi ten FK
+' PlantText: copy -> Refresh -> Export PNG/SVG (landscape)
+
+skinparam linetype ortho
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam defaultFontSize 10
+skinparam classFontSize 10
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam ArrowColor #333333
+skinparam ClassBorderColor #333333
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title So do tong quan CSDL E4C — 32 collection
+
+class User <<Hub>> {
+  role: user | teacher | admin
+}
+
+' ===== TREN: Core (6) =====
+class Notification <<Entity>>
+class Report <<Entity>>
+class Word <<Entity>>
+class UserDailyProgress <<Entity>>
+class AdminAuditLog <<Entity>>
+class AppRelease <<Entity>>
+
+Notification -[hidden]right- Report
+Report -[hidden]right- Word
+Word -[hidden]right- UserDailyProgress
+UserDailyProgress -[hidden]right- AdminAuditLog
+AdminAuditLog -[hidden]right- AppRelease
+Notification -[hidden]up- User
+
+User "1" -up-> "0..*" Notification
+User "0..1" -up-> "0..*" Notification
+User "1" -up-> "0..*" Report
+User "1" -up-> "0..*" Word
+User "1" -up-> "0..*" UserDailyProgress
+User "1" -up-> "0..*" AdminAuditLog
+
+' ===== TRAI: Lop hoc (5) =====
+class Classroom <<Entity>>
+class ClassroomMember <<Entity>>
+class ClassroomMessage <<Entity>>
+class ClassroomActivityLog <<Entity>>
+class ClassroomChatReadState <<Entity>>
+
+Classroom -[hidden]left- User
+ClassroomMember -[hidden]down- ClassroomMessage
+ClassroomMessage -[hidden]down- ClassroomActivityLog
+ClassroomActivityLog -[hidden]down- ClassroomChatReadState
+
+User "1" -left-> "0..*" Classroom
+User "1" -left-> "0..*" ClassroomMember
+User "1" -left-> "0..*" ClassroomMessage
+User "0..1" -left-> "0..*" ClassroomActivityLog
+User "1" -left-> "0..*" ClassroomChatReadState
+
+Classroom "1" -left-> "0..*" ClassroomMember
+Classroom "1" -left-> "0..*" ClassroomMessage
+Classroom "1" -left-> "0..*" ClassroomActivityLog
+Classroom "1" -left-> "0..*" ClassroomChatReadState
+Classroom "0..1" -left-> "0..1" ClassroomMessage
+
+' ===== DUOI: De thi (5) =====
+class Exam <<Entity>>
+class ExamAssignment <<Entity>>
+class ExamSession <<Entity>>
+class ExamAttempt <<Entity>>
+class TeacherAssignmentPreset <<Entity>>
+
+Exam -[hidden]down- User
+Exam -[hidden]right- ExamAssignment
+ExamAssignment -[hidden]right- ExamSession
+ExamSession -[hidden]right- ExamAttempt
+ExamAttempt -[hidden]right- TeacherAssignmentPreset
+
+User "1" -down-> "0..*" Exam
+User "1" -down-> "0..*" ExamAssignment
+User "1" -down-> "0..*" ExamSession
+User "1" -down-> "0..*" ExamAttempt
+User "1" -down-> "0..*" TeacherAssignmentPreset
+
+Exam "1" -down-> "0..*" ExamAssignment
+Classroom "0..1" -down-> "0..*" ExamAssignment
+ExamAssignment "1" -down-> "0..*" ExamSession
+ExamAssignment "1" -down-> "0..*" ExamAttempt
+ExamSession "0..1" -down-> "0..*" ExamAttempt
+TeacherAssignmentPreset ..> ExamAssignment
+
+' ===== PHAI: 4 ky nang (16) — 5 cot =====
+class Listening <<Entity>>
+class Enrollment <<Entity>>
+class DictationAttempt <<Entity>>
+class CueComment <<Entity>>
+class ListeningComprehension <<Entity>>
+class ListeningCompAttempt <<Entity>>
+
+class Reading <<Entity>>
+class ReadingProgress <<Entity>>
+class ReadingAttempt <<Entity>>
+
+class WritingTopic <<Entity>>
+class WritingSubmission <<Entity>>
+class WritingTopicVersion <<Entity>>
+
+class SpeakingSet <<Entity>>
+class SpeakingEnrollment <<Entity>>
+class SpeakingAttempt <<Entity>>
+
+Listening -[hidden]right- User
+Listening -[hidden]down- Enrollment
+Enrollment -[hidden]down- DictationAttempt
+DictationAttempt -[hidden]down- CueComment
+
+ListeningComprehension -[hidden]down- ListeningCompAttempt
+
+Reading -[hidden]down- ReadingProgress
+ReadingProgress -[hidden]down- ReadingAttempt
+
+WritingTopic -[hidden]down- WritingSubmission
+WritingSubmission -[hidden]down- WritingTopicVersion
+
+SpeakingSet -[hidden]down- SpeakingEnrollment
+SpeakingEnrollment -[hidden]down- SpeakingAttempt
+
+Listening -[hidden]right- ListeningComprehension
+ListeningComprehension -[hidden]right- Reading
+Reading -[hidden]right- WritingTopic
+WritingTopic -[hidden]right- SpeakingSet
+
+User "1" -right-> "0..*" Enrollment
+User "1" -right-> "0..*" DictationAttempt
+User "1" -right-> "0..*" CueComment
+User "1" -right-> "0..*" ListeningCompAttempt
+User "1" -right-> "0..*" ReadingProgress
+User "1" -right-> "0..*" ReadingAttempt
+User "1" -right-> "0..*" WritingSubmission
+User "0..1" -right-> "0..*" WritingTopicVersion
+User "1" -right-> "0..*" SpeakingEnrollment
+User "1" -right-> "0..*" SpeakingAttempt
+
+Listening "1" -right-> "0..*" Enrollment
+Listening "1" -right-> "0..*" DictationAttempt
+Listening "1" -right-> "0..*" CueComment
+ListeningComprehension "1" -right-> "0..*" ListeningCompAttempt
+CueComment "0..1" -right-> "0..*" CueComment
+
+Reading "1" -right-> "0..*" ReadingProgress
+Reading "1" -right-> "0..*" ReadingAttempt
+
+WritingTopic "1" -right-> "0..*" WritingSubmission
+WritingTopic "1" -right-> "0..*" WritingTopicVersion
+
+SpeakingSet "1" -right-> "0..*" SpeakingEnrollment
+SpeakingSet "1" -right-> "0..*" SpeakingAttempt
+
+legend bottom
+  1 = mot  |  0..* = nhieu  |  ..> = tuy chon
+  AppRelease doc lap (khong FK toi User)
+  Chi tiet field: database-domain-*.puml
+endlegend
+
+@enduml

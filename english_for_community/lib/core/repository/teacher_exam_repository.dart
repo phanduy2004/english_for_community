@@ -2,10 +2,6 @@ import '../model/either.dart';
 import '../model/failure.dart';
 
 abstract class TeacherExamRepository {
-  Future<Either<Failure, dynamic>> getMyTeacherApplication();
-  Future<Either<Failure, void>> submitTeacherApplication({String bio, String organization});
-  Future<Either<Failure, void>> withdrawTeacherApplication();
-
   Future<Either<Failure, List<dynamic>>> listMyClassroomsAsTeacher();
   Future<Either<Failure, List<dynamic>>> listEnrolledClassrooms();
   Future<Either<Failure, dynamic>> createClassroom({required String name});

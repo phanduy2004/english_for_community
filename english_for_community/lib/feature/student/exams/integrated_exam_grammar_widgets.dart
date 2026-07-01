@@ -143,7 +143,7 @@ class _GrammarBlankField extends StatelessWidget {
   final double width;
   final Key? fieldKey;
 
-  static const double _blankHeight = 40;
+  static const double _blankHeight = 32;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +193,7 @@ class _GrammarBlankField extends StatelessWidget {
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
                     disabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   ),
                 ),
               ),

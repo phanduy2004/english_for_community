@@ -9,6 +9,7 @@ import Reading from '../models/Reading.js';
 import Listening from '../models/Listening.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import User from '../models/User.js';
+import { toSpeakingSetObjectId } from '../lib/speakingSetId.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import historyService from '../services/historyService.js';
 import {
@@ -678,7 +679,10 @@ export const toolImplementations = {
       // ... (rest of speaking logic remains the same)
       lesson = await SpeakingSet.findById(lessonId).select('title mode level sentences').lean();
       if (!lesson) return "Không tìm thấy bài nói này.";
-      const enrollment = await SpeakingEnrollment.findOne({ userId, speakingSetId: lessonId }).lean();
+      const enrollment = await SpeakingEnrollment.findOne({
+        userId,
+        speakingSetId: toSpeakingSetObjectId(lessonId),
+      }).lean();
       return {
         title: lesson.title, mode: lesson.mode, level: lesson.level, total_sentences: lesson.sentences?.length || 0,
         progress: enrollment ? formatPercent(enrollment.progress || 0) : '0%',

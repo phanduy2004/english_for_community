@@ -1,0 +1,643 @@
+@startuml E4C_Database_Full
+' PHU LUC — Schema day du field (32 collection, 7 trang)
+' Cho dev / tra cuu chi tiet. Bao cao Word dung bo 4 file:
+'   database-overview.puml, database-domain-core.puml,
+'   database-domain-classroom-exam.puml, database-domain-learning.puml
+' PlantText: Refresh -> Export PDF (7 trang) hoac PNG tung trang
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title Trang 1/7 — User va Phan quyen
+
+class User <<Entity>> {
+  +_id : ObjectId
+  +phone : String
+  +email : String
+  +password : String
+  +avatarUrl : String
+  +fullName : String
+  +username : String
+  +role : String
+  +dateOfBirth : Date
+  +bio : String
+  +gender : String
+  +isVerified : Boolean
+  +goal : String
+  +cefr : String
+  +dailyMinutes : Number
+  +reminder : Object
+  +dailyLessonGoal : Number
+  +dailyActivityProgress : Number
+  +dailyProgressDate : String
+  +totalPoints : Number
+  +level : Number
+  +currentStreak : Number
+  +strictCorrection : Boolean
+  +language : String
+  +timezone : String
+  +isOnline : Boolean
+  +lastActivityDate : Date
+  +isBanned : Boolean
+  +banExpiresAt : Date
+  +banReason : String
+  +_destroy : Boolean
+  +fcmTokens : String[]
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Notification <<Entity>> {
+  +_id : ObjectId
+  +recipientId : ObjectId
+  +senderId : ObjectId
+  +type : String
+  +title : String
+  +message : String
+  +data : Object
+  +isRead : Boolean
+  +createdAt : Date
+}
+
+class Report <<Entity>> {
+  +_id : ObjectId
+  +user : ObjectId
+  +type : String
+  +title : String
+  +description : String
+  +images : String[]
+  +deviceInfo : Object
+  +status : String
+  +adminResponse : String
+  +createdAt : Date
+}
+
+User "1" --> "0..*" Notification
+User "0..1" --> "0..*" Notification
+User "1" --> "0..*" Report
+
+newpage
+
+title Trang 2/7 — Lop hoc
+
+class User <<Entity>> {
+  +_id : ObjectId
+  +fullName : String
+  +role : String
+}
+
+class Classroom <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +name : String
+  +description : String
+  +coverImageUrl : String
+  +inviteCode : String
+  +inviteToken : String
+  +joinPolicy : String
+  +pinnedMessageId : ObjectId
+  +archived : Boolean
+  +settings : Object
+  +integrations : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomMember <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +userId : ObjectId
+  +roleInClass : String
+  +status : String
+  +joinedAt : Date
+  +leftAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomMessage <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +senderId : ObjectId
+  +type : String
+  +content : String
+  +media : Object
+  +replyTo : Object
+  +mentions : ObjectId[]
+  +reactions : Object[]
+  +deletedAt : Date
+  +editedAt : Date
+  +clientId : String
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomActivityLog <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +actorId : ObjectId
+  +type : String
+  +message : String
+  +meta : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomChatReadState <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +userId : ObjectId
+  +lastReadAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+User "1" --> "0..*" Classroom
+User "1" --> "0..*" ClassroomMember
+User "1" --> "0..*" ClassroomMessage
+User "0..1" --> "0..*" ClassroomActivityLog
+User "1" --> "0..*" ClassroomChatReadState
+Classroom "1" --> "0..*" ClassroomMember
+Classroom "1" --> "0..*" ClassroomMessage
+Classroom "1" --> "0..*" ClassroomActivityLog
+Classroom "1" --> "0..*" ClassroomChatReadState
+Classroom "0..1" --> "0..1" ClassroomMessage
+
+newpage
+
+title Trang 3/7 — De thi va cham diem
+
+class User <<Entity>> {
+  +_id : ObjectId
+  +role : String
+}
+
+class Classroom <<Entity>> {
+  +_id : ObjectId
+  +name : String
+}
+
+class Exam <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +title : String
+  +description : String
+  +status : String
+  +contentVersion : Number
+  +sections : Object[]
+  +settings : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamAssignment <<Entity>> {
+  +_id : ObjectId
+  +examId : ObjectId
+  +teacherId : ObjectId
+  +classroomId : ObjectId
+  +audience : String
+  +mode : String
+  +config : Object
+  +publicJoin : Object
+  +status : String
+  +examSnapshot : Object
+  +examSnapshotFrozenAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamSession <<Entity>> {
+  +_id : ObjectId
+  +assignmentId : ObjectId
+  +leaderTeacherId : ObjectId
+  +status : String
+  +roomCode : String
+  +joinedUserIds : ObjectId[]
+  +readyUserIds : ObjectId[]
+  +startedAt : Date
+  +endedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamAttempt <<Entity>> {
+  +_id : ObjectId
+  +assignmentId : ObjectId
+  +sessionId : ObjectId
+  +userId : ObjectId
+  +status : String
+  +answers : Object
+  +scores : Object
+  +gradingState : String
+  +resultsReleased : Boolean
+  +integrity : Object
+  +startedAt : Date
+  +submittedAt : Date
+  +attemptDeadlineAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class TeacherAssignmentPreset <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +name : String
+  +config : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+User "1" --> "0..*" Exam
+User "1" --> "0..*" ExamAssignment
+User "1" --> "0..*" ExamSession
+User "1" --> "0..*" ExamAttempt
+User "1" --> "0..*" TeacherAssignmentPreset
+Exam "1" --> "0..*" ExamAssignment
+Classroom "0..1" --> "0..*" ExamAssignment
+ExamAssignment "1" --> "0..*" ExamSession
+ExamAssignment "1" --> "0..*" ExamAttempt
+ExamSession "0..1" --> "0..*" ExamAttempt
+TeacherAssignmentPreset ..> ExamAssignment
+
+newpage
+
+title Trang 4/7 — Nghe (Dictation + Comprehension)
+
+class User <<Entity>> {
+  +_id : ObjectId
+}
+
+class Listening <<Entity>> {
+  +_id : ObjectId
+  +code : String
+  +title : String
+  +audioUrl : String
+  +playbackPad : Object
+  +difficulty : String
+  +tags : String[]
+  +transcript : String
+  +cues : CueSchema[]
+  +_destroy : Boolean
+  +deletedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class CueSchema <<Embed>> {
+  +_id : ObjectId
+  +startMs : Number
+  +endMs : Number
+  +spk : String
+  +text : String
+  +textNorm : String
+  +meaning : String
+}
+
+class DictationAttempt <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +listeningId : ObjectId
+  +cueIdx : Number
+  +userText : String
+  +userTextNorm : String
+  +score : Object
+  +attemptsCount : Number
+  +durationInSeconds : Number
+  +playedMs : Number
+  +submittedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Enrollment <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +listeningId : ObjectId
+  +completedCueIds : ObjectId[]
+  +progress : Number
+  +lastAccessedAt : Date
+  +isCompleted : Boolean
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class CueComment <<Entity>> {
+  +_id : ObjectId
+  +listeningId : ObjectId
+  +cueId : String
+  +userId : ObjectId
+  +content : String
+  +parentId : ObjectId
+  +reactions : Reaction[]
+  +createdAt : Date
+}
+
+class Reaction <<Embed>> {
+  +userId : ObjectId
+  +type : String
+}
+
+class ListeningComprehension <<Entity>> {
+  +_id : ObjectId
+  +title : String
+  +summary : String
+  +audioUrl : String
+  +transcript : String
+  +difficulty : String
+  +imageUrl : String
+  +minutesToComplete : Number
+  +questions : QuestionSubSchema[]
+  +_destroy : Boolean
+  +deletedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class QuestionSubSchema <<Embed>> {
+  +_id : ObjectId
+  +questionText : String
+  +options : String[]
+  +correctAnswerIndex : Number
+  +feedback : Object
+}
+
+class ListeningCompAttempt <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +listeningId : ObjectId
+  +answers : Object[]
+  +score : Number
+  +correctCount : Number
+  +totalQuestions : Number
+  +durationInSeconds : Number
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+Listening "1" *-- "0..*" CueSchema
+ListeningComprehension "1" *-- "0..*" QuestionSubSchema
+CueComment "1" *-- "0..*" Reaction
+User "1" --> "0..*" DictationAttempt
+User "1" --> "0..*" Enrollment
+User "1" --> "0..*" CueComment
+User "1" --> "0..*" ListeningCompAttempt
+Listening "1" --> "0..*" DictationAttempt
+Listening "1" --> "0..*" Enrollment
+Listening "1" --> "0..*" CueComment
+ListeningComprehension "1" --> "0..*" ListeningCompAttempt
+CueComment "0..1" --> "0..*" CueComment
+
+newpage
+
+title Trang 5/7 — Doc (Reading)
+
+class User <<Entity>> {
+  +_id : ObjectId
+}
+
+class Reading <<Entity>> {
+  +_id : ObjectId
+  +title : String
+  +summary : String
+  +content : String
+  +translation : Object
+  +difficulty : String
+  +imageUrl : String
+  +minutesToRead : Number
+  +questions : QuestionSubSchema[]
+  +_destroy : Boolean
+  +deletedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class QuestionSubSchema <<Embed>> {
+  +_id : ObjectId
+  +questionText : String
+  +options : String[]
+  +correctAnswerIndex : Number
+  +feedback : Object
+  +translation : Object
+}
+
+class ReadingProgress <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +readingId : ObjectId
+  +status : String
+  +highScore : Number
+  +attemptsCount : Number
+  +lastAttemptedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ReadingAttempt <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +readingId : ObjectId
+  +answers : AnswerSubSchema[]
+  +score : Number
+  +correctCount : Number
+  +totalQuestions : Number
+  +durationInSeconds : Number
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class AnswerSubSchema <<Embed>> {
+  +questionId : ObjectId
+  +chosenIndex : Number
+  +isCorrect : Boolean
+}
+
+Reading "1" *-- "0..*" QuestionSubSchema
+ReadingAttempt "1" *-- "0..*" AnswerSubSchema
+User "1" --> "0..*" ReadingProgress
+User "1" --> "0..*" ReadingAttempt
+Reading "1" --> "0..*" ReadingProgress
+Reading "1" --> "0..*" ReadingAttempt
+
+newpage
+
+title Trang 6/7 — Viet va Noi
+
+class User <<Entity>> {
+  +_id : ObjectId
+}
+
+class WritingTopic <<Entity>> {
+  +_id : ObjectId
+  +name : String
+  +isActive : Boolean
+  +approvalStatus : String
+  +approval : Object
+  +aiConfig : Object
+  +stats : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class WritingTopicVersion <<Entity>> {
+  +_id : ObjectId
+  +topicId : ObjectId
+  +snapshot : Object
+  +changedBy : ObjectId
+  +changeReason : String
+  +createdAt : Date
+}
+
+class WritingSubmission <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +topicId : ObjectId
+  +generatedPrompt : Object
+  +content : String
+  +wordCount : Number
+  +durationInSeconds : Number
+  +status : String
+  +startedAt : Date
+  +submittedAt : Date
+  +feedback : Object
+  +score : Number
+  +reviewedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class SpeakingSet <<Entity>> {
+  +_id : ObjectId
+  +title : String
+  +description : String
+  +level : String
+  +mode : String
+  +sentences : SentenceSchema[]
+  +_destroy : Boolean
+  +deletedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class SentenceSchema <<Embed>> {
+  +id : String
+  +order : Number
+  +speaker : String
+  +script : String
+  +phonetic_script : String
+}
+
+class SpeakingEnrollment <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +speakingSetId : ObjectId
+  +completedSentenceIds : String[]
+  +progress : Number
+  +averageWer : Number
+  +lastAccessedAt : Date
+  +isCompleted : Boolean
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class SpeakingAttempt <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +speakingSetId : ObjectId
+  +sentenceId : String
+  +userTranscript : String
+  +userAudioUrl : String
+  +audioDurationSeconds : Number
+  +score : Object
+  +submittedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+SpeakingSet "1" *-- "0..*" SentenceSchema
+User "1" --> "0..*" WritingSubmission
+User "1" --> "0..*" SpeakingEnrollment
+User "1" --> "0..*" SpeakingAttempt
+User "0..1" --> "0..*" WritingTopicVersion
+WritingTopic "1" --> "0..*" WritingSubmission
+WritingTopic "1" --> "0..*" WritingTopicVersion
+SpeakingSet "1" --> "0..*" SpeakingEnrollment
+SpeakingSet "1" --> "0..*" SpeakingAttempt
+
+newpage
+
+title Trang 7/7 — Tu vung va He thong
+
+class User <<Entity>> {
+  +_id : ObjectId
+}
+
+class Word <<Entity>> {
+  +_id : ObjectId
+  +user : ObjectId
+  +headword : String
+  +ipa : String
+  +shortDefinition : String
+  +pos : String
+  +status : String
+  +learningLevel : Number
+  +nextReviewDate : Date
+  +lastReviewedDate : Date
+  +lastRemindedDate : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class UserDailyProgress <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +date : String
+  +studySeconds : Number
+  +vocabLearned : Number
+  +lessonsCompleted : Object
+  +stats : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class AdminAuditLog <<Entity>> {
+  +_id : ObjectId
+  +actorId : ObjectId
+  +actorRole : String
+  +action : String
+  +targetType : String
+  +targetId : String
+  +metadata : Object
+  +ip : String
+  +userAgent : String
+  +createdAt : Date
+}
+
+class AppRelease <<Entity>> {
+  +_id : ObjectId
+  +platform : String
+  +environment : String
+  +versionName : String
+  +versionCode : Number
+  +minSupportedVersionCode : Number
+  +forceUpdate : Boolean
+  +updateType : String
+  +status : String
+  +downloadUrl : String
+  +releaseNotes : String
+  +publishedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+User "1" --> "0..*" Word
+User "1" --> "0..*" UserDailyProgress
+User "1" --> "0..*" AdminAuditLog
+
+@enduml

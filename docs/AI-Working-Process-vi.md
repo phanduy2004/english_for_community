@@ -1,9 +1,11 @@
 # Quy Trình Làm Việc AI — Brain / Implement / Audit (prompt chuẩn)
 
-**Version:** 1.3 · **Ngày:** 2026-06-28 · **Ngôn ngữ:** tiếng Việt (thuật ngữ kỹ thuật giữ tiếng Anh)
+**Version:** 1.4 · **Ngày:** 2026-07-01 · **Ngôn ngữ:** tiếng Việt (thuật ngữ kỹ thuật giữ tiếng Anh)
 
 > **Mục đích:** prompt chuẩn để khởi động MỌI task theo quy trình 3 vai:
 > **Opus (bộ não) PHÂN TÍCH + PLAN + AUDIT → Codex/Sonnet (Cursor) IMPLEMENT → Opus AUDIT lại khi xong.**
+>
+> **Nguyên tắc token (giữ chất lượng):** Opus chỉ ôm phần CẦN LÝ LUẬN — phân tích, thiết kế giải pháp, phán quyết cuối. Phần *lấy dữ liệu / gõ code / rà soát lần đầu* → giao model rẻ (Codex/Sonnet, sub-agent Explore). Mục tiêu: **giảm token Opus mà chất lượng đầu ra KHÔNG giảm** — Opus vẫn đọc code thật ở mọi điểm ra quyết định.
 >
 > **Nguyên tắc bắt buộc (mọi loại task):**
 > - **Chức năng + không regression** — đúng nghiệp vụ, không phá luồng cũ.
@@ -63,6 +65,11 @@ PHASE 0 — READINESS (bắt buộc):
       → Doc thắng code khi mâu thuẫn.
 
 PHASE 1 — PHÂN TÍCH GROUND-TRUTH (không hallucinate):
+  - TIẾT KIỆM TOKEN — DELEGATE SCOUT: việc dò rộng / đọc số lượng lớn file → giao sub-agent rẻ
+      (Explore/Codex) chạy grep/read, trả về BẢN ĐỒ `file:line` + TRÍCH ĐOẠN CODE THẬT ở điểm quyết định.
+      Opus reasoning trên đó + tự đọc KỸ vài file quyết định. (Opus lo suy luận, không ôm retrieval.)
+  - CHẤT LƯỢNG BẤT KHẢ XÂM PHẠM: KHÔNG kết luận chỉ từ tóm tắt của sub-agent. Mọi điểm ra quyết định
+      (root-cause, field/luồng dùng chung, chỗ sẽ sửa) → Opus phải đọc CODE THẬT tận nơi, verify lại.
   - ĐỌC CODE THẬT trước khi kết luận. Mọi file/field/luồng phải verify (grep/read), không suy đoán từ trí nhớ.
   - Nếu đụng field/hành vi dùng chung: AUDIT DOWNSTREAM (grep consumer) + bằng chứng.
   - **PERF GATE (mọi loại task):** 4 câu — lag/jank? lazy/pagination/debounce/cache? rebuild thừa? memory leak?
@@ -87,7 +94,9 @@ PHASE 2 — VIẾT ARTIFACT (đặt tại docs/plantasks/{Loại}/{Task ID}/):
     2) Audit downstream (bảng consumer nếu có).
     3) Quyết định thiết kế + cảnh báo.
     4) Scope IN/OUT + "chạm là DỪNG & hỏi".
-    5) Diff cụ thể: file + path + dòng ~ + code mẫu.
+    5) Diff cụ thể: file + path + dòng ~ + Ý ĐỊNH thay đổi + RÀNG BUỘC + TIÊU CHÍ NGHIỆM THU.
+       → Codex TỰ VIẾT code; Opus KHÔNG viết full code mẫu (đỡ tốn output token). Chỉ đính code mẫu ở
+         chỗ thật sự dễ sai / logic tinh tế. CHẤT LƯỢNG: instruction phải đủ chính xác để Codex không phải đoán.
     6) Ràng buộc hiệu năng (nếu PERF GATE có rủi ro).
     6b) Ràng buộc UI/UX (nếu UI/UX GATE có chạm layout).
     6c) Ràng buộc backend (nếu BACKEND GATE có rủi ro).
@@ -107,7 +116,11 @@ PHASE 3 — HANDOFF cho Cursor IMPLEMENT (copy-paste, biên giới cứng):
   - Verify + smoke (perf + UI + hồi quy) → dán tracker → báo Opus audit.
 
 PHASE 4 — OPUS AUDIT (implementer báo xong):
-  - Đọc DIFF thật; đối chiếu plan; không scope-creep.
+  - TIẾT KIỆM TOKEN: Codex SELF-AUDIT + tóm tắt DIFF có cấu trúc trước (file đổi · rủi ro · checklist tự chấm).
+      Opus audit trên bản cô đọng đó, không nạp lại toàn bộ diff.
+  - CHẤT LƯỢNG BẤT KHẢ XÂM PHẠM: Opus VẪN đọc DIFF THẬT ở các hunk rủi ro / điểm quyết định (spot-check);
+      KHÔNG APPROVE chỉ dựa vào tóm tắt của Codex. Nghi ngờ → đọc full hunk. Phán quyết cuối luôn do Opus.
+  - Đối chiếu plan; không scope-creep.
   - Audit chức năng + perf + UI/UX (+ backend nếu có) — checklist chi tiết xem bảng cuối doc.
   - Finding = BLOCKER; ghi file:line + fix cụ thể.
   - Verdict: APPROVED | CHANGES REQUESTED → ghi tracker.

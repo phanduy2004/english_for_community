@@ -2,6 +2,10 @@
 
 Chạy **chỉ trên staging** trước. Production = **[MANUAL]** sau backup.
 
+| ID | Mô tả |
+|----|--------|
+| `004-speaking-set-id-objectid` | `SpeakingAttempt` / `SpeakingEnrollment`: `speakingSetId` String → ObjectId |
+
 ```bash
 npm run migrate:dry    # thống kê, không ghi
 npm run migrate        # chạy migration chưa apply

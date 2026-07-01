@@ -17,46 +17,6 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> getMyTeacherApplication() async {
-    try {
-      return Right(await remote.getMyTeacherApplication());
-    } on DioException catch (e) {
-      return Left(ServerFailure(message: _dioMsg(e)));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> submitTeacherApplication({String bio = '', String organization = ''}) async {
-    try {
-      await remote.submitTeacherApplication({
-        'bio': bio,
-        'organization': organization,
-        'subjects': <String>[],
-        'proofUrls': <String>[],
-      });
-      return Right(null);
-    } on DioException catch (e) {
-      return Left(ServerFailure(message: _dioMsg(e)));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<Failure, void>> withdrawTeacherApplication() async {
-    try {
-      await remote.withdrawTeacherApplication();
-      return Right(null);
-    } on DioException catch (e) {
-      return Left(ServerFailure(message: _dioMsg(e)));
-    } catch (e) {
-      return Left(ServerFailure(message: e.toString()));
-    }
-  }
-
-  @override
   Future<Either<Failure, List<dynamic>>> listMyClassroomsAsTeacher() async {
     try {
       return Right(await remote.listMyClassroomsAsTeacher());

@@ -11,7 +11,6 @@ import 'package:english_for_community/feature/admin/ops_center/admin_ops_center_
 import 'package:english_for_community/feature/admin/release_management/release_management_page.dart';
 import 'package:english_for_community/feature/admin/report_management/report_management_page.dart';
 import 'package:english_for_community/feature/admin/submission_managerment/activity_history_page.dart';
-import 'package:english_for_community/feature/admin/teacher_applications/admin_teacher_applications_page.dart';
 import 'package:english_for_community/feature/admin/user_management/user_management_page.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
@@ -186,12 +185,6 @@ class _AdminSidebar extends StatelessWidget {
               selectedIcon: Icons.flag,
               label: l10n.reportsMenuTitle,
               path: ReportManagementPage.routePath,
-            ),
-            _NavItem(
-              icon: Icons.how_to_reg_outlined,
-              selectedIcon: Icons.how_to_reg,
-              label: l10n.adminTeacherApplicationsTitle,
-              path: AdminTeacherApplicationsPage.routePath,
             ),
             _NavItem(
               icon: Icons.tune_outlined,
@@ -498,7 +491,6 @@ class _RouteContextLabel extends StatelessWidget {
     if (path.startsWith(UserManagementPage.routePath)) return l10n.usersMenuTitle;
     if (path.startsWith(ActivityHistoryPage.routePath)) return l10n.adminNavSubmissions;
     if (path.startsWith(ReportManagementPage.routePath)) return l10n.reportsMenuTitle;
-    if (path.startsWith(AdminTeacherApplicationsPage.routePath)) return l10n.adminTeacherApplicationsTitle;
     if (path.startsWith(AdminOpsCenterPage.routePath)) return l10n.adminNavOps;
     if (path.startsWith(ReleaseManagementPage.routePath)) return l10n.adminNavReleases;
     if (path.startsWith(ContentDashboardPage.routePath)) return l10n.contentManagerTile;

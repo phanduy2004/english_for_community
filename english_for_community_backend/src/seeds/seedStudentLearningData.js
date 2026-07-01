@@ -517,7 +517,7 @@ async function seedReadingForUser(user, reading, intensity, anchorToday = false)
 }
 
 async function seedSpeakingForUser(user, speakingSet, intensity, anchorToday = false) {
-  const setId = speakingSet._id.toString();
+  const setId = speakingSet._id;
   const sentences = speakingSet.sentences || [];
   if (sentences.length === 0) return 0;
 

@@ -853,7 +853,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get registerAccountTypeTeacherHint =>
-      'Teacher accounts need admin approval before you can create classes.';
+      'You can create classes and manage exams right after signing up.';
 
   @override
   String get labelFullName => 'Full Name *';
@@ -3765,6 +3765,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String teacherLiveMirrorReadingQuestion(int number) {
     return 'Question $number';
+  }
+
+  @override
+  String teacherLiveMirrorExerciseLabel(int index, int total) {
+    return 'Exercise $index/$total';
   }
 
   @override

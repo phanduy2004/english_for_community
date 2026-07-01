@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import SpeakingAttempt from "../models/SpeakingAttempt.js";
 import SpeakingEnrollment from "../models/SpeakingEnrollment.js";
 import {updateGamificationStats} from "./gamificationService.js";
+import { toSpeakingSetObjectId } from '../lib/speakingSetId.js';
 
 const getSetsWithProgress = async (userId, filters, options) => {
   // ... (Phần này giữ nguyên, không thay đổi)
@@ -30,15 +31,14 @@ const getSetsWithProgress = async (userId, filters, options) => {
         from: 'speakingenrollments', // Tên collection
 
         // ⬇️ SỬA 1: Dùng '_id' (convert sang string) làm khóa để join
-        let: { speakingSetIdStr: { $toString: '$_id' } },
+        let: { speakingSetId: '$_id' },
 
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  // So sánh với speakingSetId (String) trong Enrollment
-                  { $eq: ['$speakingSetId', '$$speakingSetIdStr'] },
+                  { $eq: ['$speakingSetId', '$$speakingSetId'] },
                   { $eq: ['$userId', userObjectId] }
                 ]
               }
@@ -150,13 +150,13 @@ const getSetById = async (setId, userId) => {
     {
       $lookup: {
         from: 'speakingenrollments',
-        let: { setIdStr: { $toString: '$_id' } },
+        let: { speakingSetId: '$_id' },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$speakingSetId', '$$setIdStr'] },
+                  { $eq: ['$speakingSetId', '$$speakingSetId'] },
                   { $eq: ['$userId', userObjectId] }
                 ]
               }
@@ -176,13 +176,13 @@ const getSetById = async (setId, userId) => {
     {
       $lookup: {
         from: 'speakingattempts',
-        let: { setIdStr: { $toString: '$_id' } },
+        let: { speakingSetId: '$_id' },
         pipeline: [
           {
             $match: {
               $expr: {
                 $and: [
-                  { $eq: ['$speakingSetId', '$$setIdStr'] },
+                  { $eq: ['$speakingSetId', '$$speakingSetId'] },
                   { $eq: ['$userId', userObjectId] }
                 ]
               }
@@ -251,12 +251,19 @@ const submitAttempt = async (userId, data) => {
     audioDurationSeconds,
   } = data;
 
+  const speakingSetObjectId = toSpeakingSetObjectId(speakingSetId);
+  if (!speakingSetObjectId) {
+    const err = new Error('Invalid speakingSetId');
+    err.statusCode = 400;
+    throw err;
+  }
+
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   // 1. Lưu Attempt mới
   const newAttempt = new SpeakingAttempt({
     userId: userObjectId,
-    speakingSetId: speakingSetId,
+    speakingSetId: speakingSetObjectId,
     sentenceId: sentenceId,
     userTranscript: userTranscript,
     userAudioUrl: userAudioUrl,
@@ -272,13 +279,13 @@ const submitAttempt = async (userId, data) => {
   // 2. Tìm hoặc tạo Enrollment (để lấy trạng thái cũ)
   let enrollment = await SpeakingEnrollment.findOne({
     userId: userObjectId,
-    speakingSetId: speakingSetId,
+    speakingSetId: speakingSetObjectId,
   });
 
   if (!enrollment) {
     enrollment = new SpeakingEnrollment({
       userId: userObjectId,
-      speakingSetId: speakingSetId,
+      speakingSetId: speakingSetObjectId,
       completedSentenceIds: [],
       progress: 0,
       isCompleted: false, // Trạng thái ban đầu
@@ -294,7 +301,7 @@ const submitAttempt = async (userId, data) => {
   }
 
   // 4. Tính toán Progress mới
-  const set = await SpeakingSet.findById(speakingSetId).select('sentences');
+  const set = await SpeakingSet.findById(speakingSetObjectId).select('sentences');
   const totalSentences = set ? set.sentences.length : 0;
 
   if (totalSentences > 0) {
@@ -309,7 +316,7 @@ const submitAttempt = async (userId, data) => {
   // 5. Tính điểm trung bình (WER)
   const attempts = await SpeakingAttempt.find({
     userId: userObjectId,
-    speakingSetId: speakingSetId,
+    speakingSetId: speakingSetObjectId,
   }).select('score.wer');
 
   if (attempts.length > 0) {
@@ -359,7 +366,7 @@ const getAdminList = async (page, limit, level) => {
     .skip(skip)
     .limit(limit)
     .lean();
-  const speakingSetIds = data.map((item) => item._id.toString());
+  const speakingSetIds = data.map((item) => item._id);
   const attemptsAgg = await SpeakingAttempt.aggregate([
     { $match: { speakingSetId: { $in: speakingSetIds } } },
     { $group: { _id: '$speakingSetId', attemptsCount: { $sum: 1 } } },

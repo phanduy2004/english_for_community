@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 const SpeakingAttemptSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
-    speakingSetId: { type: String, ref: 'SpeakingSet', index: true },
+    speakingSetId: { type: mongoose.Schema.Types.ObjectId, ref: 'SpeakingSet', index: true },
     sentenceId: { type: String, index: true },
 
     // Dùng để lưu kết quả của Bước 4 (Google STT)

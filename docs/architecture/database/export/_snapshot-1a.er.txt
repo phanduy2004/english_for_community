@@ -1,0 +1,209 @@
+erDiagram
+    User {
+        objectId ＋_id PK
+        string ＋phone
+        string ＋email
+        string －password
+        string ＋avatarUrl
+        string ＋fullName
+        string ＋username
+        string ＋role
+        date ＋dateOfBirth
+        string ＋bio
+        string ＋gender
+        boolean ＋isVerified
+        string ＋goal
+        string ＋cefr
+        number ＋dailyMinutes
+        object ＋reminder
+        number ＋dailyLessonGoal
+        number ＋dailyActivityProgress
+        string ＋dailyProgressDate
+        number ＋totalPoints
+        number ＋level
+        number ＋currentStreak
+        boolean ＋strictCorrection
+        string ＋language
+        string ＋timezone
+        boolean ＋isOnline
+        date ＋lastActivityDate
+        boolean ＋isBanned
+        date ＋banExpiresAt
+        string ＋banReason
+        boolean ＃_destroy
+        string －refreshToken
+        string_array ＋fcmTokens
+        string －resetOtp
+        date －resetOtpExpiresAt
+        number －resetOtpAttempts
+        date －resetLastSentAt
+        string －otpPurpose
+        date －otpCreatedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    Notification {
+        objectId ＋_id
+        objectId ＋recipientId
+        objectId ＋senderId
+        string ＋type
+        string ＋title
+        string ＋message
+        object ＋data
+        boolean ＋isRead
+        date ＋createdAt
+    }
+
+    Report {
+        objectId ＋_id
+        objectId ＋user
+        string ＋type
+        string ＋title
+        string ＋description
+        string_array ＋images
+        object ＋deviceInfo
+        string ＋status
+        string ＋adminResponse
+        date ＋createdAt
+    }
+
+    Word {
+        objectId ＋_id
+        objectId ＋user
+        string ＋headword
+        string ＋ipa
+        string ＋shortDefinition
+        string ＋pos
+        string ＋status
+        number ＋learningLevel
+        date ＋nextReviewDate
+        date ＋lastReviewedDate
+        date ＋lastRemindedDate
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    UserDailyProgress {
+        objectId ＋_id
+        objectId ＋userId
+        string ＋date
+        number ＋studySeconds
+        number ＋vocabLearned
+        object ＋lessonsCompleted
+        object ＋stats
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    AdminAuditLog {
+        objectId ＋_id
+        objectId ＋actorId
+        string ＋actorRole
+        string ＋action
+        string ＋targetType
+        string ＋targetId
+        object ＋metadata
+        string ＋ip
+        string ＋userAgent
+        date ＋createdAt
+    }
+
+    AppRelease {
+        objectId ＋_id
+        string ＋platform
+        string ＋environment
+        string ＋versionName
+        number ＋versionCode
+        number ＋minSupportedVersionCode
+        boolean ＋forceUpdate
+        string ＋updateType
+        string ＋status
+        string ＋downloadUrl
+        string ＋releaseNotes
+        date ＋publishedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    Classroom {
+        objectId ＋_id
+        objectId ＋teacherId
+        string ＋name
+        string ＋description
+        string ＋coverImageUrl
+        string ＋inviteCode
+        string ＋inviteToken
+        string ＋joinPolicy
+        objectId ＋pinnedMessageId
+        boolean ＋archived
+        object ＋settings
+        object ＋integrations
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ClassroomMember {
+        objectId ＋_id
+        objectId ＋classroomId
+        objectId ＋userId
+        string ＋roleInClass
+        string ＋status
+        date ＋joinedAt
+        date ＋leftAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ClassroomMessage {
+        objectId ＋_id
+        objectId ＋classroomId
+        objectId ＋senderId
+        string ＋type
+        string ＋content
+        object ＋media
+        object ＋replyTo
+        objectId_array ＋mentions
+        object_array ＋reactions
+        date ＋deletedAt
+        date ＋editedAt
+        string ＋clientId
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ClassroomActivityLog {
+        objectId ＋_id
+        objectId ＋classroomId
+        objectId ＋actorId
+        string ＋type
+        string ＋message
+        object ＋meta
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ClassroomChatReadState {
+        objectId ＋_id
+        objectId ＋classroomId
+        objectId ＋userId
+        date ＋lastReadAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    User ||--o{ Notification : " "
+    User ||--o{ Report : " "
+    User ||--o{ Word : " "
+    User ||--o{ UserDailyProgress : " "
+    User ||--o{ AdminAuditLog : " "
+    User ||--o{ Classroom : " "
+    User ||--o{ ClassroomMember : " "
+    User ||--o{ ClassroomMessage : " "
+    User |o--o{ ClassroomActivityLog : " "
+    User ||--o{ ClassroomChatReadState : " "
+    Classroom ||--o{ ClassroomMember : " "
+    Classroom ||--o{ ClassroomMessage : " "
+    Classroom ||--o{ ClassroomActivityLog : " "
+    Classroom ||--o{ ClassroomChatReadState : " "
+    Classroom |o--o| ClassroomMessage : " "

@@ -1,0 +1,184 @@
+@startuml E4C_Database_Domain_Classroom_Exam
+' Mien Giao vien — Lop hoc (5) + De thi (5) = 10 collection
+' Hinh 2 trong bo bao cao
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title Chi tiet mien Lop hoc & De thi (10 collection)
+
+class User <<Entity>> {
+  +_id : ObjectId
+  +fullName : String
+  +role : String
+}
+
+class Classroom <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +name : String
+  +description : String
+  +coverImageUrl : String
+  +inviteCode : String
+  +inviteToken : String
+  +joinPolicy : String
+  +pinnedMessageId : ObjectId
+  +archived : Boolean
+  +settings : Object
+  +integrations : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomMember <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +userId : ObjectId
+  +roleInClass : String
+  +status : String
+  +joinedAt : Date
+  +leftAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomMessage <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +senderId : ObjectId
+  +type : String
+  +content : String
+  +media : Object
+  +replyTo : Object
+  +mentions : ObjectId[]
+  +reactions : Object[]
+  +deletedAt : Date
+  +editedAt : Date
+  +clientId : String
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomActivityLog <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +actorId : ObjectId
+  +type : String
+  +message : String
+  +meta : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ClassroomChatReadState <<Entity>> {
+  +_id : ObjectId
+  +classroomId : ObjectId
+  +userId : ObjectId
+  +lastReadAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Exam <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +title : String
+  +description : String
+  +status : String
+  +contentVersion : Number
+  +sections : Object[]
+  +settings : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamAssignment <<Entity>> {
+  +_id : ObjectId
+  +examId : ObjectId
+  +teacherId : ObjectId
+  +classroomId : ObjectId
+  +audience : String
+  +mode : String
+  +config : Object
+  +publicJoin : Object
+  +status : String
+  +examSnapshot : Object
+  +examSnapshotFrozenAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamSession <<Entity>> {
+  +_id : ObjectId
+  +assignmentId : ObjectId
+  +leaderTeacherId : ObjectId
+  +status : String
+  +roomCode : String
+  +joinedUserIds : ObjectId[]
+  +readyUserIds : ObjectId[]
+  +startedAt : Date
+  +endedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class ExamAttempt <<Entity>> {
+  +_id : ObjectId
+  +assignmentId : ObjectId
+  +sessionId : ObjectId
+  +userId : ObjectId
+  +status : String
+  +answers : Object
+  +scores : Object
+  +gradingState : String
+  +resultsReleased : Boolean
+  +integrity : Object
+  +startedAt : Date
+  +submittedAt : Date
+  +attemptDeadlineAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class TeacherAssignmentPreset <<Entity>> {
+  +_id : ObjectId
+  +teacherId : ObjectId
+  +name : String
+  +config : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+' --- Lop hoc ---
+User "1" --> "0..*" Classroom
+User "1" --> "0..*" ClassroomMember
+User "1" --> "0..*" ClassroomMessage
+User "0..1" --> "0..*" ClassroomActivityLog
+User "1" --> "0..*" ClassroomChatReadState
+Classroom "1" --> "0..*" ClassroomMember
+Classroom "1" --> "0..*" ClassroomMessage
+Classroom "1" --> "0..*" ClassroomActivityLog
+Classroom "1" --> "0..*" ClassroomChatReadState
+Classroom "0..1" --> "0..1" ClassroomMessage
+
+' --- De thi ---
+User "1" --> "0..*" Exam
+User "1" --> "0..*" ExamAssignment
+User "1" --> "0..*" ExamSession
+User "1" --> "0..*" ExamAttempt
+User "1" --> "0..*" TeacherAssignmentPreset
+Exam "1" --> "0..*" ExamAssignment
+Classroom "0..1" --> "0..*" ExamAssignment
+ExamAssignment "1" --> "0..*" ExamSession
+ExamAssignment "1" --> "0..*" ExamAttempt
+ExamSession "0..1" --> "0..*" ExamAttempt
+TeacherAssignmentPreset ..> ExamAssignment
+
+@enduml

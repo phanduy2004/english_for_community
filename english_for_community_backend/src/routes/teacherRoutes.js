@@ -2,27 +2,10 @@ import { Router } from 'express';
 import { authenticate, requirePermissions } from '../middleware/auth.js';
 import { Permission } from '../constants/permissions.js';
 import { examStrictLimiter } from '../middleware/examRateLimit.js';
-import * as teacherApplicationController from '../controllers/teacherApplicationController.js';
 import * as teacherExamController from '../controllers/teacherExamController.js';
 
 const router = Router();
 router.use(authenticate);
-
-router.post(
-  '/applications',
-  requirePermissions(Permission.TEACHER_APPLICATION_CREATE),
-  teacherApplicationController.createTeacherApplication
-);
-router.get(
-  '/applications/me',
-  requirePermissions(Permission.TEACHER_APPLICATION_READ_OWN),
-  teacherApplicationController.getMyTeacherApplication
-);
-router.post(
-  '/applications/withdraw',
-  requirePermissions(Permission.TEACHER_APPLICATION_CREATE),
-  teacherApplicationController.withdrawTeacherApplication
-);
 
 router.get(
   '/exams/grading-attempts/:attemptId',

@@ -1,0 +1,10 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    darkMode: false
+    background: "#ffffff"
+    lineColor: "#000000"
+    fontSize: 16px
+---

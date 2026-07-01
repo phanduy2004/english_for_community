@@ -1,0 +1,232 @@
+erDiagram
+    User {
+        objectId ＋_id PK
+        string ＋fullName
+        string ＋role
+    }
+
+    Listening {
+        objectId ＋_id
+        string ＋code
+        string ＋title
+        string ＋audioUrl
+        object ＋playbackPad
+        string ＋difficulty
+        string_array ＋tags
+        string ＋transcript
+        object_array ＋cues
+        boolean ＃_destroy
+        date ＋deletedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    DictationAttempt {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋listeningId
+        number ＋cueIdx
+        string ＋userText
+        string ＋userTextNorm
+        object ＋score
+        number ＋attemptsCount
+        number ＋durationInSeconds
+        number ＋playedMs
+        date ＋submittedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    Enrollment {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋listeningId
+        objectId_array ＋completedCueIds
+        number ＋progress
+        date ＋lastAccessedAt
+        boolean ＋isCompleted
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    CueComment {
+        objectId ＋_id
+        objectId ＋listeningId
+        string ＋cueId
+        objectId ＋userId
+        string ＋content
+        objectId ＋parentId
+        object_array ＋reactions
+        date ＋createdAt
+    }
+
+    ListeningComprehension {
+        objectId ＋_id
+        string ＋title
+        string ＋summary
+        string ＋audioUrl
+        string ＋transcript
+        string ＋difficulty
+        string ＋imageUrl
+        number ＋minutesToComplete
+        object_array ＋questions
+        boolean ＃_destroy
+        date ＋deletedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ListeningCompAttempt {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋listeningId
+        object_array ＋answers
+        number ＋score
+        number ＋correctCount
+        number ＋totalQuestions
+        number ＋durationInSeconds
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    Reading {
+        objectId ＋_id
+        string ＋title
+        string ＋summary
+        string ＋content
+        object ＋translation
+        string ＋difficulty
+        string ＋imageUrl
+        number ＋minutesToRead
+        object_array ＋questions
+        boolean ＃_destroy
+        date ＋deletedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ReadingProgress {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋readingId
+        string ＋status
+        number ＋highScore
+        number ＋attemptsCount
+        date ＋lastAttemptedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ReadingAttempt {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋readingId
+        object_array ＋answers
+        number ＋score
+        number ＋correctCount
+        number ＋totalQuestions
+        number ＋durationInSeconds
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    WritingTopic {
+        objectId ＋_id
+        string ＋name
+        boolean ＋isActive
+        string ＋approvalStatus
+        object ＋approval
+        object ＋aiConfig
+        object ＋stats
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    WritingTopicVersion {
+        objectId ＋_id
+        objectId ＋topicId
+        object ＋snapshot
+        objectId ＋changedBy
+        string ＋changeReason
+        date ＋createdAt
+    }
+
+    WritingSubmission {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋topicId
+        object ＋generatedPrompt
+        string ＋content
+        number ＋wordCount
+        number ＋durationInSeconds
+        string ＋status
+        date ＋startedAt
+        date ＋submittedAt
+        object ＋feedback
+        number ＋score
+        date ＋reviewedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    SpeakingSet {
+        objectId ＋_id
+        string ＋title
+        string ＋description
+        string ＋level
+        string ＋mode
+        object_array ＋sentences
+        boolean ＃_destroy
+        date ＋deletedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    SpeakingEnrollment {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋speakingSetId
+        string_array ＋completedSentenceIds
+        number ＋progress
+        number ＋averageWer
+        date ＋lastAccessedAt
+        boolean ＋isCompleted
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    SpeakingAttempt {
+        objectId ＋_id
+        objectId ＋userId
+        objectId ＋speakingSetId
+        string ＋sentenceId
+        string ＋userTranscript
+        string ＋userAudioUrl
+        number ＋audioDurationSeconds
+        object ＋score
+        date ＋submittedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    User ||--o{ DictationAttempt : " "
+    User ||--o{ Enrollment : " "
+    User ||--o{ CueComment : " "
+    User ||--o{ ListeningCompAttempt : " "
+    User ||--o{ ReadingProgress : " "
+    User ||--o{ ReadingAttempt : " "
+    User ||--o{ WritingSubmission : " "
+    User |o--o{ WritingTopicVersion : " "
+    User ||--o{ SpeakingEnrollment : " "
+    User ||--o{ SpeakingAttempt : " "
+    Listening ||--o{ DictationAttempt : " "
+    Listening ||--o{ Enrollment : " "
+    Listening ||--o{ CueComment : " "
+    ListeningComprehension ||--o{ ListeningCompAttempt : " "
+    CueComment |o--o{ CueComment : " "
+    Reading ||--o{ ReadingProgress : " "
+    Reading ||--o{ ReadingAttempt : " "
+    WritingTopic ||--o{ WritingSubmission : " "
+    WritingTopic ||--o{ WritingTopicVersion : " "
+    SpeakingSet ||--o{ SpeakingEnrollment : " "
+    SpeakingSet ||--o{ SpeakingAttempt : " "

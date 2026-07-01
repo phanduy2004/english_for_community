@@ -1,0 +1,229 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    darkMode: false
+    background: "#ffffff"
+    lineColor: "#000000"
+    fontSize: 16px
+---
+classDiagram
+    direction TB
+
+    class User {
+        +ObjectId _id
+        +String fullName
+        +String role
+    }
+    class Listening {
+        +ObjectId _id
+        +String code
+        +String title
+        +String audioUrl
+        +Object playbackPad
+        +String difficulty
+        +String[] tags
+        +String transcript
+        +Object[] cues
+        #Boolean _destroy
+        +Date deletedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class DictationAttempt {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId listeningId
+        +Number cueIdx
+        +String userText
+        +String userTextNorm
+        +Object score
+        +Number attemptsCount
+        +Number durationInSeconds
+        +Number playedMs
+        +Date submittedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class Enrollment {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId listeningId
+        +ObjectId[] completedCueIds
+        +Number progress
+        +Date lastAccessedAt
+        +Boolean isCompleted
+        +Date createdAt
+        +Date updatedAt
+    }
+    class CueComment {
+        +ObjectId _id
+        +ObjectId listeningId
+        +String cueId
+        +ObjectId userId
+        +String content
+        +ObjectId parentId
+        +Object[] reactions
+        +Date createdAt
+    }
+    class ListeningComprehension {
+        +ObjectId _id
+        +String title
+        +String summary
+        +String audioUrl
+        +String transcript
+        +String difficulty
+        +String imageUrl
+        +Number minutesToComplete
+        +Object[] questions
+        #Boolean _destroy
+        +Date deletedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ListeningCompAttempt {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId listeningId
+        +Object[] answers
+        +Number score
+        +Number correctCount
+        +Number totalQuestions
+        +Number durationInSeconds
+        +Date createdAt
+        +Date updatedAt
+    }
+    class Reading {
+        +ObjectId _id
+        +String title
+        +String summary
+        +String content
+        +Object translation
+        +String difficulty
+        +String imageUrl
+        +Number minutesToRead
+        +Object[] questions
+        #Boolean _destroy
+        +Date deletedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ReadingProgress {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId readingId
+        +String status
+        +Number highScore
+        +Number attemptsCount
+        +Date lastAttemptedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ReadingAttempt {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId readingId
+        +Object[] answers
+        +Number score
+        +Number correctCount
+        +Number totalQuestions
+        +Number durationInSeconds
+        +Date createdAt
+        +Date updatedAt
+    }
+    class WritingTopic {
+        +ObjectId _id
+        +String name
+        +Boolean isActive
+        +String approvalStatus
+        +Object approval
+        +Object aiConfig
+        +Object stats
+        +Date createdAt
+        +Date updatedAt
+    }
+    class WritingTopicVersion {
+        +ObjectId _id
+        +ObjectId topicId
+        +Object snapshot
+        +ObjectId changedBy
+        +String changeReason
+        +Date createdAt
+    }
+    class WritingSubmission {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId topicId
+        +Object generatedPrompt
+        +String content
+        +Number wordCount
+        +Number durationInSeconds
+        +String status
+        +Date startedAt
+        +Date submittedAt
+        +Object feedback
+        +Number score
+        +Date reviewedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class SpeakingSet {
+        +ObjectId _id
+        +String title
+        +String description
+        +String level
+        +String mode
+        +Object[] sentences
+        #Boolean _destroy
+        +Date deletedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class SpeakingEnrollment {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId speakingSetId
+        +String[] completedSentenceIds
+        +Number progress
+        +Number averageWer
+        +Date lastAccessedAt
+        +Boolean isCompleted
+        +Date createdAt
+        +Date updatedAt
+    }
+    class SpeakingAttempt {
+        +ObjectId _id
+        +ObjectId userId
+        +ObjectId speakingSetId
+        +String sentenceId
+        +String userTranscript
+        +String userAudioUrl
+        +Number audioDurationSeconds
+        +Object score
+        +Date submittedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    User "1" --> "0..*" DictationAttempt
+    User "1" --> "0..*" Enrollment
+    User "1" --> "0..*" CueComment
+    User "1" --> "0..*" ListeningCompAttempt
+    User "1" --> "0..*" ReadingProgress
+    User "1" --> "0..*" ReadingAttempt
+    User "1" --> "0..*" WritingSubmission
+    User "0..1" ..> "0..*" WritingTopicVersion
+    User "1" --> "0..*" SpeakingEnrollment
+    User "1" --> "0..*" SpeakingAttempt
+    Listening "1" --> "0..*" DictationAttempt
+    Listening "1" --> "0..*" Enrollment
+    Listening "1" --> "0..*" CueComment
+    ListeningComprehension "1" --> "0..*" ListeningCompAttempt
+    CueComment "0..1" ..> "0..*" CueComment
+    Reading "1" --> "0..*" ReadingProgress
+    Reading "1" --> "0..*" ReadingAttempt
+    WritingTopic "1" --> "0..*" WritingSubmission
+    WritingTopic "1" --> "0..*" WritingTopicVersion
+    SpeakingSet "1" --> "0..*" SpeakingEnrollment
+    SpeakingSet "1" --> "0..*" SpeakingAttempt

@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-// Import LessonEntity của bạn
 import 'cue_entity.dart';
 
 // --- Helper Classes ---

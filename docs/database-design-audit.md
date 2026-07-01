@@ -1,6 +1,6 @@
 # Đánh giá & chuẩn thiết kế Database (MongoDB + Mongoose)
 
-> **Phạm vi:** 35 schema trong `english_for_community_backend/src/models/**`.
+> **Phạm vi:** 32 schema trong `english_for_community_backend/src/models/**` (+ sub-schema trong `sub/`).
 > **Mục đích:** chấm điểm thiết kế hiện trạng, chỉ ra cái chưa tốt **kèm `file:dòng`**, và đề xuất cách làm theo **chuẩn thiết kế DB** (indexing, embed vs reference, schema discipline, integrity, lifecycle). Dùng cho Cursor/dev sửa.
 > **Nguồn:** đọc trực tiếp models 06/2026. Stack: Express 4 + Mongoose 8 + MongoDB.
 
@@ -12,7 +12,7 @@
 |------|:----:|-----------|
 | **Mô hình hoá & quan hệ** | 7/10 | Dùng `ObjectId + ref` nhất quán, sub-schema tốt ở `Classroom`/`ExamAssignment`. Trừ: **lạm dụng `Mixed`** ở miền đề thi. |
 | **Indexing** | 7/10 | Compound index đề thi đã thêm (doc 21), unique constraint hợp lý. Trừ: vài collection **thiếu index cho query pattern** (chat sender, comment, enrollment, notification unread). |
-| **Chuẩn hoá & nhất quán** | 5.5/10 | `User` lệch chuẩn (timestamps thủ công), `SpeakingAttempt.speakingSetId` String, `Word.user`, daily-progress trùng nguồn. |
+| **Chuẩn hoá & nhất quán** | 5.5/10 | `User` lệch chuẩn (timestamps thủ công), `Word.user`, daily-progress trùng nguồn. (`SpeakingAttempt`/`SpeakingEnrollment`.speakingSetId → ObjectId — migration 004) |
 | **Toàn vẹn & vòng đời** | 5/10 | **Không có chiến lược cascade/soft-delete đồng nhất**, **không TTL** cho log/notification, **examSnapshot nhân bản** mỗi attempt. |
 | **Validation** | 6.5/10 | Enum phủ phần lớn status; trừ vài free-text (gender, audit action) + thiếu min/max điểm. |
 | **Tổng** | **6.3/10** | Nền tảng ổn cho Mongoose, nhưng có **vài quyết định cấu trúc cần sửa sớm** (Mixed miền đề, snapshot nhân bản, integrity). |

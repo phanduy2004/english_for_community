@@ -1,0 +1,210 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    darkMode: false
+    background: "#ffffff"
+    lineColor: "#000000"
+    fontSize: 16px
+---
+classDiagram
+    direction TB
+
+    class User {
+        +ObjectId _id
+        +String phone
+        +String email
+        -String password
+        +String avatarUrl
+        +String fullName
+        +String username
+        +String role
+        +Date dateOfBirth
+        +String bio
+        +String gender
+        +Boolean isVerified
+        +String goal
+        +String cefr
+        +Number dailyMinutes
+        +Object reminder
+        +Number dailyLessonGoal
+        +Number dailyActivityProgress
+        +String dailyProgressDate
+        +Number totalPoints
+        +Number level
+        +Number currentStreak
+        +Boolean strictCorrection
+        +String language
+        +String timezone
+        +Boolean isOnline
+        +Date lastActivityDate
+        +Boolean isBanned
+        +Date banExpiresAt
+        +String banReason
+        #Boolean _destroy
+        -String refreshToken
+        +String[] fcmTokens
+        -String resetOtp
+        -Date resetOtpExpiresAt
+        -Number resetOtpAttempts
+        -Date resetLastSentAt
+        -String otpPurpose
+        -Date otpCreatedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class Notification {
+        +ObjectId _id
+        +ObjectId recipientId
+        +ObjectId senderId
+        +String type
+        +String title
+        +String message
+        +Object data
+        +Boolean isRead
+        +Date createdAt
+    }
+    class Report {
+        +ObjectId _id
+        +ObjectId user
+        +String type
+        +String title
+        +String description
+        +String[] images
+        +Object deviceInfo
+        +String status
+        +String adminResponse
+        +Date createdAt
+    }
+    class Word {
+        +ObjectId _id
+        +ObjectId user
+        +String headword
+        +String ipa
+        +String shortDefinition
+        +String pos
+        +String status
+        +Number learningLevel
+        +Date nextReviewDate
+        +Date lastReviewedDate
+        +Date lastRemindedDate
+        +Date createdAt
+        +Date updatedAt
+    }
+    class UserDailyProgress {
+        +ObjectId _id
+        +ObjectId userId
+        +String date
+        +Number studySeconds
+        +Number vocabLearned
+        +Object lessonsCompleted
+        +Object stats
+        +Date createdAt
+        +Date updatedAt
+    }
+    class AdminAuditLog {
+        +ObjectId _id
+        +ObjectId actorId
+        +String actorRole
+        +String action
+        +String targetType
+        +String targetId
+        +Object metadata
+        +String ip
+        +String userAgent
+        +Date createdAt
+    }
+    class AppRelease {
+        +ObjectId _id
+        +String platform
+        +String environment
+        +String versionName
+        +Number versionCode
+        +Number minSupportedVersionCode
+        +Boolean forceUpdate
+        +String updateType
+        +String status
+        +String downloadUrl
+        +String releaseNotes
+        +Date publishedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class Classroom {
+        +ObjectId _id
+        +ObjectId teacherId
+        +String name
+        +String description
+        +String coverImageUrl
+        +String inviteCode
+        +String inviteToken
+        +String joinPolicy
+        +ObjectId pinnedMessageId
+        +Boolean archived
+        +Object settings
+        +Object integrations
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ClassroomMember {
+        +ObjectId _id
+        +ObjectId classroomId
+        +ObjectId userId
+        +String roleInClass
+        +String status
+        +Date joinedAt
+        +Date leftAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ClassroomMessage {
+        +ObjectId _id
+        +ObjectId classroomId
+        +ObjectId senderId
+        +String type
+        +String content
+        +Object media
+        +Object replyTo
+        +ObjectId[] mentions
+        +Object[] reactions
+        +Date deletedAt
+        +Date editedAt
+        +String clientId
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ClassroomActivityLog {
+        +ObjectId _id
+        +ObjectId classroomId
+        +ObjectId actorId
+        +String type
+        +String message
+        +Object meta
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ClassroomChatReadState {
+        +ObjectId _id
+        +ObjectId classroomId
+        +ObjectId userId
+        +Date lastReadAt
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    User "1" --> "0..*" Notification
+    User "1" --> "0..*" Report
+    User "1" --> "0..*" Word
+    User "1" --> "0..*" UserDailyProgress
+    User "1" --> "0..*" AdminAuditLog
+    User "1" --> "0..*" Classroom
+    User "1" --> "0..*" ClassroomMember
+    User "1" --> "0..*" ClassroomMessage
+    User "0..1" ..> "0..*" ClassroomActivityLog
+    User "1" --> "0..*" ClassroomChatReadState
+    Classroom "1" --> "0..*" ClassroomMember
+    Classroom "1" --> "0..*" ClassroomMessage
+    Classroom "1" --> "0..*" ClassroomActivityLog
+    Classroom "1" --> "0..*" ClassroomChatReadState
+    Classroom "0..1" ..> "0..1" ClassroomMessage

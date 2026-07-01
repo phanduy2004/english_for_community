@@ -342,7 +342,6 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     List<Map<String, dynamic>> sections,
     Map<String, dynamic> answers,
   ) {
-    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -566,7 +565,6 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     List<Map<String, dynamic>> resources,
     Map<String, dynamic> ans,
   ) {
-    final readingId = resources.isNotEmpty ? (resources.first['id'] as String?)?.trim() ?? '' : '';
     final raw = ans['readingAnswers'];
     final selected = <String, int>{};
     if (raw is Map) {
@@ -574,10 +572,41 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
         if (v is num) selected['$k'] = v.toInt();
       });
     }
-    if (readingId.isEmpty) {
+
+    final readingResources = resources
+        .where((r) => ((r['id'] as String?)?.trim().isNotEmpty ?? false))
+        .toList();
+    if (readingResources.isEmpty) {
       return _buildGenericSkillMirror(context, 'reading', ans['completed'] == true);
     }
-    return _ReadingLiveMirrorBody(readingId: readingId, selectedAnswers: selected);
+    if (readingResources.length == 1) {
+      return _ReadingLiveMirrorBody(
+        readingId: (readingResources.first['id'] as String).trim(),
+        selectedAnswers: selected,
+      );
+    }
+
+    // Multi-resource: render từng bài để teacher thấy bài làm dù học sinh đang ở bài nào.
+    // `selectedAnswers` là map gộp toàn section; mỗi body tự lọc theo q.id của bài đó.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var i = 0; i < readingResources.length; i++) ...[
+          if (i > 0) const Divider(height: 24),
+          _ReadingResourceHeader(
+            index: i + 1,
+            total: readingResources.length,
+            title: (readingResources[i]['title'] as String?)?.trim() ?? '',
+          ),
+          const SizedBox(height: 8),
+          _ReadingLiveMirrorBody(
+            key: ValueKey('reading_mirror_${readingResources[i]['id']}'),
+            readingId: (readingResources[i]['id'] as String).trim(),
+            selectedAnswers: selected,
+          ),
+        ],
+      ],
+    );
   }
 
   Widget _buildListeningMirror(BuildContext context, Map<String, dynamic> ans) {
@@ -710,6 +739,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
 /// Loads reading passage and shows student's MCQ choices (live).
 class _ReadingLiveMirrorBody extends StatefulWidget {
   const _ReadingLiveMirrorBody({
+    super.key,
     required this.readingId,
     required this.selectedAnswers,
   });
@@ -774,9 +804,10 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
     final reading = _reading;
     if (reading == null) return const SizedBox.shrink();
 
-    if (widget.selectedAnswers.isEmpty) {
-      return Text(l10n.teacherLiveMirrorReadingEmpty, style: ExamSystemUi.captionSecondary);
-    }
+    // Đáp án thuộc về bài này (lọc theo q.id của chính reading doc này) —
+    // `selectedAnswers` là map gộp toàn section nên có thể chứa đáp án của bài khác.
+    final questionIds = reading.questions.map((q) => q.id).toSet();
+    final answeredHere = widget.selectedAnswers.keys.any(questionIds.contains);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -785,6 +816,11 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(reading.title, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600)),
+          ),
+        if (!answeredHere)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(l10n.teacherLiveMirrorReadingEmpty, style: ExamSystemUi.captionMuted),
           ),
         ...reading.questions.asMap().entries.map((entry) {
           final qi = entry.key;
@@ -844,6 +880,45 @@ class _ReadingLiveMirrorBodyState extends State<_ReadingLiveMirrorBody> {
             ),
           );
         }),
+      ],
+    );
+  }
+}
+
+/// Header phân tách các bài (resource) trong cùng một skill section ở mirror.
+class _ReadingResourceHeader extends StatelessWidget {
+  const _ReadingResourceHeader({
+    required this.index,
+    required this.total,
+    required this.title,
+  });
+
+  final int index;
+  final int total;
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = context.l10n.teacherLiveMirrorExerciseLabel(index, total);
+    return Row(
+      children: [
+        const Icon(Icons.menu_book_outlined, size: 14, color: AppColors.textSecondary),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
+        ),
+        if (title.isNotEmpty) ...[
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '• $title',
+              style: ExamSystemUi.captionMuted,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ],
     );
   }

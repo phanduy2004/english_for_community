@@ -1,0 +1,15 @@
+{
+  "theme": "base",
+  "look": "classic",
+  "themeVariables": {
+    "darkMode": false,
+    "background": "#ffffff",
+    "fontSize": "16px",
+    "primaryTextColor": "#000000",
+    "lineColor": "#000000",
+    "classText": "#000000",
+    "classBorder": "#000000",
+    "relationColor": "#000000"
+  },
+  "themeCSS": ".classGroup .label text,.classGroup .classTitle text,.classGroup .label .nodeLabel{fill:#000000!important;font-weight:600!important;font-size:14px!important}.relation line,.relation path{stroke:#000000!important;stroke-width:2px!important}"
+}

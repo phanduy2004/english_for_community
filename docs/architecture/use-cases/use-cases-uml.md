@@ -5,7 +5,9 @@
 
 **Liên quan:** [use-cases-diagrams.md](./use-cases-diagrams.md) (flowchart / sequence).
 
-**PlantUML (PlantText / luận văn):** copy file trong [plantuml/](./plantuml/) — ví dụ [teacher-use-case.puml](./plantuml/teacher-use-case.puml).  
+**Sơ đồ CSDL (Mermaid):** [database/database-diagrams-uml.md](../database/database-diagrams-uml.md) — cùng format preview Markdown.
+
+**PlantUML (PlantText / tuỳ chọn):** copy file trong [plantuml/](./plantuml/) — ví dụ [teacher-use-case.puml](./plantuml/teacher-use-case.puml).  
 ⚠️ PlantText **không** chạy code Mermaid bên dưới; cần `@startuml` … `@enduml`.
 
 ---

@@ -8,6 +8,8 @@ import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_card_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
@@ -474,6 +476,8 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                               onAssignExam: _openAssignExamPicker,
                               onOpenAssignment: _openStudentAttempts,
                               onManageSession: _openSession,
+                              onOpenMembersTab: () => _tabs.animateTo(2),
+                              onOpenAssignmentsTab: () => _tabs.animateTo(1),
                               onOpenGradebook: () => context.push(
                                 TeacherGradebookPage.routePath(widget.classroomId),
                               ),
@@ -654,6 +658,8 @@ class _OverviewTab extends StatelessWidget {
     required this.onOpenAssignment,
     required this.onManageSession,
     required this.onOpenGradebook,
+    required this.onOpenMembersTab,
+    required this.onOpenAssignmentsTab,
     required this.onCloseAssignment,
     required this.onDeleteAssignment,
   });
@@ -674,6 +680,8 @@ class _OverviewTab extends StatelessWidget {
   final void Function(Map<String, dynamic>) onOpenAssignment;
   final void Function(Map<String, dynamic>) onManageSession;
   final VoidCallback onOpenGradebook;
+  final VoidCallback onOpenMembersTab;
+  final VoidCallback onOpenAssignmentsTab;
   final void Function(Map<String, dynamic>) onCloseAssignment;
   final void Function(Map<String, dynamic>) onDeleteAssignment;
 
@@ -696,44 +704,51 @@ class _OverviewTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.s5),
-          TeacherKpiGrid(
-            children: [
-              TeacherKpiCard(
-                icon: Icons.groups_outlined,
-                value: '$activeMembers',
-                label: l10n.teacherClassStatStudents,
-                accent: AppColors.primary,
+          AppCard(
+            variant: AppCardVariant.outline,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s5),
+              child: Row(
+                children: [
+                  TeacherCardKpiMini(
+                    value: '$activeMembers',
+                    label: l10n.teacherClassStatStudents,
+                    color: AppColors.primary,
+                    onTap: onOpenMembersTab,
+                  ),
+                  TeacherCardKpiMini(
+                    value: '$activeCount',
+                    label: l10n.teacherClassStatActiveAssignments,
+                    color: AppColors.secondary,
+                    onTap: onOpenAssignmentsTab,
+                  ),
+                  TeacherCardKpiMini(
+                    value: '$historyCount',
+                    label: l10n.teacherClassStatHistoryAssignments,
+                    color: AppColors.textSecondary,
+                    onTap: onOpenAssignmentsTab,
+                  ),
+                  TeacherCardKpiMini(
+                    value: '$pendingMembers',
+                    label: l10n.teacherClassStatPendingMembers,
+                    color: AppColors.warning,
+                    onTap: pendingMembers > 0 ? onOpenMembersTab : null,
+                  ),
+                ],
               ),
-              TeacherKpiCard(
-                icon: Icons.assignment_outlined,
-                value: '$activeCount',
-                label: l10n.teacherClassStatActiveAssignments,
-                accent: AppColors.secondary,
-              ),
-              TeacherKpiCard(
-                icon: Icons.history_outlined,
-                value: '$historyCount',
-                label: l10n.teacherClassStatHistoryAssignments,
-                accent: AppColors.textSecondary,
-              ),
-              TeacherKpiCard(
-                icon: Icons.hourglass_top_outlined,
-                value: '$pendingMembers',
-                label: l10n.teacherClassStatPendingMembers,
-                accent: AppColors.warning,
-              ),
-            ],
+            ),
           ),
           const SizedBox(height: AppSpacing.s7),
           TeacherResponsiveColumns(
-            left: _DescriptionPanel(
+            left: _OverviewDescriptionCard(
               description: description,
               emptyLabel: l10n.studentClassNoDescription,
               createdAt: createdAt,
               updatedAt: updatedAt,
             ),
-            right: _InvitePanel(
+            right: _OverviewInviteCard(
               code: inviteCode,
+              hint: l10n.teacherClassInviteCardHint,
               onCopy: onCopyInvite,
             ),
           ),
@@ -756,6 +771,7 @@ class _OverviewTab extends StatelessWidget {
           else
             ...recentAssignments.map(
               (m) => TeacherClassroomAssignmentTile(
+                compact: true,
                 assignment: m,
                 onViewAttempts: () => onOpenAssignment(m),
                 onManageSession: (m['mode'] as String?) == 'realtime' ? () => onManageSession(m) : null,
@@ -2388,8 +2404,64 @@ class _TeacherPersonTile extends StatelessWidget {
   }
 }
 
-class _DescriptionPanel extends StatelessWidget {
-  const _DescriptionPanel({
+class _OverviewSectionCard extends StatelessWidget {
+  const _OverviewSectionCard({
+    required this.title,
+    required this.icon,
+    required this.accent,
+    required this.child,
+    this.footer,
+  });
+
+  final String title;
+  final IconData icon;
+  final Color accent;
+  final Widget child;
+  final Widget? footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      variant: AppCardVariant.outline,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s5),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: accent.withValues(alpha: 0.12),
+                  child: Icon(icon, size: 17, color: accent),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s4),
+            child,
+            if (footer != null) ...[
+              const SizedBox(height: AppSpacing.s4),
+              const Divider(height: 1, color: AppColors.outlineMuted),
+              const SizedBox(height: AppSpacing.s4),
+              footer!,
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OverviewDescriptionCard extends StatelessWidget {
+  const _OverviewDescriptionCard({
     required this.description,
     required this.emptyLabel,
     required this.createdAt,
@@ -2404,73 +2476,83 @@ class _DescriptionPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: TeacherWebUi.panelDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(l10n.teacherExamDescriptionLabel, style: TeacherWebUi.sectionTitle(context)),
-          const SizedBox(height: AppSpacing.s4),
-          Text(
-            description.isNotEmpty ? description : emptyLabel,
-            style: TeacherWebUi.webBody(context).copyWith(
-              color: description.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
-            ),
-          ),
-          if (createdAt != null || updatedAt != null) ...[
-            const SizedBox(height: AppSpacing.s5),
-            const Divider(height: 1, color: AppColors.outlineMuted),
-            const SizedBox(height: AppSpacing.s4),
-            if (createdAt != null) Text(l10n.studentClassCreatedAt(createdAt!), style: TeacherWebUi.metaMuted),
-            if (updatedAt != null) ...[
-              const SizedBox(height: 4),
-              Text(l10n.studentClassUpdatedAt(updatedAt!), style: TeacherWebUi.metaMuted),
-            ],
-          ],
-        ],
+    return _OverviewSectionCard(
+      title: l10n.teacherExamDescriptionLabel,
+      icon: Icons.notes_outlined,
+      accent: AppColors.primary,
+      footer: (createdAt != null || updatedAt != null)
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (createdAt != null)
+                  TeacherGradingMetaRow(icon: Icons.event_outlined, text: l10n.studentClassCreatedAt(createdAt!)),
+                if (updatedAt != null)
+                  TeacherGradingMetaRow(icon: Icons.update_outlined, text: l10n.studentClassUpdatedAt(updatedAt!)),
+              ],
+            )
+          : null,
+      child: Text(
+        description.isNotEmpty ? description : emptyLabel,
+        style: TeacherWebUi.webBody(context).copyWith(
+          height: 1.5,
+          color: description.isNotEmpty ? AppColors.textPrimary : AppColors.textMuted,
+        ),
       ),
     );
   }
 }
 
-class _InvitePanel extends StatelessWidget {
-  const _InvitePanel({required this.code, required this.onCopy});
+class _OverviewInviteCard extends StatelessWidget {
+  const _OverviewInviteCard({
+    required this.code,
+    required this.hint,
+    required this.onCopy,
+  });
 
   final String code;
+  final String hint;
   final VoidCallback onCopy;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.s5),
-      decoration: TeacherWebUi.panelDecoration(),
+    final hasCode = code.isNotEmpty;
+
+    return _OverviewSectionCard(
+      title: l10n.teacherInviteCode,
+      icon: Icons.link_rounded,
+      accent: AppColors.primary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(l10n.teacherInviteCode, style: TeacherWebUi.sectionTitle(context)),
-          const SizedBox(height: AppSpacing.s5),
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: AppSpacing.s4),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primaryTint,
+              color: AppColors.surfaceSubtle,
               borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
+              border: Border.all(color: AppColors.outline),
             ),
             child: SelectableText(
-              code,
-              style: TeacherWebUi.webH1(context).copyWith(letterSpacing: 4, color: AppColors.primaryDark),
+              hasCode ? code : '—',
+              style: TeacherWebUi.webKpiValue(context).copyWith(
+                letterSpacing: hasCode ? 4 : 0,
+                color: AppColors.primaryDark,
+                fontSize: 24,
+              ),
             ),
           ),
+          const SizedBox(height: AppSpacing.s3),
+          Text(hint, style: TeacherWebUi.metaMuted, textAlign: TextAlign.center),
           const SizedBox(height: AppSpacing.s4),
-          FilledButton.icon(
-            onPressed: onCopy,
-            icon: const Icon(Icons.copy_outlined, size: 18),
-            label: Text(l10n.copyInviteCode),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton.icon(
+              onPressed: hasCode ? onCopy : null,
+              style: TeacherWebUi.compactFilledStyle(context),
+              icon: const Icon(Icons.copy_outlined, size: 18),
+              label: Text(l10n.copyInviteCode),
+            ),
           ),
         ],
       ),

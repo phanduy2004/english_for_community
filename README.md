@@ -202,15 +202,15 @@ The app uses WebSocket for critical real-time features:
 
 ---
 
-## Database Schema (33 Models)
+## Database Schema (31 Models)
 
 ```
 Users & Auth          Learning Content       Exams & Grading         Classroom & Chat
 ─────────────         ────────────────       ───────────────         ────────────────
 User                  Listening              Exam                    Classroom
-RolePermission        ListeningComprehension ExamSession             ClassroomMember
-TeacherApplication    Reading                ExamAttempt             ClassroomActivityLog
-AdminAuditLog         SpeakingSet            ExamAssignment          ClassroomMessage
+AdminAuditLog         ListeningComprehension ExamSession             ClassroomMember
+                      Reading                ExamAttempt             ClassroomActivityLog
+                      SpeakingSet            ExamAssignment          ClassroomMessage
                       WritingTopics          TeacherAssignmentPreset ClassroomChatReadState
 Progress & Social     WritingTopicVersion
 ────────────────      Word                   Attempts & Submissions

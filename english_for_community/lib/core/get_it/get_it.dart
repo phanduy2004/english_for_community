@@ -30,7 +30,6 @@ import '../datasource/ai_chat_remote_datasource.dart';
 import '../datasource/app_update_remote_datasource.dart';
 import '../datasource/app_release_admin_remote_datasource.dart';
 import '../datasource/teacher_exam_remote_datasource.dart';
-import '../datasource/admin_teacher_application_remote_datasource.dart';
 import '../datasource/dictionary_local_datasource.dart';
 import '../datasource/history_remote_datasource.dart';
 import '../datasource/listening_comp_remote_datasource.dart';
@@ -50,7 +49,6 @@ import '../repository/auth_repository.dart';
 import '../repository/app_update_repository.dart';
 import '../repository/app_release_repository.dart';
 import '../repository/teacher_exam_repository.dart';
-import '../repository/admin_teacher_application_repository.dart';
 import '../repository/dictionary_repository.dart';
 import '../repository/history_repository.dart';
 import '../repository/listening_comp_repository.dart';
@@ -67,7 +65,6 @@ import '../repository_impl/ai_chat_repository_impl.dart';
 import '../repository_impl/app_update_repository_impl.dart';
 import '../repository_impl/app_release_repository_impl.dart';
 import '../repository_impl/teacher_exam_repository_impl.dart';
-import '../repository_impl/admin_teacher_application_repository_impl.dart';
 import '../repository_impl/auth_repository_impl.dart';
 import '../repository_impl/dictionary_repository_impl.dart';
 import '../repository_impl/history_repository_impl.dart';
@@ -87,7 +84,6 @@ import '../../feature/student/bloc/classes_hub/student_classes_hub_bloc.dart';
 import '../../feature/student/bloc/classroom_detail/student_classroom_detail_bloc.dart';
 import '../../feature/teacher/bloc/analytics/teacher_analytics_bloc.dart';
 import '../../feature/teacher/bloc/live_monitor/teacher_live_monitor_bloc.dart';
-import '../../feature/teacher/bloc/apply/teacher_apply_bloc.dart';
 import '../../feature/teacher/bloc/classroom/teacher_classroom_bloc.dart';
 import '../../feature/teacher/bloc/dashboard/teacher_dashboard_bloc.dart';
 import '../../feature/teacher/bloc/exams_list/teacher_exams_list_bloc.dart';
@@ -190,9 +186,6 @@ void registerDataSource() {
   getIt.registerSingleton<TeacherExamRemoteDatasource>(
     TeacherExamRemoteDatasource(dio: dioAuth),
   );
-  getIt.registerSingleton<AdminTeacherApplicationRemoteDatasource>(
-    AdminTeacherApplicationRemoteDatasource(dio: dioAuth),
-  );
   getIt.registerLazySingleton<HistoryRemoteDatasource>(
       () => HistoryRemoteDatasource(dio: dioAuth));
   getIt.registerSingleton<ListeningCompRemoteDatasource>(
@@ -254,9 +247,6 @@ void registerRepositories() {
   getIt.registerSingleton<TeacherExamRepository>(
     TeacherExamRepositoryImpl(remote: getIt()),
   );
-  getIt.registerSingleton<AdminTeacherApplicationRepository>(
-    AdminTeacherApplicationRepositoryImpl(remote: getIt()),
-  );
   getIt.registerLazySingleton<HistoryRepository>(
       () => HistoryRepositoryImpl(historyRemoteDatasource: getIt()));
   getIt.registerSingleton<ListeningCompRepository>(
@@ -309,7 +299,6 @@ void registerBloc() {
   getIt.registerFactory(() => AdminListeningCompBloc(repository: getIt()));
   getIt.registerFactory(() => TeacherDashboardBloc(repository: getIt()));
   getIt.registerFactory(() => TeacherExamsListBloc(repository: getIt()));
-  getIt.registerFactory(() => TeacherApplyBloc(repository: getIt()));
   getIt.registerFactory(() => TeacherAnalyticsBloc(repository: getIt()));
   getIt.registerFactoryParam<TeacherClassroomBloc, String, void>(
     (classroomId, _) => TeacherClassroomBloc(

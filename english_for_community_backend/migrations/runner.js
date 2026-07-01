@@ -12,7 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import mongoose from 'mongoose';
-import { getMongoUri, getMongoUriForLog } from '../src/lib/mongoUri.js';
+import { getMongoUri, getMongoUriForLog, getMongoDbName } from '../src/lib/mongoUri.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -34,8 +34,8 @@ export async function runMigrations(options = {}) {
     throw new Error('MONGO_URI is not set. Configure english_for_community_backend/.env first.');
   }
 
-  console.log(`[migrate] connect ${getMongoUriForLog(uri)} dry=${dry} force=${force}`);
-  await mongoose.connect(uri);
+  console.log(`[migrate] connect ${getMongoUriForLog(uri)} db=${getMongoDbName()} dry=${dry} force=${force}`);
+  await mongoose.connect(uri, { dbName: getMongoDbName() });
 
   const db = mongoose.connection.db;
   const ledger = db.collection('migrations');

@@ -1679,7 +1679,7 @@ abstract class AppLocalizations {
   /// No description provided for @registerAccountTypeTeacherHint.
   ///
   /// In en, this message translates to:
-  /// **'Teacher accounts need admin approval before you can create classes.'**
+  /// **'You can create classes and manage exams right after signing up.'**
   String get registerAccountTypeTeacherHint;
 
   /// No description provided for @labelFullName.
@@ -6760,6 +6760,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Question {number}'**
   String teacherLiveMirrorReadingQuestion(int number);
+
+  /// No description provided for @teacherLiveMirrorExerciseLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Exercise {index}/{total}'**
+  String teacherLiveMirrorExerciseLabel(int index, int total);
 
   /// No description provided for @examSessionStatusLobby.
   ///

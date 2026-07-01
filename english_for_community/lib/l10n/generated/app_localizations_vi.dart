@@ -852,7 +852,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get registerAccountTypeTeacherHint =>
-      'Tài khoản giáo viên cần được quản trị duyệt trước khi tạo lớp.';
+      'Sau khi đăng ký bạn có thể tạo lớp và quản lý bài kiểm tra ngay.';
 
   @override
   String get labelFullName => 'Họ và tên *';
@@ -3753,6 +3753,11 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String teacherLiveMirrorReadingQuestion(int number) {
     return 'Câu $number';
+  }
+
+  @override
+  String teacherLiveMirrorExerciseLabel(int index, int total) {
+    return 'Bài $index/$total';
   }
 
   @override

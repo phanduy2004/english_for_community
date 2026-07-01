@@ -1,0 +1,25 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    darkMode: false
+    background: "#ffffff"
+    lineColor: "#000000"
+  themeCSS: |
+    .er .label.attribute-type{display:none!important;width:0!important;opacity:0!important}
+    .er .attribute-type{display:none!important}
+    .er .divider{display:none!important}
+    .er [class^=row-rect] path{stroke:none!important;fill:#ffffff!important}
+    .er.entityLabel text,.er .label.attribute-name text{fill:#000000!important;font-weight:600!important}
+    .er.relationshipLine{stroke:#000000!important;stroke-width:2px!important}
+---
+erDiagram
+    User {
+        attr +ObjectId _id
+        attr +String email
+    }
+    Notification {
+        attr +ObjectId _id
+    }
+    User ||--o{ Notification : " "

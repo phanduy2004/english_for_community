@@ -11,6 +11,7 @@ import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_g
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_state.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.dart';
+import 'package:english_for_community/feature/teacher/layout/teacher_card_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_grading_hub_context_header.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
@@ -308,38 +309,6 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
   }
 }
 
-/// Pill badge used in grading cards — extracted to a standalone widget so Flutter
-/// can cache/skip its build when the parent rebuilds with the same inputs.
-class _GradingPill extends StatelessWidget {
-  const _GradingPill({
-    required this.label,
-    required this.color,
-    this.alpha = 0.1,
-  });
-
-  final String label;
-  final Color color;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: alpha),
-        borderRadius: const BorderRadius.all(Radius.circular(20)),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Text(
-          label,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color),
-        ),
-      ),
-    );
-  }
-}
-
 /// Student attempt row for teacher grading lists.
 class TeacherGradingAttemptCard extends StatelessWidget {
   const TeacherGradingAttemptCard({
@@ -473,9 +442,9 @@ class TeacherGradingAttemptCard extends StatelessWidget {
                 if (startedLabel != null || submittedLabel != null) ...[
                   const SizedBox(height: AppSpacing.s4),
                   if (startedLabel != null)
-                    _metaRow(Icons.play_circle_outline, l10n.teacherGradingStartedAt(startedLabel!)),
+                    TeacherGradingMetaRow(icon: Icons.play_circle_outline, text: l10n.teacherGradingStartedAt(startedLabel!)),
                   if (submittedLabel != null)
-                    _metaRow(Icons.check_circle_outline, l10n.teacherGradingHubSubmittedAt(submittedLabel!)),
+                    TeacherGradingMetaRow(icon: Icons.check_circle_outline, text: l10n.teacherGradingHubSubmittedAt(submittedLabel!)),
                 ],
                 if (completeness == 'partial' || completeness == 'force_end' || (gs == 'finalized' && !released)) ...[
                   const SizedBox(height: AppSpacing.s3),
@@ -543,20 +512,7 @@ class TeacherGradingAttemptCard extends StatelessWidget {
     return AppColors.primary;
   }
 
-  Widget _statusPill(String label, Color color) => _GradingPill(label: label, color: color);
-  Widget _badge(String label, Color color) => _GradingPill(label: label, color: color, alpha: 0.12);
-
-  Widget _metaRow(IconData icon, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 15, color: AppColors.textMuted),
-          const SizedBox(width: 6),
-          Expanded(child: Text(text, style: TeacherWebUi.metaMuted)),
-        ],
-      ),
-    );
-  }
+  Widget _statusPill(String label, Color color) => TeacherGradingPill(label: label, color: color);
+  Widget _badge(String label, Color color) => TeacherGradingPill(label: label, color: color, alpha: 0.12);
 }
 

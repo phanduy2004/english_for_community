@@ -4,8 +4,6 @@ import { writeAdminAudit, listAdminAudits } from '../services/adminAuditService.
 import { getRolePermissions } from '../middleware/auth.js';
 import { VALID_ROLES } from '../constants/permissions.js';
 import User from '../models/User.js';
-import { teacherApplicationService } from '../services/teacherApplicationService.js';
-
 const getDashboardStats = async (req, res) => {
   try {
     const { range = 'week' } = req.query;
@@ -338,56 +336,6 @@ const getContentSummary = async (req, res) => {
 
 const getStatusCode = (err) => err.statusCode || 500;
 
-const listTeacherApplications = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 20;
-    const { status = 'pending' } = req.query;
-    const data = await teacherApplicationService.listForAdmin({ status, page, limit });
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(getStatusCode(error)).json({ message: error.message });
-  }
-};
-
-const approveTeacherApplication = async (req, res) => {
-  try {
-    const { application, user } = await teacherApplicationService.approve(req.params.id, req.user._id);
-    await writeAdminAudit({
-      actorId: req.user?._id,
-      actorRole: req.user?.role,
-      action: 'teacher.application.approve',
-      targetType: 'teacher_application',
-      targetId: req.params.id,
-      metadata: { userId: user._id.toString() },
-      ip: req.ip,
-      userAgent: req.get('user-agent') || '',
-    });
-    return res.status(200).json({ application, user });
-  } catch (error) {
-    return res.status(getStatusCode(error)).json({ message: error.message });
-  }
-};
-
-const rejectTeacherApplication = async (req, res) => {
-  try {
-    const application = await teacherApplicationService.reject(req.params.id, req.user._id, req.body);
-    await writeAdminAudit({
-      actorId: req.user?._id,
-      actorRole: req.user?.role,
-      action: 'teacher.application.reject',
-      targetType: 'teacher_application',
-      targetId: req.params.id,
-      metadata: { reason: application.review?.reason },
-      ip: req.ip,
-      userAgent: req.get('user-agent') || '',
-    });
-    return res.status(200).json({ application });
-  } catch (error) {
-    return res.status(getStatusCode(error)).json({ message: error.message });
-  }
-};
-
 const getActivityDetail = async (req, res) => {
   try {
     const { id } = req.params;
@@ -432,7 +380,4 @@ export default {
   getActivities,
   getActivityDetail,
   getContentSummary,
-  listTeacherApplications,
-  approveTeacherApplication,
-  rejectTeacherApplication,
 };

@@ -13,6 +13,7 @@ import Reading from '../models/Reading.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import SpeakingAttempt from '../models/SpeakingAttempt.js';
 import WritingSubmission from '../models/WritingSubmission.js';
+import { toSpeakingSetObjectId, toSpeakingSetObjectIdList } from '../lib/speakingSetId.js';
 import { wordErrorRate } from '../utils/scoring.js';
 import { withLeanApiId, withLeanNestedIds } from '../lib/leanApiSerialize.js';
 import {
@@ -482,10 +483,13 @@ async function fetchReadingRecord(userId, readingId, bounds, opts = {}) {
 }
 
 async function fetchSpeakingRecords(userId, speakingSetId, bounds, opts = {}) {
+  const setOid = toSpeakingSetObjectId(speakingSetId);
+  if (!setOid) return { records: [], source: null };
+
   const examOnly = opts.examOnly === true;
   const strict = await SpeakingAttempt.find({
     userId,
-    speakingSetId: String(speakingSetId),
+    speakingSetId: setOid,
     $or: [
       { createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
       { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
@@ -499,7 +503,7 @@ async function fetchSpeakingRecords(userId, speakingSetId, bounds, opts = {}) {
 
   const soft = await SpeakingAttempt.find({
     userId,
-    speakingSetId: String(speakingSetId),
+    speakingSetId: setOid,
     createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
   })
     .select('sentenceId userTranscript score submittedAt createdAt')
@@ -507,7 +511,7 @@ async function fetchSpeakingRecords(userId, speakingSetId, bounds, opts = {}) {
     .lean();
   if (soft.length > 0) return { records: soft, source: 'near_session' };
 
-  const latest = await SpeakingAttempt.find({ userId, speakingSetId: String(speakingSetId) })
+  const latest = await SpeakingAttempt.find({ userId, speakingSetId: setOid })
     .select('sentenceId userTranscript score submittedAt createdAt')
     .sort({ createdAt: -1 })
     .limit(50)
@@ -721,10 +725,12 @@ async function batchFetchSpeakingRecordsMap(userId, speakingSetIds, bounds, opts
   if (!userId || !bounds || speakingSetIds.length === 0) return map;
   const examOnly = opts.examOnly === true;
   const idList = [...new Set(speakingSetIds.map((id) => String(id).trim()).filter(Boolean))];
+  const oidList = toSpeakingSetObjectIdList(idList);
+  if (oidList.length === 0) return map;
 
   const strictRows = await SpeakingAttempt.find({
     userId,
-    speakingSetId: { $in: idList },
+    speakingSetId: { $in: oidList },
     $or: [
       { createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
       { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
@@ -749,7 +755,7 @@ async function batchFetchSpeakingRecordsMap(userId, speakingSetIds, bounds, opts
 
   const softRows = await SpeakingAttempt.find({
     userId,
-    speakingSetId: { $in: pending },
+    speakingSetId: { $in: toSpeakingSetObjectIdList(pending) },
     createdAt: { $gte: bounds.softStart, $lte: bounds.softEnd },
   })
     .select('speakingSetId sentenceId userTranscript score submittedAt createdAt')
@@ -769,7 +775,7 @@ async function batchFetchSpeakingRecordsMap(userId, speakingSetIds, bounds, opts
 
   const latestRows = await SpeakingAttempt.find({
     userId,
-    speakingSetId: { $in: stillPending },
+    speakingSetId: { $in: toSpeakingSetObjectIdList(stillPending) },
   })
     .select('speakingSetId sentenceId userTranscript score submittedAt createdAt')
     .sort({ createdAt: -1 })

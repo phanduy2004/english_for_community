@@ -1,0 +1,150 @@
+@startuml E4C_Database_Domain_Core
+' Mien Core & He thong — User day du + Notification, Report, Word, UserDailyProgress, AdminAuditLog, AppRelease
+' Hinh 4 (tu chon) hoac gop vao muc Core trong bao cao
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title Chi tiet mien Core & He thong (7 collection)
+
+class User <<Entity>> {
+  +_id : ObjectId
+  +phone : String
+  +email : String
+  +password : String
+  +avatarUrl : String
+  +fullName : String
+  +username : String
+  +role : String
+  +dateOfBirth : Date
+  +bio : String
+  +gender : String
+  +isVerified : Boolean
+  +goal : String
+  +cefr : String
+  +dailyMinutes : Number
+  +reminder : Object
+  +dailyLessonGoal : Number
+  +dailyActivityProgress : Number
+  +dailyProgressDate : String
+  +totalPoints : Number
+  +level : Number
+  +currentStreak : Number
+  +strictCorrection : Boolean
+  +language : String
+  +timezone : String
+  +isOnline : Boolean
+  +lastActivityDate : Date
+  +isBanned : Boolean
+  +banExpiresAt : Date
+  +banReason : String
+  +_destroy : Boolean
+  +fcmTokens : String[]
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class Notification <<Entity>> {
+  +_id : ObjectId
+  +recipientId : ObjectId
+  +senderId : ObjectId
+  +type : String
+  +title : String
+  +message : String
+  +data : Object
+  +isRead : Boolean
+  +createdAt : Date
+}
+
+class Report <<Entity>> {
+  +_id : ObjectId
+  +user : ObjectId
+  +type : String
+  +title : String
+  +description : String
+  +images : String[]
+  +deviceInfo : Object
+  +status : String
+  +adminResponse : String
+  +createdAt : Date
+}
+
+class Word <<Entity>> {
+  +_id : ObjectId
+  +user : ObjectId
+  +headword : String
+  +ipa : String
+  +shortDefinition : String
+  +pos : String
+  +status : String
+  +learningLevel : Number
+  +nextReviewDate : Date
+  +lastReviewedDate : Date
+  +lastRemindedDate : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class UserDailyProgress <<Entity>> {
+  +_id : ObjectId
+  +userId : ObjectId
+  +date : String
+  +studySeconds : Number
+  +vocabLearned : Number
+  +lessonsCompleted : Object
+  +stats : Object
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+class AdminAuditLog <<Entity>> {
+  +_id : ObjectId
+  +actorId : ObjectId
+  +actorRole : String
+  +action : String
+  +targetType : String
+  +targetId : String
+  +metadata : Object
+  +ip : String
+  +userAgent : String
+  +createdAt : Date
+}
+
+class AppRelease <<Entity>> {
+  +_id : ObjectId
+  +platform : String
+  +environment : String
+  +versionName : String
+  +versionCode : Number
+  +minSupportedVersionCode : Number
+  +forceUpdate : Boolean
+  +updateType : String
+  +status : String
+  +downloadUrl : String
+  +releaseNotes : String
+  +publishedAt : Date
+  +createdAt : Date
+  +updatedAt : Date
+}
+
+User "1" --> "0..*" Notification
+User "0..1" --> "0..*" Notification
+User "1" --> "0..*" Report
+User "1" --> "0..*" Word
+User "1" --> "0..*" UserDailyProgress
+User "1" --> "0..*" AdminAuditLog
+
+note right of User
+  **role** chon luc dang ky:
+  user | teacher | admin
+  RBAC: constants/permissions.js
+end note
+
+@enduml

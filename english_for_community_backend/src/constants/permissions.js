@@ -2,7 +2,7 @@
  * RBAC Permission constants — single source of truth.
  *
  * ROLES:
- *   user    — learner; may submit teacher application (limited permissions)
+ *   user    — learner (default at registration)
  *   teacher — classroom + exam authoring (see ROLE_PERMISSIONS)
  *   admin   — full access (wildcard)
  *
@@ -30,9 +30,6 @@ export const Permission = Object.freeze({
   CONTENT_VERSION_ROLLBACK: 'content.version.rollback',
   CONTENT_APPROVE: 'content.approve',
 
-  TEACHER_APPLICATION_CREATE: 'teacher.application.create',
-  TEACHER_APPLICATION_READ_OWN: 'teacher.application.read_own',
-
   TEACHER_CLASSROOM_MANAGE: 'teacher.classroom.manage',
   TEACHER_CLASSROOM_MEMBERS_MANAGE: 'teacher.classroom.members.manage',
   TEACHER_EXAM_MANAGE: 'teacher.exam.manage',
@@ -41,7 +38,6 @@ export const Permission = Object.freeze({
   TEACHER_GRADING_READ: 'teacher.grading.read',
   TEACHER_GRADING_WRITE: 'teacher.grading.write',
 
-  ADMIN_TEACHER_APPLICATION_REVIEW: 'admin.teacher.application.review',
 });
 
 export const ALL_KNOWN_PERMISSIONS = Object.freeze(
@@ -57,13 +53,8 @@ export const VALID_ROLES = Object.freeze(['user', 'admin', 'teacher']);
  */
 export const ROLE_PERMISSIONS = Object.freeze({
   admin: [Permission.WILDCARD],
-  user: [
-    Permission.TEACHER_APPLICATION_CREATE,
-    Permission.TEACHER_APPLICATION_READ_OWN,
-  ],
+  user: [],
   teacher: [
-    Permission.TEACHER_APPLICATION_CREATE,
-    Permission.TEACHER_APPLICATION_READ_OWN,
     Permission.TEACHER_CLASSROOM_MANAGE,
     Permission.TEACHER_CLASSROOM_MEMBERS_MANAGE,
     Permission.TEACHER_EXAM_MANAGE,

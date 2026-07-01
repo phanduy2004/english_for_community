@@ -12,6 +12,7 @@ import ListeningCompAttempt from '../models/ListeningCompAttempt.js';
 import Reading from '../models/Reading.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import SpeakingAttempt from '../models/SpeakingAttempt.js';
+import { toSpeakingSetObjectId } from '../lib/speakingSetId.js';
 import {
   examTimeBounds,
   fetchListeningRecords,
@@ -319,9 +320,12 @@ async function scoreReadingSection(sec, attempt, ctx) {
  * near_session or latest_linked — old practice records must never pollute exam scores.
  */
 async function fetchSpeakingRecordsExamStrict(userId, speakingSetId, bounds) {
+  const setOid = toSpeakingSetObjectId(speakingSetId);
+  if (!setOid) return [];
+
   const records = await SpeakingAttempt.find({
     userId,
-    speakingSetId: String(speakingSetId),
+    speakingSetId: setOid,
     $or: [
       { createdAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },
       { submittedAt: { $gte: bounds.strictStart, $lte: bounds.strictEnd } },

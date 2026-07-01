@@ -21,7 +21,6 @@ import '../../../core/get_it/get_it.dart';
 import '../content_management/content_dashboard_page.dart';
 import '../ops_center/admin_ops_center_page.dart';
 import '../release_management/release_management_page.dart';
-import '../teacher_applications/admin_teacher_applications_page.dart';
 import '../report_management/report_management_page.dart';
 import '../submission_managerment/activity_history_page.dart';
 import '../user_management/user_management_page.dart';
@@ -295,12 +294,6 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
           subtitle: l10n.usersMenuSub,
           accent: AppColors.success,
           onTap: () => context.pushNamed(UserManagementPage.routeName),
-        ),
-        AdminNavTile(
-          icon: Icons.how_to_reg_outlined,
-          title: l10n.adminTeacherApplicationsTitle,
-          subtitle: l10n.adminTeacherApplicationsSubtitle,
-          onTap: () => context.pushNamed(AdminTeacherApplicationsPage.routeName),
         ),
         AdminNavTile(
           icon: Icons.tune_outlined,

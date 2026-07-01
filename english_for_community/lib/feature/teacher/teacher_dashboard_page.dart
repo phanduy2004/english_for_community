@@ -156,12 +156,6 @@ class _TeacherDashboardView extends StatelessWidget {
               color: AppColors.textSecondary,
               tooltip: l10n.retry,
             ),
-            OutlinedButton.icon(
-              style: TeacherWebUi.compactOutlinedStyle(context),
-              onPressed: () => _createClass(context),
-              icon: const Icon(Icons.groups_outlined, size: 16),
-              label: Text(l10n.teacherClassCreateTitle),
-            ),
             FilledButton.icon(
               style: TeacherWebUi.compactFilledStyle(context),
               onPressed: () => _newSkillsExam(context),

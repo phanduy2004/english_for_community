@@ -1,0 +1,98 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    darkMode: false
+    background: "#ffffff"
+    lineColor: "#000000"
+    fontSize: 16px
+---
+classDiagram
+    direction TB
+
+    class User {
+        +ObjectId _id
+        +String fullName
+        +String role
+    }
+    class Classroom {
+        +ObjectId _id
+        +String name
+    }
+    class Exam {
+        +ObjectId _id
+        +ObjectId teacherId
+        +String title
+        +String description
+        +String status
+        +Number contentVersion
+        +Object[] sections
+        +Object settings
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ExamAssignment {
+        +ObjectId _id
+        +ObjectId examId
+        +ObjectId teacherId
+        +ObjectId classroomId
+        +String audience
+        +String mode
+        +Object config
+        +Object publicJoin
+        +String status
+        +Object examSnapshot
+        +Date examSnapshotFrozenAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ExamSession {
+        +ObjectId _id
+        +ObjectId assignmentId
+        +ObjectId leaderTeacherId
+        +String status
+        +String roomCode
+        +ObjectId[] joinedUserIds
+        +ObjectId[] readyUserIds
+        +Date startedAt
+        +Date endedAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class ExamAttempt {
+        +ObjectId _id
+        +ObjectId assignmentId
+        +ObjectId sessionId
+        +ObjectId userId
+        +String status
+        +Object answers
+        +Object scores
+        +String gradingState
+        +Boolean resultsReleased
+        +Object integrity
+        +Date startedAt
+        +Date submittedAt
+        +Date attemptDeadlineAt
+        +Date createdAt
+        +Date updatedAt
+    }
+    class TeacherAssignmentPreset {
+        +ObjectId _id
+        +ObjectId teacherId
+        +String name
+        +Object config
+        +Date createdAt
+        +Date updatedAt
+    }
+
+    User "1" --> "0..*" Exam
+    User "1" --> "0..*" ExamAssignment
+    User "1" --> "0..*" ExamSession
+    User "1" --> "0..*" ExamAttempt
+    User "1" --> "0..*" TeacherAssignmentPreset
+    Exam "1" --> "0..*" ExamAssignment
+    Classroom "0..1" ..> "0..*" ExamAssignment
+    ExamAssignment "1" --> "0..*" ExamSession
+    ExamAssignment "1" --> "0..*" ExamAttempt
+    ExamSession "0..1" ..> "0..*" ExamAttempt

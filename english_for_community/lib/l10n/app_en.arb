@@ -357,7 +357,7 @@
   "registerAccountTypeLabel": "Account type",
   "registerAccountTypeStudent": "Student",
   "registerAccountTypeTeacher": "Teacher",
-  "registerAccountTypeTeacherHint": "Teacher accounts need admin approval before you can create classes.",
+  "registerAccountTypeTeacherHint": "You can create classes and manage exams right after signing up.",
   "labelFullName": "Full Name *",
   "hintFullName": "John Doe",
   "labelUsername": "Username *",
@@ -1695,6 +1695,10 @@
   "teacherLiveMirrorReadingQuestion": "Question {number}",
   "@teacherLiveMirrorReadingQuestion": {
     "placeholders": { "number": { "type": "int" } }
+  },
+  "teacherLiveMirrorExerciseLabel": "Exercise {index}/{total}",
+  "@teacherLiveMirrorExerciseLabel": {
+    "placeholders": { "index": { "type": "int" }, "total": { "type": "int" } }
   },
   "examSessionStatusLobby": "Waiting room (lobby)",
   "examSessionStatusLive": "Exam in progress",

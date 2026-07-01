@@ -1,0 +1,322 @@
+@startuml E4C_Database_Domain_Learning
+' Mien Hoc tap — 4 ky nang: Nghe, Doc, Viet, Noi (16 collection)
+' Hinh 3 trong bo bao cao
+
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 9
+skinparam classFontSize 9
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title Chi tiet mien Noi dung & Luyen tap — 4 ky nang (16 collection)
+
+class User <<Entity>> {
+  +_id : ObjectId
+}
+
+package "Nghe — Dictation + Comprehension" as PKG_LISTEN {
+
+  class Listening <<Entity>> {
+    +_id : ObjectId
+    +code : String
+    +title : String
+    +audioUrl : String
+    +playbackPad : Object
+    +difficulty : String
+    +tags : String[]
+    +transcript : String
+    +cues : CueSchema[]
+    +_destroy : Boolean
+    +deletedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class CueSchema <<Embed>> {
+    +_id : ObjectId
+    +startMs : Number
+    +endMs : Number
+    +spk : String
+    +text : String
+    +textNorm : String
+    +meaning : String
+  }
+
+  class DictationAttempt <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +listeningId : ObjectId
+    +cueIdx : Number
+    +userText : String
+    +userTextNorm : String
+    +score : Object
+    +attemptsCount : Number
+    +durationInSeconds : Number
+    +playedMs : Number
+    +submittedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class Enrollment <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +listeningId : ObjectId
+    +completedCueIds : ObjectId[]
+    +progress : Number
+    +lastAccessedAt : Date
+    +isCompleted : Boolean
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class CueComment <<Entity>> {
+    +_id : ObjectId
+    +listeningId : ObjectId
+    +cueId : String
+    +userId : ObjectId
+    +content : String
+    +parentId : ObjectId
+    +reactions : Reaction[]
+    +createdAt : Date
+  }
+
+  class Reaction <<Embed>> {
+    +userId : ObjectId
+    +type : String
+  }
+
+  class ListeningComprehension <<Entity>> {
+    +_id : ObjectId
+    +title : String
+    +summary : String
+    +audioUrl : String
+    +transcript : String
+    +difficulty : String
+    +imageUrl : String
+    +minutesToComplete : Number
+    +questions : QuestionSubSchema[]
+    +_destroy : Boolean
+    +deletedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class QuestionSubSchema <<Embed>> {
+    +_id : ObjectId
+    +questionText : String
+    +options : String[]
+    +correctAnswerIndex : Number
+    +feedback : Object
+  }
+
+  class ListeningCompAttempt <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +listeningId : ObjectId
+    +answers : Object[]
+    +score : Number
+    +correctCount : Number
+    +totalQuestions : Number
+    +durationInSeconds : Number
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  Listening "1" *-- "0..*" CueSchema
+  ListeningComprehension "1" *-- "0..*" QuestionSubSchema
+  CueComment "1" *-- "0..*" Reaction
+  Listening "1" --> "0..*" DictationAttempt
+  Listening "1" --> "0..*" Enrollment
+  Listening "1" --> "0..*" CueComment
+  ListeningComprehension "1" --> "0..*" ListeningCompAttempt
+  CueComment "0..1" --> "0..*" CueComment
+}
+
+package "Doc — Reading" as PKG_READ {
+
+  class Reading <<Entity>> {
+    +_id : ObjectId
+    +title : String
+    +summary : String
+    +content : String
+    +translation : Object
+    +difficulty : String
+    +imageUrl : String
+    +minutesToRead : Number
+    +questions : ReadingQuestionSubSchema[]
+    +_destroy : Boolean
+    +deletedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class ReadingQuestionSubSchema <<Embed>> {
+    +_id : ObjectId
+    +questionText : String
+    +options : String[]
+    +correctAnswerIndex : Number
+    +feedback : Object
+    +translation : Object
+  }
+
+  class ReadingProgress <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +readingId : ObjectId
+    +status : String
+    +highScore : Number
+    +attemptsCount : Number
+    +lastAttemptedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class ReadingAttempt <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +readingId : ObjectId
+    +answers : AnswerSubSchema[]
+    +score : Number
+    +correctCount : Number
+    +totalQuestions : Number
+    +durationInSeconds : Number
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class AnswerSubSchema <<Embed>> {
+    +questionId : ObjectId
+    +chosenIndex : Number
+    +isCorrect : Boolean
+  }
+
+  Reading "1" *-- "0..*" ReadingQuestionSubSchema
+  ReadingAttempt "1" *-- "0..*" AnswerSubSchema
+  Reading "1" --> "0..*" ReadingProgress
+  Reading "1" --> "0..*" ReadingAttempt
+}
+
+package "Viet — Writing" as PKG_WRITE {
+
+  class WritingTopic <<Entity>> {
+    +_id : ObjectId
+    +name : String
+    +isActive : Boolean
+    +approvalStatus : String
+    +approval : Object
+    +aiConfig : Object
+    +stats : Object
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class WritingTopicVersion <<Entity>> {
+    +_id : ObjectId
+    +topicId : ObjectId
+    +snapshot : Object
+    +changedBy : ObjectId
+    +changeReason : String
+    +createdAt : Date
+  }
+
+  class WritingSubmission <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +topicId : ObjectId
+    +generatedPrompt : Object
+    +content : String
+    +wordCount : Number
+    +durationInSeconds : Number
+    +status : String
+    +startedAt : Date
+    +submittedAt : Date
+    +feedback : Object
+    +score : Number
+    +reviewedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  WritingTopic "1" --> "0..*" WritingSubmission
+  WritingTopic "1" --> "0..*" WritingTopicVersion
+}
+
+package "Noi — Speaking" as PKG_SPEAK {
+
+  class SpeakingSet <<Entity>> {
+    +_id : ObjectId
+    +title : String
+    +description : String
+    +level : String
+    +mode : String
+    +sentences : SentenceSchema[]
+    +_destroy : Boolean
+    +deletedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class SentenceSchema <<Embed>> {
+    +id : String
+    +order : Number
+    +speaker : String
+    +script : String
+    +phonetic_script : String
+  }
+
+  class SpeakingEnrollment <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +speakingSetId : ObjectId
+    +completedSentenceIds : String[]
+    +progress : Number
+    +averageWer : Number
+    +lastAccessedAt : Date
+    +isCompleted : Boolean
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  class SpeakingAttempt <<Entity>> {
+    +_id : ObjectId
+    +userId : ObjectId
+    +speakingSetId : ObjectId
+    +sentenceId : String
+    +userTranscript : String
+    +userAudioUrl : String
+    +audioDurationSeconds : Number
+    +score : Object
+    +submittedAt : Date
+    +createdAt : Date
+    +updatedAt : Date
+  }
+
+  SpeakingSet "1" *-- "0..*" SentenceSchema
+  SpeakingSet "1" --> "0..*" SpeakingEnrollment
+  SpeakingSet "1" --> "0..*" SpeakingAttempt
+}
+
+' --- User -> tat ca attempt/progress ---
+User "1" --> "0..*" DictationAttempt
+User "1" --> "0..*" Enrollment
+User "1" --> "0..*" CueComment
+User "1" --> "0..*" ListeningCompAttempt
+User "1" --> "0..*" ReadingProgress
+User "1" --> "0..*" ReadingAttempt
+User "1" --> "0..*" WritingSubmission
+User "0..1" --> "0..*" WritingTopicVersion
+User "1" --> "0..*" SpeakingEnrollment
+User "1" --> "0..*" SpeakingAttempt
+
+note bottom
+  **Pattern:** Content (CMS) -> Enrollment/Progress -> Attempt
+  Enrollment (dictation) != ClassroomMember (lop hoc)
+end note
+
+@enduml

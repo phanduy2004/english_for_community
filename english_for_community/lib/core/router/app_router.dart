@@ -79,7 +79,6 @@ import '../../feature/vocabulary/dict_demo_page.dart';
 import '../../feature/vocabulary/dict_detail_page.dart';
 import '../../feature/vocabulary/review_session_page.dart';
 
-import '../../feature/teacher/teacher_apply_page.dart';
 import '../../feature/teacher/teacher_dashboard_page.dart';
 import '../../feature/teacher/teacher_classroom_detail_page.dart';
 import '../../feature/teacher/teacher_exam_session_console_page.dart';
@@ -101,7 +100,6 @@ import '../../feature/student/exams/exam_assignments_page.dart';
 import '../../feature/student/exams/exam_runner_page.dart';
 import '../../feature/student/exams/public_exam_join_page.dart';
 import '../../feature/student/exams/exam_session_lobby_page.dart';
-import '../../feature/admin/teacher_applications/admin_teacher_applications_page.dart';
 import '../../feature/classroom_chat/classroom_chat_page.dart';
 // Route Constants
 const String kReadingDetailRouteName = 'reading-detail';
@@ -189,7 +187,6 @@ class AppRouter {
         // 🟢 TEACHER — vào workspace giáo viên, không qua Home học sinh
         else if (role == 'teacher') {
           final isDictionaryRoute = location.startsWith('/dictionary');
-          final isTeacherApply = location == TeacherApplyPage.routePath;
           final isAccountRoute = location.startsWith('/profile');
 
           if (publicRoutes.contains(location) && !isDictionaryRoute ||
@@ -198,7 +195,6 @@ class AppRouter {
           }
 
           if (!location.startsWith('/teacher') &&
-              !isTeacherApply &&
               !isAccountRoute &&
               !isDictionaryRoute) {
             return TeacherDashboardPage.routePath;
@@ -212,8 +208,7 @@ class AppRouter {
         else {
           final isDictionaryRoute = location.startsWith('/dictionary');
 
-          if (location.startsWith('/teacher') &&
-              location != TeacherApplyPage.routePath) {
+          if (location.startsWith('/teacher')) {
             return HomePage.routePath;
           }
 
@@ -246,11 +241,6 @@ class AppRouter {
             path: '/admin-dashboard',
             name: AdminDashboardPage.routeName,
             builder: (context, state) => const AdminDashboardPage(),
-          ),
-          GoRoute(
-            path: AdminTeacherApplicationsPage.routePath,
-            name: AdminTeacherApplicationsPage.routeName,
-            builder: (context, state) => const AdminTeacherApplicationsPage(),
           ),
           GoRoute(
             path: AdminOpsCenterPage.routePath,
@@ -398,11 +388,6 @@ class AppRouter {
         path: EditProfilePage.routePath,
         name: EditProfilePage.routeName,
         builder: (context, state) => EditProfilePage(),
-      ),
-      GoRoute(
-        path: TeacherApplyPage.routePath,
-        name: TeacherApplyPage.routeName,
-        builder: (context, state) => const TeacherApplyPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

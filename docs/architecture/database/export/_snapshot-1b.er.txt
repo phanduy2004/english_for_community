@@ -1,0 +1,92 @@
+erDiagram
+    User {
+        objectId ＋_id PK
+        string ＋fullName
+        string ＋role
+    }
+
+    Classroom {
+        objectId ＋_id
+        string ＋name
+    }
+
+    Exam {
+        objectId ＋_id
+        objectId ＋teacherId
+        string ＋title
+        string ＋description
+        string ＋status
+        number ＋contentVersion
+        object_array ＋sections
+        object ＋settings
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ExamAssignment {
+        objectId ＋_id
+        objectId ＋examId
+        objectId ＋teacherId
+        objectId ＋classroomId
+        string ＋audience
+        string ＋mode
+        object ＋config
+        object ＋publicJoin
+        string ＋status
+        object ＋examSnapshot
+        date ＋examSnapshotFrozenAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ExamSession {
+        objectId ＋_id
+        objectId ＋assignmentId
+        objectId ＋leaderTeacherId
+        string ＋status
+        string ＋roomCode
+        objectId_array ＋joinedUserIds
+        objectId_array ＋readyUserIds
+        date ＋startedAt
+        date ＋endedAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    ExamAttempt {
+        objectId ＋_id
+        objectId ＋assignmentId
+        objectId ＋sessionId
+        objectId ＋userId
+        string ＋status
+        object ＋answers
+        object ＋scores
+        string ＋gradingState
+        boolean ＋resultsReleased
+        object ＋integrity
+        date ＋startedAt
+        date ＋submittedAt
+        date ＋attemptDeadlineAt
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    TeacherAssignmentPreset {
+        objectId ＋_id
+        objectId ＋teacherId
+        string ＋name
+        object ＋config
+        date ＋createdAt
+        date ＋updatedAt
+    }
+
+    User ||--o{ Exam : " "
+    User ||--o{ ExamAssignment : " "
+    User ||--o{ ExamSession : " "
+    User ||--o{ ExamAttempt : " "
+    User ||--o{ TeacherAssignmentPreset : " "
+    Exam ||--o{ ExamAssignment : " "
+    Classroom |o--o{ ExamAssignment : " "
+    ExamAssignment ||--o{ ExamSession : " "
+    ExamAssignment ||--o{ ExamAttempt : " "
+    ExamSession |o--o{ ExamAttempt : " "

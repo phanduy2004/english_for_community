@@ -82,12 +82,14 @@ Map<String, dynamic> summaryFromLiveMonitorStudents(List<Map<String, dynamic>> s
   };
 }
 
-/// Attach parsed skill strips once per merge to avoid re-parsing in list tiles.
+/// Re-parse skill strips only when the raw `skillStrips` reference changes (new socket patch),
+/// otherwise reuse the cached parse — avoids both re-parsing every emit AND going stale.
 Map<String, dynamic> enrichLiveMonitorStudentRow(Map<String, dynamic> row) {
   final next = Map<String, dynamic>.from(row);
-  if (next['skillStrips'] is List && next['_parsedSkillStrips'] == null) {
-    next['_parsedSkillStrips'] =
-        TeacherExamQuestionStripSection.parseStrips(next['skillStrips']);
+  final raw = next['skillStrips'];
+  if (raw is List && !identical(next['_parsedSkillStripsSource'], raw)) {
+    next['_parsedSkillStrips'] = TeacherExamQuestionStripSection.parseStrips(raw);
+    next['_parsedSkillStripsSource'] = raw;
   }
   return next;
 }

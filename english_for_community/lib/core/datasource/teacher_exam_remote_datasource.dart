@@ -1,25 +1,10 @@
 import 'package:dio/dio.dart';
 
-/// Teacher applications, classrooms, teacher exams, and student exam runtime (same authorized Dio).
+/// Teacher classrooms, teacher exams, and student exam runtime (same authorized Dio).
 class TeacherExamRemoteDatasource {
   TeacherExamRemoteDatasource({required this.dio});
 
   final Dio dio;
-
-  Future<dynamic> getMyTeacherApplication() async {
-    final r = await dio.get('teacher/applications/me');
-    return r.data;
-  }
-
-  Future<dynamic> submitTeacherApplication(Map<String, dynamic> body) async {
-    final r = await dio.post('teacher/applications', data: body);
-    return r.data;
-  }
-
-  Future<dynamic> withdrawTeacherApplication() async {
-    final r = await dio.post('teacher/applications/withdraw');
-    return r.data;
-  }
 
   Future<List<dynamic>> listMyClassroomsAsTeacher() async {
     final r = await dio.get('classrooms/mine');

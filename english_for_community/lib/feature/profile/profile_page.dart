@@ -23,7 +23,6 @@ import '../auth/login_page.dart';
 import 'change_password_dialog.dart';
 import 'my_exercise_history/my_exercise_history_page.dart';
 import '../../feature/student/classes/my_classes_hub_page.dart';
-import '../../feature/teacher/teacher_apply_page.dart';
 import '../../feature/teacher/teacher_dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -409,16 +408,6 @@ class _ProfilePageState extends State<ProfilePage> {
                           subtitle: t.profileTeacherHubSubtitle,
                           skill: SkillType.writing,
                           onTap: () => context.push(TeacherDashboardPage.routePath),
-                        ),
-                      ],
-                      if (user.role == 'user') ...[
-                        const _GroupDivider(),
-                        _SettingsTile(
-                          icon: Icons.person_add_alt_1_outlined,
-                          title: t.profileApplyTeacherTitle,
-                          subtitle: t.profileApplyTeacherSubtitle,
-                          skill: SkillType.writing,
-                          onTap: () => context.push(TeacherApplyPage.routePath),
                         ),
                       ],
                     ],
