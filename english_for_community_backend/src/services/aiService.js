@@ -7,7 +7,7 @@ dotenv.config();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Model Groq dùng chung (chat, writing prompt, feedback). Đổi một chỗ — tránh model cũ / không tồn tại.
-export const GROQ_MODEL_NAME = "llama-3.3-70b-versatile";
+export const GROQ_MODEL_NAME = process.env.GROQ_MODEL_NAME || "openai/gpt-oss-120b";
 const MODEL_NAME = GROQ_MODEL_NAME;
 
 // Hàm clean JSON (Loại bỏ ```json ... ```)

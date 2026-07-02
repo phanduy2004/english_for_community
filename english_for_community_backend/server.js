@@ -6,6 +6,7 @@ import { initSocket } from './src/socket/socketManager.js';
 import {initSmartNotificationJob} from "./src/jobs/smartNotificationJob.js";
 import { initAppReleaseSchedulerJob } from './src/jobs/appReleaseSchedulerJob.js';
 import { initExamAttemptExpireJob } from './src/jobs/examAttemptExpireJob.js';
+import { initExamSessionExpireJob } from './src/jobs/examSessionExpireJob.js';
 import User from './src/models/User.js';
 
 import { getMongoUri, getMongoUriForLog, getMongoDbName } from './src/lib/mongoUri.js';
@@ -47,6 +48,7 @@ initSocket(httpServer);
 initSmartNotificationJob();
 initAppReleaseSchedulerJob();
 initExamAttemptExpireJob();
+initExamSessionExpireJob();
 // 3. Lắng nghe port (Dùng httpServer.listen thay vì app.listen)
 const PORT = Number(process.env.PORT ?? 3000);
 httpServer.listen(PORT, () => {

@@ -111,6 +111,30 @@ async function maybeAutoEndLiveSessionIfDue(session) {
 export const examSessionService = {
   maybeAutoEndLiveSessionIfDue,
 
+  /** Cron sweep: close every live session whose scheduled end (time limit / hardEndAt) has passed. */
+  async bulkAutoEndDueLiveSessions() {
+    const now = Date.now();
+    const sessions = await ExamSession.find({ status: 'live' })
+      .populate({ path: 'assignmentId', select: 'config mode' });
+    let closed = 0;
+    for (const session of sessions) {
+      const assignment =
+        session.assignmentId && typeof session.assignmentId === 'object'
+          ? session.assignmentId
+          : null;
+      if (!assignment) continue;
+      const end = computeSessionScheduledEnd(session, assignment);
+      if (!end || end.getTime() > now) continue;
+      try {
+        await examSessionService.endSession(session.leaderTeacherId, session._id);
+        closed += 1;
+      } catch {
+        /* race or already ended */
+      }
+    }
+    return closed;
+  },
+
   /**
    * Payload for Socket.IO `exam_session_state` + teacher GET lobby (participants = students in lobby, no teacher row).
    */

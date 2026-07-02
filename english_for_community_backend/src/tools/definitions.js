@@ -1,268 +1,205 @@
-export const geminiTools = [
-  {
-    functionDeclarations: [
-      // ========================================
-      // 1. LỊCH SỬ HỌC TẬP TỔNG QUAN
-      // ========================================
-      {
-        name: "get_learning_history",
-        description:
-          "Thống kê UserDailyProgress (phút học, từ mới, điểm TB) trong khoảng ngày. Chỉ dùng khi đã có chính xác startDate/endDate (YYYY-MM-DD). KHÔNG bịa ngày — với hôm nay/tuần/tháng dùng get_learning_history_period hoặc get_daily_activity.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            startDate: { type: "STRING", description: "Ngày bắt đầu (YYYY-MM-DD)" },
-            endDate: { type: "STRING", description: "Ngày kết thúc (YYYY-MM-DD)" }
-          },
-          required: ["startDate", "endDate"],
-        },
-      },
-      {
-        name: "get_learning_history_period",
-        description:
-          "Giống get_learning_history nhưng server tự tính ngày theo múi giờ user: today | week (7 ngày gần nhất tính đến hôm nay) | last_week (tuần dương lịch trước: Thứ Hai–Chủ nhật, KHÔNG gồm tuần hiện tại) | month (từ mùng 1 đến hôm nay). Với \"tuần trước / last week\" bắt buộc dùng last_week, không dùng week.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            range: {
-              type: "STRING",
-              enum: ["today", "week", "last_week", "month"],
-              description:
-                "today = hôm nay; week = 7 ngày lùi từ hôm nay (rolling); last_week = tuần dương lịch trước (Thứ Hai–Chủ nhật); month = tháng hiện tại",
-            },
-          },
-        },
-      },
-      {
-        name: "get_daily_activity",
-        description:
-          "Danh sách bài đã làm trong MỘT ngày (khớp màn Progress/Lịch sử app): đếm số activity và từng tiêu đề. Dùng khi user hỏi hôm nay làm mấy bài / progress hôm nay.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            date: {
-              type: "STRING",
-              description: "YYYY-MM-DD (tùy chọn). Bỏ trống = hôm nay theo timezone user.",
-            },
-          },
-        },
-      },
+const tool = (name, description, properties = {}, required = []) => ({
+  type: 'function',
+  function: {
+    name,
+    description,
+    parameters: {
+      type: 'object',
+      properties,
+      required,
+    },
+  },
+});
 
-      // ========================================
-      // 2. CHI TIẾT SPEAKING (Mở rộng)
-      // ========================================
-      {
-        name: "get_speaking_details",
-        description:
-          "Danh sách bài Speaking đã hoàn thành. Có thể lọc theo khoảng ngày (theo timezone user) để khớp 'hôm nay'.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" },
-            mode: {
-              type: "STRING",
-              enum: ["Read-aloud", "Shadowing", "all"],
-              description: "Lọc theo chế độ Speaking (không bắt buộc)"
-            },
-            startDate: { type: "STRING", description: "Lọc lastAccessedAt từ ngày (YYYY-MM-DD), dùng cùng endDate" },
-            endDate: { type: "STRING", description: "Lọc đến ngày (YYYY-MM-DD)" },
-          },
-        },
+export const chatTools = [
+  tool(
+    'get_learning_history',
+    'Summarize UserDailyProgress between exact YYYY-MM-DD startDate and endDate. Use only when exact dates are known; otherwise use get_learning_history_period or get_daily_activity.',
+    {
+      startDate: { type: 'string', description: 'Start date YYYY-MM-DD' },
+      endDate: { type: 'string', description: 'End date YYYY-MM-DD' },
+    },
+    ['startDate', 'endDate']
+  ),
+  tool(
+    'get_learning_history_period',
+    'Server computes the date range in the user timezone: today, week, last_week, or month.',
+    {
+      range: {
+        type: 'string',
+        enum: ['today', 'week', 'last_week', 'month'],
+        description: 'today = user local today; week = rolling 7 days; last_week = previous calendar week; month = current month to today',
       },
-
-      // ========================================
-      // 3. CHI TIẾT READING (Mở rộng)
-      // ========================================
-      {
-        name: "get_reading_details",
-        description:
-          "Bài Reading đã hoàn thành. Truyền startDate+endDate (YYYY-MM-DD) để chỉ lấy bài có hoạt động trong khoảng đó (ví dụ hôm nay).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" },
-            difficulty: {
-              type: "STRING",
-              enum: ["easy", "medium", "hard", "all"],
-              description: "Lọc theo độ khó (không bắt buộc)"
-            },
-            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
-            endDate: { type: "STRING", description: "YYYY-MM-DD" },
-          },
-        },
+    }
+  ),
+  tool(
+    'get_daily_activity',
+    'List completed activities for one calendar day in the user timezone. Use for questions about today or a specific day.',
+    {
+      date: { type: 'string', description: 'Optional YYYY-MM-DD. Empty means today in user timezone.' },
+    }
+  ),
+  tool(
+    'get_speaking_details',
+    'List completed Speaking exercises. Can filter by date range and mode.',
+    {
+      limit: { type: 'number', description: 'Number of recent exercises, default 5' },
+      mode: {
+        type: 'string',
+        enum: ['Read-aloud', 'Shadowing', 'all'],
+        description: 'Optional speaking mode filter',
       },
-
-      // ========================================
-      // 4. CHI TIẾT WRITING (Mở rộng)
-      // ========================================
-      {
-        name: "get_writing_details",
-        description: "Bài Writing đã nộp. Có thể lọc submittedAt theo startDate/endDate (YYYY-MM-DD).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" },
-            topicId: {
-              type: "STRING",
-              description: "Lọc theo Topic cụ thể (không bắt buộc)"
-            },
-            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
-            endDate: { type: "STRING", description: "YYYY-MM-DD" },
-          },
-        },
+      startDate: { type: 'string', description: 'Optional YYYY-MM-DD with endDate' },
+      endDate: { type: 'string', description: 'Optional YYYY-MM-DD with startDate' },
+    }
+  ),
+  tool(
+    'get_reading_details',
+    'List completed Reading exercises. Can filter by date range and difficulty.',
+    {
+      limit: { type: 'number', description: 'Number of recent exercises, default 5' },
+      difficulty: {
+        type: 'string',
+        enum: ['easy', 'medium', 'hard', 'all'],
+        description: 'Optional difficulty filter',
       },
-
-      // ========================================
-      // 5. CHI TIẾT LISTENING/DICTATION
-      // ========================================
-      {
-        name: "get_listening_details",
-        description:
-          "Bài Dictation đã hoàn thành. startDate+endDate (YYYY-MM-DD) lọc theo lastAccessedAt trong ngày của user.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            limit: { type: "NUMBER", description: "Số lượng bài gần nhất (mặc định 5)" },
-            startDate: { type: "STRING", description: "YYYY-MM-DD (kèm endDate)" },
-            endDate: { type: "STRING", description: "YYYY-MM-DD" },
-          },
-        },
+      startDate: { type: 'string', description: 'Optional YYYY-MM-DD with endDate' },
+      endDate: { type: 'string', description: 'Optional YYYY-MM-DD with startDate' },
+    }
+  ),
+  tool(
+    'get_writing_details',
+    'List submitted Writing tasks. Can filter by topicId or submittedAt date range.',
+    {
+      limit: { type: 'number', description: 'Number of recent submissions, default 5' },
+      topicId: { type: 'string', description: 'Optional topic ObjectId' },
+      startDate: { type: 'string', description: 'Optional YYYY-MM-DD with endDate' },
+      endDate: { type: 'string', description: 'Optional YYYY-MM-DD with startDate' },
+    }
+  ),
+  tool(
+    'get_listening_details',
+    'List completed Dictation/Listening exercises. Can filter by lastAccessedAt date range.',
+    {
+      limit: { type: 'number', description: 'Number of recent exercises, default 5' },
+      startDate: { type: 'string', description: 'Optional YYYY-MM-DD with endDate' },
+      endDate: { type: 'string', description: 'Optional YYYY-MM-DD with startDate' },
+    }
+  ),
+  tool(
+    'get_vocab_list',
+    'Get vocabulary by status: learning, saved, or recent.',
+    {
+      status: {
+        type: 'string',
+        enum: ['learning', 'saved', 'recent'],
+        description: 'Vocabulary status',
       },
-
-      // ========================================
-      // 6. TỪ VỰNG (Mở rộng)
-      // ========================================
-      {
-        name: "get_vocab_list",
-        description: "Lấy danh sách từ vựng theo trạng thái (đang học, đã lưu, gần đây).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            status: {
-              type: "STRING",
-              enum: ["learning", "saved", "recent"],
-              description: "Trạng thái từ vựng"
-            },
-            limit: { type: "NUMBER", description: "Số lượng từ (mặc định 10)" }
-          },
-        },
+      limit: { type: 'number', description: 'Number of words, default 10' },
+    }
+  ),
+  tool(
+    'get_vocab_review',
+    'Get words due for review today.',
+    {
+      limit: { type: 'number', description: 'Number of words, default 20' },
+    }
+  ),
+  tool(
+    'get_skill_statistics',
+    'Get statistics for a specific skill over a period.',
+    {
+      skill: {
+        type: 'string',
+        enum: ['reading', 'writing', 'speaking', 'listening', 'vocab'],
+        description: 'Skill to inspect',
       },
-
-      // ========================================
-      // 7. TỪ VỰNG CẦN ÔN TẬP (Mới)
-      // ========================================
-      {
-        name: "get_vocab_review",
-        description: "Lấy danh sách từ vựng cần ôn tập hôm nay (theo thuật toán Ebbinghaus).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            limit: { type: "NUMBER", description: "Số lượng từ (mặc định 20)" }
-          },
-        },
+      range: {
+        type: 'string',
+        enum: ['today', 'day', 'week', 'last_week', 'month'],
+        description: 'Period, default week',
       },
-
-      // ========================================
-      // 8. THỐNG KÊ THEO KỸ NĂNG (Mới)
-      // ========================================
-      {
-        name: "get_skill_statistics",
-        description: "Lấy thống kê chi tiết cho một kỹ năng cụ thể trong khoảng thời gian.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            skill: {
-              type: "STRING",
-              enum: ["reading", "writing", "speaking", "listening", "vocab"],
-              description: "Kỹ năng cần xem thống kê"
-            },
-            range: {
-              type: "STRING",
-              enum: ["today", "day", "week", "last_week", "month"],
-              description: "today/day = hôm nay; week = 7 ngày lùi đến hôm nay; last_week = tuần dương lịch trước; month = từ mùng 1 (timezone user). Mặc định: week"
-            }
-          },
-          required: ["skill"]
-        },
+    },
+    ['skill']
+  ),
+  tool(
+    'get_leaderboard',
+    'Get public top users by XP and the current user rank if present.',
+    {}
+  ),
+  tool(
+    'get_exercises_by_difficulty',
+    'Find exercises matching a skill and difficulty that the user has not completed yet.',
+    {
+      skill: {
+        type: 'string',
+        enum: ['reading', 'speaking', 'listening'],
+        description: 'Exercise skill',
       },
-
-      // ========================================
-      // 9. BẢNG XẾP HẠNG (Mới)
-      // ========================================
-      {
-        name: "get_leaderboard",
-        description: "Lấy bảng xếp hạng người dùng theo điểm tích lũy (XP).",
-        parameters: {
-          type: "OBJECT",
-          properties: {},
-        },
+      difficulty: {
+        type: 'string',
+        enum: ['easy', 'medium', 'hard', 'Beginner', 'Intermediate', 'Advanced'],
+        description: 'Exercise difficulty',
       },
-
-      // ========================================
-      // 10. TÌM BÀI TẬP THEO ĐỘ KHÓ (Mới)
-      // ========================================
-      {
-        name: "get_exercises_by_difficulty",
-        description: "Tìm các bài tập phù hợp với trình độ người dùng (chưa làm hoặc điểm thấp).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            skill: {
-              type: "STRING",
-              enum: ["reading", "speaking", "listening"],
-              description: "Loại bài tập"
-            },
-            difficulty: {
-              type: "STRING",
-              enum: ["easy", "medium", "hard", "Beginner", "Intermediate", "Advanced"],
-              description: "Độ khó"
-            },
-            limit: { type: "NUMBER", description: "Số lượng bài (mặc định 5)" }
-          },
-          required: ["skill", "difficulty"]
-        },
+      limit: { type: 'number', description: 'Number of exercises, default 5' },
+    },
+    ['skill', 'difficulty']
+  ),
+  tool(
+    'analyze_weaknesses',
+    'Analyze weak or neglected skills from recent learning history.',
+    {
+      range: {
+        type: 'string',
+        enum: ['today', 'day', 'week', 'last_week', 'month'],
+        description: 'Period, default week',
       },
-
-      // ========================================
-      // 11. PHÂN TÍCH ĐIỂM YẾU (Mới)
-      // ========================================
-      {
-        name: "analyze_weaknesses",
-        description: "Phân tích điểm yếu của người dùng dựa trên lịch sử học tập (kỹ năng nào điểm thấp, ít luyện tập).",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            range: {
-              type: "STRING",
-              enum: ["today", "day", "week", "last_week", "month"],
-              description: "today/day = hôm nay; week = 7 ngày; last_week = tuần dương lịch trước; month theo timezone user (mặc định: week)"
-            }
-          }
-        },
+    }
+  ),
+  tool(
+    'get_lesson_detail',
+    'Get one Reading, Listening, or Speaking lesson and the user history for that lesson.',
+    {
+      lessonType: {
+        type: 'string',
+        enum: ['reading', 'listening', 'speaking'],
+        description: 'Lesson type',
       },
-
-      // ========================================
-      // 12. CHI TIẾT MỘT BÀI HỌC CỤ THỂ (Mới)
-      // ========================================
-      {
-        name: "get_lesson_detail",
-        description: "Lấy chi tiết một bài học cụ thể (Reading/Listening/Speaking) kèm lịch sử làm bài.",
-        parameters: {
-          type: "OBJECT",
-          properties: {
-            lessonType: {
-              type: "STRING",
-              enum: ["reading", "listening", "speaking"],
-              description: "Loại bài học"
-            },
-            lessonId: {
-              type: "STRING",
-              description: "ID của bài học"
-            }
-          },
-          required: ["lessonType", "lessonId"]
-        },
-      }
-    ]
-  }
+      lessonId: { type: 'string', description: 'Lesson ObjectId' },
+    },
+    ['lessonType', 'lessonId']
+  ),
+  tool(
+    'get_profile',
+    'Get safe profile and learning-goal information for the authenticated user only.',
+    {}
+  ),
+  tool(
+    'get_classrooms',
+    'Get active classrooms for the authenticated user, including teacher name and active member count.',
+    {}
+  ),
+  tool(
+    'get_exam_results',
+    'Get recent exam attempts for the authenticated user only.',
+    {
+      limit: { type: 'number', description: 'Number of attempts, default 10, max 30' },
+      status: {
+        type: 'string',
+        enum: ['submitted', 'graded', 'expired', 'all'],
+        description: 'Filter by attempt status/result state. all means no status filter.',
+      },
+    }
+  ),
+  tool(
+    'get_progress_trend',
+    'Get daily progress trend for the authenticated user over today, week, last_week, or month.',
+    {
+      range: {
+        type: 'string',
+        enum: ['today', 'week', 'last_week', 'month'],
+        description: 'Trend range, default week',
+      },
+    }
+  ),
 ];

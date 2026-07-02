@@ -9,6 +9,10 @@ import Reading from '../models/Reading.js';
 import Listening from '../models/Listening.js';
 import SpeakingSet from '../models/SpeakingSet.js';
 import User from '../models/User.js';
+import Classroom from '../models/Classroom.js';
+import ClassroomMember from '../models/ClassroomMember.js';
+import ExamAttempt from '../models/ExamAttempt.js';
+import ExamAssignment from '../models/ExamAssignment.js';
 import { toSpeakingSetObjectId } from '../lib/speakingSetId.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import historyService from '../services/historyService.js';
@@ -91,6 +95,193 @@ const normalizePeriodArg = (range) => {
 };
 
 export const toolImplementations = {
+
+  // ========================================
+  // PERSONAL DATA TOOLS (read-only, userId server-injected)
+  // ========================================
+  get_profile: async (userId, args) => {
+    console.log('🛠️ Tool: get_profile');
+    const user = await User.findById(userId)
+      .select(
+        'fullName username level cefr goal dailyMinutes dailyLessonGoal totalPoints currentStreak timezone language createdAt dateOfBirth bio'
+      )
+      .lean();
+
+    if (!user) return { error: 'Không tìm thấy hồ sơ người dùng.' };
+
+    return {
+      fullName: user.fullName || '',
+      username: user.username || '',
+      level: user.level ?? 1,
+      cefr: user.cefr ?? null,
+      goal: user.goal || '',
+      dailyMinutes: user.dailyMinutes ?? 0,
+      dailyLessonGoal: user.dailyLessonGoal ?? 0,
+      totalPoints: user.totalPoints ?? 0,
+      currentStreak: user.currentStreak ?? 0,
+      timezone: user.timezone || 'Asia/Ho_Chi_Minh',
+      language: user.language || 'en',
+      joinedAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
+      dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString() : null,
+      bio: user.bio || '',
+    };
+  },
+
+  get_classrooms: async (userId, args) => {
+    console.log('🛠️ Tool: get_classrooms');
+    const memberships = await ClassroomMember.find({ userId, status: 'active' })
+      .select('classroomId roleInClass joinedAt')
+      .lean();
+
+    const classroomIds = memberships
+      .map((m) => m.classroomId)
+      .filter(Boolean);
+    if (!classroomIds.length) return [];
+
+    const [classrooms, memberCounts] = await Promise.all([
+      Classroom.find({ _id: { $in: classroomIds } })
+        .select('name description teacherId')
+        .lean(),
+      ClassroomMember.aggregate([
+        { $match: { classroomId: { $in: classroomIds }, status: 'active' } },
+        { $group: { _id: '$classroomId', count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const teacherIds = classrooms
+      .map((c) => c.teacherId)
+      .filter(Boolean);
+    const teachers = teacherIds.length
+      ? await User.find({ _id: { $in: teacherIds } })
+          .select('fullName username email')
+          .lean()
+      : [];
+
+    const classroomById = new Map(classrooms.map((c) => [c._id.toString(), c]));
+    const teacherById = new Map(teachers.map((t) => [t._id.toString(), t]));
+    const countByClassroomId = new Map(
+      memberCounts.map((row) => [row._id.toString(), row.count])
+    );
+
+    return memberships
+      .map((membership) => {
+        const classroom = classroomById.get(membership.classroomId?.toString());
+        if (!classroom) return null;
+        const teacher = classroom.teacherId
+          ? teacherById.get(classroom.teacherId.toString())
+          : null;
+        return {
+          name: classroom.name || '',
+          description: classroom.description || '',
+          teacherName:
+            teacher?.fullName?.trim() ||
+            teacher?.username?.trim() ||
+            teacher?.email?.trim() ||
+            '',
+          memberCount: countByClassroomId.get(classroom._id.toString()) || 0,
+          roleInClass: membership.roleInClass || 'student',
+          joinedAt: membership.joinedAt ? new Date(membership.joinedAt).toISOString() : null,
+        };
+      })
+      .filter(Boolean);
+  },
+
+  get_exam_results: async (userId, args) => {
+    const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 30);
+    const status = args.status || 'all';
+    console.log(`🛠️ Tool: get_exam_results (limit ${limit}, status ${status})`);
+
+    const query = { userId };
+    if (status === 'submitted') {
+      query.status = 'submitted';
+    } else if (status === 'expired') {
+      query.status = 'expired';
+    } else if (status === 'graded') {
+      query.status = 'submitted';
+      query.gradingState = 'finalized';
+    }
+
+    const attempts = await ExamAttempt.find(query)
+      .select('assignmentId status scores gradingState submittedAt updatedAt resultsReleased')
+      .sort({ submittedAt: -1, updatedAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const assignmentIds = attempts
+      .map((attempt) => attempt.assignmentId)
+      .filter(Boolean);
+
+    const assignments = assignmentIds.length
+      ? await ExamAssignment.find({ _id: { $in: assignmentIds } })
+          .select('examId classroomId examSnapshot')
+          .populate('examId', 'title')
+          .populate('classroomId', 'name')
+          .lean()
+      : [];
+    const assignmentById = new Map(assignments.map((a) => [a._id.toString(), a]));
+
+    return attempts.map((attempt) => {
+      const assignment = assignmentById.get(attempt.assignmentId?.toString());
+      const scores = attempt.scores || {};
+      return {
+        examTitle:
+          assignment?.examId?.title ||
+          assignment?.examSnapshot?.title ||
+          '',
+        classroomName: assignment?.classroomId?.name || null,
+        status: attempt.status,
+        score: scores.finalScore ?? scores.totalAwarded ?? null,
+        maxScore: scores.finalMax ?? scores.totalMax ?? null,
+        gradingState: attempt.gradingState || null,
+        submittedAt: attempt.submittedAt ? new Date(attempt.submittedAt).toISOString() : null,
+        resultsReleased: attempt.resultsReleased === true,
+      };
+    });
+  },
+
+  get_progress_trend: async (userId, args) => {
+    const range = normalizePeriodArg(args.range || 'week');
+    const { startDate, endDate } = await resolveZonedRangeYmd(userId, range);
+    console.log(`🛠️ Tool: get_progress_trend (${range} → ${startDate}..${endDate})`);
+
+    const [user, records] = await Promise.all([
+      User.findById(userId).select('currentStreak').lean(),
+      UserDailyProgress.find({
+        userId,
+        date: { $gte: startDate, $lte: endDate },
+      })
+        .sort({ date: 1 })
+        .lean(),
+    ]);
+
+    const days = records.map((rec) => {
+      const lessonsCompleted = rec.lessonsCompleted || {};
+      const lessons =
+        (lessonsCompleted.listening || 0) +
+        (lessonsCompleted.reading || 0) +
+        (lessonsCompleted.speaking || 0) +
+        (lessonsCompleted.writing || 0);
+      return {
+        date: rec.date,
+        studyMinutes: Math.round((rec.studySeconds || 0) / 60),
+        vocabLearned: rec.vocabLearned || 0,
+        lessonsCompleted: lessons,
+      };
+    });
+
+    return {
+      range: args.range || 'week',
+      startDate,
+      endDate,
+      currentStreak: user?.currentStreak || 0,
+      days,
+      totals: {
+        studyMinutes: days.reduce((sum, day) => sum + day.studyMinutes, 0),
+        vocabLearned: days.reduce((sum, day) => sum + day.vocabLearned, 0),
+        lessons: days.reduce((sum, day) => sum + day.lessonsCompleted, 0),
+      },
+    };
+  },
 
   // ========================================
   // 1. LỊCH SỬ HỌC TẬP TỔNG QUAN

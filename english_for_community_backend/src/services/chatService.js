@@ -1,11 +1,13 @@
 import Groq from 'groq-sdk';
 import { getUserContext } from './aiContextService.js';
 import { aiService } from './aiService.js';
+import { chatTools } from '../tools/definitions.js';
 import { toolImplementations } from '../tools/implementations.js';
 
 const API_KEY = process.env.GROQ_API_KEY;
 const groq = new Groq({ apiKey: API_KEY });
-const MODEL_NAME = aiService.MODEL_NAME || 'llama-3.3-70b-versatile';
+const MODEL_NAME = aiService.MODEL_NAME || 'openai/gpt-oss-120b';
+const MAX_TOOL_ROUNDS = 5;
 
 const normalizeHistory = (historyItems) => {
   if (!Array.isArray(historyItems)) return [];
@@ -20,17 +22,63 @@ const normalizeHistory = (historyItems) => {
   }).filter(item => item.content.trim() !== '');
 };
 
-const extractToolCall = (text) => {
-  try {
-    const match = text.match(/```json([\s\S]*?)```/) || text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if (match) {
-      const jsonStr = match[0].replace(/```json|```/g, '').trim();
-      return JSON.parse(jsonStr);
-    }
-    return null;
-  } catch {
-    return null;
-  }
+const buildSystemPrompt = (userContext) => {
+  const today = new Date();
+  const todayStr = today.toLocaleDateString('en-CA');
+  const weekday = today.toLocaleDateString('vi-VN', { weekday: 'long' });
+
+  return `
+# VAI TRO: Co van hoc tap & chuyen gia phan tich du lieu
+
+Ban la AI English Learning Companion. Ban co quyen truy cap du lieu hoc tap cua nguoi dung qua native tools.
+
+---
+
+# CHIEN LUOC TRUY XUAT DU LIEU
+
+Khong tu bia startDate/endDate. Ngay trong DB la YYYY-MM-DD theo timezone user, nen uu tien tool co range de server tinh ngay dung.
+
+- Hoi "hom nay / progress hom nay / lam may bai hom nay" -> goi get_daily_activity, co the them get_learning_history_period voi range "today".
+- Hoi "tuan nay / 7 ngay gan day / rolling week" -> goi get_learning_history_period voi range "week".
+- Hoi "tuan truoc / last week / tuan vua roi" -> goi get_learning_history_period voi range "last_week"; khong dung "week".
+- Hoi "thang nay" -> goi get_learning_history_period voi range "month".
+- get_learning_history chi dung khi da co chinh xac startDate va endDate YYYY-MM-DD.
+- Khi can chi tiet bai theo mot ngay, truyen cung startDate va endDate vao get_reading_details/get_listening_details/get_speaking_details/get_writing_details, hoac dung get_daily_activity neu chi can danh sach hoat dong.
+- Hoi thong tin tai khoan/muc tieu/level/streak -> goi get_profile.
+- Hoi lop hoc/giao vien -> goi get_classrooms.
+- Hoi diem/bai thi/bai kiem tra/ket qua exam/ket qua grading gan day -> bat buoc goi get_exam_results truoc khi tra loi. Khong tra loi generic ve kha nang cua AI khi user dang hoi diem cua chinh ho.
+- Hoi xu huong hoc tap theo ngay/streak -> goi get_progress_trend.
+
+Combo goi y cho thong ke rong:
+1. get_learning_history_period hoac get_daily_activity
+2. analyze_weaknesses
+3. get_reading_details / get_listening_details / get_speaking_details / get_writing_details
+4. Neu can thong tin ca nhan/lop/exam/trend, goi them 4 tool profile/classrooms/exam_results/progress_trend phu hop.
+
+---
+
+# CAU TRUC BAO CAO SAU KHI CO DU LIEU
+
+Khi da nhan du lieu tu tools, tra loi bang Markdown ro rang, than thien:
+
+### 1. Tong quan
+- Thoi gian hoc / bai hoan thanh / tu vung / diem noi bat neu co.
+- Nhan xet ngan dua tren du lieu.
+
+### 2. Chi tiet theo ky nang hoac theo muc user hoi
+**Reading / Listening / Speaking / Writing / Exam / Classrooms / Profile**:
+- Dua so lieu cu the tu tool.
+- Neu du lieu thieu, noi ro "chua co du lieu" thay vi bia.
+
+### 3. Loi khuyen & ke hoach tiep theo
+- Dua ra 2-4 buoc cu the dua tren weaknesses/trend/recent results.
+
+---
+
+# BOI CANH
+Hom nay: ${weekday}, ${todayStr}
+${userContext}
+`;
 };
 
 /**
@@ -38,161 +86,64 @@ const extractToolCall = (text) => {
  */
 export async function generateChatReply(userId, message, history) {
   const userContext = await getUserContext(userId);
-  const today = new Date();
-  const todayStr = today.toLocaleDateString('en-CA');
-  const weekday = today.toLocaleDateString('vi-VN', { weekday: 'long' });
-
-  const systemInstruction = `
-# 🎓 VAI TRÒ: Cố Vấn Học Tập & Chuyên Gia Phân Tích Dữ Liệu (Data Analyst)
-
-Bạn là **AI English Learning Companion**. Bạn có quyền truy cập vào cơ sở dữ liệu học tập của người dùng thông qua các TOOLS.
-
----
-
-# 🕵️ CHIẾN LƯỢC TRUY XUẤT DỮ LIỆU (QUAN TRỌNG)
-
-**KHÔNG được tự bịa startDate/endDate** (ví dụ năm 2024 trong prompt mẫu cũ). Ngày trong DB là **YYYY-MM-DD theo múi giờ user** — chỉ server/tool mới tính đúng.
-
-- **Hỏi "hôm nay / hôm nay làm mấy bài / progress hôm nay"** → bắt buộc gọi **get_daily_activity** (có thể thêm **get_learning_history_period** với \`range: "today"\`).
-- **Hỏi "tuần này / 7 ngày gần đây / rolling week"** → **get_learning_history_period** với \`range: "week"\` (7 ngày lùi **tính cả hôm nay** — không phải tuần lịch).
-- **Hỏi "tuần trước / last week / tuần vừa rồi"** → **get_learning_history_period** với \`range: "last_week"\` (tuần dương lịch **trước** tuần hiện tại: Thứ Hai–Chủ nhật). **KHÔNG** dùng \`range: "week"\` cho câu này.
-- **Hỏi "tháng này"** → **get_learning_history_period** với \`range: "month"\`.
-- **get_learning_history** chỉ dùng khi đã có **chính xác** hai ngày YYYY-MM-DD từ dữ liệu hệ thống hoặc user nói rõ; nếu không chắc → dùng **get_learning_history_period**.
-
-Khi cần chi tiết bài theo **đúng một ngày** (ví dụ hôm nay), truyền **cùng startDate và endDate** = ngày đó vào get_reading_details / get_listening_details / get_speaking_details / get_writing_details — hoặc chỉ cần **get_daily_activity** đã liệt kê đủ.
-
-## ⚠️ COMBO gợi ý (thống kê rộng):
-1. **get_learning_history_period** hoặc **get_daily_activity** (tùy ngữ cảnh)
-2. **analyze_weaknesses**
-3. **get_reading_details** / **get_listening_details** / **get_speaking_details** / **get_writing_details** (có thể kèm cùng startDate=endDate=hôm nay nếu hỏi theo ngày)
-
----
-
-# 🧠 VÍ DỤ MẪU (FEW-SHOT — KHÔNG COPY NGÀY CỐ ĐỊNH)
-
-## VD 1: "Hôm nay tôi học thế nào / làm mấy bài?"
-\`\`\`json
-[
-  { "name": "get_daily_activity", "args": {} },
-  { "name": "get_learning_history_period", "args": { "range": "today" } }
-]
-\`\`\`
-
-## VD 2: "Thống kê tháng này"
-\`\`\`json
-[
-  { "name": "get_learning_history_period", "args": { "range": "month" } },
-  { "name": "analyze_weaknesses", "args": { "range": "month" } },
-  { "name": "get_reading_details", "args": { "limit": 8 } },
-  { "name": "get_listening_details", "args": { "limit": 8 } },
-  { "name": "get_speaking_details", "args": { "limit": 8, "mode": "all" } },
-  { "name": "get_writing_details", "args": { "limit": 5 } }
-]
-\`\`\`
-
-## VD 2b: "Tuần trước tôi học thế nào / last week"
-\`\`\`json
-[
-  { "name": "get_learning_history_period", "args": { "range": "last_week" } },
-  { "name": "analyze_weaknesses", "args": { "range": "last_week" } }
-]
-\`\`\`
-
-## VD 3: "Kỹ năng nói dạo này?"
-\`\`\`json
-[
-  { "name": "get_skill_statistics", "args": { "skill": "speaking", "range": "month" } },
-  { "name": "get_speaking_details", "args": { "limit": 10, "mode": "all" } }
-]
-\`\`\`
-
----
-
-# 🎨 CẤU TRÚC BÁO CÁO (SAU KHI CÓ DỮ LIỆU)
-
-Khi đã nhận được dữ liệu từ hệ thống, hãy trình bày câu trả lời theo format Markdown chuyên nghiệp:
-
-### 1. 📊 Tổng Quan Tháng Này
-- Tổng thời gian: ... phút
-- Số từ mới: ... từ
-- Nhận xét chung: (Dựa trên learning_history)
-
-### 2. 🔍 Chi Tiết Từng Kỹ Năng (Dựa trên *_details)
-**📖 Reading:**
-- Bài gần nhất: [Tên bài] - [Điểm số]
-- Xu hướng: Đang tăng hay giảm?
-
-**🗣️ Speaking:**
-- Bài gần nhất: [Tên bài] - [Độ chính xác]
-- Vấn đề: (Dựa trên analyze_weaknesses)
-
-**✍️ Writing:**
-- Bài gần nhất: [Tên bài] - [Điểm]
-
-### 3. 💡 Lời Khuyên & Kế Hoạch Tiếp Theo
-- (Dựa trên analyze_weaknesses để đưa ra bài tập cụ thể)
-
----
-
-# BỐI CẢNH
-📅 Hôm nay: **${weekday}**, ${todayStr}
-${userContext}
-`;
-
-  const chatHistory = normalizeHistory(history);
-  let messages = [
-    { role: 'system', content: systemInstruction },
-    ...chatHistory,
+  const messages = [
+    { role: 'system', content: buildSystemPrompt(userContext) },
+    ...normalizeHistory(history),
     { role: 'user', content: message },
   ];
 
-  let completion = await groq.chat.completions.create({
-    messages,
-    model: MODEL_NAME,
-    temperature: 0.3,
-    stream: false,
-  });
-
-  let aiContent = completion.choices[0].message.content;
-  const toolCalls = extractToolCall(aiContent);
-
-  if (toolCalls && Array.isArray(toolCalls) && toolCalls.length > 0) {
-    const toolResults = [];
-
-    for (const call of toolCalls) {
-      const { name, args } = call;
-      if (toolImplementations[name]) {
-        try {
-          const result = await toolImplementations[name](userId, args);
-          toolResults.push({ name, result });
-        } catch (err) {
-          toolResults.push({ name, error: err.message });
-        }
-      } else {
-        toolResults.push({ name, error: 'Function not found' });
-      }
-    }
-
-    messages.push({ role: 'assistant', content: aiContent });
-    messages.push({
-      role: 'user',
-      content: `
-🔴 KẾT QUẢ TỪ HỆ THỐNG (DATA SYSTEM):
-${JSON.stringify(toolResults, null, 2)}
-
-Hãy dựa vào dữ liệu trên để trả lời user. Format Markdown rõ ràng, thân thiện.
-`,
-    });
-
-    completion = await groq.chat.completions.create({
+  for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
+    const completion = await groq.chat.completions.create({
       messages,
       model: MODEL_NAME,
-      temperature: 0.7,
+      tools: chatTools,
+      tool_choice: 'auto',
+      temperature: 0.4,
       stream: false,
     });
 
-    aiContent = completion.choices[0].message.content;
+    const msg = completion.choices[0].message;
+    messages.push(msg);
+    const calls = msg.tool_calls || [];
+    if (calls.length === 0) return msg.content || '';
+
+    console.log(
+      `[chatService] tool_calls round=${round + 1}: ${calls
+        .map((call) => call.function?.name || 'unknown')
+        .join(', ')}`
+    );
+
+    for (const call of calls) {
+      const name = call.function?.name;
+      let args = {};
+      try {
+        args = JSON.parse(call.function?.arguments || '{}');
+      } catch {
+        args = {};
+      }
+
+      let result;
+      try {
+        result = toolImplementations[name]
+          ? await toolImplementations[name](userId, args)
+          : { error: 'Function not found' };
+      } catch (err) {
+        result = { error: err?.message || 'Tool execution failed' };
+      }
+
+      messages.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: JSON.stringify(result),
+      });
+    }
   }
 
-  return aiContent;
+  const final = await groq.chat.completions.create({
+    messages,
+    model: MODEL_NAME,
+    temperature: 0.5,
+    stream: false,
+  });
+  return final.choices[0].message.content || '';
 }

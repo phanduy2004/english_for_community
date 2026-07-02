@@ -1449,8 +1449,10 @@ export const examAttemptService = {
   /** Mark overdue in_progress attempts (used by cron). */
   async bulkExpirePastDeadline() {
     const now = new Date();
+    // Realtime/live-session attempts (sessionId set) are owned by the session lifecycle
+    // (endSession force-submits + grades them). Only bulk-expire non-session attempts here.
     const res = await ExamAttempt.updateMany(
-      { status: 'in_progress', attemptDeadlineAt: { $lte: now } },
+      { status: 'in_progress', attemptDeadlineAt: { $lte: now }, sessionId: null },
       { $set: { status: 'expired' } }
     );
     return res.modifiedCount ?? 0;

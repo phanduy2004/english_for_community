@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
@@ -62,7 +61,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
       _selectedGender = user.gender;
 
       if (user.dateOfBirth != null) {
-        _dobController.text = DateFormat('dd/MM/yyyy').format(user.dateOfBirth!);
+        _dobController.text =
+            DateFormat('dd/MM/yyyy').format(user.dateOfBirth!);
       }
     }
   }
@@ -81,9 +81,81 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!_isDirty) setState(() => _isDirty = true);
   }
 
+  Future<void> _handleBackPressed() async {
+    if (!_isDirty) {
+      Navigator.maybePop(context);
+      return;
+    }
+    await _handleUnsavedChanges();
+  }
+
+  Future<void> _handlePopInvoked(bool didPop, Object? result) async {
+    if (didPop) return;
+    await _handleUnsavedChanges();
+  }
+
+  Future<void> _handleUnsavedChanges() async {
+    if (!mounted) return;
+    final isLoading =
+        context.read<UserBloc>().state.status == UserStatus.loading;
+    if (isLoading) return;
+    if (!_isDirty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final t = ctx.l10n;
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceCard,
+          surfaceTintColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+          title: Text(t.saveChanges, style: AppTypography.titleMd()),
+          content: Text(
+            t.writingSaveDraftMessage,
+            style: AppTypography.body(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                t.writingDiscardButton,
+                style: AppTypography.label(color: AppColors.danger),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+              ),
+              child: Text(
+                t.saveChanges,
+                style: AppTypography.label(color: AppColors.onPrimary),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted || shouldSave == null) return;
+    if (shouldSave) {
+      _save();
+      return;
+    }
+    setState(() => _isDirty = false);
+    Navigator.of(context).pop();
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+    final file =
+        await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
     if (file != null) {
       final bytes = await file.readAsBytes();
       if (!mounted) return;
@@ -145,7 +217,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
                     colors: _accentIconColors,
                   ),
                   trailing: _selectedGender == e.$1
-                      ? Icon(Icons.check_circle_rounded, size: 20, color: AppColors.accent)
+                      ? Icon(Icons.check_circle_rounded,
+                          size: 20, color: AppColors.accent)
                       : null,
                   onTap: () {
                     setState(() {
@@ -196,7 +269,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ));
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context, AppLocalizations t, bool canSave, bool isLoading) {
+  PreferredSizeWidget _buildAppBar(
+      BuildContext context, AppLocalizations t, bool canSave, bool isLoading) {
     return AppBar(
       toolbarHeight: StudentMobileUi.appBarHeight,
       elevation: 0,
@@ -205,9 +279,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       foregroundColor: AppColors.textPrimary,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back_rounded, size: 20),
-        onPressed: () => Navigator.maybePop(context),
+        onPressed: _handleBackPressed,
       ),
-      title: Text(t.editProfileTitle, style: StudentMobileUi.sectionTitle(context)),
+      title: Text(t.editProfileTitle,
+          style: StudentMobileUi.sectionTitle(context)),
       actions: [
         Padding(
           padding: const EdgeInsets.only(right: AppSpacing.s4),
@@ -217,24 +292,40 @@ class _EditProfilePageState extends State<EditProfilePage> {
               minimumSize: const Size(72, 36),
               backgroundColor: AppColors.primary,
               foregroundColor: AppColors.onPrimary,
-              disabledBackgroundColor: AppColors.surfaceSubtle,
-              disabledForegroundColor: AppColors.textMuted,
+              disabledBackgroundColor: isLoading && _isDirty
+                  ? AppColors.primary
+                  : AppColors.surfaceSubtle,
+              disabledForegroundColor: isLoading && _isDirty
+                  ? AppColors.onPrimary
+                  : AppColors.textMuted,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.input)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.input),
+              ),
             ),
-            child: isLoading
+            child: isLoading && _isDirty
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: AppLoadingIndicator(strokeWidth: 2, color: AppColors.onPrimary),
+                    child: AppLoadingIndicator(
+                        strokeWidth: 2, color: AppColors.onPrimary),
                   )
-                : Text(t.saveChanges, style: AppTypography.label()),
+                : Text(
+                    t.saveChanges,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.label(
+                      color:
+                          canSave ? AppColors.onPrimary : AppColors.textMuted,
+                    ),
+                  ),
           ),
         ),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(2),
-        child: Container(height: 2, color: AppColors.accent.withValues(alpha: 0.55)),
+        child: Container(
+            height: 2, color: AppColors.accent.withValues(alpha: 0.55)),
       ),
     );
   }
@@ -244,8 +335,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return BlocConsumer<UserBloc, UserState>(
       listener: (context, state) {
         if (state.status == UserStatus.success && _isDirty) {
-          context.pop();
+          setState(() => _isDirty = false);
           AppFeedback.success(context, context.l10n.profileUpdatedSuccess);
+          Navigator.of(context).pop();
         }
       },
       builder: (context, state) {
@@ -253,136 +345,153 @@ class _EditProfilePageState extends State<EditProfilePage> {
         final t = context.l10n;
         final canSave = _isDirty && !isLoading;
 
-        return Scaffold(
-          backgroundColor: AppColors.surface,
-          appBar: _buildAppBar(context, t, canSave, isLoading),
-          body: _profile == null
-              ? StudentMobileUi.runnerLoading()
-              : Form(
-                  key: _formKey,
-                  child: ListView(
-                    padding: StudentMobileUi.pagePadding,
-                    children: [
-                      _AvatarHeader(
-                        avatarBytes: _pickedAvatarBytes,
-                        avatarUrl: _profile!.avatarUrl,
-                        onPick: _pickImage,
-                        hint: t.changePhotoHint,
-                      ),
-                      const SizedBox(height: StudentMobileUi.sectionGap),
-
-                      StudentMobileUi.sectionHeader(context, title: t.sectionPublicInfo),
-                      const SizedBox(height: AppSpacing.s3),
-                      _ProfileSectionCard(
-                        skill: SkillType.speaking,
-                        children: [
-                          _ProfileFormField(
-                            icon: Icons.person_rounded,
-                            skill: SkillType.speaking,
-                            label: t.labelFullName,
-                            controller: _fullNameController,
-                            onChanged: (_) => _markDirty(),
-                            validator: (v) => v!.isEmpty ? t.fieldRequired : null,
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.alternate_email_rounded,
-                            skill: SkillType.speaking,
-                            label: t.labelUsername,
-                            controller: _usernameController,
-                            prefixText: '@',
-                            onChanged: (_) => _markDirty(),
-                            validator: (v) => v!.isEmpty ? t.fieldRequired : null,
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.edit_note_rounded,
-                            skill: SkillType.speaking,
-                            label: t.labelBio,
-                            controller: _bioController,
-                            hint: t.hintBio,
-                            maxLines: 4,
-                            onChanged: (_) => _markDirty(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: StudentMobileUi.sectionGap),
-
-                      StudentMobileUi.sectionHeader(context, title: t.sectionPrivateDetails),
-                      const SizedBox(height: AppSpacing.s3),
-                      _ProfileSectionCard(
-                        skill: SkillType.reading,
-                        children: [
-                          _ProfilePickerField(
-                            icon: Icons.wc_rounded,
-                            skill: SkillType.reading,
-                            label: t.labelGender,
-                            value: _genderLabel(context) ?? t.selectPlaceholder,
-                            isPlaceholder: _genderLabel(context) == null,
-                            onTap: () => _showGenderPicker(context),
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.cake_rounded,
-                            skill: SkillType.reading,
-                            label: t.labelBirthday,
-                            controller: _dobController,
-                            readOnly: true,
-                            hint: t.hintSelectDate,
-                            onTap: _pickDate,
-                            suffixIcon: Icons.calendar_today_rounded,
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.phone_rounded,
-                            skill: SkillType.reading,
-                            label: t.labelPhone,
-                            controller: _phoneController,
-                            keyboardType: TextInputType.phone,
-                            hint: t.hintPhoneShort,
-                            onChanged: (_) => _markDirty(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: StudentMobileUi.sectionGap),
-
-                      StudentMobileUi.sectionHeader(context, title: t.sectionSystemInfo),
-                      const SizedBox(height: AppSpacing.s3),
-                      _ProfileSectionCard(
-                        muted: true,
-                        children: [
-                          _ProfileFormField(
-                            icon: Icons.email_rounded,
-                            label: t.labelEmail,
-                            initialValue: _profile!.email,
-                            readOnly: true,
-                            enabled: false,
-                            suffixIcon: _profile!.isVerified ? Icons.verified_rounded : Icons.info_outline,
-                            suffixColor: _profile!.isVerified ? AppColors.success : AppColors.textMuted,
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.security_rounded,
-                            label: t.labelRole,
-                            initialValue: _profile!.role.toUpperCase(),
-                            readOnly: true,
-                            enabled: false,
-                          ),
-                          const _FieldDivider(),
-                          _ProfileFormField(
-                            icon: Icons.fingerprint_rounded,
-                            label: t.labelUserId,
-                            initialValue: _profile!.id,
-                            readOnly: true,
-                            enabled: false,
-                            isCopyable: true,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.s9),
-                    ],
+        return PopScope<Object?>(
+          canPop: !_isDirty,
+          onPopInvokedWithResult: _handlePopInvoked,
+          child: Scaffold(
+            backgroundColor: AppColors.surface,
+            appBar: _buildAppBar(context, t, canSave, isLoading),
+            body: _profile == null
+                ? StudentMobileUi.runnerLoading()
+                : Form(
+                    key: _formKey,
+                    child: ListView(
+                      padding: StudentMobileUi.pagePadding,
+                      children: [
+                        _AvatarHeader(
+                          avatarBytes: _pickedAvatarBytes,
+                          avatarUrl: _profile!.avatarUrl,
+                          onPick: _pickImage,
+                          hint: t.changePhotoHint,
+                        ),
+                        const SizedBox(height: StudentMobileUi.sectionGap),
+                        StudentMobileUi.sectionHeader(
+                          context,
+                          title: t.sectionPublicInfo,
+                        ),
+                        const SizedBox(height: AppSpacing.s3),
+                        _ProfileSectionCard(
+                          skill: SkillType.speaking,
+                          children: [
+                            _ProfileFormField(
+                              icon: Icons.person_rounded,
+                              skill: SkillType.speaking,
+                              label: t.labelFullName,
+                              controller: _fullNameController,
+                              onChanged: (_) => _markDirty(),
+                              validator: (v) =>
+                                  v!.isEmpty ? t.fieldRequired : null,
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.alternate_email_rounded,
+                              skill: SkillType.speaking,
+                              label: t.labelUsername,
+                              controller: _usernameController,
+                              prefixText: '@',
+                              onChanged: (_) => _markDirty(),
+                              validator: (v) =>
+                                  v!.isEmpty ? t.fieldRequired : null,
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.edit_note_rounded,
+                              skill: SkillType.speaking,
+                              label: t.labelBio,
+                              controller: _bioController,
+                              hint: t.hintBio,
+                              maxLines: 4,
+                              onChanged: (_) => _markDirty(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: StudentMobileUi.sectionGap),
+                        StudentMobileUi.sectionHeader(
+                          context,
+                          title: t.sectionPrivateDetails,
+                        ),
+                        const SizedBox(height: AppSpacing.s3),
+                        _ProfileSectionCard(
+                          skill: SkillType.reading,
+                          children: [
+                            _ProfilePickerField(
+                              icon: Icons.wc_rounded,
+                              skill: SkillType.reading,
+                              label: t.labelGender,
+                              value:
+                                  _genderLabel(context) ?? t.selectPlaceholder,
+                              isPlaceholder: _genderLabel(context) == null,
+                              onTap: () => _showGenderPicker(context),
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.cake_rounded,
+                              skill: SkillType.reading,
+                              label: t.labelBirthday,
+                              controller: _dobController,
+                              readOnly: true,
+                              hint: t.hintSelectDate,
+                              onTap: _pickDate,
+                              suffixIcon: Icons.calendar_today_rounded,
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.phone_rounded,
+                              skill: SkillType.reading,
+                              label: t.labelPhone,
+                              controller: _phoneController,
+                              keyboardType: TextInputType.phone,
+                              hint: t.hintPhoneShort,
+                              onChanged: (_) => _markDirty(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: StudentMobileUi.sectionGap),
+                        StudentMobileUi.sectionHeader(
+                          context,
+                          title: t.sectionSystemInfo,
+                        ),
+                        const SizedBox(height: AppSpacing.s3),
+                        _ProfileSectionCard(
+                          muted: true,
+                          children: [
+                            _ProfileFormField(
+                              icon: Icons.email_rounded,
+                              label: t.labelEmail,
+                              initialValue: _profile!.email,
+                              readOnly: true,
+                              enabled: false,
+                              suffixIcon: _profile!.isVerified
+                                  ? Icons.verified_rounded
+                                  : Icons.info_outline,
+                              suffixColor: _profile!.isVerified
+                                  ? AppColors.success
+                                  : AppColors.textMuted,
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.security_rounded,
+                              label: t.labelRole,
+                              initialValue: _profile!.role.toUpperCase(),
+                              readOnly: true,
+                              enabled: false,
+                            ),
+                            const _FieldDivider(),
+                            _ProfileFormField(
+                              icon: Icons.fingerprint_rounded,
+                              label: t.labelUserId,
+                              initialValue: _profile!.id,
+                              readOnly: true,
+                              enabled: false,
+                              isCopyable: true,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.s9),
+                      ],
+                    ),
                   ),
-                ),
+          ),
         );
       },
     );
@@ -435,7 +544,8 @@ class _AvatarHeader extends StatelessWidget {
         const SizedBox(height: AppSpacing.s3),
         Text(
           hint,
-          style: StudentMobileUi.caption(context).copyWith(color: AppColors.accentDark),
+          style: StudentMobileUi.caption(context)
+              .copyWith(color: AppColors.accentDark),
         ),
       ],
     );
@@ -460,7 +570,8 @@ class _ProfileSectionCard extends StatelessWidget {
     if (skill != null && !muted) {
       return StudentMobileUi.skillAccentCard(
         skill: skill!,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
         child: Column(children: children),
       );
     }
@@ -471,7 +582,8 @@ class _ProfileSectionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.s5, vertical: AppSpacing.s4),
       child: Column(children: children),
     );
   }
@@ -533,7 +645,8 @@ class _ProfileFormField extends StatelessWidget {
   InputDecoration _decoration({required bool disabled}) {
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(AppRadius.input),
-      borderSide: BorderSide(color: disabled ? AppColors.outlineMuted : AppColors.outlineStrong),
+      borderSide: BorderSide(
+          color: disabled ? AppColors.outlineMuted : AppColors.outlineStrong),
     );
     return InputDecoration(
       hintText: hint,
@@ -541,7 +654,8 @@ class _ProfileFormField extends StatelessWidget {
       prefixText: prefixText,
       prefixStyle: AppTypography.body(color: AppColors.textMuted),
       suffixIcon: suffixIcon != null
-          ? Icon(suffixIcon, size: 18, color: suffixColor ?? AppColors.textSecondary)
+          ? Icon(suffixIcon,
+              size: 18, color: suffixColor ?? AppColors.textSecondary)
           : null,
       contentPadding: EdgeInsets.symmetric(
         horizontal: AppSpacing.s4,
@@ -576,12 +690,14 @@ class _ProfileFormField extends StatelessWidget {
                 visualDensity: VisualDensity.compact,
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                icon: const Icon(Icons.copy_rounded, size: 18, color: AppColors.textSecondary),
+                icon: const Icon(Icons.copy_rounded,
+                    size: 18, color: AppColors.textSecondary),
                 onPressed: () {
                   final text = controller?.text ?? initialValue ?? '';
                   if (text.isNotEmpty) {
                     Clipboard.setData(ClipboardData(text: text));
-                    AppFeedback.success(context, context.l10n.copiedToClipboard);
+                    AppFeedback.success(
+                        context, context.l10n.copiedToClipboard);
                   }
                 },
               ),
@@ -627,7 +743,9 @@ class _ProfilePickerField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final skillColor = skill != null ? AppSkillColors.of(skill!).color : AppColors.textSecondary;
+    final skillColor = skill != null
+        ? AppSkillColors.of(skill!).color
+        : AppColors.textSecondary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -648,7 +766,8 @@ class _ProfilePickerField extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadius.input),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: AppColors.outlineStrong),
@@ -659,11 +778,14 @@ class _ProfilePickerField extends StatelessWidget {
                     child: Text(
                       value,
                       style: AppTypography.body(
-                        color: isPlaceholder ? AppColors.textMuted : AppColors.textPrimary,
+                        color: isPlaceholder
+                            ? AppColors.textMuted
+                            : AppColors.textPrimary,
                       ),
                     ),
                   ),
-                  Icon(Icons.keyboard_arrow_down_rounded, size: 20, color: skillColor),
+                  Icon(Icons.keyboard_arrow_down_rounded,
+                      size: 20, color: skillColor),
                 ],
               ),
             ),
