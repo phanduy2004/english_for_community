@@ -644,7 +644,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueAction => 'Continue';
 
   @override
-  String get appNameBrand => 'LearnLingo';
+  String get appNameBrand => 'E4C';
 
   @override
   String streakDays(int n) {

@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
           ],
           child: MaterialApp.router(
             debugShowCheckedModeBanner: false,
-            title: 'LearnLingo',
+            title: 'E4C',
             theme: AppTheme.getTheme(),
             scrollBehavior: kIsWeb
                 ? const E4cNoScrollbarScrollBehavior()

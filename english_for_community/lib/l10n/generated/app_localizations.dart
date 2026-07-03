@@ -1313,7 +1313,7 @@ abstract class AppLocalizations {
   /// No description provided for @appNameBrand.
   ///
   /// In en, this message translates to:
-  /// **'LearnLingo'**
+  /// **'E4C'**
   String get appNameBrand;
 
   /// No description provided for @streakDays.
