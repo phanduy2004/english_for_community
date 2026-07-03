@@ -1287,7 +1287,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
                     ? SizedBox(
                         width: mobile ? 18 : 16,
                         height: mobile ? 18 : 16,
-                        child: const AppLoadingIndicator(strokeWidth: 2),
+                        child: const AppLoadingIndicator.button(),
                       )
                     : Icon(Icons.smart_toy_outlined, size: mobile ? 18 : 16),
                 label: Text(

@@ -7,7 +7,7 @@ import 'app_motion.dart';
 
 enum _LoadingVariant { standard, center, inline, button }
 
-/// App-wide loading — Lottie Paperplane for page/center loads; Material spinner for tiny slots.
+/// App-wide loading — Lottie Paperplane for page/center loads; Material spinner elsewhere.
 class AppLoadingIndicator extends StatelessWidget {
   const AppLoadingIndicator({
     super.key,
@@ -72,8 +72,7 @@ class AppLoadingIndicator extends StatelessWidget {
       color: fallbackColor,
     );
 
-    final useLottie =
-        !forceSpinner && effectiveSize >= AppMotion.loadingLottieStandard;
+    final useLottie = !forceSpinner && _variant == _LoadingVariant.center;
 
     if (!useLottie) {
       return SizedBox(

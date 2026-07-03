@@ -218,8 +218,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: AppLoadingIndicator(
-                                    strokeWidth: 2,
+                                  child: AppLoadingIndicator.button(
                                     color: AppColors.onPrimary,
                                   ),
                                 )
@@ -266,8 +265,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: AppLoadingIndicator(
-                                strokeWidth: 2,
+                              child: AppLoadingIndicator.button(
                                 color: AppColors.onPrimary,
                               ),
                             )

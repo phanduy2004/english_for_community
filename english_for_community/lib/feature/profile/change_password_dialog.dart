@@ -188,7 +188,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: AppLoadingIndicator(color: Colors.white, strokeWidth: 2))
+                              child: AppLoadingIndicator.button(color: Colors.white))
                               : Text(t.saveChanges,
                               style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
                         );

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
@@ -17,7 +18,7 @@ import '../../core/api/api_client.dart';
 import '../../core/config/vapi_env_config.dart';
 import '../../core/datasource/vapi_config_remote_datasource.dart';
 import '../../core/get_it/get_it.dart';
-import '../../core/theme/app_color.dart' as T;
+import '../../core/theme/app_color.dart' as app_color;
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/ui/feedback/app_feedback.dart';
@@ -34,10 +35,18 @@ class ChatMessage {
   final MessageRole role;
   final bool isFinal;
 
-  ChatMessage({required this.id, required this.text, required this.role, this.isFinal = true});
+  ChatMessage(
+      {required this.id,
+      required this.text,
+      required this.role,
+      this.isFinal = true});
 
   ChatMessage copyWith({String? text, bool? isFinal}) {
-    return ChatMessage(id: id, role: role, text: text ?? this.text, isFinal: isFinal ?? this.isFinal);
+    return ChatMessage(
+        id: id,
+        role: role,
+        text: text ?? this.text,
+        isFinal: isFinal ?? this.isFinal);
   }
 }
 
@@ -193,7 +202,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     switch (event.type) {
       case 'error':
         final code = event.data?['code'] as String? ?? 'unknown';
-        final msg = event.data?['message'] as String? ?? context.l10n.genericLoadError;
+        final msg =
+            event.data?['message'] as String? ?? context.l10n.genericLoadError;
         SpeakingTelemetry.logError(code);
         AppFeedback.error(context, msg);
         break;
@@ -201,10 +211,12 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       case 'status':
         final prev = _callStatus;
         setState(() => _callStatus = event.value as VapiCallStatus);
-        if (_callStatus == VapiCallStatus.active && prev != VapiCallStatus.active) {
+        if (_callStatus == VapiCallStatus.active &&
+            prev != VapiCallStatus.active) {
           SpeakingTelemetry.logCallStart();
         }
-        if (_callStatus == VapiCallStatus.ended || _callStatus == VapiCallStatus.disconnected) {
+        if (_callStatus == VapiCallStatus.ended ||
+            _callStatus == VapiCallStatus.disconnected) {
           if (prev == VapiCallStatus.active) {
             SpeakingTelemetry.logCallEnd();
           }
@@ -245,7 +257,9 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   void _startWaveAnimation() {
     _waveTimer?.cancel();
     _waveTimer = Timer.periodic(AppMotion.micro, (_) {
-      if (mounted) setState(() => _volumeLevel = 0.2 + Random().nextDouble() * 0.8);
+      if (mounted) {
+        setState(() => _volumeLevel = 0.2 + Random().nextDouble() * 0.8);
+      }
     });
   }
 
@@ -273,9 +287,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     if (_callStatus == VapiCallStatus.connecting) return;
 
     // 1. Nếu chưa kết nối -> Bắt đầu gọi
-    if (_callStatus == VapiCallStatus.disconnected || _callStatus == VapiCallStatus.ended) {
-      final status = await Permission.microphone.request();
-      if (!status.isGranted) {
+    if (_callStatus == VapiCallStatus.disconnected ||
+        _callStatus == VapiCallStatus.ended) {
+      final hasMicAccess =
+          kIsWeb || (await Permission.microphone.request()).isGranted;
+      if (!hasMicAccess) {
         await SpeakingTelemetry.logMicDenied();
         if (mounted) {
           AppFeedback.error(context, context.l10n.freeSpeakingMicDenied);
@@ -306,10 +322,13 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     final String text = data['text'];
     final bool isFinal = data['isFinal'];
     final roleStr = data['role'];
-    final MessageRole role = roleStr == 'user' ? MessageRole.user : MessageRole.ai;
+    final MessageRole role =
+        roleStr == 'user' ? MessageRole.user : MessageRole.ai;
 
     setState(() {
-      if (_messages.isNotEmpty && _messages.last.role == role && !_messages.last.isFinal) {
+      if (_messages.isNotEmpty &&
+          _messages.last.role == role &&
+          !_messages.last.isFinal) {
         // Ghi đè tin nhắn đang nói dở (tránh lặp)
         final updated = _messages.last.copyWith(text: text, isFinal: isFinal);
         _messages[_messages.length - 1] = updated;
@@ -317,8 +336,9 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         // Thêm tin nhắn mới
         _messages.add(ChatMessage(
             id: DateTime.now().millisecondsSinceEpoch.toString(),
-            text: text, role: role, isFinal: isFinal
-        ));
+            text: text,
+            role: role,
+            isFinal: isFinal));
       }
     });
 
@@ -361,7 +381,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
   // Hiển thị BottomSheet chọn giọng
   void _showVoiceSelector() {
-    if (_callStatus != VapiCallStatus.disconnected && _callStatus != VapiCallStatus.ended) {
+    if (_callStatus != VapiCallStatus.disconnected &&
+        _callStatus != VapiCallStatus.ended) {
       AppFeedback.error(context, context.l10n.freeSpeakingEndCallToChangeVoice);
       return;
     }
@@ -369,7 +390,9 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg))),
+      shape: const RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(AppRadius.lg))),
       builder: (sheetContext) {
         final st = sheetContext.l10n;
         return Container(
@@ -379,10 +402,13 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                child: Text(st.freeSpeakingSelectVoiceTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Text(st.freeSpeakingSelectVoiceTitle,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
               ),
-              const Divider(height: 1, color: T.AppColors.outline),
+              const Divider(height: 1, color: app_color.AppColors.outline),
               const SizedBox(height: 8),
               // List giọng
               Flexible(
@@ -394,15 +420,28 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                     final isSelected = _selectedVoice.id == voice.id;
                     return ListTile(
                       leading: CircleAvatar(
-                        backgroundColor: isSelected ? T.AppColors.primary.withValues(alpha: 0.1) : T.AppColors.surface,
+                        backgroundColor: isSelected
+                            ? app_color.AppColors.primary.withValues(alpha: 0.1)
+                            : app_color.AppColors.surface,
                         child: Icon(
                             voice.gender == 'Male' ? Icons.face : Icons.face_3,
-                            color: isSelected ? T.AppColors.primary : T.AppColors.textMuted
-                        ),
+                            color: isSelected
+                                ? app_color.AppColors.primary
+                                : app_color.AppColors.textMuted),
                       ),
-                      title: Text(voice.name, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? T.AppColors.primary : T.AppColors.textPrimary)),
-                      subtitle: Text("${voice.gender} • ${voice.accent}", style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      trailing: isSelected ? const Icon(Icons.check_circle, color: T.AppColors.primary) : null,
+                      title: Text(voice.name,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: isSelected
+                                  ? app_color.AppColors.primary
+                                  : app_color.AppColors.textPrimary)),
+                      subtitle: Text("${voice.gender} • ${voice.accent}",
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle,
+                              color: app_color.AppColors.primary)
+                          : null,
                       onTap: () {
                         setState(() => _selectedVoice = voice);
                         Navigator.pop(context);
@@ -425,15 +464,18 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     final t = context.l10n;
     if (_vapiBootstrap == _VapiBootstrap.loading) {
       return Scaffold(
-        backgroundColor: T.AppColors.surface,
-        appBar: StudentMobileUi.skillAppBar(context, title: t.freeSpeakingTitle, skill: SkillType.speaking),
+        backgroundColor: app_color.AppColors.surface,
+        appBar: StudentMobileUi.skillAppBar(context,
+            title: t.freeSpeakingTitle, skill: SkillType.speaking),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               StudentMobileUi.runnerLoading(),
               const SizedBox(height: 16),
-              Text(t.freeSpeakingLoadingConfig, style: StudentMobileUi.body(context).copyWith(color: T.AppColors.textMuted)),
+              Text(t.freeSpeakingLoadingConfig,
+                  style: StudentMobileUi.body(context)
+                      .copyWith(color: app_color.AppColors.textMuted)),
             ],
           ),
         ),
@@ -442,21 +484,23 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     if (_vapiBootstrap == _VapiBootstrap.error) {
       return Scaffold(
-        backgroundColor: T.AppColors.surface,
-        appBar: StudentMobileUi.skillAppBar(context, title: t.freeSpeakingTitle, skill: SkillType.speaking),
+        backgroundColor: app_color.AppColors.surface,
+        appBar: StudentMobileUi.skillAppBar(context,
+            title: t.freeSpeakingTitle, skill: SkillType.speaking),
         body: Center(
           child: SingleChildScrollView(
             padding: StudentMobileUi.pagePadding,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.settings_ethernet, size: 48, color: T.AppColors.textMuted),
+                Icon(Icons.settings_ethernet,
+                    size: 48, color: app_color.AppColors.textMuted),
                 const SizedBox(height: 16),
                 Text(
                   _vapiBootstrapError ?? t.freeSpeakingConfigErrorShort,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: T.AppColors.textSecondary,
+                        color: app_color.AppColors.textSecondary,
                         height: 1.45,
                       ),
                 ),
@@ -478,36 +522,49 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
     final chatEntries = _chatEntriesForList();
 
     return Scaffold(
-      backgroundColor: T.AppColors.surface,
+      backgroundColor: app_color.AppColors.surface,
       appBar: AppBar(
         toolbarHeight: StudentMobileUi.appBarHeight,
-        backgroundColor: T.AppColors.surface,
+        backgroundColor: app_color.AppColors.surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: T.AppColors.textPrimary, size: 20),
+          icon: const Icon(Icons.arrow_back_rounded,
+              color: app_color.AppColors.textPrimary, size: 20),
           onPressed: () => context.pop(),
         ),
         centerTitle: true,
         title: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: isConnected ? T.AppColors.successBg : T.AppColors.surface,
+            color: isConnected
+                ? app_color.AppColors.successBg
+                : app_color.AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: isConnected ? T.AppColors.success.withValues(alpha: 0.2) : Colors.transparent),
+            border: Border.all(
+                color: isConnected
+                    ? app_color.AppColors.success.withValues(alpha: 0.2)
+                    : Colors.transparent),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isConnecting)
-                SizedBox(width: 8, height: 8, child: AppLoadingIndicator(strokeWidth: 1.5, color: T.AppColors.textMuted))
+                SizedBox(
+                    width: 8,
+                    height: 8,
+                    child: AppLoadingIndicator(
+                        strokeWidth: 1.5, color: app_color.AppColors.textMuted))
               else
                 Container(
-                  width: 8, height: 8,
+                  width: 8,
+                  height: 8,
                   decoration: BoxDecoration(
-                    color: isConnected ? T.AppColors.success : T.AppColors.textMuted,
+                    color: isConnected
+                        ? app_color.AppColors.success
+                        : app_color.AppColors.textMuted,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -516,12 +573,16 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 isConnecting
                     ? t.freeSpeakingStatusConnecting
                     : (isConnected
-                        ? (_isAiSpeaking ? t.freeSpeakingStatusAiSpeaking : t.freeSpeakingStatusOnline)
+                        ? (_isAiSpeaking
+                            ? t.freeSpeakingStatusAiSpeaking
+                            : t.freeSpeakingStatusOnline)
                         : t.freeSpeakingStatusOffline),
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: isConnected ? T.AppColors.success : T.AppColors.textMuted,
+                  color: isConnected
+                      ? app_color.AppColors.success
+                      : app_color.AppColors.textMuted,
                 ),
               ),
             ],
@@ -537,23 +598,26 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
               borderRadius: BorderRadius.circular(AppRadius.lg),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 112),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: T.AppColors.surface,
+                  color: app_color.AppColors.surface,
                   borderRadius: BorderRadius.circular(AppRadius.card),
-                  border: Border.all(color: T.AppColors.outline),
+                  border: Border.all(color: app_color.AppColors.outline),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.record_voice_over_rounded, size: 16, color: T.AppColors.textPrimary),
+                    const Icon(Icons.record_voice_over_rounded,
+                        size: 16, color: app_color.AppColors.textPrimary),
                     const SizedBox(width: 6),
                     Flexible(
                       child: Text(
                         _selectedVoice.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -564,7 +628,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: T.AppColors.outline, height: 1),
+          child: Container(color: app_color.AppColors.outline, height: 1),
         ),
       ),
       body: Column(
@@ -590,8 +654,9 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
             decoration: const BoxDecoration(
-              color: T.AppColors.surfaceCard,
-              border: Border(top: BorderSide(color: T.AppColors.outline)),
+              color: app_color.AppColors.surfaceCard,
+              border:
+                  Border(top: BorderSide(color: app_color.AppColors.outline)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -600,7 +665,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                 if (isConnected && _isAiSpeaking)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: SizedBox(height: 24, child: _Waveform(volume: _volumeLevel)),
+                    child: SizedBox(
+                        height: 24, child: _Waveform(volume: _volumeLevel)),
                   ),
 
                 Row(
@@ -610,21 +676,29 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                       child: Container(
                         height: 50,
                         decoration: BoxDecoration(
-                          color: T.AppColors.surface,
+                          color: app_color.AppColors.surface,
                           borderRadius: BorderRadius.circular(AppRadius.sheet),
                         ),
                         child: TextField(
                           controller: _textController,
                           enabled: isConnected, // Chỉ nhập được khi đã kết nối
-                          style: const TextStyle(fontSize: 15, color: T.AppColors.textPrimary),
+                          style: const TextStyle(
+                              fontSize: 15,
+                              color: app_color.AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: isConnecting
                                 ? t.freeSpeakingHintConnecting
-                                : (isConnected ? t.freeSpeakingHintTypeMessage : t.freeSpeakingHintTapMic),
-                            hintStyle: const TextStyle(color: T.AppColors.textMuted, fontSize: 14),
+                                : (isConnected
+                                    ? t.freeSpeakingHintTypeMessage
+                                    : t.freeSpeakingHintTapMic),
+                            hintStyle: const TextStyle(
+                                color: app_color.AppColors.textMuted,
+                                fontSize: 14),
                             border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                            prefixIcon: const Icon(Icons.keyboard_alt_outlined, size: 20, color: T.AppColors.textMuted),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            prefixIcon: const Icon(Icons.keyboard_alt_outlined,
+                                size: 20, color: app_color.AppColors.textMuted),
                           ),
                         ),
                       ),
@@ -636,33 +710,39 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                       onTap: _handleBottomButtonPress,
                       child: AnimatedContainer(
                         duration: AppMotion.base,
-                        height: 50, width: 50,
+                        height: 50,
+                        width: 50,
                         decoration: BoxDecoration(
-                            color: (isConnected && !_isTyping) ? Colors.red.shade500 : T.AppColors.primary,
-                            borderRadius: BorderRadius.circular(AppRadius.sheet),
+                            color: (isConnected && !_isTyping)
+                                ? Colors.red.shade500
+                                : app_color.AppColors.primary,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.sheet),
                             boxShadow: [
                               BoxShadow(
                                   color: (isConnected && !_isTyping)
                                       ? Colors.red.withValues(alpha: 0.3)
-                                      : T.AppColors.primary.withValues(alpha: 0.3),
+                                      : app_color.AppColors.primary
+                                          .withValues(alpha: 0.3),
                                   blurRadius: 8,
-                                  offset: const Offset(0, 4)
-                              )
-                            ]
-                        ),
+                                  offset: const Offset(0, 4))
+                            ]),
                         child: Center(
                           child: isConnecting
                               ? const SizedBox(
-                              height: 24, width: 24,
-                              child: AppLoadingIndicator(color: Colors.white, strokeWidth: 2.5)
-                          )
+                                  height: 24,
+                                  width: 24,
+                                  child: AppLoadingIndicator.button(
+                                      color: Colors.white))
                               : Icon(
-                            (!isConnected)
-                                ? Icons.mic_rounded // Icon bắt đầu
-                                : (_isTyping ? Icons.arrow_upward_rounded : Icons.stop_rounded),
-                            color: Colors.white,
-                            size: 24,
-                          ),
+                                  (!isConnected)
+                                      ? Icons.mic_rounded // Icon bắt đầu
+                                      : (_isTyping
+                                          ? Icons.arrow_upward_rounded
+                                          : Icons.stop_rounded),
+                                  color: Colors.white,
+                                  size: 24,
+                                ),
                         ),
                       ),
                     ),
@@ -685,23 +765,24 @@ class _SystemHintBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayText =
-        message.id == 'sys_init' ? context.l10n.freeSpeakingWelcome : message.text;
+    final displayText = message.id == 'sys_init'
+        ? context.l10n.freeSpeakingWelcome
+        : message.text;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: T.AppColors.outlineMuted,
+            color: app_color.AppColors.outlineMuted,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: T.AppColors.outline),
+            border: Border.all(color: app_color.AppColors.outline),
           ),
           child: Text(
             displayText,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: T.AppColors.textMuted,
+                  color: app_color.AppColors.textMuted,
                   fontWeight: FontWeight.w500,
                   height: 1.35,
                 ),
@@ -717,7 +798,8 @@ class _ConversationTurnBubble extends StatefulWidget {
   const _ConversationTurnBubble({required this.turn});
 
   @override
-  State<_ConversationTurnBubble> createState() => _ConversationTurnBubbleState();
+  State<_ConversationTurnBubble> createState() =>
+      _ConversationTurnBubbleState();
 }
 
 class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
@@ -821,7 +903,8 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
     final scheme = Theme.of(context).colorScheme;
 
     return Row(
-      mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment:
+          isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (!isUser)
@@ -830,23 +913,30 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: T.AppColors.primaryTint,
+              color: app_color.AppColors.primaryTint,
               borderRadius: BorderRadius.circular(AppRadius.input),
-              border: Border.all(color: T.AppColors.outline),
+              border: Border.all(color: app_color.AppColors.outline),
             ),
-            child: Icon(Icons.auto_awesome_rounded, color: T.AppColors.primary, size: 18),
+            child: Icon(Icons.auto_awesome_rounded,
+                color: app_color.AppColors.primary, size: 18),
           ),
         Flexible(
           child: Column(
-            crossAxisAlignment: isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment:
+                isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               AnimatedContainer(
                 duration: AppMotion.base,
                 curve: Curves.easeOutCubic,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isUser ? T.AppColors.primary : T.AppColors.surfaceCard,
-                  border: isUser ? null : Border.all(color: T.AppColors.outline),
+                  color: isUser
+                      ? app_color.AppColors.primary
+                      : app_color.AppColors.surfaceCard,
+                  border: isUser
+                      ? null
+                      : Border.all(color: app_color.AppColors.outline),
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(AppRadius.lg),
                     topRight: const Radius.circular(AppRadius.lg),
@@ -856,7 +946,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                   boxShadow: [
                     BoxShadow(
                       color: isUser
-                          ? T.AppColors.primary.withValues(alpha: 0.22)
+                          ? app_color.AppColors.primary.withValues(alpha: 0.22)
                           : Colors.black.withValues(alpha: 0.06),
                       blurRadius: isUser ? 12 : 8,
                       offset: const Offset(0, 2),
@@ -875,7 +965,9 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                             style: TextStyle(
                               fontSize: 15,
                               height: 1.5,
-                              color: isUser ? Colors.white : T.AppColors.textPrimary,
+                              color: isUser
+                                  ? Colors.white
+                                  : app_color.AppColors.textPrimary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -890,7 +982,9 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                                 '…',
                                 style: TextStyle(
                                   fontSize: 18,
-                                  color: isUser ? Colors.white70 : scheme.onSurfaceVariant,
+                                  color: isUser
+                                      ? Colors.white70
+                                      : scheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -900,7 +994,11 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                     ),
                     if (_showTranslation) ...[
                       const SizedBox(height: 10),
-                      Divider(height: 1, color: isUser ? Colors.white24 : T.AppColors.outline),
+                      Divider(
+                          height: 1,
+                          color: isUser
+                              ? Colors.white24
+                              : app_color.AppColors.outline),
                       const SizedBox(height: 8),
                       if (_isTranslating)
                         SizedBox(
@@ -908,7 +1006,9 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                           width: 14,
                           child: AppLoadingIndicator(
                             strokeWidth: 2,
-                            color: isUser ? Colors.white70 : T.AppColors.primary,
+                            color: isUser
+                                ? Colors.white70
+                                : app_color.AppColors.primary,
                           ),
                         )
                       else
@@ -918,7 +1018,9 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                             fontSize: 14,
                             fontStyle: FontStyle.italic,
                             height: 1.45,
-                            color: isUser ? Colors.white.withValues(alpha: 0.92) : T.AppColors.textMuted,
+                            color: isUser
+                                ? Colors.white.withValues(alpha: 0.92)
+                                : app_color.AppColors.textMuted,
                           ),
                         ),
                     ],
@@ -932,7 +1034,9 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _ActionButton(
-                        icon: _isPlaying ? Icons.stop_circle_outlined : Icons.volume_up_rounded,
+                        icon: _isPlaying
+                            ? Icons.stop_circle_outlined
+                            : Icons.volume_up_rounded,
                         onTap: _speak,
                         active: _isPlaying,
                       ),
@@ -954,11 +1058,13 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: T.AppColors.primary.withValues(alpha: 0.12),
+              color: app_color.AppColors.primary.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: T.AppColors.primary.withValues(alpha: 0.25)),
+              border: Border.all(
+                  color: app_color.AppColors.primary.withValues(alpha: 0.25)),
             ),
-            child: Icon(Icons.person_rounded, color: T.AppColors.primary, size: 20),
+            child: Icon(Icons.person_rounded,
+                color: app_color.AppColors.primary, size: 20),
           ),
       ],
     );
@@ -971,7 +1077,8 @@ class _ActionButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool active;
 
-  const _ActionButton({required this.icon, required this.onTap, this.active = false});
+  const _ActionButton(
+      {required this.icon, required this.onTap, this.active = false});
 
   @override
   Widget build(BuildContext context) {
@@ -980,13 +1087,17 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: active ? T.AppColors.primary.withValues(alpha: 0.1) : Colors.transparent,
+          color: active
+              ? app_color.AppColors.primary.withValues(alpha: 0.1)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.input),
         ),
         child: Icon(
           icon,
           size: 18,
-          color: active ? T.AppColors.primary : T.AppColors.textMuted,
+          color: active
+              ? app_color.AppColors.primary
+              : app_color.AppColors.textMuted,
         ),
       ),
     );
@@ -1012,7 +1123,7 @@ class _Waveform extends StatelessWidget {
           width: 3,
           height: 10 + (volume * 30 * scale),
           decoration: BoxDecoration(
-            color: T.AppColors.primary.withValues(alpha: 0.7),
+            color: app_color.AppColors.primary.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(AppRadius.xs),
           ),
         );

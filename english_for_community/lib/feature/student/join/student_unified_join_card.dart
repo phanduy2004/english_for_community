@@ -162,7 +162,7 @@ class _StudentUnifiedJoinCardState extends State<StudentUnifiedJoinCard> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: AppLoadingIndicator(strokeWidth: 2, color: Colors.white),
+                          child: AppLoadingIndicator.button(color: Colors.white),
                         )
                       : Text(l10n.studentUnifiedJoinButton),
                 ),

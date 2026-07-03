@@ -143,73 +143,7 @@ class LocalNotificationService {
     }
   }
 
-  // 🟢 5. ĐẶT LỊCH NHẮC TỪ VỰNG HÀNG NGÀY
-  Future<void> scheduleDailyWordSequence({
-    required List<dynamic> words,
-    required TimeOfDay time,
-  }) async {
-    if (kIsWeb) return;
-
-    await cancelAll(); // Hủy lịch cũ
-
-    final now = tz.TZDateTime.now(tz.local);
-
-    // Tạo thời gian nhắc
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year, now.month, now.day,
-      time.hour, time.minute,
-    );
-
-    // Nếu giờ đã qua, chuyển sang ngày mai
-    if (scheduledDate.isBefore(now)) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-
-    print("📅 Scheduled Daily Words starting at: $scheduledDate");
-
-    for (int i = 0; i < words.length; i++) {
-      final word = words[i];
-      final headword = word['headword'] ?? 'Word';
-      final definition = word['shortDefinition'] ?? 'Review now';
-
-      // Lấy ID word
-      final String wordId = (word['id'] ?? word['_id'] ?? '').toString();
-
-      // 🔥 ĐÓNG GÓI PAYLOAD DẠNG JSON (để _handleNotificationTap đọc được)
-      final String jsonPayload = jsonEncode({
-        "wordId": wordId,
-        "type": "DAILY_VOCAB"
-      });
-
-      // Mỗi từ cách nhau 1 phút
-      final reminderTime = scheduledDate.add(Duration(minutes: i));
-
-      await _flutterLocalNotificationsPlugin.zonedSchedule(
-        i + 1000,
-        "Daily Vocab (${i + 1}/${words.length}) 🔔",
-        "$headword: $definition",
-        reminderTime,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'vocab_channel_v3',
-            'Daily Vocabulary',
-            importance: Importance.max,
-            priority: Priority.high,
-            color: Color(0xFF2E7D32),
-            icon: '@mipmap/ic_launcher',
-          ),
-          iOS: DarwinNotificationDetails(),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.time, // Lặp lại hàng ngày
-        payload: jsonPayload, // 🔥 Payload JSON mới
-      );
-    }
-  }
-
-  // 🟢 6. HỦY TẤT CẢ
+  // 🟢 5. HỦY TẤT CẢ
   Future<void> cancelAll() async {
     if (kIsWeb) return;
 

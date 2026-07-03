@@ -257,6 +257,22 @@ class ExamNavNumberChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bgColor = done ? AppColors.success : ExamNavTokens.backgroundColor();
+    final borderColor = done
+        ? AppColors.success
+        : ExamNavTokens.borderColor(
+            selected: selected,
+            done: done,
+            skillAccent: skillAccent,
+          );
+    final fgColor = done
+        ? AppColors.onPrimary
+        : ExamNavTokens.textColor(
+            selected: selected,
+            done: done,
+            skillAccent: skillAccent,
+          );
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -269,14 +285,10 @@ class ExamNavNumberChip extends StatelessWidget {
           height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: ExamNavTokens.backgroundColor(),
+            color: bgColor,
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(
-              color: ExamNavTokens.borderColor(
-                selected: selected,
-                done: done,
-                skillAccent: skillAccent,
-              ),
+              color: borderColor,
               width: ExamNavTokens.borderWidth(selected: selected),
             ),
           ),
@@ -285,11 +297,7 @@ class ExamNavNumberChip extends StatelessWidget {
             style: TextStyle(
               fontWeight: ExamNavTokens.fontWeight(selected: selected, done: done),
               fontSize: size <= 32 ? 11 : 13,
-              color: ExamNavTokens.textColor(
-                selected: selected,
-                done: done,
-                skillAccent: skillAccent,
-              ),
+              color: fgColor,
               height: 1,
             ),
           ),

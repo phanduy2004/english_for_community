@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/entity/app_update_info_entity.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_bloc.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_event.dart';
 import 'package:english_for_community/feature/app_update/bloc/app_update_state.dart';
@@ -82,7 +83,7 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
             }
             _dialogShowing = true;
             _lastShownVersionCode = info.latestVersionCode;
-            await _showUpdateDialog(context, info);
+            await _showUpdateDialog(info);
             _dialogShowing = false;
           },
         ),
@@ -91,12 +92,12 @@ class _AppUpdateGuardState extends State<AppUpdateGuard>
     );
   }
 
-  Future<void> _showUpdateDialog(
-    BuildContext context,
-    AppUpdateInfoEntity info,
-  ) async {
+  Future<void> _showUpdateDialog(AppUpdateInfoEntity info) async {
+    final host = rootNavigatorKey.currentContext;
+    if (host == null) return;
+
     await showDialog<void>(
-      context: context,
+      context: host,
       barrierDismissible: info.status != AppUpdateStatus.forceUpdate,
       useRootNavigator: true,
       builder: (dialogContext) {

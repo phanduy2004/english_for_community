@@ -1147,7 +1147,7 @@ class _TeacherIntegratedExamEditorViewState extends State<_TeacherIntegratedExam
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: AppLoadingIndicator(strokeWidth: 2),
+                                  child: AppLoadingIndicator.button(),
                                 ),
                               ),
                             )

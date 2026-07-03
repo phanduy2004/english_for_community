@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 // Đảm bảo import đúng các file entity/bloc của dự án bạn
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
@@ -540,8 +539,11 @@ class _WritingTaskViewState extends State<WritingTaskView> {
                               readOnly: isSubmitting || widget.readOnlyReview,
                             ),
 
-                            // C. Spacer
-                            SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 300 : 100),
+                            SizedBox(
+                              height: MediaQuery.of(context).viewInsets.bottom > 0
+                                  ? AppSpacing.s5
+                                  : AppSpacing.s3,
+                            ),
                           ],
                         ),
                       ),
@@ -682,8 +684,13 @@ class _Editor extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.l10n;
     final compact = ExamEmbeddedSkillScope.compactOf(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final editorMinHeight = (screenHeight * (compact ? 0.26 : 0.30))
+        .clamp(compact ? 120.0 : 160.0, compact ? 180.0 : 240.0)
+        .toDouble();
+
     return Container(
-      constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height * (compact ? 0.35 : 0.5)),
+      constraints: BoxConstraints(minHeight: editorMinHeight),
       padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 20),
       child: TextField(
         controller: controller,

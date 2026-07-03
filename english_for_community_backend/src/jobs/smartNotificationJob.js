@@ -25,58 +25,51 @@ const getUserTime = (timezone = 'Asia/Ho_Chi_Minh') => {
 };
 
 // ============================================================
-// 1. [DAILY VOCAB] GỬI CHUỖI 3 TỪ CỤ THỂ
+// 1. [DAILY REMINDER] GỬI 1 NHẮC CHUNG
 // ============================================================
-const sendSingleWordNotification = async (user, word, index, total) => {
+const triggerDailyVocabSequence = async (user) => {
   try {
-    const title = `Từ vựng mỗi ngày (${index + 1}/${total}) ⏰`;
-    const body = `Hôm nay học từ: "${word.headword}" (${word.pos}) - ${word.shortDefinition}`;
+    const words = (await vocabService.getDailyReminderWords(user._id) || []).slice(0, 3);
+    const wordNames = words
+      .map(word => word?.headword)
+      .filter(Boolean);
+    const firstWord = words[0];
+
+    const title = 'Đến giờ học rồi 👋';
+    const body = wordNames.length > 0
+      ? `Ôn lại: ${wordNames.join(', ')}. Vào học nhé!`
+      : 'Đã đến giờ học tiếng Anh của bạn. Vào luyện tập ngay!';
+    const data = {
+      type: 'DAILY_REMINDER',
+      ...(firstWord?._id ? { wordId: firstWord._id.toString() } : {})
+    };
 
     const messagePayload = {
       notification: { title, body },
       data: {
-        type: 'DAILY_VOCAB',
-        wordId: word._id.toString(),
+        ...data,
         click_action: 'FLUTTER_NOTIFICATION_CLICK'
       },
       tokens: user.fcmTokens
     };
 
     if (messaging && user.fcmTokens?.length > 0) {
-      // 1. Job tự gửi FCM
       await messaging.sendEachForMulticast(messagePayload);
+      console.log(`📢 [DAILY_REMINDER] Sent to ${user.username}`);
 
-      // 2. Lưu DB (Chặn Socket + Chặn FCM của Service)
-      notificationService.createNotification({
+      await notificationService.createNotification({
         recipientId: user._id,
         senderId: null,
         type: 'DAILY_REMINDER',
         title,
         message: body,
-        data: { wordId: word._id.toString() }, // ✅ SỬA LẠI DATA CHUẨN
+        data,
         skipSocket: true,
-        skipFCM: true // ✅ ĐÃ CÓ (TỐT)
+        skipFCM: true
       });
     }
   } catch (error) {
-    console.error(`❌ Error sending word "${word.headword}":`, error.message);
-  }
-};
-
-const triggerDailyVocabSequence = async (user) => {
-  try {
-    const words = await vocabService.getDailyReminderWords(user._id);
-    if (!words || words.length === 0) return;
-
-    console.log(`🚀 [Daily Vocab] Sending ${words.length} words to ${user.username}`);
-
-    words.forEach((word, index) => {
-      setTimeout(() => {
-        sendSingleWordNotification(user, word, index, words.length);
-      }, index * 20000);
-    });
-  } catch (error) {
-    console.error(`❌ Error logic daily vocab:`, error);
+    console.error(`❌ Error logic daily reminder:`, error);
   }
 };
 
@@ -185,7 +178,7 @@ export const initSmartNotificationJob = () => {
         const { hour, minute, dateStr } = getUserTime(user.timezone);
 
         // A. Daily Vocab
-        if (user.reminder?.enabled !== false && user.reminder?.hour != null) {
+        if (user.reminder?.hour != null) {
           if (hour === user.reminder.hour && minute === user.reminder.minute) {
             await triggerDailyVocabSequence(user);
           }
@@ -196,13 +189,13 @@ export const initSmartNotificationJob = () => {
           await checkReviewReminders(user);
         }
 
-        // C. Progress Nudge (20:00) - Bạn đang set phút 8 để test
-        if (hour === 23 && minute === 12) {
+        // C. Progress Nudge (20:00)
+        if (hour === 20 && minute === 0) {
           await checkProgressNudge(user, dateStr);
         }
 
         // D. Streak Rescue (22:00)
-        if (hour === 23 && minute === 14) {
+        if (hour === 22 && minute === 0) {
           await checkStreakRescue(user, dateStr);
         }
       }

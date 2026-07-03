@@ -199,8 +199,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: AppLoadingIndicator(
-                              strokeWidth: 2,
+                            child: AppLoadingIndicator.button(
                               color: AppColors.onPrimary,
                             ),
                           )

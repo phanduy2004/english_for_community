@@ -1,5 +1,4 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
@@ -118,7 +117,12 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final newRange = _Range.values[index];
     if (_range == newRange) return;
     setState(() => _range = newRange);
-    blocContext.read<ProgressBloc>().add(FetchProgressData(range: _rangeToString(newRange)));
+    blocContext.read<ProgressBloc>().add(
+          FetchProgressData(
+            range: _rangeToString(newRange),
+            forceRefresh: true,
+          ),
+        );
   }
 
   void _showStatDetailDialog(ProgressBloc bloc, String statKey, _Range range) {
@@ -239,8 +243,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         body: SafeArea(
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
-              if ((state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) &&
-                  state.summary == null) {
+              if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
                 return StudentMobileUi.listLoading();
               }
               if (state.status == ProgressStatus.error && state.summary == null) {

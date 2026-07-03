@@ -357,7 +357,7 @@ class CueSelector extends StatelessWidget {
             return ExamNavNumberChip(
               number: i + 1,
               selected: i == selectedIndex,
-              done: completedIdx.contains(i) && i != selectedIndex,
+              done: completedIdx.contains(i),
               skillAccent: skillAccent,
               size: 36,
               radius: 8,

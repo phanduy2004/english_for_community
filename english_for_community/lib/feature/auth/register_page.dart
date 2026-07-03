@@ -343,8 +343,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: AppLoadingIndicator(
-                                    strokeWidth: 2,
+                                  child: AppLoadingIndicator.button(
                                     color: AppColors.onPrimary,
                                   ),
                                 )

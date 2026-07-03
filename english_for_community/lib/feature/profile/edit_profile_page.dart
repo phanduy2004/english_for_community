@@ -307,8 +307,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ? const SizedBox(
                     width: 16,
                     height: 16,
-                    child: AppLoadingIndicator(
-                        strokeWidth: 2, color: AppColors.onPrimary),
+                    child: AppLoadingIndicator.button(color: AppColors.onPrimary),
                   )
                 : Text(
                     t.saveChanges,

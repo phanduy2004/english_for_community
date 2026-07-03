@@ -1820,7 +1820,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                                 ? const SizedBox(
                                     height: 18,
                                     width: 18,
-                                    child: AppLoadingIndicator(strokeWidth: 2),
+                                    child: AppLoadingIndicator.button(),
                                   )
                                 : Text(l10n.teacherClassSaveSettings),
                           ),
@@ -1914,7 +1914,7 @@ class _SettingsTabState extends State<_SettingsTab> {
                               ? const Padding(
                                   padding: EdgeInsets.all(12),
                                   child: SizedBox(
-                                    child: const AppLoadingIndicator.button(),
+                                    child: AppLoadingIndicator.button(),
                                   ),
                                 )
                               : (_coUsername.text.isNotEmpty

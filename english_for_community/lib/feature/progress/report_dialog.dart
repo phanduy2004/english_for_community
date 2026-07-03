@@ -147,7 +147,7 @@ class _ReportDialogState extends State<ReportDialog> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: AppLoadingIndicator(strokeWidth: 2, color: AppColors.onPrimary),
+                        child: AppLoadingIndicator.button(color: AppColors.onPrimary),
                       )
                     : Text(t.submitReport),
               ),
