@@ -100,19 +100,19 @@ dev_dependencies:
   json_serializable: ^6.7.1
   flutter_lints: ^6.0.0
 flutter_launcher_icons:
+  # Logo E4C (Monogram Tile) — navy #213D65 + gold #C59D48, chữ Lexend
   android: "ic_launcher"
   ios: true
-  # 1. Đường dẫn ảnh logo (đã tách nền trong suốt là tốt nhất)
-  image_path: "assets/images/logoE4C.png"
+  # Icon full-bleed (navy phủ kín) dùng cho iOS + legacy Android
+  image_path: "assets/images/e4c_icon.png"
+  remove_alpha_ios: true
 
   min_sdk_android: 21
 
-  # 🔥 QUAN TRỌNG: Thêm 2 dòng này để tạo nền màu cho Logo
-  # Đây là lớp ảnh nằm trên (Foreground) - Dùng chính logo của bạn
-  adaptive_icon_foreground: "assets/images/logoE4C.png"
-
-  # Đây là lớp màu nền nằm dưới (Background) - Logo trắng sẽ nổi trên nền này
-  adaptive_icon_background: "#2E7D32"  # 👈 Thay mã màu bạn thích vào đây (Ví dụ: Xanh #2E7D32, Đen #000000)
+  # Android adaptive: foreground = chữ E4C (nền trong suốt, chừa lề an toàn),
+  # background = màu navy thương hiệu
+  adaptive_icon_foreground: "assets/images/e4c_icon_fg.png"
+  adaptive_icon_background: "#213D65"
 flutter:
   uses-material-design: true
   generate: true

@@ -1,11 +1,11 @@
 {
-    "name": "english_for_community",
-    "short_name": "english_for_community",
+    "name": "E4C — English for Community",
+    "short_name": "E4C",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#1B3358",
+    "theme_color": "#1B3358",
+    "description": "Learn English, connect with your community, and grow together.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
