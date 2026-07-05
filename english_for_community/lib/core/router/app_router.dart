@@ -67,6 +67,10 @@ import '../../feature/listening/listening_skill/listening_skills_page.dart';
 import '../../feature/speaking/speaking_hub_page.dart';
 import '../../feature/speaking/speaking_skills_page.dart';
 import '../../feature/speaking/free_speaking_page.dart';
+import '../../feature/speaking/speaking_feedback_page.dart';
+import '../../feature/speaking/speaking_progress_dashboard_page.dart';
+import '../../feature/speaking/speaking_notebook_page.dart';
+import '../entity/speaking_phase2_entity.dart';
 
 // Writing
 import '../../feature/writing/writing_topics_page.dart';
@@ -101,6 +105,7 @@ import '../../feature/student/exams/exam_runner_page.dart';
 import '../../feature/student/exams/public_exam_join_page.dart';
 import '../../feature/student/exams/exam_session_lobby_page.dart';
 import '../../feature/classroom_chat/classroom_chat_page.dart';
+
 // Route Constants
 const String kReadingDetailRouteName = 'reading-detail';
 const String kDictDetailRouteName = 'dict-detail';
@@ -294,7 +299,8 @@ class AppRouter {
                   } else if (type == 'writing') {
                     return const AdminWritingListView();
                   }
-                  return Scaffold(body: Center(child: Text('Unknown type: $type')));
+                  return Scaffold(
+                      body: Center(child: Text('Unknown type: $type')));
                 },
                 routes: [
                   GoRoute(
@@ -314,7 +320,8 @@ class AppRouter {
                       } else if (type == 'writing') {
                         return WritingTopicEditorPage(id: id);
                       }
-                      return Scaffold(body: Center(child: Text('Error: $type')));
+                      return Scaffold(
+                          body: Center(child: Text('Error: $type')));
                     },
                   ),
                 ],
@@ -417,11 +424,13 @@ class AppRouter {
                       GoRoute(
                         path: 'gradebook',
                         name: TeacherGradebookPage.routeName,
-                        pageBuilder: (context, state) => AppPageTransitions.build(
+                        pageBuilder: (context, state) =>
+                            AppPageTransitions.build(
                           state: state,
                           transition: AppRouteTransition.push,
                           child: TeacherGradebookPage(
-                            classroomId: state.pathParameters['classroomId'] ?? '',
+                            classroomId:
+                                state.pathParameters['classroomId'] ?? '',
                           ),
                         ),
                       ),
@@ -429,10 +438,13 @@ class AppRouter {
                         path: 'chat',
                         name: ClassroomChatPage.routeName,
                         pageBuilder: (context, state) {
-                          final classroomId = state.pathParameters['classroomId'] ?? '';
+                          final classroomId =
+                              state.pathParameters['classroomId'] ?? '';
                           final extra = state.extra as Map<String, dynamic>?;
-                          final name = extra?['classroomName'] as String? ?? 'Nhóm lớp học';
-                          final userId = extra?['currentUserId'] as String? ?? '';
+                          final name = extra?['classroomName'] as String? ??
+                              'Nhóm lớp học';
+                          final userId =
+                              extra?['currentUserId'] as String? ?? '';
                           return AppPageTransitions.build(
                             state: state,
                             transition: AppRouteTransition.push,
@@ -451,7 +463,9 @@ class AppRouter {
                     name: TeacherInboxPage.routeName,
                     pageBuilder: (context, state) {
                       final raw = state.uri.queryParameters['filter'];
-                      final filter = TeacherInboxFilter.values.asNameMap()[raw] ?? TeacherInboxFilter.all;
+                      final filter =
+                          TeacherInboxFilter.values.asNameMap()[raw] ??
+                              TeacherInboxFilter.all;
                       return AppPageTransitions.build(
                         state: state,
                         transition: AppRouteTransition.push,
@@ -466,7 +480,8 @@ class AppRouter {
                       state: state,
                       transition: AppRouteTransition.push,
                       child: TeacherExamAttemptGradePage(
-                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                        assignmentId:
+                            state.pathParameters['assignmentId'] ?? '',
                         attemptId: state.pathParameters['attemptId'] ?? '',
                       ),
                     ),
@@ -478,7 +493,8 @@ class AppRouter {
                       state: state,
                       transition: AppRouteTransition.push,
                       child: TeacherExamSessionConsolePage(
-                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                        assignmentId:
+                            state.pathParameters['assignmentId'] ?? '',
                       ),
                     ),
                   ),
@@ -489,7 +505,8 @@ class AppRouter {
                       state: state,
                       transition: AppRouteTransition.push,
                       child: TeacherExamGradingPage(
-                        assignmentId: state.pathParameters['assignmentId'] ?? '',
+                        assignmentId:
+                            state.pathParameters['assignmentId'] ?? '',
                       ),
                     ),
                   ),
@@ -508,7 +525,9 @@ class AppRouter {
                       } else if (type == 'writing') {
                         page = WritingTopicEditorPage();
                       } else {
-                        page = Scaffold(body: Center(child: Text('Unknown content type: $type')));
+                        page = Scaffold(
+                            body: Center(
+                                child: Text('Unknown content type: $type')));
                       }
                       return AppPageTransitions.build(
                         state: state,
@@ -560,7 +579,8 @@ class AppRouter {
                       final extra = state.extra;
                       String? initialClassroomId;
                       if (extra is Map<String, dynamic>) {
-                        initialClassroomId = extra['initialClassroomId'] as String?;
+                        initialClassroomId =
+                            extra['initialClassroomId'] as String?;
                       }
                       return AppPageTransitions.build(
                         state: state,
@@ -691,9 +711,10 @@ class AppRouter {
         path: '/listening-comp/:id',
         builder: (context, state) {
           final id = state.pathParameters['id'];
-          if (id == null)
+          if (id == null) {
             return const Scaffold(
                 body: Center(child: Text('Error: Missing ID')));
+          }
 
           // 🔥 LẤY CỜ TỪ URL (QUERY PARAMETERS)
           final isRetakeStr = state.uri.queryParameters['isRetake'];
@@ -851,9 +872,10 @@ class AppRouter {
         path: '/speaking-skills/:setId',
         builder: (context, state) {
           final setId = state.pathParameters['setId'];
-          if (setId == null)
+          if (setId == null) {
             return const Scaffold(
                 body: Center(child: Text('Error: Missing ID')));
+          }
 
           // 🔥 BẮT CỜ isRetake TỪ URL
           final isRetakeStr = state.uri.queryParameters['isRetake'];
@@ -866,7 +888,37 @@ class AppRouter {
       GoRoute(
         path: FreeSpeakingPage.routePath,
         name: FreeSpeakingPage.routeName,
-        builder: (context, state) => const FreeSpeakingPage(),
+        builder: (context, state) => FreeSpeakingPage(
+          scenario: state.extra is SpeakingScenarioEntity
+              ? state.extra as SpeakingScenarioEntity
+              : null,
+        ),
+      ),
+      GoRoute(
+        path: SpeakingProgressDashboardPage.routePath,
+        name: SpeakingProgressDashboardPage.routeName,
+        builder: (context, state) => const SpeakingProgressDashboardPage(),
+      ),
+      GoRoute(
+        path: SpeakingNotebookPage.routePath,
+        name: SpeakingNotebookPage.routeName,
+        builder: (context, state) => const SpeakingNotebookPage(),
+      ),
+      GoRoute(
+        path: SpeakingFeedbackPage.routePath,
+        name: SpeakingFeedbackPage.routeName,
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is SpeakingFeedbackPageArgs) {
+            return SpeakingFeedbackPage(args: extra);
+          }
+          return const SpeakingFeedbackHistoryPage();
+        },
+      ),
+      GoRoute(
+        path: SpeakingFeedbackHistoryPage.routePath,
+        name: SpeakingFeedbackHistoryPage.routeName,
+        builder: (context, state) => const SpeakingFeedbackHistoryPage(),
       ),
 
       // --- Writing ---

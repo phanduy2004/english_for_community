@@ -31,7 +31,10 @@ class VapiVoice {
 abstract class VapiService {
   Stream<VapiEvent> get onEvent;
   List<VapiVoice> getAvailableVoices();
-  Future<void> start({String? voiceId}); // start nhận voiceId
+  Future<void> start({
+    String? voiceId,
+    Map<String, dynamic>? assistantOverrides,
+  }); // start nhận voiceId
   Future<void> stop();
   Future<void> sendMessage(String text);
   void dispose();

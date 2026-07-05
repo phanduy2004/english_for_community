@@ -43,6 +43,30 @@ function applyDailyStreak(user, { resetLegacyDailyProgress = false } = {}) {
   return true;
 }
 
+function applySpeakingStreak(user) {
+  const userTimezone = user.timezone || 'Asia/Ho_Chi_Minh';
+  const todayStr = getDateString(new Date(), userTimezone);
+  const yesterdayStr = getYesterdayStr(userTimezone);
+  const lastSpeakingDate = user.speakingStreakDate || null;
+
+  if (lastSpeakingDate === todayStr) return false;
+
+  user.speakingStreak = lastSpeakingDate === yesterdayStr
+    ? (user.speakingStreak || 0) + 1
+    : 1;
+  user.speakingStreakDate = todayStr;
+  return true;
+}
+
+function addBadge(user, badge) {
+  if (!badge) return;
+  const badges = Array.isArray(user.speakingBadges) ? user.speakingBadges : [];
+  if (!badges.includes(badge)) {
+    badges.push(badge);
+    user.speakingBadges = badges;
+  }
+}
+
 /**
  * Ghi nhận hoạt động hàng ngày (đăng nhập / mở app).
  * Streak tăng khi user active ít nhất 1 lần mỗi ngày — không bắt buộc hoàn thành bài học.
@@ -84,7 +108,19 @@ export const updateGamificationStats = async (userId, activityType, activityData
     }
 
     let newPoints = 0;
-    if (activityType === 'speaking') newPoints = 25;
+    if (activityType === 'speaking') {
+      if (activityData?.isFreeSpeakingConversation === true) {
+        applySpeakingStreak(user);
+        const durationBonus = Math.min(20, Math.floor((activityData.durationInSeconds || 0) / 60) * 5);
+        const scoreBonus = Math.max(0, Math.round(Number(activityData.score || 0) * 2));
+        newPoints = 30 + durationBonus + scoreBonus;
+        if ((activityData.score || 0) >= 7) addBadge(user, 'speaking-clear-communicator');
+        if ((user.speakingStreak || 0) >= 3) addBadge(user, 'speaking-3-day-streak');
+        if ((user.speakingStreak || 0) >= 7) addBadge(user, 'speaking-7-day-streak');
+      } else {
+        newPoints = 25;
+      }
+    }
     if (activityType === 'dictation') newPoints = 20;
     if (activityType === 'reading') newPoints = 15;
     if (activityType === 'writing') newPoints = 100;

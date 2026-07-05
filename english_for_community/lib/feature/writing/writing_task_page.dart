@@ -254,29 +254,37 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       builder: (ctx) {
         final t = ctx.l10n;
         return AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
-        title: Text(t.writingSaveDraftTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
-        content: Text(
-          t.writingSaveDraftMessage,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, null),
-            child: Text(t.cancel, style: const TextStyle(color: AppColors.textSecondary)),
+          backgroundColor: AppColors.surfaceCard,
+          surfaceTintColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(t.writingDiscardButton, style: const TextStyle(color: AppColors.danger)),
+          title: Text(
+            t.writingSaveDraftTitle,
+            style: StudentMobileUi.sectionTitle(ctx),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(t.saveChanges, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          content: Text(
+            t.writingSaveDraftMessage,
+            style: StudentMobileUi.body(ctx),
           ),
-        ],
-      );
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+              ),
+              child: Text(t.writingDiscardButton),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+              ),
+              child: Text(t.saveChanges),
+            ),
+          ],
+        );
       },
     );
 
@@ -358,47 +366,59 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       builder: (ctx) {
         final t = ctx.l10n;
         return AlertDialog(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
-        title: Text(t.writingResumeTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
-        content: Text(
-          t.writingResumeMessage,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              final currentState = context.read<WritingTaskBloc>().state;
-              if (currentState.topic != null) {
-                final userId = _resolveUserId();
-                if (userId == null || userId.isEmpty) return;
-                context.read<WritingTaskBloc>().add(DiscardDraftAndStartNew(
-                  oldSubmissionId: submissionId,
-                  topic: currentState.topic!,
-                  userId: userId,
-                  taskType: _taskType ?? 'Discussion',
-                ));
-                _text.clear();
-                _isDirty = false;
-              }
-            },
-            child: Text(t.writingStartNewButton, style: const TextStyle(color: AppColors.danger)),
+          backgroundColor: AppColors.surfaceCard,
+          surfaceTintColor: AppColors.surfaceCard,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.sheet),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _taskType = serverTaskType;
-                _text.text = oldContent;
-                _isDirty = false;
-              });
-            },
-            child: Text(t.writingResumeButton, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          title: Text(
+            t.writingResumeTitle,
+            style: StudentMobileUi.sectionTitle(ctx),
           ),
-        ],
-      );
+          content: Text(
+            t.writingResumeMessage,
+            style: StudentMobileUi.body(ctx),
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                final currentState = context.read<WritingTaskBloc>().state;
+                if (currentState.topic != null) {
+                  final userId = _resolveUserId();
+                  if (userId == null || userId.isEmpty) return;
+                  context.read<WritingTaskBloc>().add(DiscardDraftAndStartNew(
+                    oldSubmissionId: submissionId,
+                    topic: currentState.topic!,
+                    userId: userId,
+                    taskType: _taskType ?? 'Discussion',
+                  ));
+                  _text.clear();
+                  _isDirty = false;
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.danger,
+              ),
+              child: Text(t.writingStartNewButton),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                setState(() {
+                  _taskType = serverTaskType;
+                  _text.text = oldContent;
+                  _isDirty = false;
+                });
+              },
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.onPrimary,
+              ),
+              child: Text(t.writingResumeButton),
+            ),
+          ],
+        );
       },
     );
   }
@@ -702,7 +722,7 @@ class _Editor extends StatelessWidget {
         textCapitalization: TextCapitalization.sentences,
         style: compact
             ? ExamSystemUi.embeddedBodyStyle.copyWith(color: AppColors.textPrimary)
-            : const TextStyle(fontSize: 16, height: 1.6, color: AppColors.textPrimary),
+            : StudentMobileUi.bodyLg(context),
         cursorColor: AppColors.primary,
         decoration: InputDecoration(
           border: InputBorder.none,

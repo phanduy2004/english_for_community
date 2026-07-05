@@ -845,6 +845,17 @@
   "updateAvailableBody": "Đã có phiên bản mới của ứng dụng. Hãy cập nhật để có trải nghiệm tốt nhất.",
   "updateNowButton": "Cập nhật ngay",
   "updateLaterButton": "Để sau",
+  "updateDownloading": "Đang tải... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": { "type": "int" }
+    }
+  },
+  "updatePreparingInstall": "Đang chuẩn bị cài đặt...",
+  "updateDownloadFailed": "Tải thất bại. Vui lòng thử lại.",
+  "updateOpenInBrowser": "Mở bằng trình duyệt",
+  "updateRetry": "Thử lại",
+  "updateCancel": "Hủy",
   "updateDialogVersionLine": "{name} (+{code})",
   "@updateDialogVersionLine": {
     "placeholders": {
@@ -2193,5 +2204,94 @@
   "chatMediaDownloading": "Đang tải file…",
   "chatMediaDownloadDone": "Đã tải file",
   "chatMediaDownloadFailed": "Không thể tải file",
-  "chatMediaVideoLoadFailed": "Không thể phát video"
+  "chatMediaVideoLoadFailed": "Không thể phát video",
+  "speakingFbTitle": "Nhận xét luyện nói",
+  "speakingFbTabOverview": "Tổng quan",
+  "speakingFbTabDetails": "Chi tiết",
+  "speakingFbTabCorrections": "Chữa lỗi",
+  "speakingFbTabSamples": "Câu mẫu",
+  "speakingFbOverall": "Band tổng {score}",
+  "@speakingFbOverall": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "speakingFbCefr": "Trình độ CEFR",
+  "speakingFbStrengths": "Điểm mạnh",
+  "speakingFbImprovements": "Cần cải thiện",
+  "speakingFbCorrections": "Chữa lỗi cụ thể",
+  "speakingFbVocabUpgrades": "Nâng cấp từ vựng",
+  "speakingFbSaveWord": "Lưu vào sổ từ",
+  "speakingFbSaved": "Đã lưu",
+  "speakingFbModelAnswers": "Câu mẫu",
+  "speakingFbSamplesEmptyTitle": "Chưa có câu mẫu",
+  "speakingFbSamplesEmptyBody": "Cuộc trò chuyện này chưa có câu mẫu để hiển thị.",
+  "speakingFbNextSteps": "Luyện tiếp",
+  "speakingFbAnalyzing": "Đang phân tích cuộc trò chuyện của bạn...",
+  "speakingFbTooShort": "Trò chuyện thêm một chút để nhận đánh giá nhé.",
+  "speakingErrorTitle": "Đã có lỗi xảy ra",
+  "speakingErrorBody": "Chưa tải được nội dung. Vui lòng thử lại.",
+  "speakingFbErrorTitle": "Chưa tạo được đánh giá",
+  "speakingFbErrorBody": "Chưa chấm được cuộc trò chuyện này. Vui lòng thử lại.",
+  "speakingFbSaveError": "Chưa lưu được từ. Thử lại nhé.",
+  "speakingFbRetry": "Thử lại",
+  "speakingFbStatWords": "{count} từ",
+  "@speakingFbStatWords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbStatWpm": "{value} WPM",
+  "@speakingFbStatWpm": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "speakingFbStatDuration": "{seconds}s",
+  "@speakingFbStatDuration": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "speakingFbStatFiller": "{count} từ đệm",
+  "@speakingFbStatFiller": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbStatQuestions": "{count} câu hỏi",
+  "@speakingFbStatQuestions": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbEndAndEvaluate": "Kết thúc & nhận đánh giá",
+  "speakingFbSpeakMore": "Nói tiếp",
+  "speakingFbBack": "Về",
+  "speakingFbPronunciationSoon": "Phát âm: sắp có (cần bản ghi âm).",
+  "speakingFbCriterionFc": "Độ trôi chảy & mạch lạc",
+  "speakingFbCriterionLr": "Từ vựng",
+  "speakingFbCriterionGra": "Ngữ pháp",
+  "speakingFbCriterionIa": "Tương tác & đúng nhiệm vụ",
+  "speakingFbYourTurn": "Bạn đã nói",
+  "speakingFbModelTurn": "Cách nói tự nhiên hơn",
+  "speakingFbHistoryTitle": "Lịch sử luyện nói",
+  "speakingFbHistoryEmptyTitle": "Chưa có buổi luyện nói",
+  "speakingFbHistoryEmptyBody": "Kết thúc một cuộc nói tự do để xem nhận xét tại đây.",
+  "speakingFbHistoryMeta": "{seconds}s · {turns} lượt · {cefr}",
+  "@speakingFbHistoryMeta": {
+    "placeholders": {
+      "seconds": { "type": "int" },
+      "turns": { "type": "int" },
+      "cefr": { "type": "String" }
+    }
+  },
+  "speakingFbTaskAchievement": "Mức hoàn thành nhiệm vụ",
+  "speakingScenarioTitle": "Tình huống luyện nói",
+  "speakingScenarioFreeChat": "Trò chuyện tự do",
+  "speakingScenarioFreeChatBody": "Nói tự do với trợ lý AI.",
+  "speakingScenarioEmptyTitle": "Chưa có tình huống",
+  "speakingScenarioEmptyBody": "Bạn vẫn có thể dùng trò chuyện tự do.",
+  "speakingDashboardTitle": "Tiến bộ luyện nói",
+  "speakingDashboardEmptyTitle": "Chưa có dữ liệu tiến bộ",
+  "speakingDashboardEmptyBody": "Hoàn thành ít nhất hai buổi nói tự do để thấy xu hướng rõ hơn.",
+  "speakingDashboardSessions": "Buổi nói",
+  "speakingDashboardMinutes": "Số phút",
+  "speakingDashboardAvgBand": "Band TB",
+  "speakingDashboardStreak": "Chuỗi nói",
+  "speakingDashboardRecent": "Buổi gần đây",
+  "speakingNotebookTitle": "Sổ tay cải thiện",
+  "speakingNotebookRepeated": "Lặp lại",
+  "speakingNotebookEmptyTitle": "Chưa có ghi chú",
+  "speakingNotebookEmptyBody": "Lỗi lặp lại và từ vựng nên nâng cấp sẽ xuất hiện sau khi có feedback.",
+  "speakingNotebookNoItems": "Chưa có mục nào",
+  "speakingNotebookReviewVocab": "Ôn từ vựng"
 }

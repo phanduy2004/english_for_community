@@ -29,6 +29,7 @@ export const getUserDetailsForAdmin = async (req, res) => {
       readingAcc: { total: 0, count: 0 },
       dictationAcc: { total: 0, count: 0 },
       speakingScore: { total: 0, count: 0 },
+      speakingFluency: { total: 0, count: 0 },
       writingScore: { total: 0, count: 0 },
     };
 
@@ -59,6 +60,10 @@ export const getUserDetailsForAdmin = async (req, res) => {
           aggs.speakingScore.total += rec.stats.speakingScore.total;
           aggs.speakingScore.count += rec.stats.speakingScore.count;
         }
+        if (rec.stats.speakingFluency?.count) {
+          aggs.speakingFluency.total += rec.stats.speakingFluency.total;
+          aggs.speakingFluency.count += rec.stats.speakingFluency.count;
+        }
         if (rec.stats.writingScore?.count) {
           aggs.writingScore.total += rec.stats.writingScore.total;
           aggs.writingScore.count += rec.stats.writingScore.count;
@@ -73,6 +78,7 @@ export const getUserDetailsForAdmin = async (req, res) => {
       readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100),
       dictationAccuracy: Math.round(calcAvg(aggs.dictationAcc) * 100),
       speakingAccuracy: Math.round(calcAvg(aggs.speakingScore) * 100),
+      speakingFluency: Math.round(calcAvg(aggs.speakingFluency) * 100),
       // ❌ Đã bỏ readingWpm hoàn toàn
     };
 

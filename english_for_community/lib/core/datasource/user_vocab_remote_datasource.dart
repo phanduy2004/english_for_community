@@ -74,6 +74,19 @@ class UserVocabRemoteDatasource {
     await dio.post('/vocab/save', data: data);
   }
 
+  Future<void> saveRawWord({
+    required String headword,
+    String? shortDefinition,
+    String? pos,
+  }) async {
+    await dio.post('/vocab/save', data: {
+      'headword': headword,
+      'ipa': null,
+      'shortDefinition': shortDefinition,
+      'pos': pos,
+    });
+  }
+
   Future<void> startLearningWord(Entry entry) async {
     final String? ipa = entry.ipa;
     final String? pos = entry.pos;

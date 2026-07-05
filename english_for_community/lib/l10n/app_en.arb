@@ -950,6 +950,17 @@
   "updateAvailableBody": "A new app version is available. Please update for the best experience.",
   "updateNowButton": "Update now",
   "updateLaterButton": "Later",
+  "updateDownloading": "Downloading... {progress}%",
+  "@updateDownloading": {
+    "placeholders": {
+      "progress": { "type": "int" }
+    }
+  },
+  "updatePreparingInstall": "Preparing to install...",
+  "updateDownloadFailed": "Download failed. Please try again.",
+  "updateOpenInBrowser": "Open in browser",
+  "updateRetry": "Retry",
+  "updateCancel": "Cancel",
   "updateDialogVersionLine": "{name} (+{code})",
   "@updateDialogVersionLine": {
     "placeholders": {
@@ -2443,5 +2454,94 @@
   "chatMediaDownloading": "Downloading file…",
   "chatMediaDownloadDone": "File downloaded",
   "chatMediaDownloadFailed": "Could not download file",
-  "chatMediaVideoLoadFailed": "Could not load video"
+  "chatMediaVideoLoadFailed": "Could not load video",
+  "speakingFbTitle": "Speaking feedback",
+  "speakingFbTabOverview": "Overview",
+  "speakingFbTabDetails": "Details",
+  "speakingFbTabCorrections": "Fixes",
+  "speakingFbTabSamples": "Samples",
+  "speakingFbOverall": "Overall band {score}",
+  "@speakingFbOverall": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "speakingFbCefr": "CEFR level",
+  "speakingFbStrengths": "Strengths",
+  "speakingFbImprovements": "Needs improvement",
+  "speakingFbCorrections": "Specific corrections",
+  "speakingFbVocabUpgrades": "Vocabulary upgrades",
+  "speakingFbSaveWord": "Save to vocabulary",
+  "speakingFbSaved": "Saved",
+  "speakingFbModelAnswers": "Model answers",
+  "speakingFbSamplesEmptyTitle": "No sample answers",
+  "speakingFbSamplesEmptyBody": "This conversation has no sample answers to show.",
+  "speakingFbNextSteps": "Next steps",
+  "speakingFbAnalyzing": "Analyzing your conversation...",
+  "speakingFbTooShort": "Talk a little longer to receive feedback.",
+  "speakingErrorTitle": "Something went wrong",
+  "speakingErrorBody": "We couldn't load this right now. Please try again.",
+  "speakingFbErrorTitle": "Couldn't create feedback",
+  "speakingFbErrorBody": "We couldn't evaluate this conversation. Please try again.",
+  "speakingFbSaveError": "Couldn't save the word. Please try again.",
+  "speakingFbRetry": "Try again",
+  "speakingFbStatWords": "{count} words",
+  "@speakingFbStatWords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbStatWpm": "{value} WPM",
+  "@speakingFbStatWpm": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "speakingFbStatDuration": "{seconds}s",
+  "@speakingFbStatDuration": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "speakingFbStatFiller": "{count} fillers",
+  "@speakingFbStatFiller": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbStatQuestions": "{count} questions",
+  "@speakingFbStatQuestions": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "speakingFbEndAndEvaluate": "End & get feedback",
+  "speakingFbSpeakMore": "Speak again",
+  "speakingFbBack": "Back",
+  "speakingFbPronunciationSoon": "Pronunciation: coming soon (requires an audio recording).",
+  "speakingFbCriterionFc": "Fluency & coherence",
+  "speakingFbCriterionLr": "Lexical resource",
+  "speakingFbCriterionGra": "Grammar range & accuracy",
+  "speakingFbCriterionIa": "Interaction & task",
+  "speakingFbYourTurn": "Your turn",
+  "speakingFbModelTurn": "Native-like version",
+  "speakingFbHistoryTitle": "Speaking history",
+  "speakingFbHistoryEmptyTitle": "No speaking sessions yet",
+  "speakingFbHistoryEmptyBody": "Finish a free speaking conversation to see feedback here.",
+  "speakingFbHistoryMeta": "{seconds}s · {turns} turns · {cefr}",
+  "@speakingFbHistoryMeta": {
+    "placeholders": {
+      "seconds": { "type": "int" },
+      "turns": { "type": "int" },
+      "cefr": { "type": "String" }
+    }
+  },
+  "speakingFbTaskAchievement": "Task achievement",
+  "speakingScenarioTitle": "Speaking scenarios",
+  "speakingScenarioFreeChat": "Free chat",
+  "speakingScenarioFreeChatBody": "Talk freely with the AI assistant.",
+  "speakingScenarioEmptyTitle": "No scenarios yet",
+  "speakingScenarioEmptyBody": "Free chat is still available.",
+  "speakingDashboardTitle": "Speaking progress",
+  "speakingDashboardEmptyTitle": "No progress yet",
+  "speakingDashboardEmptyBody": "Finish at least two free speaking sessions to see a clearer trend.",
+  "speakingDashboardSessions": "Sessions",
+  "speakingDashboardMinutes": "Minutes",
+  "speakingDashboardAvgBand": "Avg band",
+  "speakingDashboardStreak": "Streak",
+  "speakingDashboardRecent": "Recent sessions",
+  "speakingNotebookTitle": "Improvement notebook",
+  "speakingNotebookRepeated": "Repeated",
+  "speakingNotebookEmptyTitle": "No notes yet",
+  "speakingNotebookEmptyBody": "Your repeated errors and vocabulary upgrades will appear here after feedback.",
+  "speakingNotebookNoItems": "No items",
+  "speakingNotebookReviewVocab": "Review vocabulary"
 }

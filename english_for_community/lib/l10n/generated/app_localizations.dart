@@ -4040,6 +4040,42 @@ abstract class AppLocalizations {
   /// **'Later'**
   String get updateLaterButton;
 
+  /// No description provided for @updateDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading... {progress}%'**
+  String updateDownloading(int progress);
+
+  /// No description provided for @updatePreparingInstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing to install...'**
+  String get updatePreparingInstall;
+
+  /// No description provided for @updateDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Download failed. Please try again.'**
+  String get updateDownloadFailed;
+
+  /// No description provided for @updateOpenInBrowser.
+  ///
+  /// In en, this message translates to:
+  /// **'Open in browser'**
+  String get updateOpenInBrowser;
+
+  /// No description provided for @updateRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get updateRetry;
+
+  /// No description provided for @updateCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get updateCancel;
+
   /// No description provided for @updateDialogVersionLine.
   ///
   /// In en, this message translates to:
@@ -10108,6 +10144,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load video'**
   String get chatMediaVideoLoadFailed;
+
+  /// No description provided for @speakingFbTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking feedback'**
+  String get speakingFbTitle;
+
+  /// No description provided for @speakingFbTabOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get speakingFbTabOverview;
+
+  /// No description provided for @speakingFbTabDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get speakingFbTabDetails;
+
+  /// No description provided for @speakingFbTabCorrections.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixes'**
+  String get speakingFbTabCorrections;
+
+  /// No description provided for @speakingFbTabSamples.
+  ///
+  /// In en, this message translates to:
+  /// **'Samples'**
+  String get speakingFbTabSamples;
+
+  /// No description provided for @speakingFbOverall.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall band {score}'**
+  String speakingFbOverall(String score);
+
+  /// No description provided for @speakingFbCefr.
+  ///
+  /// In en, this message translates to:
+  /// **'CEFR level'**
+  String get speakingFbCefr;
+
+  /// No description provided for @speakingFbStrengths.
+  ///
+  /// In en, this message translates to:
+  /// **'Strengths'**
+  String get speakingFbStrengths;
+
+  /// No description provided for @speakingFbImprovements.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs improvement'**
+  String get speakingFbImprovements;
+
+  /// No description provided for @speakingFbCorrections.
+  ///
+  /// In en, this message translates to:
+  /// **'Specific corrections'**
+  String get speakingFbCorrections;
+
+  /// No description provided for @speakingFbVocabUpgrades.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocabulary upgrades'**
+  String get speakingFbVocabUpgrades;
+
+  /// No description provided for @speakingFbSaveWord.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to vocabulary'**
+  String get speakingFbSaveWord;
+
+  /// No description provided for @speakingFbSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get speakingFbSaved;
+
+  /// No description provided for @speakingFbModelAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Model answers'**
+  String get speakingFbModelAnswers;
+
+  /// No description provided for @speakingFbSamplesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No sample answers'**
+  String get speakingFbSamplesEmptyTitle;
+
+  /// No description provided for @speakingFbSamplesEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This conversation has no sample answers to show.'**
+  String get speakingFbSamplesEmptyBody;
+
+  /// No description provided for @speakingFbNextSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'Next steps'**
+  String get speakingFbNextSteps;
+
+  /// No description provided for @speakingFbAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing your conversation...'**
+  String get speakingFbAnalyzing;
+
+  /// No description provided for @speakingFbTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk a little longer to receive feedback.'**
+  String get speakingFbTooShort;
+
+  /// No description provided for @speakingErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong'**
+  String get speakingErrorTitle;
+
+  /// No description provided for @speakingErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t load this right now. Please try again.'**
+  String get speakingErrorBody;
+
+  /// No description provided for @speakingFbErrorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create feedback'**
+  String get speakingFbErrorTitle;
+
+  /// No description provided for @speakingFbErrorBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t evaluate this conversation. Please try again.'**
+  String get speakingFbErrorBody;
+
+  /// No description provided for @speakingFbSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the word. Please try again.'**
+  String get speakingFbSaveError;
+
+  /// No description provided for @speakingFbRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get speakingFbRetry;
+
+  /// No description provided for @speakingFbStatWords.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} words'**
+  String speakingFbStatWords(int count);
+
+  /// No description provided for @speakingFbStatWpm.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} WPM'**
+  String speakingFbStatWpm(String value);
+
+  /// No description provided for @speakingFbStatDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s'**
+  String speakingFbStatDuration(int seconds);
+
+  /// No description provided for @speakingFbStatFiller.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} fillers'**
+  String speakingFbStatFiller(int count);
+
+  /// No description provided for @speakingFbStatQuestions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} questions'**
+  String speakingFbStatQuestions(int count);
+
+  /// No description provided for @speakingFbEndAndEvaluate.
+  ///
+  /// In en, this message translates to:
+  /// **'End & get feedback'**
+  String get speakingFbEndAndEvaluate;
+
+  /// No description provided for @speakingFbSpeakMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Speak again'**
+  String get speakingFbSpeakMore;
+
+  /// No description provided for @speakingFbBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get speakingFbBack;
+
+  /// No description provided for @speakingFbPronunciationSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Pronunciation: coming soon (requires an audio recording).'**
+  String get speakingFbPronunciationSoon;
+
+  /// No description provided for @speakingFbCriterionFc.
+  ///
+  /// In en, this message translates to:
+  /// **'Fluency & coherence'**
+  String get speakingFbCriterionFc;
+
+  /// No description provided for @speakingFbCriterionLr.
+  ///
+  /// In en, this message translates to:
+  /// **'Lexical resource'**
+  String get speakingFbCriterionLr;
+
+  /// No description provided for @speakingFbCriterionGra.
+  ///
+  /// In en, this message translates to:
+  /// **'Grammar range & accuracy'**
+  String get speakingFbCriterionGra;
+
+  /// No description provided for @speakingFbCriterionIa.
+  ///
+  /// In en, this message translates to:
+  /// **'Interaction & task'**
+  String get speakingFbCriterionIa;
+
+  /// No description provided for @speakingFbYourTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get speakingFbYourTurn;
+
+  /// No description provided for @speakingFbModelTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Native-like version'**
+  String get speakingFbModelTurn;
+
+  /// No description provided for @speakingFbHistoryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking history'**
+  String get speakingFbHistoryTitle;
+
+  /// No description provided for @speakingFbHistoryEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No speaking sessions yet'**
+  String get speakingFbHistoryEmptyTitle;
+
+  /// No description provided for @speakingFbHistoryEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish a free speaking conversation to see feedback here.'**
+  String get speakingFbHistoryEmptyBody;
+
+  /// No description provided for @speakingFbHistoryMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds}s · {turns} turns · {cefr}'**
+  String speakingFbHistoryMeta(int seconds, int turns, String cefr);
+
+  /// No description provided for @speakingFbTaskAchievement.
+  ///
+  /// In en, this message translates to:
+  /// **'Task achievement'**
+  String get speakingFbTaskAchievement;
+
+  /// No description provided for @speakingScenarioTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking scenarios'**
+  String get speakingScenarioTitle;
+
+  /// No description provided for @speakingScenarioFreeChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Free chat'**
+  String get speakingScenarioFreeChat;
+
+  /// No description provided for @speakingScenarioFreeChatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Talk freely with the AI assistant.'**
+  String get speakingScenarioFreeChatBody;
+
+  /// No description provided for @speakingScenarioEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No scenarios yet'**
+  String get speakingScenarioEmptyTitle;
+
+  /// No description provided for @speakingScenarioEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Free chat is still available.'**
+  String get speakingScenarioEmptyBody;
+
+  /// No description provided for @speakingDashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Speaking progress'**
+  String get speakingDashboardTitle;
+
+  /// No description provided for @speakingDashboardEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No progress yet'**
+  String get speakingDashboardEmptyTitle;
+
+  /// No description provided for @speakingDashboardEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Finish at least two free speaking sessions to see a clearer trend.'**
+  String get speakingDashboardEmptyBody;
+
+  /// No description provided for @speakingDashboardSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get speakingDashboardSessions;
+
+  /// No description provided for @speakingDashboardMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get speakingDashboardMinutes;
+
+  /// No description provided for @speakingDashboardAvgBand.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg band'**
+  String get speakingDashboardAvgBand;
+
+  /// No description provided for @speakingDashboardStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get speakingDashboardStreak;
+
+  /// No description provided for @speakingDashboardRecent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent sessions'**
+  String get speakingDashboardRecent;
+
+  /// No description provided for @speakingNotebookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Improvement notebook'**
+  String get speakingNotebookTitle;
+
+  /// No description provided for @speakingNotebookRepeated.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeated'**
+  String get speakingNotebookRepeated;
+
+  /// No description provided for @speakingNotebookEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No notes yet'**
+  String get speakingNotebookEmptyTitle;
+
+  /// No description provided for @speakingNotebookEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your repeated errors and vocabulary upgrades will appear here after feedback.'**
+  String get speakingNotebookEmptyBody;
+
+  /// No description provided for @speakingNotebookNoItems.
+  ///
+  /// In en, this message translates to:
+  /// **'No items'**
+  String get speakingNotebookNoItems;
+
+  /// No description provided for @speakingNotebookReviewVocab.
+  ///
+  /// In en, this message translates to:
+  /// **'Review vocabulary'**
+  String get speakingNotebookReviewVocab;
 }
 
 class _AppLocalizationsDelegate

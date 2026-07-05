@@ -4,6 +4,12 @@ const router = express.Router();
 import {speakingController} from '../controllers/speakingController.js';
 
 router.get('/vapi-config', authenticate, speakingController.getVapiConfig);
+router.get('/progress/summary', authenticate, speakingController.getProgressSummary);
+router.get('/scenarios', authenticate, speakingController.getScenarios);
+router.get('/notebook', authenticate, speakingController.getNotebook);
+router.post('/conversation/evaluate', authenticate, speakingController.evaluateConversation);
+router.get('/conversation/history', authenticate, speakingController.getConversationHistory);
+router.get('/conversation/:id', authenticate, speakingController.getConversationById);
 router.get('/sets', authenticate, speakingController.getSpeakingSetsWithProgress);
 router.get('/sets/:setId', authenticate, speakingController.getSpeakingSetDetails);
 router.post('/submit', authenticate, speakingController.submitAttempt);

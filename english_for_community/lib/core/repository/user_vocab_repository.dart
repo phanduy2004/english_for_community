@@ -16,6 +16,12 @@ abstract class UserVocabRepository {
 
   Future<Either<Failure, void>> saveWord(Entry entry);
 
+  Future<Either<Failure, void>> saveRawWord({
+    required String headword,
+    String? shortDefinition,
+    String? pos,
+  });
+
   Future<Either<Failure, void>> logRecentWord(Entry entry);
 
   Future<Either<Failure, void>> startLearningFromUserWord(UserWordEntity userWord);

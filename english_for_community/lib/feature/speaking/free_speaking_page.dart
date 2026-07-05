@@ -17,6 +17,8 @@ import '../../core/analytics/speaking_telemetry.dart';
 import '../../core/api/api_client.dart';
 import '../../core/config/vapi_env_config.dart';
 import '../../core/datasource/vapi_config_remote_datasource.dart';
+import '../../core/entity/speaking_conversation_entity.dart';
+import '../../core/entity/speaking_phase2_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/theme/app_color.dart' as app_color;
 import '../../core/theme/app_skill_colors.dart';
@@ -25,6 +27,9 @@ import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
+import 'speaking_feedback_page.dart';
+import 'speaking_progress_dashboard_page.dart';
+import 'speaking_notebook_page.dart';
 
 // --- 2. MODELS ---
 enum MessageRole { user, ai, system }
@@ -76,9 +81,11 @@ enum _VapiBootstrap { loading, ready, error }
 
 // --- 3. MAIN PAGE ---
 class FreeSpeakingPage extends StatefulWidget {
-  const FreeSpeakingPage({super.key});
+  const FreeSpeakingPage({super.key, this.scenario});
   static const routeName = 'FreeSpeakingPage';
   static const routePath = '/free-speaking';
+
+  final SpeakingScenarioEntity? scenario;
 
   @override
   State<FreeSpeakingPage> createState() => _FreeSpeakingPageState();
@@ -100,6 +107,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   VapiCallStatus _callStatus = VapiCallStatus.disconnected;
   bool _isAiSpeaking = false;
   bool _isTyping = false;
+  DateTime? _callStartedAt;
+  bool _evaluateAfterCallEnds = false;
 
   // Animation sóng âm
   Timer? _waveTimer;
@@ -213,13 +222,19 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         setState(() => _callStatus = event.value as VapiCallStatus);
         if (_callStatus == VapiCallStatus.active &&
             prev != VapiCallStatus.active) {
+          _callStartedAt = DateTime.now();
+          _evaluateAfterCallEnds = false;
           SpeakingTelemetry.logCallStart();
         }
         if (_callStatus == VapiCallStatus.ended ||
             _callStatus == VapiCallStatus.disconnected) {
           if (prev == VapiCallStatus.active) {
             SpeakingTelemetry.logCallEnd();
+            if (_evaluateAfterCallEnds) {
+              _openFeedbackIfEligible();
+            }
           }
+          _evaluateAfterCallEnds = false;
           _resetState();
         }
         break;
@@ -298,7 +313,16 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         }
         return;
       }
-      await _vapiService!.start(voiceId: _selectedVoice.id);
+      setState(() {
+        _messages
+          ..clear()
+          ..add(
+              ChatMessage(id: 'sys_init', text: '', role: MessageRole.system));
+      });
+      await _vapiService!.start(
+        voiceId: _selectedVoice.id,
+        assistantOverrides: widget.scenario?.toVapiOverrides(),
+      );
       return;
     }
 
@@ -314,8 +338,63 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
     // 3. Nếu đang gọi mà không nhập -> Tắt cuộc gọi
     if (_callStatus == VapiCallStatus.active) {
+      _evaluateAfterCallEnds = true;
       await _vapiService!.stop();
     }
+  }
+
+  List<SpeakingTurnEntity> _conversationTurnsForFeedback() {
+    final turns = <SpeakingTurnEntity>[];
+    for (final entry in _chatEntriesForList()) {
+      if (entry is! _ConversationTurn) continue;
+      if (!entry.allFinal) continue;
+      final text = entry.combinedText.trim();
+      if (text.isEmpty) continue;
+      turns.add(SpeakingTurnEntity(
+        role: entry.role == MessageRole.user ? 'user' : 'ai',
+        text: text,
+        ts: entry.parts.first.id == 'sys_init'
+            ? null
+            : int.tryParse(entry.parts.first.id),
+      ));
+    }
+    return turns;
+  }
+
+  int _feedbackDurationSeconds(DateTime endedAt) {
+    final startedAt = _callStartedAt;
+    if (startedAt == null) return 0;
+    return endedAt.difference(startedAt).inSeconds.clamp(0, 24 * 60 * 60);
+  }
+
+  bool _isLongEnoughForFeedback(List<SpeakingTurnEntity> turns, int duration) {
+    final userTurns = turns.where((turn) => turn.role == 'user').length;
+    if (userTurns == 0) return false;
+    return userTurns >= 3 || duration >= 30;
+  }
+
+  void _openFeedbackIfEligible() {
+    final endedAt = DateTime.now();
+    final turns = _conversationTurnsForFeedback();
+    final durationSeconds = _feedbackDurationSeconds(endedAt);
+    if (!_isLongEnoughForFeedback(turns, durationSeconds)) {
+      if (mounted) {
+        AppFeedback.info(context, context.l10n.speakingFbTooShort);
+      }
+      return;
+    }
+    if (!mounted) return;
+    context.pushNamed(
+      SpeakingFeedbackPage.routeName,
+      extra: SpeakingFeedbackPageArgs.evaluate(
+        turns: turns,
+        durationSeconds: durationSeconds,
+        startedAt: _callStartedAt,
+        endedAt: endedAt,
+        level: widget.scenario?.levelSuggested,
+        scenarioId: widget.scenario?.id,
+      ),
+    );
   }
 
   void _handleTranscript(Map<String, dynamic> data) {
@@ -591,6 +670,36 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
 
         // --- 2. NÚT CHỌN GIỌNG ---
         actions: [
+          IconButton(
+            tooltip: t.speakingFbHistoryTitle,
+            icon: const Icon(Icons.history_rounded,
+                size: 20, color: app_color.AppColors.textPrimary),
+            onPressed: () =>
+                context.pushNamed(SpeakingFeedbackHistoryPage.routeName),
+          ),
+          PopupMenuButton<String>(
+            tooltip: t.speakingDashboardTitle,
+            icon: const Icon(Icons.more_vert_rounded,
+                size: 20, color: app_color.AppColors.textPrimary),
+            onSelected: (value) {
+              if (value == 'progress') {
+                context.pushNamed(SpeakingProgressDashboardPage.routeName);
+              }
+              if (value == 'notebook') {
+                context.pushNamed(SpeakingNotebookPage.routeName);
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'progress',
+                child: Text(t.speakingDashboardTitle),
+              ),
+              PopupMenuItem(
+                value: 'notebook',
+                child: Text(t.speakingNotebookTitle),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.only(right: AppSpacing.s4),
             child: InkWell(
@@ -667,6 +776,26 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: SizedBox(
                         height: 24, child: _Waveform(volume: _volumeLevel)),
+                  ),
+                if (isConnected && !_isTyping)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.rate_review_outlined,
+                            size: 16, color: Colors.red.shade500),
+                        const SizedBox(width: 6),
+                        Text(
+                          t.speakingFbEndAndEvaluate,
+                          style: TextStyle(
+                            color: Colors.red.shade600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
 
                 Row(

@@ -312,6 +312,7 @@ export const toolImplementations = {
       readingAcc: { total: 0, count: 0 },
       dictationAcc: { total: 0, count: 0 },
       speakingScore: { total: 0, count: 0 },
+      speakingFluency: { total: 0, count: 0 },
       writingScore: { total: 0, count: 0 },
     };
 
@@ -330,6 +331,7 @@ export const toolImplementations = {
         if (rec.stats.readingAccuracy?.count) { aggs.readingAcc.total += rec.stats.readingAccuracy.total; aggs.readingAcc.count += rec.stats.readingAccuracy.count; }
         if (rec.stats.dictationAccuracy?.count) { aggs.dictationAcc.total += rec.stats.dictationAccuracy.total; aggs.dictationAcc.count += rec.stats.dictationAccuracy.count; }
         if (rec.stats.speakingScore?.count) { aggs.speakingScore.total += rec.stats.speakingScore.total; aggs.speakingScore.count += rec.stats.speakingScore.count; }
+        if (rec.stats.speakingFluency?.count) { aggs.speakingFluency.total += rec.stats.speakingFluency.total; aggs.speakingFluency.count += rec.stats.speakingFluency.count; }
         if (rec.stats.writingScore?.count) { aggs.writingScore.total += rec.stats.writingScore.total; aggs.writingScore.count += rec.stats.writingScore.count; }
       }
     });
@@ -345,6 +347,7 @@ export const toolImplementations = {
         reading_accuracy: Math.round(calcAvg(aggs.readingAcc) * 100) + '%',
         listening_accuracy: Math.round(calcAvg(aggs.dictationAcc) * 100) + '%',
         speaking_accuracy: Math.round(calcAvg(aggs.speakingScore) * 100) + '%',
+        free_speaking_fluency: Math.round(calcAvg(aggs.speakingFluency) * 100) + '%',
         writing_score: parseFloat(calcAvg(aggs.writingScore).toFixed(1))
       },
     };
@@ -688,7 +691,12 @@ export const toolImplementations = {
         let skillStat = null;
         if (skill === 'reading' && rec.stats.readingAccuracy) { skillStat = rec.stats.readingAccuracy; }
         else if (skill === 'listening' && rec.stats.dictationAccuracy) { skillStat = rec.stats.dictationAccuracy; }
-        else if (skill === 'speaking' && rec.stats.speakingScore) { skillStat = rec.stats.speakingScore; }
+        else if (skill === 'speaking') {
+          const f = rec.stats.speakingFluency, s = rec.stats.speakingScore;
+          if (f?.count || s?.count) {
+            skillStat = { total: (f?.total || 0) + (s?.total || 0), count: (f?.count || 0) + (s?.count || 0) };
+          }
+        }
         else if (skill === 'writing' && rec.stats.writingScore) { skillStat = rec.stats.writingScore; }
 
         if (skillStat && skillStat.count) {
@@ -789,6 +797,7 @@ export const toolImplementations = {
       if (rec.stats) {
         if (rec.stats.readingAccuracy?.count) { skills.reading.total += rec.stats.readingAccuracy.total; skills.reading.count += rec.stats.readingAccuracy.count; }
         if (rec.stats.dictationAccuracy?.count) { skills.listening.total += rec.stats.dictationAccuracy.total; skills.listening.count += rec.stats.dictationAccuracy.count; }
+        if (rec.stats.speakingFluency?.count) { skills.speaking.total += rec.stats.speakingFluency.total; skills.speaking.count += rec.stats.speakingFluency.count; }
         if (rec.stats.speakingScore?.count) { skills.speaking.total += rec.stats.speakingScore.total; skills.speaking.count += rec.stats.speakingScore.count; }
         if (rec.stats.writingScore?.count) { skills.writing.total += rec.stats.writingScore.total; skills.writing.count += rec.stats.writingScore.count; }
       }

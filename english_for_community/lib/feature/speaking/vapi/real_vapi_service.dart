@@ -20,19 +20,43 @@ class RealVapiService implements VapiService {
   vapi_sdk.VapiCall? _currentCall;
   final _controller = StreamController<VapiEvent>.broadcast();
 
-  bool get isConfigured =>
-      _publicKey.isNotEmpty && _assistantId.isNotEmpty;
+  bool get isConfigured => _publicKey.isNotEmpty && _assistantId.isNotEmpty;
 
   @override
   List<VapiVoice> getAvailableVoices() {
     return const [
-      VapiVoice(id: "", name: "Default (Assistant)", gender: "AI", accent: "Default"),
-      VapiVoice(id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel", gender: "Female", accent: "US"),
-      VapiVoice(id: "29vD33N1CtxCmqQRPOHJ", name: "Drew", gender: "Male", accent: "US"),
-      VapiVoice(id: "AZnzlk1XvdvUeBnXmlld", name: "Domi", gender: "Female", accent: "US"),
-      VapiVoice(id: "ErXwobaYiN019PkySvjV", name: "Antoni", gender: "Male", accent: "US"),
-      VapiVoice(id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh", gender: "Male", accent: "US"),
-      VapiVoice(id: "EXAVITQu4vr4xnSDxMaL", name: "Bella", gender: "Female", accent: "US"),
+      VapiVoice(
+          id: "", name: "Default (Assistant)", gender: "AI", accent: "Default"),
+      VapiVoice(
+          id: "21m00Tcm4TlvDq8ikWAM",
+          name: "Rachel",
+          gender: "Female",
+          accent: "US"),
+      VapiVoice(
+          id: "29vD33N1CtxCmqQRPOHJ",
+          name: "Drew",
+          gender: "Male",
+          accent: "US"),
+      VapiVoice(
+          id: "AZnzlk1XvdvUeBnXmlld",
+          name: "Domi",
+          gender: "Female",
+          accent: "US"),
+      VapiVoice(
+          id: "ErXwobaYiN019PkySvjV",
+          name: "Antoni",
+          gender: "Male",
+          accent: "US"),
+      VapiVoice(
+          id: "TxGEqnHWrfWFTfGW9XjX",
+          name: "Josh",
+          gender: "Male",
+          accent: "US"),
+      VapiVoice(
+          id: "EXAVITQu4vr4xnSDxMaL",
+          name: "Bella",
+          gender: "Female",
+          accent: "US"),
     ];
   }
 
@@ -40,7 +64,10 @@ class RealVapiService implements VapiService {
   Stream<VapiEvent> get onEvent => _controller.stream;
 
   @override
-  Future<void> start({String? voiceId}) async {
+  Future<void> start({
+    String? voiceId,
+    Map<String, dynamic>? assistantOverrides,
+  }) async {
     if (!isConfigured) {
       _emit(
         type: 'error',
@@ -57,13 +84,13 @@ class RealVapiService implements VapiService {
     try {
       _client ??= vapi_sdk.VapiClient(_publicKey);
 
-      Map<String, dynamic> overrides = {};
+      final overrides = <String, dynamic>{
+        ...?assistantOverrides,
+      };
       if (voiceId != null && voiceId.isNotEmpty && voiceId != "default") {
-        overrides = {
-          "voice": {
-            "provider": "11labs",
-            "voiceId": voiceId,
-          }
+        overrides["voice"] = {
+          "provider": "11labs",
+          "voiceId": voiceId,
         };
       }
 
@@ -117,7 +144,9 @@ class RealVapiService implements VapiService {
         "type": "add-message",
         "message": {"role": "user", "content": text}
       });
-      _emit(type: 'transcript', data: {'text': text, 'role': 'user', 'isFinal': true});
+      _emit(
+          type: 'transcript',
+          data: {'text': text, 'role': 'user', 'isFinal': true});
     } catch (e) {
       _emit(
         type: 'error',
@@ -142,8 +171,11 @@ class RealVapiService implements VapiService {
     } else if (type == 'speech-update') {
       final status = message['status'];
       final role = message['role'] ?? 'ai';
-      if (status == 'started') _emit(type: 'speech_start', data: {'role': role});
-      else if (status == 'stopped') _emit(type: 'speech_end', data: {'role': role});
+      if (status == 'started') {
+        _emit(type: 'speech_start', data: {'role': role});
+      } else if (status == 'stopped') {
+        _emit(type: 'speech_end', data: {'role': role});
+      }
     }
   }
 
@@ -161,7 +193,8 @@ class RealVapiService implements VapiService {
     _controller.close();
   }
 
-  void _emit({required String type, dynamic value, Map<String, dynamic>? data}) {
+  void _emit(
+      {required String type, dynamic value, Map<String, dynamic>? data}) {
     if (!_controller.isClosed) {
       _controller.add(VapiEvent(type: type, value: value, data: data));
     }

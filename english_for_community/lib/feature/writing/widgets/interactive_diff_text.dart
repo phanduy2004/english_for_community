@@ -43,7 +43,11 @@ class InteractiveDiffText extends StatelessWidget {
       if (oldText.trim().toLowerCase() == newText.trim().toLowerCase()) {
         spans.add(TextSpan(
           text: newText,
-          style: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary),
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textPrimary,
+          ),
         ));
         lastMatchEnd = match.end;
         continue;
@@ -79,7 +83,11 @@ class InteractiveDiffText extends StatelessWidget {
         return PrettyDiffText(
           oldText: oldText,
           newText: newText,
-          defaultTextStyle: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary),
+          defaultTextStyle: const TextStyle(
+            fontSize: 15,
+            height: 1.6,
+            color: AppColors.textPrimary,
+          ),
           addedTextStyle: const TextStyle(
             backgroundColor: AppColors.successBg,
             color: AppColors.success,
@@ -92,7 +100,14 @@ class InteractiveDiffText extends StatelessWidget {
           ),
         );
       }
-      return Text(newText, style: const TextStyle(fontSize: 15, height: 1.6, color: AppColors.textPrimary));
+      return Text(
+        newText,
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.6,
+          color: AppColors.textPrimary,
+        ),
+      );
     }
 
     return RichText(
@@ -121,46 +136,104 @@ class _ErrorToken extends StatelessWidget {
           builder: (context) => Dialog(
             backgroundColor: Colors.transparent,
             insetPadding: const EdgeInsets.all(20),
-            child: _CuteReasonPopup(old: oldText, newT: newText, reason: reason),
+            child: _CuteReasonPopup(
+              old: oldText,
+              newT: newText,
+              reason: reason,
+            ),
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: AppColors.dangerBg,
-          borderRadius: BorderRadius.circular(AppRadius.chip),
-          border: Border.all(color: AppColors.dangerBg),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (oldText.isNotEmpty) ...[
-              Text(
-                oldText,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: AppColors.danger,
-                  decoration: TextDecoration.lineThrough,
-                  decorationColor: AppColors.danger,
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(Icons.arrow_right_alt, size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              newText,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppColors.success,
-                fontWeight: FontWeight.bold,
-              ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width - 32;
+
+          return Container(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: AppColors.dangerBg,
+              borderRadius: BorderRadius.circular(AppRadius.chip),
+              border: Border.all(color: AppColors.dangerBg),
             ),
-          ],
-        ),
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 2,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (oldText.isNotEmpty) ...[
+                  Text(
+                    oldText,
+                    softWrap: true,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.danger,
+                      decoration: TextDecoration.lineThrough,
+                      decorationColor: AppColors.danger,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.arrow_right_alt,
+                    size: 14,
+                    color: Colors.grey,
+                  ),
+                ],
+                Text(
+                  newText,
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.success,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+class _DiffPair extends StatelessWidget {
+  final String old;
+  final String newT;
+
+  const _DiffPair({required this.old, required this.newT});
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 8,
+      children: [
+        if (old.isNotEmpty) ...[
+          Text(
+            old,
+            softWrap: true,
+            style: const TextStyle(
+              color: Colors.red,
+              decoration: TextDecoration.lineThrough,
+            ),
+          ),
+          const Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
+        ],
+        Text(
+          newT,
+          softWrap: true,
+          style: const TextStyle(
+            color: Colors.green,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -170,7 +243,11 @@ class _CuteReasonPopup extends StatelessWidget {
   final String newT;
   final String reason;
 
-  const _CuteReasonPopup({required this.old, required this.newT, required this.reason});
+  const _CuteReasonPopup({
+    required this.old,
+    required this.newT,
+    required this.reason,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -204,7 +281,10 @@ class _CuteReasonPopup extends StatelessWidget {
               const SizedBox(width: 12),
               Text(
                 t.writingAiSuggestionTitle,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),
@@ -216,29 +296,28 @@ class _CuteReasonPopup extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.sheet),
               border: Border.all(color: AppColors.outline),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (old.isNotEmpty) ...[
-                  Text(old, style: const TextStyle(color: Colors.red, decoration: TextDecoration.lineThrough)),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12.0),
-                    child: Icon(Icons.arrow_forward, size: 16, color: Colors.grey),
-                  ),
-                ],
-                Text(newT, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
-              ],
-            ),
+            child: _DiffPair(old: old, newT: newT),
           ),
           const SizedBox(height: 20),
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(t.writingWhyCorrection, style: const TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
+            child: Text(
+              t.writingWhyCorrection,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.grey,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             reason,
-            style: const TextStyle(fontSize: 15, color: AppColors.textPrimary, height: 1.5),
+            style: const TextStyle(
+              fontSize: 15,
+              color: AppColors.textPrimary,
+              height: 1.5,
+            ),
             textAlign: TextAlign.left,
           ),
           const SizedBox(height: 24),
@@ -250,7 +329,9 @@ class _CuteReasonPopup extends StatelessWidget {
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                ),
               ),
               child: Text(t.writingGotIt),
             ),

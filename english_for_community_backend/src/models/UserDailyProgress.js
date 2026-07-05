@@ -18,6 +18,7 @@ const UserDailyProgressSchema = new mongoose.Schema({
     readingAccuracy: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } },
     dictationAccuracy: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } }, // Lưu 1 - WER
     speakingScore: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } },     // Lưu 1 - WER
+    speakingFluency: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } },
     writingScore: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } },
     readingWpm: { total: { type: Number, default: 0 }, count: { type: Number, default: 0 } },
   }

@@ -135,6 +135,7 @@ const getSummaryData = async (userId, range) => {
     readingAcc: { total: 0, count: 0 },
     dictationAcc: { total: 0, count: 0 },
     speakingScore: { total: 0, count: 0 },
+    speakingFluency: { total: 0, count: 0 },
     writingScore: { total: 0, count: 0 },
     readingWpm: { total: 0, count: 0 },
   };
@@ -153,6 +154,7 @@ const getSummaryData = async (userId, range) => {
         if (rec.stats.readingAccuracy?.count) { aggs.readingAcc.total += rec.stats.readingAccuracy.total; aggs.readingAcc.count += rec.stats.readingAccuracy.count; }
         if (rec.stats.dictationAccuracy?.count) { aggs.dictationAcc.total += rec.stats.dictationAccuracy.total; aggs.dictationAcc.count += rec.stats.dictationAccuracy.count; }
         if (rec.stats.speakingScore?.count) { aggs.speakingScore.total += rec.stats.speakingScore.total; aggs.speakingScore.count += rec.stats.speakingScore.count; }
+        if (rec.stats.speakingFluency?.count) { aggs.speakingFluency.total += rec.stats.speakingFluency.total; aggs.speakingFluency.count += rec.stats.speakingFluency.count; }
         if (rec.stats.writingScore?.count) { aggs.writingScore.total += rec.stats.writingScore.total; aggs.writingScore.count += rec.stats.writingScore.count; }
         if (rec.stats.readingWpm?.count) { aggs.readingWpm.total += rec.stats.readingWpm.total; aggs.readingWpm.count += rec.stats.readingWpm.count; }
       }
@@ -176,6 +178,7 @@ const getSummaryData = async (userId, range) => {
     readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100),
     dictationAccuracy: Math.round(calcAvg(aggs.dictationAcc) * 100),
     speakingAccuracy: Math.round(calcAvg(aggs.speakingScore) * 100),
+    speakingFluency: Math.round(calcAvg(aggs.speakingFluency) * 100),
     avgWritingScore: parseFloat(calcAvg(aggs.writingScore).toFixed(1)),
     readingWpm: Math.round(calcAvg(aggs.readingWpm))
   };

@@ -42,6 +42,9 @@ const userSchema = new mongoose.Schema({
   totalPoints: { type: Number, default: 0 },
   level: { type: Number, default: 1 },
   currentStreak: { type: Number, default: 0 },
+  speakingStreak: { type: Number, default: 0 },
+  speakingStreakDate: { type: String, default: null },
+  speakingBadges: [{ type: String }],
   // ------------------------------------
   strictCorrection: { type: Boolean, default: false },
   language: { type: String, default: 'en' },

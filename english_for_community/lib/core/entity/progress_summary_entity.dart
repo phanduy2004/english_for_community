@@ -57,6 +57,7 @@ class StatsGridEntity {
   final int readingAccuracy;
   final int dictationAccuracy;
   final int speakingAccuracy;
+  final int speakingFluency;
   final int lessonsCompleted; // ✍️ THÊM TRƯỜNG MỚI
 
   StatsGridEntity({
@@ -65,6 +66,7 @@ class StatsGridEntity {
     required this.readingAccuracy,
     required this.dictationAccuracy,
     required this.speakingAccuracy,
+    required this.speakingFluency,
     required this.lessonsCompleted, // ✍️ THÊM VÀO CONSTRUCTOR
   });
 
@@ -75,6 +77,7 @@ class StatsGridEntity {
         readingAccuracy: json["readingAccuracy"],
         dictationAccuracy: json["dictationAccuracy"],
         speakingAccuracy: json["speakingAccuracy"],
+        speakingFluency: json["speakingFluency"] ?? 0,
         lessonsCompleted: json["lessonsCompleted"], // ✍️ THÊM VÀO FACTORY
       );
 }
@@ -107,10 +110,11 @@ class CalloutEntity {
   });
 
   factory CalloutEntity.fromJson(Map<String, dynamic> json) => CalloutEntity(
-    title: json["title"],
-    message: json["message"],
-  );
+        title: json["title"],
+        message: json["message"],
+      );
 }
+
 class ProgressDetailEntity {
   final String id;
   final String title;

@@ -6,6 +6,8 @@ import 'package:english_for_community/core/model/either.dart';
 import 'package:english_for_community/core/model/failure.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_attempt_entity.dart';
+import 'package:english_for_community/core/entity/speaking_conversation_entity.dart';
+import 'package:english_for_community/core/entity/speaking_phase2_entity.dart';
 import 'package:english_for_community/core/dtos/speaking_response_dto.dart';
 import 'package:english_for_community/feature/speaking/speaking_hub_page.dart';
 
@@ -15,7 +17,8 @@ class SpeakingRepositoryImpl implements SpeakingRepository {
   SpeakingRepositoryImpl({required this.speakingRemoteDatasource});
 
   @override
-  Future<Either<Failure, PaginatedResult<SpeakingSetProgressEntity>>> getSpeakingSets({
+  Future<Either<Failure, PaginatedResult<SpeakingSetProgressEntity>>>
+      getSpeakingSets({
     required SpeakingMode mode,
     required String level,
     int page = 1,
@@ -30,19 +33,23 @@ class SpeakingRepositoryImpl implements SpeakingRepository {
       );
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {
       return Left(SpeakingFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, SpeakingSetEntity>> getSpeakingSetDetails(String setId) async {
+  Future<Either<Failure, SpeakingSetEntity>> getSpeakingSetDetails(
+      String setId) async {
     try {
-      final result = await speakingRemoteDatasource.getSpeakingSetDetails(setId);
+      final result =
+          await speakingRemoteDatasource.getSpeakingSetDetails(setId);
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {
       return Left(SpeakingFailure(message: e.toString()));
     }
@@ -68,52 +75,174 @@ class SpeakingRepositoryImpl implements SpeakingRepository {
       );
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
-    } catch (e) {
-      return Left(SpeakingFailure(message: e.toString()));
-    }
-  }
-  @override
-  Future<Either<Failure, PaginatedResult<SpeakingSetEntity>>> getAdminSpeakingList({int page = 1, int limit = 20}) async {
-    try {
-      final result = await speakingRemoteDatasource.getAdminSpeakingList(page: page, limit: limit);
-      return Right(result);
-    } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     } catch (e) {
       return Left(SpeakingFailure(message: e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, SpeakingSetEntity>> getAdminSpeakingDetail(String id) async {
+  Future<Either<Failure, SpeakingConversationEntity>> evaluateConversation({
+    required List<SpeakingTurnEntity> turns,
+    required int durationSeconds,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    String? level,
+    String? scenarioId,
+  }) async {
+    try {
+      final result = await speakingRemoteDatasource.evaluateConversation(
+        turns: turns,
+        durationSeconds: durationSeconds,
+        startedAt: startedAt,
+        endedAt: endedAt,
+        level: level,
+        scenarioId: scenarioId,
+      );
+      return Right(result);
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      final message = data is Map
+          ? (data['message'] ?? data['code'] ?? e.message).toString()
+          : e.message;
+      return Left(SpeakingFailure(message: message ?? 'Submit failed'));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedResult<SpeakingConversationSummaryEntity>>>
+      getConversationHistory({int limit = 20, String? cursor}) async {
+    try {
+      final result = await speakingRemoteDatasource.getConversationHistory(
+        limit: limit,
+        cursor: cursor,
+      );
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SpeakingConversationEntity>> getConversationById(
+      String id) async {
+    try {
+      final result = await speakingRemoteDatasource.getConversationById(id);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<SpeakingScenarioEntity>>> getSpeakingScenarios({
+    String? group,
+    String? level,
+  }) async {
+    try {
+      final result = await speakingRemoteDatasource.getSpeakingScenarios(
+        group: group,
+        level: level,
+      );
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SpeakingProgressSummaryEntity>>
+      getSpeakingProgressSummary({String range = 'week'}) async {
+    try {
+      final result = await speakingRemoteDatasource.getSpeakingProgressSummary(
+          range: range);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SpeakingNotebookEntity>> getSpeakingNotebook({
+    int limit = 40,
+  }) async {
+    try {
+      final result =
+          await speakingRemoteDatasource.getSpeakingNotebook(limit: limit);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PaginatedResult<SpeakingSetEntity>>>
+      getAdminSpeakingList({int page = 1, int limit = 20}) async {
+    try {
+      final result = await speakingRemoteDatasource.getAdminSpeakingList(
+          page: page, limit: limit);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(SpeakingFailure(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, SpeakingSetEntity>> getAdminSpeakingDetail(
+      String id) async {
     try {
       final result = await speakingRemoteDatasource.getAdminSpeakingDetail(id);
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     }
   }
 
   @override
-  Future<Either<Failure, SpeakingSetEntity>> createSpeakingSet(SpeakingSetEntity speakingSet) async {
+  Future<Either<Failure, SpeakingSetEntity>> createSpeakingSet(
+      SpeakingSetEntity speakingSet) async {
     try {
       final body = _convertEntityToJson(speakingSet);
       final result = await speakingRemoteDatasource.createSpeakingSet(body);
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     }
   }
 
   @override
-  Future<Either<Failure, SpeakingSetEntity>> updateSpeakingSet(String id, SpeakingSetEntity speakingSet) async {
+  Future<Either<Failure, SpeakingSetEntity>> updateSpeakingSet(
+      String id, SpeakingSetEntity speakingSet) async {
     try {
       final body = _convertEntityToJson(speakingSet);
       final result = await speakingRemoteDatasource.updateSpeakingSet(id, body);
       return Right(result);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     }
   }
 
@@ -121,9 +250,10 @@ class SpeakingRepositoryImpl implements SpeakingRepository {
   Future<Either<Failure, void>> deleteSpeakingSet(String id) async {
     try {
       await speakingRemoteDatasource.deleteSpeakingSet(id);
-      return  Right(null);
+      return Right(null);
     } on DioException catch (e) {
-      return Left(SpeakingFailure(message: e.response?.data['message'] ?? e.message));
+      return Left(
+          SpeakingFailure(message: e.response?.data['message'] ?? e.message));
     }
   }
 

@@ -2129,6 +2129,26 @@ class AppLocalizationsVi extends AppLocalizations {
   String get updateLaterButton => 'Để sau';
 
   @override
+  String updateDownloading(int progress) {
+    return 'Đang tải... $progress%';
+  }
+
+  @override
+  String get updatePreparingInstall => 'Đang chuẩn bị cài đặt...';
+
+  @override
+  String get updateDownloadFailed => 'Tải thất bại. Vui lòng thử lại.';
+
+  @override
+  String get updateOpenInBrowser => 'Mở bằng trình duyệt';
+
+  @override
+  String get updateRetry => 'Thử lại';
+
+  @override
+  String get updateCancel => 'Hủy';
+
+  @override
   String updateDialogVersionLine(String name, int code) {
     return '$name (+$code)';
   }
@@ -5642,4 +5662,217 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get chatMediaVideoLoadFailed => 'Không thể phát video';
+
+  @override
+  String get speakingFbTitle => 'Nhận xét luyện nói';
+
+  @override
+  String get speakingFbTabOverview => 'Tổng quan';
+
+  @override
+  String get speakingFbTabDetails => 'Chi tiết';
+
+  @override
+  String get speakingFbTabCorrections => 'Chữa lỗi';
+
+  @override
+  String get speakingFbTabSamples => 'Câu mẫu';
+
+  @override
+  String speakingFbOverall(String score) {
+    return 'Band tổng $score';
+  }
+
+  @override
+  String get speakingFbCefr => 'Trình độ CEFR';
+
+  @override
+  String get speakingFbStrengths => 'Điểm mạnh';
+
+  @override
+  String get speakingFbImprovements => 'Cần cải thiện';
+
+  @override
+  String get speakingFbCorrections => 'Chữa lỗi cụ thể';
+
+  @override
+  String get speakingFbVocabUpgrades => 'Nâng cấp từ vựng';
+
+  @override
+  String get speakingFbSaveWord => 'Lưu vào sổ từ';
+
+  @override
+  String get speakingFbSaved => 'Đã lưu';
+
+  @override
+  String get speakingFbModelAnswers => 'Câu mẫu';
+
+  @override
+  String get speakingFbSamplesEmptyTitle => 'Chưa có câu mẫu';
+
+  @override
+  String get speakingFbSamplesEmptyBody =>
+      'Cuộc trò chuyện này chưa có câu mẫu để hiển thị.';
+
+  @override
+  String get speakingFbNextSteps => 'Luyện tiếp';
+
+  @override
+  String get speakingFbAnalyzing => 'Đang phân tích cuộc trò chuyện của bạn...';
+
+  @override
+  String get speakingFbTooShort =>
+      'Trò chuyện thêm một chút để nhận đánh giá nhé.';
+
+  @override
+  String get speakingErrorTitle => 'Đã có lỗi xảy ra';
+
+  @override
+  String get speakingErrorBody => 'Chưa tải được nội dung. Vui lòng thử lại.';
+
+  @override
+  String get speakingFbErrorTitle => 'Chưa tạo được đánh giá';
+
+  @override
+  String get speakingFbErrorBody =>
+      'Chưa chấm được cuộc trò chuyện này. Vui lòng thử lại.';
+
+  @override
+  String get speakingFbSaveError => 'Chưa lưu được từ. Thử lại nhé.';
+
+  @override
+  String get speakingFbRetry => 'Thử lại';
+
+  @override
+  String speakingFbStatWords(int count) {
+    return '$count từ';
+  }
+
+  @override
+  String speakingFbStatWpm(String value) {
+    return '$value WPM';
+  }
+
+  @override
+  String speakingFbStatDuration(int seconds) {
+    return '${seconds}s';
+  }
+
+  @override
+  String speakingFbStatFiller(int count) {
+    return '$count từ đệm';
+  }
+
+  @override
+  String speakingFbStatQuestions(int count) {
+    return '$count câu hỏi';
+  }
+
+  @override
+  String get speakingFbEndAndEvaluate => 'Kết thúc & nhận đánh giá';
+
+  @override
+  String get speakingFbSpeakMore => 'Nói tiếp';
+
+  @override
+  String get speakingFbBack => 'Về';
+
+  @override
+  String get speakingFbPronunciationSoon => 'Phát âm: sắp có (cần bản ghi âm).';
+
+  @override
+  String get speakingFbCriterionFc => 'Độ trôi chảy & mạch lạc';
+
+  @override
+  String get speakingFbCriterionLr => 'Từ vựng';
+
+  @override
+  String get speakingFbCriterionGra => 'Ngữ pháp';
+
+  @override
+  String get speakingFbCriterionIa => 'Tương tác & đúng nhiệm vụ';
+
+  @override
+  String get speakingFbYourTurn => 'Bạn đã nói';
+
+  @override
+  String get speakingFbModelTurn => 'Cách nói tự nhiên hơn';
+
+  @override
+  String get speakingFbHistoryTitle => 'Lịch sử luyện nói';
+
+  @override
+  String get speakingFbHistoryEmptyTitle => 'Chưa có buổi luyện nói';
+
+  @override
+  String get speakingFbHistoryEmptyBody =>
+      'Kết thúc một cuộc nói tự do để xem nhận xét tại đây.';
+
+  @override
+  String speakingFbHistoryMeta(int seconds, int turns, String cefr) {
+    return '${seconds}s · $turns lượt · $cefr';
+  }
+
+  @override
+  String get speakingFbTaskAchievement => 'Mức hoàn thành nhiệm vụ';
+
+  @override
+  String get speakingScenarioTitle => 'Tình huống luyện nói';
+
+  @override
+  String get speakingScenarioFreeChat => 'Trò chuyện tự do';
+
+  @override
+  String get speakingScenarioFreeChatBody => 'Nói tự do với trợ lý AI.';
+
+  @override
+  String get speakingScenarioEmptyTitle => 'Chưa có tình huống';
+
+  @override
+  String get speakingScenarioEmptyBody =>
+      'Bạn vẫn có thể dùng trò chuyện tự do.';
+
+  @override
+  String get speakingDashboardTitle => 'Tiến bộ luyện nói';
+
+  @override
+  String get speakingDashboardEmptyTitle => 'Chưa có dữ liệu tiến bộ';
+
+  @override
+  String get speakingDashboardEmptyBody =>
+      'Hoàn thành ít nhất hai buổi nói tự do để thấy xu hướng rõ hơn.';
+
+  @override
+  String get speakingDashboardSessions => 'Buổi nói';
+
+  @override
+  String get speakingDashboardMinutes => 'Số phút';
+
+  @override
+  String get speakingDashboardAvgBand => 'Band TB';
+
+  @override
+  String get speakingDashboardStreak => 'Chuỗi nói';
+
+  @override
+  String get speakingDashboardRecent => 'Buổi gần đây';
+
+  @override
+  String get speakingNotebookTitle => 'Sổ tay cải thiện';
+
+  @override
+  String get speakingNotebookRepeated => 'Lặp lại';
+
+  @override
+  String get speakingNotebookEmptyTitle => 'Chưa có ghi chú';
+
+  @override
+  String get speakingNotebookEmptyBody =>
+      'Lỗi lặp lại và từ vựng nên nâng cấp sẽ xuất hiện sau khi có feedback.';
+
+  @override
+  String get speakingNotebookNoItems => 'Chưa có mục nào';
+
+  @override
+  String get speakingNotebookReviewVocab => 'Ôn từ vựng';
 }

@@ -22,7 +22,9 @@ import '../../feature/progress/bloc_report/report_bloc.dart';
 import '../../feature/reading/bloc/reading_bloc.dart';
 import '../../feature/reading/reading_attempt_bloc/reading_attempt_bloc.dart';
 import '../../feature/speaking/bloc/speaking_bloc.dart';
+import '../../feature/speaking/speaking_feedback_bloc/speaking_feedback_bloc.dart';
 import '../../feature/speaking/speaking_lesson_bloc/speaking_lesson_bloc.dart';
+import '../../feature/speaking/speaking_phase2_bloc/speaking_phase2_bloc.dart';
 import '../../feature/vocabulary/bloc_review/review_bloc.dart';
 import '../api/api_client.dart';
 import '../datasource/admin_remote_datasource.dart';
@@ -267,6 +269,9 @@ void registerBloc() {
   getIt.registerFactory(() => CueBloc(listeningRepository: getIt()));
   getIt.registerFactory(() => WritingBloc(writingRepository: getIt()));
   getIt.registerFactory(() => SpeakingBloc(speakingRepository: getIt()));
+  getIt
+      .registerFactory(() => SpeakingFeedbackBloc(speakingRepository: getIt()));
+  getIt.registerFactory(() => SpeakingPhase2Bloc(speakingRepository: getIt()));
   getIt.registerFactory(() => SpeakingLessonBloc(speakingRepository: getIt()));
   getIt.registerFactory(() => ReadingBloc(readingRepository: getIt()));
   getIt.registerFactory(() => ReadingAttemptBloc(readingRepository: getIt()));

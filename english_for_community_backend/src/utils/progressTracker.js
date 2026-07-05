@@ -56,8 +56,9 @@ export const trackUserProgress = async (userId, type, data = {}) => {
       }
 
       if (data.score != null) {
-        updateOps.$inc['stats.speakingScore.total'] = data.score;
-        updateOps.$inc['stats.speakingScore.count'] = 1;
+        const statKey = data.metric === 'fluency' ? 'speakingFluency' : 'speakingScore';
+        updateOps.$inc[`stats.${statKey}.total`] = data.score;
+        updateOps.$inc[`stats.${statKey}.count`] = 1;
       }
     }
     else if (type === 'writing') {

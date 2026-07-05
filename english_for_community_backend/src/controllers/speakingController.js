@@ -198,11 +198,103 @@ const getVapiConfig = async (req, res) => {
   }
 };
 
+const evaluateConversation = async (req, res) => {
+  try {
+    const conversation = await speakingService.evaluateConversation(req.user.id, req.body);
+    res.status(201).json({ conversation });
+  } catch (error) {
+    if (error.code === 'TOO_SHORT') {
+      return res.status(422).json({
+        code: 'TOO_SHORT',
+        message: error.message,
+        details: error.details,
+      });
+    }
+    if (error.code === 'AI_FAILED') {
+      return res.status(502).json({
+        code: 'AI_FAILED',
+        message: error.message,
+        conversation: error.conversation,
+      });
+    }
+    console.error('Error evaluating speaking conversation:', error);
+    res.status(error.statusCode || 500).json({ message: error.message || 'Internal server error' });
+  }
+};
+
+const getConversationHistory = async (req, res) => {
+  try {
+    const result = await speakingService.getConversationHistory(req.user.id, req.query);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching speaking conversation history:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getConversationById = async (req, res) => {
+  try {
+    const conversation = await speakingService.getConversationById(req.user.id, req.params.id);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+    res.status(200).json({ conversation });
+  } catch (error) {
+    console.error('Error fetching speaking conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+const getScenarios = async (req, res) => {
+  try {
+    const result = await speakingService.getScenarios(req.query);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching speaking scenarios:', error);
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Internal server error',
+      details: error.details,
+    });
+  }
+};
+
+const getProgressSummary = async (req, res) => {
+  try {
+    const result = await speakingService.getProgressSummary(req.user.id, req.query);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching speaking progress summary:', error);
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Internal server error',
+      details: error.details,
+    });
+  }
+};
+
+const getNotebook = async (req, res) => {
+  try {
+    const result = await speakingService.getNotebook(req.user.id, req.query);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error('Error fetching speaking notebook:', error);
+    res.status(error.statusCode || 500).json({
+      message: error.message || 'Internal server error',
+      details: error.details,
+    });
+  }
+};
+
 export const speakingController = {
   getSpeakingSetsWithProgress,
   getSpeakingSetDetails,
   submitAttempt,
   getVapiConfig,
+  evaluateConversation,
+  getConversationHistory,
+  getConversationById,
+  getScenarios,
+  getProgressSummary,
+  getNotebook,
   admin: {
     getList: adminGetList,
     getDetail: adminGetDetail,

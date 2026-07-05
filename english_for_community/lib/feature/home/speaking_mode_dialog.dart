@@ -22,7 +22,9 @@ Future<void> showSpeakingModeDialog(BuildContext context) {
       maxWidth: 420,
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: availableModes.map((mode) => _ModeTile(mode: mode, l10n: t)).toList(),
+        children: availableModes
+            .map((mode) => _ModeTile(mode: mode, l10n: t))
+            .toList(),
       ),
     ),
   );
@@ -43,13 +45,15 @@ class _ModeTile extends StatelessWidget {
         onTap: () => _handlePress(context),
         child: Row(
           children: [
-            StudentMobileUi.skillIconBox(_getModeIcon(mode), skill: SkillType.speaking),
+            StudentMobileUi.skillIconBox(_getModeIcon(mode),
+                skill: SkillType.speaking),
             const SizedBox(width: AppSpacing.s5),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(mode.titleLocalized(l10n), style: StudentMobileUi.cardTitle(context)),
+                  Text(mode.titleLocalized(l10n),
+                      style: StudentMobileUi.cardTitle(context)),
                   const SizedBox(height: AppSpacing.s2),
                   Text(
                     _modeDescription(l10n, mode),
@@ -74,6 +78,7 @@ class _ModeTile extends StatelessWidget {
   void _handlePress(BuildContext context) {
     Navigator.pop(context);
     if (mode == SpeakingMode.freeSpeaking) {
+      // Người học tự chọn chủ đề khi nói → vào thẳng Free chat, không qua picker.
       context.pushNamed(FreeSpeakingPage.routeName);
     } else {
       context.pushNamed(

@@ -2134,6 +2134,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateLaterButton => 'Later';
 
   @override
+  String updateDownloading(int progress) {
+    return 'Downloading... $progress%';
+  }
+
+  @override
+  String get updatePreparingInstall => 'Preparing to install...';
+
+  @override
+  String get updateDownloadFailed => 'Download failed. Please try again.';
+
+  @override
+  String get updateOpenInBrowser => 'Open in browser';
+
+  @override
+  String get updateRetry => 'Retry';
+
+  @override
+  String get updateCancel => 'Cancel';
+
+  @override
   String updateDialogVersionLine(String name, int code) {
     return '$name (+$code)';
   }
@@ -5662,4 +5682,219 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatMediaVideoLoadFailed => 'Could not load video';
+
+  @override
+  String get speakingFbTitle => 'Speaking feedback';
+
+  @override
+  String get speakingFbTabOverview => 'Overview';
+
+  @override
+  String get speakingFbTabDetails => 'Details';
+
+  @override
+  String get speakingFbTabCorrections => 'Fixes';
+
+  @override
+  String get speakingFbTabSamples => 'Samples';
+
+  @override
+  String speakingFbOverall(String score) {
+    return 'Overall band $score';
+  }
+
+  @override
+  String get speakingFbCefr => 'CEFR level';
+
+  @override
+  String get speakingFbStrengths => 'Strengths';
+
+  @override
+  String get speakingFbImprovements => 'Needs improvement';
+
+  @override
+  String get speakingFbCorrections => 'Specific corrections';
+
+  @override
+  String get speakingFbVocabUpgrades => 'Vocabulary upgrades';
+
+  @override
+  String get speakingFbSaveWord => 'Save to vocabulary';
+
+  @override
+  String get speakingFbSaved => 'Saved';
+
+  @override
+  String get speakingFbModelAnswers => 'Model answers';
+
+  @override
+  String get speakingFbSamplesEmptyTitle => 'No sample answers';
+
+  @override
+  String get speakingFbSamplesEmptyBody =>
+      'This conversation has no sample answers to show.';
+
+  @override
+  String get speakingFbNextSteps => 'Next steps';
+
+  @override
+  String get speakingFbAnalyzing => 'Analyzing your conversation...';
+
+  @override
+  String get speakingFbTooShort => 'Talk a little longer to receive feedback.';
+
+  @override
+  String get speakingErrorTitle => 'Something went wrong';
+
+  @override
+  String get speakingErrorBody =>
+      'We couldn\'t load this right now. Please try again.';
+
+  @override
+  String get speakingFbErrorTitle => 'Couldn\'t create feedback';
+
+  @override
+  String get speakingFbErrorBody =>
+      'We couldn\'t evaluate this conversation. Please try again.';
+
+  @override
+  String get speakingFbSaveError =>
+      'Couldn\'t save the word. Please try again.';
+
+  @override
+  String get speakingFbRetry => 'Try again';
+
+  @override
+  String speakingFbStatWords(int count) {
+    return '$count words';
+  }
+
+  @override
+  String speakingFbStatWpm(String value) {
+    return '$value WPM';
+  }
+
+  @override
+  String speakingFbStatDuration(int seconds) {
+    return '${seconds}s';
+  }
+
+  @override
+  String speakingFbStatFiller(int count) {
+    return '$count fillers';
+  }
+
+  @override
+  String speakingFbStatQuestions(int count) {
+    return '$count questions';
+  }
+
+  @override
+  String get speakingFbEndAndEvaluate => 'End & get feedback';
+
+  @override
+  String get speakingFbSpeakMore => 'Speak again';
+
+  @override
+  String get speakingFbBack => 'Back';
+
+  @override
+  String get speakingFbPronunciationSoon =>
+      'Pronunciation: coming soon (requires an audio recording).';
+
+  @override
+  String get speakingFbCriterionFc => 'Fluency & coherence';
+
+  @override
+  String get speakingFbCriterionLr => 'Lexical resource';
+
+  @override
+  String get speakingFbCriterionGra => 'Grammar range & accuracy';
+
+  @override
+  String get speakingFbCriterionIa => 'Interaction & task';
+
+  @override
+  String get speakingFbYourTurn => 'Your turn';
+
+  @override
+  String get speakingFbModelTurn => 'Native-like version';
+
+  @override
+  String get speakingFbHistoryTitle => 'Speaking history';
+
+  @override
+  String get speakingFbHistoryEmptyTitle => 'No speaking sessions yet';
+
+  @override
+  String get speakingFbHistoryEmptyBody =>
+      'Finish a free speaking conversation to see feedback here.';
+
+  @override
+  String speakingFbHistoryMeta(int seconds, int turns, String cefr) {
+    return '${seconds}s · $turns turns · $cefr';
+  }
+
+  @override
+  String get speakingFbTaskAchievement => 'Task achievement';
+
+  @override
+  String get speakingScenarioTitle => 'Speaking scenarios';
+
+  @override
+  String get speakingScenarioFreeChat => 'Free chat';
+
+  @override
+  String get speakingScenarioFreeChatBody =>
+      'Talk freely with the AI assistant.';
+
+  @override
+  String get speakingScenarioEmptyTitle => 'No scenarios yet';
+
+  @override
+  String get speakingScenarioEmptyBody => 'Free chat is still available.';
+
+  @override
+  String get speakingDashboardTitle => 'Speaking progress';
+
+  @override
+  String get speakingDashboardEmptyTitle => 'No progress yet';
+
+  @override
+  String get speakingDashboardEmptyBody =>
+      'Finish at least two free speaking sessions to see a clearer trend.';
+
+  @override
+  String get speakingDashboardSessions => 'Sessions';
+
+  @override
+  String get speakingDashboardMinutes => 'Minutes';
+
+  @override
+  String get speakingDashboardAvgBand => 'Avg band';
+
+  @override
+  String get speakingDashboardStreak => 'Streak';
+
+  @override
+  String get speakingDashboardRecent => 'Recent sessions';
+
+  @override
+  String get speakingNotebookTitle => 'Improvement notebook';
+
+  @override
+  String get speakingNotebookRepeated => 'Repeated';
+
+  @override
+  String get speakingNotebookEmptyTitle => 'No notes yet';
+
+  @override
+  String get speakingNotebookEmptyBody =>
+      'Your repeated errors and vocabulary upgrades will appear here after feedback.';
+
+  @override
+  String get speakingNotebookNoItems => 'No items';
+
+  @override
+  String get speakingNotebookReviewVocab => 'Review vocabulary';
 }

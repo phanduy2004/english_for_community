@@ -84,6 +84,26 @@ class UserVocabRepositoryImpl implements UserVocabRepository {
   }
 
   @override
+  Future<Either<Failure, void>> saveRawWord({
+    required String headword,
+    String? shortDefinition,
+    String? pos,
+  }) async {
+    try {
+      await userVocabRemoteDatasource.saveRawWord(
+        headword: headword,
+        shortDefinition: shortDefinition,
+        pos: pos,
+      );
+      return Right(null);
+    } on DioException catch (e) {
+      return Left(UserVocabFailure(message: 'Lỗi lưu từ: ${e.toString()}'));
+    } catch (e) {
+      return Left(UserVocabFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> startLearningWord(Entry entry) async {
     try {
       await userVocabRemoteDatasource.startLearningWord(entry);
