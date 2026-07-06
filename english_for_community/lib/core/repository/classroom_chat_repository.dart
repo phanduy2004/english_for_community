@@ -50,4 +50,8 @@ abstract class ClassroomChatRepository {
   Future<Either<Failure, Map<String, dynamic>>> getChatInbox();
 
   Future<Either<Failure, void>> markChatRead(String classroomId);
+
+  Future<Either<Failure, void>> setChatMuted(String classroomId, bool muted);
+
+  Future<Either<Failure, void>> setChatPinned(String classroomId, bool pinned);
 }

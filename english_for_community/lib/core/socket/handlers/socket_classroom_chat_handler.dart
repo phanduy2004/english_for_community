@@ -91,6 +91,15 @@ extension SocketClassroomChatHandler on SocketService {
     _classroomChatSettingsCallbacks[classroomId]?.remove(handler);
   }
 
+  void addClassroomReadListener(String classroomId, void Function(dynamic) handler) {
+    _classroomChatReadCallbacks.putIfAbsent(classroomId, () => []).add(handler);
+    _ensureClassroomChatBridge();
+  }
+
+  void removeClassroomReadListener(String classroomId, void Function(dynamic) handler) {
+    _classroomChatReadCallbacks[classroomId]?.remove(handler);
+  }
+
   void addClassroomInboxListener(void Function(dynamic) handler) {
     _classroomChatInboxCallbacks.add(handler);
     _ensureClassroomChatBridge();
@@ -98,6 +107,17 @@ extension SocketClassroomChatHandler on SocketService {
 
   void removeClassroomInboxListener(void Function(dynamic) handler) {
     _classroomChatInboxCallbacks.remove(handler);
+  }
+
+  /// "Đang nhập…" cho danh sách inbox (khác `classroom_typing` chỉ tới người
+  /// đang mở phòng chat) — fanout tới mọi thành viên.
+  void addClassroomInboxTypingListener(void Function(dynamic) handler) {
+    _classroomChatInboxTypingCallbacks.add(handler);
+    _ensureClassroomChatBridge();
+  }
+
+  void removeClassroomInboxTypingListener(void Function(dynamic) handler) {
+    _classroomChatInboxTypingCallbacks.remove(handler);
   }
 
   void _ensureClassroomChatBridge() {
@@ -126,8 +146,17 @@ extension SocketClassroomChatHandler on SocketService {
     _socket.on('classroom_chat_settings_updated', (data) {
       _dispatchClassroomChat(_classroomChatSettingsCallbacks, data);
     });
+    _socket.on('classroom_chat_read', (data) {
+      _dispatchClassroomChat(_classroomChatReadCallbacks, data);
+    });
     _socket.on('classroom_chat_inbox_updated', (data) {
       for (final cb in List<void Function(dynamic)>.from(_classroomChatInboxCallbacks)) {
+        cb(data);
+      }
+    });
+    _socket.on('classroom_chat_inbox_typing', (data) {
+      for (final cb
+          in List<void Function(dynamic)>.from(_classroomChatInboxTypingCallbacks)) {
         cb(data);
       }
     });

@@ -31,6 +31,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
   late void Function(dynamic) _socketTypingHandler;
   late void Function(dynamic) _socketPinnedHandler;
   late void Function(dynamic) _socketSettingsHandler;
+  late void Function(dynamic) _socketReadHandler;
 
   ClassroomChatBloc({
     required this.classroomId,
@@ -65,6 +66,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     on<ClassroomChatSocketTyping>(_onSocketTyping);
     on<ClassroomChatSocketPinnedUpdated>(_onSocketPinned);
     on<ClassroomChatSocketSettingsUpdated>(_onSocketSettings);
+    on<ClassroomChatSocketReadReceipt>(_onSocketReadReceipt);
 
     _setupSocket();
   }
@@ -163,6 +165,17 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
         ));
       } catch (_) {}
     };
+    _socketReadHandler = (data) {
+      if (isClosed) return;
+      try {
+        final d = Map<String, dynamic>.from(data as Map);
+        final uid = d['userId'] as String?;
+        if (uid == null || uid == currentUserId) return; // chỉ tính người khác
+        final at = DateTime.tryParse(d['lastReadAt']?.toString() ?? '');
+        if (at == null) return;
+        add(ClassroomChatSocketReadReceipt(userId: uid, lastReadAt: at));
+      } catch (_) {}
+    };
 
     socket.addClassroomMessageListener(classroomId, _socketMessageHandler);
     socket.addClassroomReactListener(classroomId, _socketReactHandler);
@@ -171,6 +184,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     socket.addClassroomTypingListener(classroomId, _socketTypingHandler);
     socket.addClassroomPinnedListener(classroomId, _socketPinnedHandler);
     socket.addClassroomSettingsListener(classroomId, _socketSettingsHandler);
+    socket.addClassroomReadListener(classroomId, _socketReadHandler);
   }
 
   // ─── Load initial ──────────────────────────────────────────────────────────
@@ -597,6 +611,16 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     emit(state.copyWith(typingUsers: map));
   }
 
+  void _onSocketReadReceipt(
+    ClassroomChatSocketReadReceipt event,
+    Emitter<ClassroomChatState> emit,
+  ) {
+    final current = state.readHorizon;
+    // Chỉ tiến mốc "đã xem" lên (max), không lùi.
+    if (current != null && !event.lastReadAt.isAfter(current)) return;
+    emit(state.copyWith(readHorizon: event.lastReadAt));
+  }
+
   void _onSocketPinned(ClassroomChatSocketPinnedUpdated event, Emitter<ClassroomChatState> emit) {
     emit(state.copyWith(
       pinnedMessage: event.pinnedMessage,
@@ -680,6 +704,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
     socket.removeClassroomTypingListener(classroomId, _socketTypingHandler);
     socket.removeClassroomPinnedListener(classroomId, _socketPinnedHandler);
     socket.removeClassroomSettingsListener(classroomId, _socketSettingsHandler);
+    socket.removeClassroomReadListener(classroomId, _socketReadHandler);
     socket.leaveClassroomChat(classroomId);
     return super.close();
   }

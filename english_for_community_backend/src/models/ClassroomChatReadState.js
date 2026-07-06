@@ -19,6 +19,10 @@ const classroomChatReadStateSchema = new mongoose.Schema(
       index: true,
     },
     lastReadAt: { type: Date, default: null },
+    /** Tắt thông báo hội thoại (per-user). */
+    muted: { type: Boolean, default: false },
+    /** Thời điểm ghim hội thoại (per-user); null = không ghim. */
+    pinnedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -223,7 +223,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
         if (_callStatus == VapiCallStatus.active &&
             prev != VapiCallStatus.active) {
           _callStartedAt = DateTime.now();
-          _evaluateAfterCallEnds = false;
+          _evaluateAfterCallEnds = true;
           SpeakingTelemetry.logCallStart();
         }
         if (_callStatus == VapiCallStatus.ended ||

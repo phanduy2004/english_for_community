@@ -13,7 +13,6 @@ import 'package:english_for_community/feature/classroom_chat/classroom_chat_sess
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/conversation_tile.dart';
-import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -129,9 +128,144 @@ class _StudentClassroomChatHubPageState
     );
   }
 
-  String _hubBadge(AppLocalizations l10n, int unread, int total) {
-    if (unread > 0) return l10n.studentChatHubUnreadCount(unread);
-    return l10n.studentChatHubClassCount(total);
+  /// Một hàng hội thoại. Nếu chưa đọc → bọc [Dismissible] để **vuốt trái
+  /// đánh dấu đã đọc** (snap-back, không xóa khỏi list).
+  Widget _buildRow(ClassroomChatRoomItem room) {
+    final tile = ConversationTile(
+      key: ValueKey(room.id),
+      room: room,
+      density: ConversationTileDensity.mobile,
+      onTap: () => _openChat(room),
+      onLongPress: () => _showConversationMenu(room),
+      typingText: _controller.typingNameFor(room.id),
+    );
+    if (!room.hasUnread) return tile;
+    return Dismissible(
+      key: ValueKey('swipe_${room.id}'),
+      direction: DismissDirection.endToStart,
+      dismissThresholds: const {DismissDirection.endToStart: 0.4},
+      confirmDismiss: (_) async {
+        await _controller.markConversationRead(room.id, notify: true);
+        return false; // snap back — chỉ đánh dấu đọc, giữ lại trong list
+      },
+      background: const SizedBox.shrink(),
+      secondaryBackground: Container(
+        color: AppColors.successBg,
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.s5),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.done_all_rounded, size: 18, color: AppColors.success),
+            SizedBox(width: AppSpacing.s2),
+            Text(
+              'Đã đọc',
+              style: TextStyle(
+                color: AppColors.success,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      child: tile,
+    );
+  }
+
+  /// Nhấn-giữ hàng → menu: Ghim / Tắt tiếng / Đánh dấu đã đọc.
+  void _showConversationMenu(ClassroomChatRoomItem room) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet + 2)),
+      ),
+      builder: (sheetCtx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: AppSpacing.s3),
+              Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.outlineStrong,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.s5,
+                  AppSpacing.s4,
+                  AppSpacing.s5,
+                  AppSpacing.s2,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        room.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: StudentMobileUi.cardTitle(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: Icon(
+                  room.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                title: Text(
+                  room.isPinned ? 'Bỏ ghim' : 'Ghim lên đầu',
+                  style: StudentMobileUi.body(context),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _controller.togglePin(room);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  room.muted
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_off_outlined,
+                  color: AppColors.textSecondary,
+                ),
+                title: Text(
+                  room.muted ? 'Bật thông báo' : 'Tắt thông báo',
+                  style: StudentMobileUi.body(context),
+                ),
+                onTap: () {
+                  Navigator.pop(sheetCtx);
+                  _controller.toggleMute(room);
+                },
+              ),
+              if (room.hasUnread)
+                ListTile(
+                  leading: const Icon(
+                    Icons.done_all_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                  title: Text(
+                    'Đánh dấu đã đọc',
+                    style: StudentMobileUi.body(context),
+                  ),
+                  onTap: () {
+                    Navigator.pop(sheetCtx);
+                    _controller.markConversationRead(room.id, notify: true);
+                  },
+                ),
+              const SizedBox(height: AppSpacing.s3),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -155,15 +289,33 @@ class _StudentClassroomChatHubPageState
               final total = _controller.rooms.length;
               if (total == 0) return const SizedBox.shrink();
               final unread = _controller.unreadConversations;
-              return Padding(
-                padding: const EdgeInsets.only(right: AppSpacing.s4),
-                child: Center(
-                  child: Text(
-                    _hubBadge(l10n, unread, total),
-                    style: StudentMobileUi.caption(context)
-                        .copyWith(color: AppColors.textMuted),
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (unread > 0)
+                    IconButton(
+                      icon: const Icon(Icons.done_all_rounded, size: 20),
+                      color: AppColors.primary,
+                      tooltip: 'Đánh dấu tất cả đã đọc',
+                      constraints:
+                          const BoxConstraints(minWidth: 44, minHeight: 44),
+                      onPressed: _controller.markAllConversationsRead,
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: AppSpacing.s4),
+                    child: Center(
+                      child: unread > 0
+                          ? _HubUnreadPill(
+                              label: l10n.studentChatHubUnreadCount(unread),
+                            )
+                          : Text(
+                              l10n.studentChatHubClassCount(total),
+                              style: StudentMobileUi.caption(context)
+                                  .copyWith(color: AppColors.textMuted),
+                            ),
+                    ),
                   ),
-                ),
+                ],
               );
             },
           ),
@@ -267,6 +419,40 @@ class _StudentClassroomChatHubPageState
                     );
                   }
 
+                  // Nhóm hiển thị: Ghim → Chưa đọc → Khác (chỉ tách khi xem
+                  // Tất cả & không tìm kiếm). Dùng data sẵn có.
+                  final showGroups =
+                      _filter == _StudentChatHubFilter.all && !hasQuery;
+                  final pinnedRooms = <ClassroomChatRoomItem>[];
+                  final unreadRooms = <ClassroomChatRoomItem>[];
+                  final otherRooms = <ClassroomChatRoomItem>[];
+                  for (final r in filtered) {
+                    if (showGroups && r.isPinned) {
+                      pinnedRooms.add(r);
+                    } else if (showGroups && r.hasUnread) {
+                      unreadRooms.add(r);
+                    } else {
+                      otherRooms.add(r);
+                    }
+                  }
+                  final sections = <_HubSection>[];
+                  if (pinnedRooms.isNotEmpty) {
+                    sections.add(_HubSection('Đã ghim', pinnedRooms));
+                  }
+                  if (unreadRooms.isNotEmpty) {
+                    sections.add(_HubSection(
+                      l10n.studentChatHubFilterUnread,
+                      unreadRooms,
+                      emphasize: true,
+                    ));
+                  }
+                  if (otherRooms.isNotEmpty) {
+                    sections.add(_HubSection(
+                      sections.isEmpty ? '' : 'Trò chuyện',
+                      otherRooms,
+                    ));
+                  }
+
                   return SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(
@@ -275,16 +461,27 @@ class _StudentClassroomChatHubPageState
                         StudentMobileUi.pageHPadding,
                         StudentMobileUi.pageBottomPadding,
                       ),
-                      child: _GroupedCard(
-                        dividerIndent: dividerIndent,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          for (final room in filtered)
-                            ConversationTile(
-                              key: ValueKey(room.id),
-                              room: room,
-                              density: ConversationTileDensity.mobile,
-                              onTap: () => _openChat(room),
+                          for (var i = 0; i < sections.length; i++) ...[
+                            if (i > 0) const SizedBox(height: AppSpacing.s5),
+                            if (sections[i].label.isNotEmpty) ...[
+                              _GroupLabel(
+                                label: sections[i].label,
+                                count: sections[i].rooms.length,
+                                emphasize: sections[i].emphasize,
+                              ),
+                              const SizedBox(height: AppSpacing.s2),
+                            ],
+                            _GroupedCard(
+                              dividerIndent: dividerIndent,
+                              children: [
+                                for (final room in sections[i].rooms)
+                                  _buildRow(room),
+                              ],
                             ),
+                          ],
                         ],
                       ),
                     ),
@@ -342,6 +539,96 @@ class _GroupedCard extends StatelessWidget {
       child: ClipRRect(
         borderRadius: radius,
         child: Column(mainAxisSize: MainAxisSize.min, children: rows),
+      ),
+    );
+  }
+}
+
+/// Một nhóm hội thoại trong hub (Ghim / Chưa đọc / Khác).
+class _HubSection {
+  const _HubSection(this.label, this.rooms, {this.emphasize = false});
+
+  final String label;
+  final List<ClassroomChatRoomItem> rooms;
+  final bool emphasize;
+}
+
+/// Nhãn nhóm nhỏ trên mỗi grouped card ("Chưa đọc" / "Đã đọc"). [emphasize] →
+/// chấm accent + chữ đậm để nhóm chưa đọc nổi lên.
+class _GroupLabel extends StatelessWidget {
+  const _GroupLabel({
+    required this.label,
+    required this.count,
+    this.emphasize = false,
+  });
+
+  final String label;
+  final int count;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: AppSpacing.s2, bottom: AppSpacing.s1),
+      child: Row(
+        children: [
+          if (emphasize) ...[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: AppColors.accent,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s2),
+          ],
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.6,
+              color:
+                  emphasize ? AppColors.textPrimary : AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s2),
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Pill "N chưa đọc" ở header — nhuộm amber (accent) để báo có tin mới.
+class _HubUnreadPill extends StatelessWidget {
+  const _HubUnreadPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.accentTint,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.30)),
+      ),
+      child: Text(
+        label,
+        style: StudentMobileUi.caption(context).copyWith(
+          color: AppColors.accentDark,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

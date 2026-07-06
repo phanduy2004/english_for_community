@@ -223,4 +223,24 @@ class ClassroomChatRepositoryImpl implements ClassroomChatRepository {
       return Left(ServerFailure(message: _errMsg(e)));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> setChatMuted(String classroomId, bool muted) async {
+    try {
+      await remote.setChatMuted(classroomId, muted);
+      return Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: _errMsg(e)));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> setChatPinned(String classroomId, bool pinned) async {
+    try {
+      await remote.setChatPinned(classroomId, pinned);
+      return Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: _errMsg(e)));
+    }
+  }
 }

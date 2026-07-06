@@ -68,4 +68,8 @@ router.post('/messages/:messageId/pin', authenticate, ctrl.pinMessage);
 router.delete('/pin', authenticate, ctrl.unpinMessage);
 router.post('/read', authenticate, ctrl.markChatRead);
 
+// ── Per-user conversation settings (mute / pin hội thoại) ─────────────────────
+router.post('/mute', authenticate, ctrl.setChatMuted);
+router.post('/pin-conversation', authenticate, ctrl.setChatPinned);
+
 export default router;

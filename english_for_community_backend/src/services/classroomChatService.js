@@ -171,6 +171,7 @@ async function emitInboxUpdates(classroomId, messageView, senderId) {
       preview: buildMessagePreview(messageView),
       senderName,
       senderId: String(senderId),
+      type: messageView.type || 'text',
       createdAt: messageView.createdAt,
     },
   };
@@ -578,6 +579,28 @@ export function broadcastTyping(classroomId, userId, isTyping) {
   });
 }
 
+/// "Đang nhập…" cho danh sách inbox — fanout tới user-room của mọi thành viên
+/// (kể cả người không mở phòng chat). Trả về sớm nếu không có thành viên.
+export async function emitInboxTyping(classroomId, typerUserId, isTyping) {
+  const memberIds = await getClassroomMemberUserIds(classroomId);
+  if (memberIds.length === 0) return;
+  let userName = 'Thành viên';
+  if (isTyping) {
+    const u = await User.findById(typerUserId).select('fullName username').lean();
+    userName = u?.fullName || u?.username || 'Thành viên';
+  }
+  const payload = {
+    classroomId: String(classroomId),
+    userId: String(typerUserId),
+    userName,
+    isTyping: isTyping === true,
+  };
+  for (const uid of memberIds) {
+    if (String(uid) === String(typerUserId)) continue;
+    emitToUser(uid, 'classroom_chat_inbox_typing', payload);
+  }
+}
+
 // ─── Inbox & read state ──────────────────────────────────────────────────────
 
 async function listUserClassroomIds(userId) {
@@ -604,7 +627,8 @@ export async function getChatInbox(userId) {
   const objectIds = classroomIds.map((id) => new mongoose.Types.ObjectId(id));
   const uid = new mongoose.Types.ObjectId(userId);
 
-  const [roomsData, lastMsgRows, unreadAgg, memberAgg] = await Promise.all([
+  const [roomsData, lastMsgRows, unreadAgg, memberAgg, readStateRows, memberUserRows] =
+    await Promise.all([
     Classroom.find({ _id: { $in: objectIds }, archived: { $ne: true } }).lean(),
     ClassroomMessage.aggregate([
       { $match: { classroomId: { $in: objectIds }, deletedAt: null } },
@@ -660,11 +684,40 @@ export async function getChatInbox(userId) {
       { $match: { classroomId: { $in: objectIds }, status: 'active' } },
       { $group: { _id: '$classroomId', n: { $sum: 1 } } },
     ]),
+    ClassroomChatReadState.find({ userId: uid, classroomId: { $in: objectIds } })
+      .select('classroomId muted pinnedAt')
+      .lean(),
+    ClassroomMember.find({ classroomId: { $in: objectIds }, status: 'active' })
+      .select('classroomId userId')
+      .lean(),
   ]);
 
   const lastMsgMap = new Map(lastMsgRows.map((r) => [String(r._id), r.doc]));
   const unreadMap = new Map(unreadAgg.map((r) => [String(r._id), r.unreadCount]));
   const memberMap = new Map(memberAgg.map((r) => [String(r._id), r.n]));
+  const settingsMap = new Map(readStateRows.map((r) => [String(r.classroomId), r]));
+
+  // Presence (load-time): thành viên nào khác đang online trong mỗi lớp.
+  const roomMemberIds = new Map();
+  for (const room of roomsData) {
+    const s = new Set();
+    if (room.teacherId) s.add(String(room.teacherId));
+    roomMemberIds.set(String(room._id), s);
+  }
+  for (const m of memberUserRows) {
+    const s = roomMemberIds.get(String(m.classroomId));
+    if (s && m.userId) s.add(String(m.userId));
+  }
+  const candidateIds = new Set();
+  for (const s of roomMemberIds.values()) {
+    for (const id of s) if (id !== String(uid)) candidateIds.add(id);
+  }
+  const onlineRows = candidateIds.size
+    ? await User.find({ _id: { $in: [...candidateIds] }, isOnline: true })
+        .select('_id')
+        .lean()
+    : [];
+  const onlineSet = new Set(onlineRows.map((u) => String(u._id)));
 
   const senderIds = [
     ...new Set(
@@ -692,27 +745,43 @@ export async function getChatInbox(userId) {
         preview: buildMessagePreview({ ...lastMsg, senderId: sender }),
         senderName: senderDisplayName(sender),
         senderId,
+        type: lastMsg.type || 'text',
         createdAt: lastMsg.createdAt,
       };
     }
 
+    const settings = settingsMap.get(cid);
+    const members = roomMemberIds.get(cid);
+    const online = members
+      ? [...members].some((id) => id !== String(uid) && onlineSet.has(id))
+      : false;
     rooms.push({
       id: cid,
       name: room.name,
       coverImageUrl: room.coverImageUrl ?? '',
       memberCount: (memberMap.get(cid) || 0) + 1,
       unreadCount: unreadMap.get(cid) || 0,
+      muted: settings?.muted === true,
+      pinnedAt: settings?.pinnedAt ?? null,
+      online,
       lastMessage,
     });
   }
 
   rooms.sort((a, b) => {
+    // Pinned lên đầu (theo pinnedAt mới nhất), rồi tới recency.
+    if (!!a.pinnedAt !== !!b.pinnedAt) return a.pinnedAt ? -1 : 1;
+    if (a.pinnedAt && b.pinnedAt) {
+      const diff = new Date(b.pinnedAt).getTime() - new Date(a.pinnedAt).getTime();
+      if (diff !== 0) return diff;
+    }
     const ta = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
     const tb = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
     return tb - ta;
   });
 
-  const unreadConversations = rooms.filter((r) => r.unreadCount > 0).length;
+  // Badge header không tính hội thoại đã tắt tiếng.
+  const unreadConversations = rooms.filter((r) => r.unreadCount > 0 && !r.muted).length;
   return { rooms, unreadConversations };
 }
 
@@ -729,7 +798,35 @@ export async function markChatRead(classroomId, userId) {
     unreadCount: 0,
     markRead: true,
   });
+  // Báo phòng chat: user này đã đọc tới `now` → dùng cho ✓✓ "Đã xem".
+  emitToRoom(classroomId, 'classroom_chat_read', {
+    classroomId: String(classroomId),
+    userId: String(userId),
+    lastReadAt: now,
+  });
   return { ok: true, lastReadAt: now };
+}
+
+// ─── Per-user conversation settings (mute / pin) ─────────────────────────────
+
+export async function setChatMuted(classroomId, userId, muted) {
+  await assertMember(classroomId, userId);
+  await ClassroomChatReadState.findOneAndUpdate(
+    { classroomId, userId },
+    { muted: muted === true },
+    { upsert: true, new: true }
+  );
+  return { ok: true, muted: muted === true };
+}
+
+export async function setChatPinned(classroomId, userId, pinned) {
+  await assertMember(classroomId, userId);
+  await ClassroomChatReadState.findOneAndUpdate(
+    { classroomId, userId },
+    { pinnedAt: pinned === true ? new Date() : null },
+    { upsert: true, new: true }
+  );
+  return { ok: true, pinned: pinned === true };
 }
 
 export const CLASSROOM_CHAT_ROOM = roomName;

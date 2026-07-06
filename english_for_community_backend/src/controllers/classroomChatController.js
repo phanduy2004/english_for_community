@@ -173,3 +173,29 @@ export const markChatRead = async (req, res) => {
     res.status(getStatusCode(e)).json({ message: e.message });
   }
 };
+
+export const setChatMuted = async (req, res) => {
+  try {
+    const result = await svc.setChatMuted(
+      req.params.classroomId,
+      req.user._id,
+      req.body.muted
+    );
+    res.json(result);
+  } catch (e) {
+    res.status(getStatusCode(e)).json({ message: e.message });
+  }
+};
+
+export const setChatPinned = async (req, res) => {
+  try {
+    const result = await svc.setChatPinned(
+      req.params.classroomId,
+      req.user._id,
+      req.body.pinned
+    );
+    res.json(result);
+  } catch (e) {
+    res.status(getStatusCode(e)).json({ message: e.message });
+  }
+};

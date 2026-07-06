@@ -105,12 +105,6 @@ class _ChartCard extends StatelessWidget {
         border: Border.all(color: AppColors.outline),
         color: AppColors.surfaceCard,
       ),
-      foregroundDecoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: const Border(
-          left: BorderSide(color: AppColors.accent, width: 3),
-        ),
-      ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.s4),
         child: Column(

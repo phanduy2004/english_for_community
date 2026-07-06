@@ -23,6 +23,7 @@ class ProgressState extends Equatable {
   final LeaderboardStatus leaderboardStatus;
   final List<LeaderboardUserEntity> leaderboardUsers;
   final int myRank;
+  final int totalUsers;
   const ProgressState({
     required this.status,
     this.errorMessage,
@@ -33,6 +34,7 @@ class ProgressState extends Equatable {
     required this.leaderboardStatus,
     required this.leaderboardUsers,
     required this.myRank,
+    this.totalUsers = 0,
   });
 
   // Trạng thái ban đầu
@@ -58,6 +60,7 @@ class ProgressState extends Equatable {
     LeaderboardStatus? leaderboardStatus,
     List<LeaderboardUserEntity>? leaderboardUsers,
     int? myRank,
+    int? totalUsers,
   }) {
     return ProgressState(
       status: status ?? this.status,
@@ -70,6 +73,7 @@ class ProgressState extends Equatable {
       leaderboardStatus: leaderboardStatus ?? this.leaderboardStatus,
       leaderboardUsers: leaderboardUsers ?? this.leaderboardUsers,
       myRank: myRank ?? this.myRank,
+      totalUsers: totalUsers ?? this.totalUsers,
     );
   }
 
@@ -84,5 +88,6 @@ class ProgressState extends Equatable {
     leaderboardStatus,
     leaderboardUsers,
     myRank,
+    totalUsers,
   ];
 }

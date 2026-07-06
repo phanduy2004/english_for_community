@@ -16,18 +16,24 @@ class ConversationTile extends StatefulWidget {
     super.key,
     required this.room,
     required this.onTap,
+    this.onLongPress,
+    this.typingText,
     this.isActive = false,
     this.density = ConversationTileDensity.mobile,
   });
 
   final ClassroomChatRoomItem room;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+
+  /// Tên người đang nhập → hiển thị "… đang nhập…" thay preview.
+  final String? typingText;
   final bool isActive;
   final ConversationTileDensity density;
 
   static double dividerIndent(ConversationTileDensity density) {
     return switch (density) {
-      ConversationTileDensity.mobile => AppSpacing.s4 + 40 + AppSpacing.s3,
+      ConversationTileDensity.mobile => AppSpacing.s4 + 48 + AppSpacing.s3,
       ConversationTileDensity.web => AppSpacing.s3 + 40 + AppSpacing.s3,
     };
   }
@@ -41,25 +47,114 @@ class _ConversationTileState extends State<ConversationTile> {
 
   bool get _isWeb => widget.density == ConversationTileDensity.web;
 
-  double get _rowHeight => _isWeb ? 58 : 64;
+  double get _rowHeight => _isWeb ? 58 : 68;
 
-  double get _avatarRadius => 20;
+  static const double _avatarDiameter = 40;
+
+  double get _avatarRadius => _avatarDiameter / 2;
+
+  /// Ô cố định giữ avatar căn đều mọi hàng — mobile chừa chỗ cho ring unread.
+  double get _avatarSlot => _isWeb ? _avatarDiameter : 48;
 
   double get _horizontalPadding =>
       _isWeb ? AppSpacing.s3 : AppSpacing.s4;
 
-  double get _titleSize => 14;
+  double get _titleSize => _isWeb ? 14 : 15;
 
-  double get _previewSize => _isWeb ? 13 : 12;
+  double get _previewSize => 13;
+
+  /// Avatar trong slot cố định. Mobile: **ring gradient màu-định-danh** khi
+  /// chưa đọc (kiểu Telegram/IG) — thêm màu + báo unread ngay; web dock giữ phẳng.
+  Widget _buildAvatar(
+    ClassroomChatRoomItem room,
+    ({Color background, Color foreground}) colors,
+    bool hasUnread,
+  ) {
+    final avatar = ChatGroupCoverAvatar(
+      coverImageUrl: room.coverImageUrl,
+      radius: _avatarRadius,
+      backgroundColor: colors.background,
+      fallbackIconColor: colors.foreground,
+      fallbackIconSize: _avatarRadius * 0.7,
+      groupName: room.name,
+      useInitialsFallback: true,
+    );
+
+    Widget inner;
+    if (_isWeb || !hasUnread) {
+      inner = avatar;
+    } else {
+      final ring = colors.foreground;
+      inner = Container(
+        width: _avatarDiameter + 8,
+        height: _avatarDiameter + 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [ring, Color.lerp(ring, Colors.white, 0.5)!],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(2.5),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.surfaceCard,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(1.5),
+              child: avatar,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: _avatarSlot,
+      height: _avatarSlot,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Center(child: inner),
+          // Chấm online (presence thật) — báo có thành viên khác đang hoạt động.
+          if (room.online)
+            Positioned(
+              right: _isWeb ? 0 : 2,
+              bottom: 1,
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: AppColors.success,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.surfaceCard, width: 2),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final room = widget.room;
     final hasUnread = room.hasUnread;
     final isActive = widget.isActive && _isWeb;
-    final preview = ClassroomChatRoomSubtitle.previewText(room);
+    final mediaIcon = _mediaIconFor(room.lastMessageType);
+    var preview = ClassroomChatRoomSubtitle.previewText(room);
+    if (mediaIcon != null) preview = _stripMediaEmoji(preview);
     final time = ClassroomChatRoomSubtitle.timeLabel(room);
     final avatarColors = ClassroomChatUi.groupAvatarColors(room.name);
+    // Mỗi lớp một "màu unread" theo identity (ring/badge/time) — web giữ đen.
+    final unreadAccent = _isWeb ? AppColors.primary : avatarColors.foreground;
+    final isMuted = room.muted;
+    final isPinned = room.isPinned;
+    // Tắt tiếng → không nhuộm màu unread (dùng xám), không ring.
+    final effectiveAccent = isMuted ? AppColors.textMuted : unreadAccent;
 
     Color rowBg = Colors.transparent;
     if (isActive) {
@@ -81,15 +176,16 @@ class _ConversationTileState extends State<ConversationTile> {
     );
 
     final timeStyle = TextStyle(
-      fontSize: _isWeb ? 12 : 11,
-      fontWeight: hasUnread ? FontWeight.w600 : FontWeight.w500,
-      color: hasUnread ? AppColors.primary : AppColors.textMuted,
+      fontSize: 12,
+      fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w500,
+      color: hasUnread ? effectiveAccent : AppColors.textMuted,
     );
 
     Widget row = Material(
       color: rowBg,
       child: InkWell(
         onTap: widget.onTap,
+        onLongPress: widget.onLongPress,
         onHighlightChanged: _isWeb ? null : (v) => setState(() => _pressed = v),
         hoverColor: _isWeb ? AppColors.surfaceSubtle : null,
         splashColor: AppColors.pressOverlay,
@@ -104,16 +200,8 @@ class _ConversationTileState extends State<ConversationTile> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                ChatGroupCoverAvatar(
-                  coverImageUrl: room.coverImageUrl,
-                  radius: _avatarRadius,
-                  backgroundColor: avatarColors.background,
-                  fallbackIconColor: avatarColors.foreground,
-                  fallbackIconSize: _avatarRadius * 0.7,
-                  groupName: room.name,
-                  useInitialsFallback: true,
-                ),
-                SizedBox(width: _isWeb ? AppSpacing.s3 : AppSpacing.s3),
+                _buildAvatar(room, avatarColors, hasUnread && !isMuted),
+                const SizedBox(width: AppSpacing.s3),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,6 +219,22 @@ class _ConversationTileState extends State<ConversationTile> {
                               style: titleStyle,
                             ),
                           ),
+                          if (isPinned) ...[
+                            const SizedBox(width: AppSpacing.s2),
+                            const Icon(
+                              Icons.push_pin,
+                              size: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ],
+                          if (isMuted) ...[
+                            const SizedBox(width: 3),
+                            const Icon(
+                              Icons.notifications_off_rounded,
+                              size: 13,
+                              color: AppColors.textMuted,
+                            ),
+                          ],
                           if (time != null) ...[
                             SizedBox(width: AppSpacing.s2),
                             Text(time, style: timeStyle),
@@ -140,17 +244,44 @@ class _ConversationTileState extends State<ConversationTile> {
                       SizedBox(height: AppSpacing.s1),
                       Row(
                         children: [
-                          Expanded(
-                            child: Text(
-                              preview,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: previewStyle,
+                          if (widget.typingText != null)
+                            Expanded(
+                              child: Text(
+                                '${widget.typingText} đang nhập…',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: _previewSize,
+                                  fontStyle: FontStyle.italic,
+                                  fontWeight: FontWeight.w600,
+                                  color: unreadAccent,
+                                ),
+                              ),
+                            )
+                          else ...[
+                            if (mediaIcon != null) ...[
+                              Icon(
+                                mediaIcon,
+                                size: 14,
+                                color: previewStyle.color,
+                              ),
+                              const SizedBox(width: 3),
+                            ],
+                            Expanded(
+                              child: Text(
+                                preview,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: previewStyle,
+                              ),
                             ),
-                          ),
+                          ],
                           if (hasUnread) ...[
                             SizedBox(width: AppSpacing.s2),
-                            _UnreadBadge(count: room.unreadCount),
+                            _UnreadBadge(
+                              count: room.unreadCount,
+                              color: effectiveAccent,
+                            ),
                           ],
                         ],
                       ),
@@ -180,9 +311,10 @@ class _ConversationTileState extends State<ConversationTile> {
 }
 
 class _UnreadBadge extends StatelessWidget {
-  const _UnreadBadge({required this.count});
+  const _UnreadBadge({required this.count, this.color = AppColors.primary});
 
   final int count;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -190,7 +322,7 @@ class _UnreadBadge extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
       padding: const EdgeInsets.symmetric(horizontal: 6),
       decoration: BoxDecoration(
-        color: AppColors.primary,
+        color: color,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       alignment: Alignment.center,
@@ -207,6 +339,31 @@ class _UnreadBadge extends StatelessWidget {
   }
 }
 
+/// Icon prefix cho tin media (null nếu là text) — `docs/ui-ux-system/23` §3.6.
+IconData? _mediaIconFor(String? type) {
+  switch (type) {
+    case 'image':
+      return Icons.photo_rounded;
+    case 'video':
+      return Icons.videocam_rounded;
+    case 'file':
+      return Icons.insert_drive_file_rounded;
+    default:
+      return null;
+  }
+}
+
+/// Bỏ emoji media khỏi preview khi đã render icon riêng — tránh trùng và đồng
+/// bộ hiển thị (emoji font lệch trên Android).
+String _stripMediaEmoji(String s) {
+  const emojis = ['📷', '🎬', '📎', '🎞️', '🖼️', '🎥'];
+  var out = s;
+  for (final e in emojis) {
+    out = out.replaceAll('$e ', '').replaceAll(e, '');
+  }
+  return out.trim();
+}
+
 /// Skeleton row matching [ConversationTile] layout.
 class ConversationTileSkeleton extends StatelessWidget {
   const ConversationTileSkeleton({
@@ -220,7 +377,8 @@ class ConversationTileSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final isWeb = density == ConversationTileDensity.web;
     const avatarSize = 40.0;
-    final rowHeight = isWeb ? 58.0 : 64.0;
+    final slot = isWeb ? 40.0 : 48.0;
+    final rowHeight = isWeb ? 58.0 : 68.0;
     final horizontal = isWeb ? AppSpacing.s3 : AppSpacing.s4;
 
     return SizedBox(
@@ -229,10 +387,16 @@ class ConversationTileSkeleton extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: horizontal),
         child: Row(
           children: [
-            AppSkeleton.box(
-              height: avatarSize,
-              width: avatarSize,
-              borderRadius: BorderRadius.circular(avatarSize / 2),
+            SizedBox(
+              width: slot,
+              height: slot,
+              child: Center(
+                child: AppSkeleton.box(
+                  height: avatarSize,
+                  width: avatarSize,
+                  borderRadius: BorderRadius.circular(avatarSize / 2),
+                ),
+              ),
             ),
             SizedBox(width: AppSpacing.s3),
             Expanded(

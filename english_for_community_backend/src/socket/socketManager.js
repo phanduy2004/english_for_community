@@ -259,13 +259,18 @@ export const initSocket = (httpServer) => {
       socket.leave(`classroom_chat_${classroomId}`);
     });
 
-    socket.on('classroom_chat_typing', ({ classroomId, isTyping } = {}) => {
+    socket.on('classroom_chat_typing', async ({ classroomId, isTyping } = {}) => {
       if (!classroomId || !socket.userId) return;
       socket.to(`classroom_chat_${classroomId}`).emit('classroom_typing', {
         classroomId: String(classroomId),
         userId: String(socket.userId),
         isTyping: isTyping === true,
       });
+      // Fanout "đang nhập…" cho danh sách inbox của mọi thành viên.
+      try {
+        const { emitInboxTyping } = await import('../services/classroomChatService.js');
+        await emitInboxTyping(classroomId, socket.userId, isTyping === true);
+      } catch (_) {}
     });
     // ─────────────────────────────────────────────────────────────────────────
 

@@ -5,6 +5,7 @@ import 'package:english_for_community/feature/auth/bloc/user_state.dart';
 import 'package:bloc/bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../../core/api/token_storage.dart';
 import '../../../core/repository/auth_repository.dart';
 
@@ -37,29 +38,39 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     emit(state.copyWith(isFormLoading: true, errorMessage: null));
 
     try {
-      // 1. Trigger Google Sign In Flow
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      // 1. Lấy Firebase ID Token - web dùng popup, mobile dùng google_sign_in native
+      final String? idToken;
 
-      if (googleUser == null) {
-        // User hủy login
-        emit(state.copyWith(isFormLoading: false));
-        return;
+      if (kIsWeb) {
+        // WEB: Firebase Auth popup lo trọn OAuth (không cần google_sign_in / clientId)
+        final UserCredential userCredential = await FirebaseAuth.instance
+            .signInWithPopup(GoogleAuthProvider());
+        idToken = await userCredential.user?.getIdToken();
+      } else {
+        // 1. Trigger Google Sign In Flow
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+
+        if (googleUser == null) {
+          // User hủy login
+          emit(state.copyWith(isFormLoading: false));
+          return;
+        }
+
+        // 2. Lấy Auth Credential
+        final GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+        final AuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
+
+        // 3. Sign in Firebase để lấy ID Token chuẩn
+        final UserCredential userCredential =
+            await FirebaseAuth.instance.signInWithCredential(credential);
+
+        idToken = await userCredential.user?.getIdToken();
       }
-
-      // 2. Lấy Auth Credential
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // 3. Sign in Firebase để lấy ID Token chuẩn
-      final UserCredential userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
-
-      final String? idToken = await userCredential.user?.getIdToken();
 
       if (idToken == null) {
         throw Exception("Không lấy được ID Token từ Google");
@@ -85,6 +96,15 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         },
       );
     } catch (e) {
+      // WEB: user đóng popup / bấm huỷ -> coi như cancel (giống mobile googleUser == null), không báo lỗi
+      if (e is FirebaseAuthException &&
+          (e.code == 'popup-closed-by-user' ||
+              e.code == 'cancelled-popup-request' ||
+              e.code == 'user-cancelled' ||
+              e.code == 'web-context-canceled')) {
+        emit(state.copyWith(isFormLoading: false));
+        return;
+      }
       emit(state.copyWith(
         isFormLoading: false,
         status: UserStatus.error,
@@ -334,7 +354,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     }
     try {
       await FirebaseAuth.instance.signOut();
-      await GoogleSignIn().signOut();
+      // WEB: login Google qua Firebase popup (không dùng google_sign_in) → không signOut plugin
+      // google_sign_in trên web (tránh lỗi "ClientID not set" của google_sign_in_web).
+      if (!kIsWeb) await GoogleSignIn().signOut();
     } catch (e) {
       print("Lỗi khi đăng xuất Google: $e");
     }

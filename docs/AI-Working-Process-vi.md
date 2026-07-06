@@ -1,11 +1,15 @@
 # Quy Trình Làm Việc AI — Brain / Implement / Audit (prompt chuẩn)
 
-**Version:** 1.4 · **Ngày:** 2026-07-01 · **Ngôn ngữ:** tiếng Việt (thuật ngữ kỹ thuật giữ tiếng Anh)
+**Version:** 1.5 · **Ngày:** 2026-07-06 · **Ngôn ngữ:** tiếng Việt (thuật ngữ kỹ thuật giữ tiếng Anh)
+
+> _v1.5: bắt buộc **CONTEXT BUNDLE** trong work-order (code thật + anchor search-string + symbol table) để implementer làm hiệu quả — xem Phase 2 §5, template `_templates/work-order.md` + `_templates/handoff-cursor.md`._
 
 > **Mục đích:** prompt chuẩn để khởi động MỌI task theo quy trình 3 vai:
 > **Opus (bộ não) PHÂN TÍCH + PLAN + AUDIT → Codex/Sonnet (Cursor) IMPLEMENT → Opus AUDIT lại khi xong.**
 >
 > **Nguyên tắc token (giữ chất lượng):** Opus chỉ ôm phần CẦN LÝ LUẬN — phân tích, thiết kế giải pháp, phán quyết cuối. Phần *lấy dữ liệu / gõ code / rà soát lần đầu* → giao model rẻ (Codex/Sonnet, sub-agent Explore). Mục tiêu: **giảm token Opus mà chất lượng đầu ra KHÔNG giảm** — Opus vẫn đọc code thật ở mọi điểm ra quyết định.
+>
+> **Cân bằng token ≠ bỏ đói implementer (v1.5):** tiết kiệm token chỉ áp cho *retrieval + lý luận của Opus* (delegate scout, không reload full diff). **Handoff cho Codex thì NGƯỢC LẠI — phải DATA-ĐẦY-ĐỦ:** work-order bắt buộc có **CONTEXT BUNDLE** = code THẬT tại từng touch-site + **anchor là chuỗi search unique** (KHÔNG neo số dòng) + **symbol table** (signature/field/enum/l10n/route verbatim). Bắt Codex tự grep lại = tốn token hơn + định vị sai + thêm vòng audit → *kém hiệu quả tổng thể*. Rẻ hơn là Opus dán sẵn đúng đoạn cần.
 >
 > **Nguyên tắc bắt buộc (mọi loại task):**
 > - **Chức năng + không regression** — đúng nghiệp vụ, không phá luồng cũ.
@@ -17,9 +21,10 @@
 >
 > **Cách dùng:**
 > 1. Task thường → copy **Khối prompt** → điền **Phần A** → gửi Opus → nhận work-order + handoff.
-> 2. Task **layout/redesign** → dùng thêm [`plantasks/_templates/uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
-> 3. Task **MICRO** (≤3 file) → xem mục [Chế độ MICRO](#chế-độ-micro) — gọn hơn, không cần tracker.
-> 4. Implementer xong → báo Opus *"implementer đã xong, audit đi"* → Phase 4.
+> 2. Opus viết work-order theo [`plantasks/_templates/work-order.md`](plantasks/_templates/work-order.md) + handoff theo [`plantasks/_templates/handoff-cursor.md`](plantasks/_templates/handoff-cursor.md) — **bắt buộc CONTEXT BUNDLE** (code thật + anchor + symbol table).
+> 3. Task **UI (dựng/redesign màn)** → template xây UI: [`plantasks/_templates/ui-build-mobile.md`](plantasks/_templates/ui-build-mobile.md) (student) / [`plantasks/_templates/ui-build-web.md`](plantasks/_templates/ui-build-web.md) (teacher/admin) — Standards + Build-spec + Perf + Pre-ship checklist; kick-off nhanh bằng prompt [`plantasks/_templates/uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
+> 4. Task **MICRO** (≤3 file) → xem mục [Chế độ MICRO](#chế-độ-micro) — gọn hơn, không cần tracker (§5 Context Bundle vẫn giữ).
+> 5. Implementer xong → báo Opus *"implementer đã xong, audit đi"* → Phase 4.
 
 ---
 
@@ -66,7 +71,8 @@ PHASE 0 — READINESS (bắt buộc):
 
 PHASE 1 — PHÂN TÍCH GROUND-TRUTH (không hallucinate):
   - TIẾT KIỆM TOKEN — DELEGATE SCOUT: việc dò rộng / đọc số lượng lớn file → giao sub-agent rẻ
-      (Explore/Codex) chạy grep/read, trả về BẢN ĐỒ `file:line` + TRÍCH ĐOẠN CODE THẬT ở điểm quyết định.
+      (Explore/Codex) chạy grep/read, trả về BẢN ĐỒ `file:line` + TRÍCH ĐOẠN CODE THẬT ở điểm quyết định
+      (các trích đoạn này về sau tái dùng làm **BEFORE** trong §5 CONTEXT BUNDLE của work-order).
       Opus reasoning trên đó + tự đọc KỸ vài file quyết định. (Opus lo suy luận, không ôm retrieval.)
   - CHẤT LƯỢNG BẤT KHẢ XÂM PHẠM: KHÔNG kết luận chỉ từ tóm tắt của sub-agent. Mọi điểm ra quyết định
       (root-cause, field/luồng dùng chung, chỗ sẽ sửa) → Opus phải đọc CODE THẬT tận nơi, verify lại.
@@ -94,9 +100,11 @@ PHASE 2 — VIẾT ARTIFACT (đặt tại docs/plantasks/{Loại}/{Task ID}/):
     2) Audit downstream (bảng consumer nếu có).
     3) Quyết định thiết kế + cảnh báo.
     4) Scope IN/OUT + "chạm là DỪNG & hỏi".
-    5) Diff cụ thể: file + path + dòng ~ + Ý ĐỊNH thay đổi + RÀNG BUỘC + TIÊU CHÍ NGHIỆM THU.
-       → Codex TỰ VIẾT code; Opus KHÔNG viết full code mẫu (đỡ tốn output token). Chỉ đính code mẫu ở
-         chỗ thật sự dễ sai / logic tinh tế. CHẤT LƯỢNG: instruction phải đủ chính xác để Codex không phải đoán.
+    5) **CONTEXT BUNDLE (BẮT BUỘC)** — mỗi touch-site: `file:path` + **anchor = chuỗi search unique** (KHÔNG neo số dòng)
+         + **BEFORE verbatim** (dán code thật ~5–15 dòng, đủ định vị) + **AFTER / thao tác chính xác** + GOTCHA.
+         Kèm **SYMBOL TABLE** (signature/field/enum/l10n/route verbatim, đánh dấu [CÓ]/[THÊM]) + **CLONE-THIS** (mẫu để nhái).
+       → Mục tiêu: Codex đọc §5 là ĐỦ code, KHÔNG phải grep lại. Opus không cần viết lại TOÀN BỘ file — chỉ dán đúng
+         đoạn touch-site, nhưng đoạn đó phải là CODE THẬT + anchor + symbol, KHÔNG phải chỉ "mô tả ý định".
     6) Ràng buộc hiệu năng (nếu PERF GATE có rủi ro).
     6b) Ràng buộc UI/UX (nếu UI/UX GATE có chạm layout).
     6c) Ràng buộc backend (nếu BACKEND GATE có rủi ro).
@@ -106,7 +114,9 @@ PHASE 2 — VIẾT ARTIFACT (đặt tại docs/plantasks/{Loại}/{Task ID}/):
     10) Checklist OPUS AUDIT (Phase 4).
   Tracker (T1/T2): trạng thái + nhật ký + bằng chứng build/test/smoke + kết quả Opus audit.
 
-PHASE 3 — HANDOFF cho Cursor IMPLEMENT (copy-paste, biên giới cứng):
+PHASE 3 — HANDOFF cho Cursor IMPLEMENT (copy-paste, biên giới cứng) — mẫu: `_templates/handoff-cursor.md`:
+  - **BƯỚC 0 (bắt buộc):** trỏ Codex ĐỌC work-order file (path đầy đủ) trước; code lấy nguyên từ §5 CONTEXT BUNDLE,
+      không tự grep đoán. File thực tế lệch BEFORE hoặc doc mâu thuẫn prompt → DỪNG (doc thắng).
   - Liệt kê CHÍNH XÁC file được sửa; ngoài danh sách → DỪNG & hỏi.
   - "TUYỆT ĐỐI KHÔNG": schema/migration không plan, đổi public signature, mở rộng scope, hardcode secret.
   - PERF: ListView.builder, lazy tab, debounce ≥300ms, BlocSelector/buildWhen, dispose subscription, không API trong build.
@@ -168,7 +178,7 @@ IN: [module]. Đo/smoke: [cách verify]. Ra work-order perf/backend gate.
 | GATE đầy đủ | Chỉ GATE có rủi ro (vd UI bug → UI/UX GATE; không chạm backend thì bỏ) |
 | Smoke dài | 3 bước hồi quy tối thiểu |
 
-Opus vẫn **đọc code thật** và **handoff biên giới cứng** — chỉ gộp file, không cắt não.
+Opus vẫn **đọc code thật**, **handoff biên giới cứng**, và **giữ nguyên §5 CONTEXT BUNDLE** (không bao giờ cắt — MICRO càng cần anchor + BEFORE/AFTER chính xác) — chỉ gộp file, không cắt não.
 
 ---
 
@@ -198,7 +208,7 @@ Opus vẫn **đọc code thật** và **handoff biên giới cứng** — chỉ 
 | **Sheet / haptic** | + `15` |
 | **a11y** | + `10` |
 
-**Layout redesign:** dùng [`uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
+**Dựng/redesign UI:** template xây UI [`ui-build-mobile.md`](plantasks/_templates/ui-build-mobile.md) (student) / [`ui-build-web.md`](plantasks/_templates/ui-build-web.md) (teacher/admin); kick-off prompt [`uiux-layout-prompt.md`](plantasks/_templates/uiux-layout-prompt.md).
 
 **Luồng:** archetype → brief → token `02` → component `04`/`07` → map `11` → guardrails `12` → perf overlap.
 

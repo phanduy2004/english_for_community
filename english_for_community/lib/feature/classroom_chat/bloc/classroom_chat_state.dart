@@ -19,6 +19,10 @@ class ClassroomChatState extends Equatable {
   final ClassroomChatMessage? pinnedMessage;
   final bool isUpdatingSettings;
 
+  /// Mốc thời gian mà một thành viên khác đã đọc tới (max) → tin của mình
+  /// tạo trước mốc này coi như "Đã xem" (✓✓).
+  final DateTime? readHorizon;
+
   const ClassroomChatState({
     this.status = ClassroomChatStatus.initial,
     this.messages = const [],
@@ -33,6 +37,7 @@ class ClassroomChatState extends Equatable {
     this.coverImageUrl,
     this.pinnedMessage,
     this.isUpdatingSettings = false,
+    this.readHorizon,
   });
 
   ClassroomChatState copyWith({
@@ -51,6 +56,7 @@ class ClassroomChatState extends Equatable {
     ClassroomChatMessage? pinnedMessage,
     bool clearPinned = false,
     bool? isUpdatingSettings,
+    DateTime? readHorizon,
   }) =>
       ClassroomChatState(
         status: status ?? this.status,
@@ -66,6 +72,7 @@ class ClassroomChatState extends Equatable {
         coverImageUrl: coverImageUrl ?? this.coverImageUrl,
         pinnedMessage: clearPinned ? null : pinnedMessage ?? this.pinnedMessage,
         isUpdatingSettings: isUpdatingSettings ?? this.isUpdatingSettings,
+        readHorizon: readHorizon ?? this.readHorizon,
       );
 
   String displayName(String fallback) =>
@@ -99,5 +106,6 @@ class ClassroomChatState extends Equatable {
         coverImageUrl,
         pinnedMessage?.id,
         isUpdatingSettings,
+        readHorizon,
       ];
 }

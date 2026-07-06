@@ -203,4 +203,15 @@ class ClassroomChatRemoteDataSource {
   Future<void> markChatRead(String classroomId) async {
     await dio.post('${_base(classroomId)}/read');
   }
+
+  Future<void> setChatMuted(String classroomId, bool muted) async {
+    await dio.post('${_base(classroomId)}/mute', data: {'muted': muted});
+  }
+
+  Future<void> setChatPinned(String classroomId, bool pinned) async {
+    await dio.post(
+      '${_base(classroomId)}/pin-conversation',
+      data: {'pinned': pinned},
+    );
+  }
 }

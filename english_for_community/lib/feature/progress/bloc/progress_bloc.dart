@@ -39,6 +39,7 @@ class ProgressBloc extends Bloc<ProgressEvent, ProgressState> {
           leaderboardStatus: LeaderboardStatus.success,
           leaderboardUsers: data.leaderboard,
           myRank: data.myRank,
+          totalUsers: data.totalUsers,
         ));
       },
     );

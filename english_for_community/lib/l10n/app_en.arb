@@ -524,8 +524,22 @@
   "progressStatLessons": "Lessons",
   "progressStatWriting": "Writing",
   "progressStatSpeaking": "Speaking",
+  "progressStatStreak": "Streak",
+  "progressStatPoints": "Points",
+  "progressStatLevel": "Level",
+  "progressStatReadingWpm": "Reading WPM",
+  "progressStatSpeakingFluency": "Fluency",
   "progressLeaderboard": "Leaderboard",
   "progressActivity": "Activity",
+  "progressEmptyTitle": "No activity yet",
+  "progressEmptyBody": "Complete your first lesson to start tracking your progress.",
+  "progressLeaderboardYouRank": "You: #{rank} of {total}",
+  "@progressLeaderboardYouRank": {
+    "placeholders": {
+      "rank": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
   "leaderboardLoadFailed": "Cannot load leaderboard",
   "leaderboardEmpty": "No leaderboard data available",
   "statDetailVocab": "Vocabulary detail",

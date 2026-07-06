@@ -33,7 +33,9 @@ class SocketService {
   final Map<String, List<void Function(dynamic)>> _classroomChatTypingCallbacks = {};
   final Map<String, List<void Function(dynamic)>> _classroomChatPinnedCallbacks = {};
   final Map<String, List<void Function(dynamic)>> _classroomChatSettingsCallbacks = {};
+  final Map<String, List<void Function(dynamic)>> _classroomChatReadCallbacks = {};
   final List<void Function(dynamic)> _classroomChatInboxCallbacks = [];
+  final List<void Function(dynamic)> _classroomChatInboxTypingCallbacks = [];
   bool _classroomChatBridgeAttached = false;
   final Set<String> _joinedClassroomChatRooms = {};
   bool _pendingAdminJoin = false;
@@ -150,7 +152,9 @@ class SocketService {
     _classroomChatTypingCallbacks.clear();
     _classroomChatPinnedCallbacks.clear();
     _classroomChatSettingsCallbacks.clear();
+    _classroomChatReadCallbacks.clear();
     _classroomChatInboxCallbacks.clear();
+    _classroomChatInboxTypingCallbacks.clear();
     _examLiveProgressListeners.clear();
     _examLiveScreenListeners.clear();
   }

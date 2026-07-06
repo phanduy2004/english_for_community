@@ -16,6 +16,9 @@ import 'chat_reaction_bar.dart';
 import 'chat_reply_preview.dart';
 import 'classroom_chat_ui.dart';
 
+/// Trạng thái tin của mình: chưa hiện / đã gửi (✓) / đã xem (✓✓).
+enum ChatReadStatus { none, sent, seen }
+
 class ChatMessageBubble extends StatefulWidget {
   const ChatMessageBubble({
     super.key,
@@ -34,6 +37,7 @@ class ChatMessageBubble extends StatefulWidget {
     this.showAvatar = true,
     this.showTail = true,
     this.highlightTeacherMessages = false,
+    this.readStatus = ChatReadStatus.none,
     required this.interactionLock,
     this.members = const [],
   });
@@ -53,6 +57,7 @@ class ChatMessageBubble extends StatefulWidget {
   final bool canPin;
   final bool compact;
   final bool highlightTeacherMessages;
+  final ChatReadStatus readStatus;
   final ChatMessageInteractionLock interactionLock;
   final List<ChatMember> members;
 
@@ -325,7 +330,25 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                       padding: EdgeInsets.only(left: isMe ? 0 : avatarColumn, top: 2),
                       child: Align(
                         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: _TimeStamp(message: message),
+                        child: (isMe && widget.readStatus != ChatReadStatus.none)
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  _TimeStamp(message: message),
+                                  const SizedBox(width: 4),
+                                  Icon(
+                                    widget.readStatus == ChatReadStatus.seen
+                                        ? Icons.done_all_rounded
+                                        : Icons.done_rounded,
+                                    size: 14,
+                                    color:
+                                        widget.readStatus == ChatReadStatus.seen
+                                            ? ClassroomChatUi.bubbleSent
+                                            : AppColors.textMuted,
+                                  ),
+                                ],
+                              )
+                            : _TimeStamp(message: message),
                       ),
                     ),
                 ],

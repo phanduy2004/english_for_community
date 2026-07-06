@@ -290,6 +290,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                   child: _MessageList(
                     messages: state.messages,
                     currentUserId: widget.currentUserId,
+                    readHorizon: state.readHorizon,
                     hasMore: state.hasMore,
                     isLoadingMore: state.status == ClassroomChatStatus.loadingMore,
                     scrollController: _scrollCtrl,
@@ -427,10 +428,12 @@ class _MessageList extends StatelessWidget {
     required this.onEdit,
     this.onPin,
     this.members = const [],
+    this.readHorizon,
   });
 
   final List<ClassroomChatMessage> messages;
   final String currentUserId;
+  final DateTime? readHorizon;
   final bool hasMore;
   final bool isLoadingMore;
   final ScrollController scrollController;
@@ -449,6 +452,15 @@ class _MessageList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mobile = !compact && ClassroomChatUi.isMobileLayout(context);
+    // Chỉ số tin cuối của mình (đã gửi thật) — nơi hiển thị ✓/✓✓.
+    var lastOwnIndex = -1;
+    for (var i = messages.length - 1; i >= 0; i--) {
+      final m = messages[i];
+      if (m.senderId == currentUserId && !m.isPending) {
+        lastOwnIndex = i;
+        break;
+      }
+    }
 
     if (messages.isEmpty) {
       return Center(
@@ -520,6 +532,11 @@ class _MessageList extends StatelessWidget {
         final msg = messages[msgIndex];
         final listKey = classroomChatMessageListKey(msg, msgIndex, messages);
         final isMe = msg.senderId == currentUserId;
+        final readStatus = (msgIndex == lastOwnIndex)
+            ? ((readHorizon != null && !msg.createdAt.isAfter(readHorizon!))
+                ? ChatReadStatus.seen
+                : ChatReadStatus.sent)
+            : ChatReadStatus.none;
         final showSenderInfo =
             !isMe && _isFirstInGroup(messages, msgIndex, _isSameDay);
         final showAvatar =
@@ -542,6 +559,7 @@ class _MessageList extends StatelessWidget {
                   showAvatar: showAvatar,
                   showTail: showTail,
                   currentUserId: currentUserId,
+                  readStatus: readStatus,
                   compact: compact,
                   highlightTeacherMessages: highlightTeacherMessages,
                   interactionLock: interactionLock,

@@ -419,8 +419,22 @@
   "progressStatLessons": "Bài học",
   "progressStatWriting": "Viết",
   "progressStatSpeaking": "Nói",
+  "progressStatStreak": "Chuỗi ngày",
+  "progressStatPoints": "Điểm",
+  "progressStatLevel": "Cấp độ",
+  "progressStatReadingWpm": "Tốc độ đọc",
+  "progressStatSpeakingFluency": "Độ trôi chảy",
   "progressLeaderboard": "Bảng xếp hạng",
   "progressActivity": "Hoạt động",
+  "progressEmptyTitle": "Chưa có hoạt động",
+  "progressEmptyBody": "Hoàn thành bài học đầu tiên để bắt đầu theo dõi tiến độ.",
+  "progressLeaderboardYouRank": "Bạn: hạng #{rank}/{total}",
+  "@progressLeaderboardYouRank": {
+    "placeholders": {
+      "rank": {"type": "int"},
+      "total": {"type": "int"}
+    }
+  },
   "leaderboardLoadFailed": "Không tải được bảng xếp hạng",
   "leaderboardEmpty": "Chưa có dữ liệu bảng xếp hạng",
   "statDetailVocab": "Chi tiết từ vựng",

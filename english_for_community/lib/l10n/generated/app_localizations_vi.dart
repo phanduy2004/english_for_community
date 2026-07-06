@@ -1246,10 +1246,37 @@ class AppLocalizationsVi extends AppLocalizations {
   String get progressStatSpeaking => 'Nói';
 
   @override
+  String get progressStatStreak => 'Chuỗi ngày';
+
+  @override
+  String get progressStatPoints => 'Điểm';
+
+  @override
+  String get progressStatLevel => 'Cấp độ';
+
+  @override
+  String get progressStatReadingWpm => 'Tốc độ đọc';
+
+  @override
+  String get progressStatSpeakingFluency => 'Độ trôi chảy';
+
+  @override
   String get progressLeaderboard => 'Bảng xếp hạng';
 
   @override
   String get progressActivity => 'Hoạt động';
+
+  @override
+  String get progressEmptyTitle => 'Chưa có hoạt động';
+
+  @override
+  String get progressEmptyBody =>
+      'Hoàn thành bài học đầu tiên để bắt đầu theo dõi tiến độ.';
+
+  @override
+  String progressLeaderboardYouRank(int rank, int total) {
+    return 'Bạn: hạng #$rank/$total';
+  }
 
   @override
   String get leaderboardLoadFailed => 'Không tải được bảng xếp hạng';

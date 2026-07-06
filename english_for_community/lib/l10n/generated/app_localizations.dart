@@ -2426,6 +2426,36 @@ abstract class AppLocalizations {
   /// **'Speaking'**
   String get progressStatSpeaking;
 
+  /// No description provided for @progressStatStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get progressStatStreak;
+
+  /// No description provided for @progressStatPoints.
+  ///
+  /// In en, this message translates to:
+  /// **'Points'**
+  String get progressStatPoints;
+
+  /// No description provided for @progressStatLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get progressStatLevel;
+
+  /// No description provided for @progressStatReadingWpm.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading WPM'**
+  String get progressStatReadingWpm;
+
+  /// No description provided for @progressStatSpeakingFluency.
+  ///
+  /// In en, this message translates to:
+  /// **'Fluency'**
+  String get progressStatSpeakingFluency;
+
   /// No description provided for @progressLeaderboard.
   ///
   /// In en, this message translates to:
@@ -2437,6 +2467,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Activity'**
   String get progressActivity;
+
+  /// No description provided for @progressEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get progressEmptyTitle;
+
+  /// No description provided for @progressEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your first lesson to start tracking your progress.'**
+  String get progressEmptyBody;
+
+  /// No description provided for @progressLeaderboardYouRank.
+  ///
+  /// In en, this message translates to:
+  /// **'You: #{rank} of {total}'**
+  String progressLeaderboardYouRank(int rank, int total);
 
   /// No description provided for @leaderboardLoadFailed.
   ///

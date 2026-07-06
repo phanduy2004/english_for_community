@@ -2,7 +2,7 @@
 
 > Áp blueprint **A1 · Home / Dashboard** ([`../01-screen-archetypes.md`](../01-screen-archetypes.md)) vào màn thật.
 > **Màn:** tab Home học sinh · **File:** `lib/feature/home/home_page.dart` (`_HomeContentView`) + `lib/feature/home/widgets/home_study_dashboard.dart`.
-> **Trạng thái:** chrome đã primary/neutral (Editorial Black), amber chỉ ở streak/points/chart (`home_page.dart:591`,`602`; `home_study_dashboard.dart:111`,`174`). Brief này lo **nhịp dọc & thứ tự khối** — màn hiện **6 khối dọc liên tiếp** (goal + chart + stats + lessons + grid) ⇒ scroll dài, lặp số liệu (daily goal hiện **3 lần**).
+> **Trạng thái:** chrome đã primary/neutral (Editorial Black), amber chỉ ở streak/points/chart highlight (`home_page.dart:591`,`602`; `home_study_dashboard.dart`). Brief này lo **nhịp dọc & thứ tự khối** — màn hiện **6 khối dọc liên tiếp** (goal + chart + stats + lessons + grid) ⇒ scroll dài, lặp số liệu (daily goal hiện **3 lần**).
 
 ---
 
@@ -21,7 +21,7 @@
 │ ┌────────────────────────────────────────┐│
 │ │ Hoạt động tuần  [🔥3]   2/5 bài         ││  HomeStudyDashboard → _ChartCard
 │ │ ▁▃▅▂▇▄▁  (bar chart 120dp)              ││   [home_study_dashboard.dart:102]
-│ │                       Thống kê đầy đủ ▸ ││   left accent amber 3px (:111) + progressBar
+│ │                       Thống kê đầy đủ ▸ ││   neutral outline card + progressBar
 │ └────────────────────────────────────────┘│
 │   ↕ s5  [home_page.dart:460]                │
 │ ┌──────┐ ┌──────┐ ┌──────┐                 │
@@ -83,12 +83,12 @@ TRƯỚC (3 khối tiến độ chồng)            SAU (A1-forward: stats → c
 |------|----------|-------|---------|
 | Header | `greeting()` h1 + subtitle + `headerIconButton`(notif/AI) + avatar tap | textPrimary/Secondary; badge `danger`; AI btn primary | giữ nguyên `_buildHeader` (`home_page.dart:489`) — đã đúng A1 |
 | Stats | 3× `statCard(compact)` streak/points/level | streak+points→`accent`/`accentTint`; level→`primary`/`primaryTint` | **chuyển lên ngay sau header** (đúng thứ tự A1) |
-| Progress | **1** card gộp = `HomeStudyDashboard` (chart + goal line + streak chip) | `chartBar` (đen), left accent `accent` 3px | **bỏ `_buildDailyGoalCard` rời** — daily-goal đã có trong chart subtitle (`home_study_dashboard.dart:132`) + bar (`:143`) |
+| Progress | **1** card gộp = `HomeStudyDashboard` (chart + goal line + streak chip) | neutral outline card, chart `chartBar` (đen), today highlight `chartHighlight` | **bỏ `_buildDailyGoalCard` rời** — daily-goal đã có trong chart subtitle (`home_study_dashboard.dart:132`) + bar (`:143`) |
 | Continue | 1× `skillAccentCard(emphasized:true)` bài-đang-dở + `skillProgressBar(skill:)` | skill color của bài dở | A1 "Continue" — thay slot listening tĩnh `emphasized` bằng bài thực sự dở (nếu có data) |
 | Lessons | `sectionHeader` + `skillAccentCard` ×3 (mở rộng ×5 qua "Xem tất cả") | surfaceCard + viền skill trái | giữ `_buildLessonsSection` (`home_page.dart:625`); spacing `cardGap` giữa card |
 | Quick grid | `quickActionButton` ×≤5 | skill color/ amber (My Classes) | gộp/cắt còn ≤5 để hợp "1 hàng" A1; `childAspectRatio 1.85` (`:707`) giữ |
 
-> **Rule màu (A1):** chrome (greeting/stats/grid label) = primary/neutral; lesson cards + quick grid icon = **skill color**; amber **chỉ** ở streak/points/level-amber-stat + chart highlight (đã đúng — `home_page.dart:591`,`602`; `home_study_dashboard.dart:111`,`167`,`174`). Đừng đổi amber sang nút.
+> **Rule màu (A1):** chrome (greeting/stats/grid label, card border) = primary/neutral; lesson cards + quick grid icon = **skill color**; amber **chỉ** ở streak/points/level-amber-stat + chart highlight. Đừng đổi amber sang nút hoặc viền card.
 
 ---
 

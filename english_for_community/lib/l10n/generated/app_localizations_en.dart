@@ -1250,10 +1250,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressStatSpeaking => 'Speaking';
 
   @override
+  String get progressStatStreak => 'Streak';
+
+  @override
+  String get progressStatPoints => 'Points';
+
+  @override
+  String get progressStatLevel => 'Level';
+
+  @override
+  String get progressStatReadingWpm => 'Reading WPM';
+
+  @override
+  String get progressStatSpeakingFluency => 'Fluency';
+
+  @override
   String get progressLeaderboard => 'Leaderboard';
 
   @override
   String get progressActivity => 'Activity';
+
+  @override
+  String get progressEmptyTitle => 'No activity yet';
+
+  @override
+  String get progressEmptyBody =>
+      'Complete your first lesson to start tracking your progress.';
+
+  @override
+  String progressLeaderboardYouRank(int rank, int total) {
+    return 'You: #$rank of $total';
+  }
 
   @override
   String get leaderboardLoadFailed => 'Cannot load leaderboard';

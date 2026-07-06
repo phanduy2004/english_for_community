@@ -29,6 +29,11 @@ class ClassroomChatDockController extends ChangeNotifier {
 
   bool _inboxSocketAttached = false;
   late void Function(dynamic) _inboxHandler;
+  late void Function(dynamic) _inboxTypingHandler;
+
+  /// classroomId → tên người đang nhập (transient, tự xóa sau ~5s).
+  final Map<String, String> _typingByRoom = {};
+  final Map<String, Timer> _typingTimers = {};
 
   /// Cuộc trò chuyện đang mở và không thu nhỏ → không tăng unread.
   bool isActiveChat(String classroomId) {
@@ -40,13 +45,44 @@ class ClassroomChatDockController extends ChangeNotifier {
     if (_inboxSocketAttached) return;
     _inboxSocketAttached = true;
     _inboxHandler = _onInboxSocket;
+    _inboxTypingHandler = _onInboxTyping;
     _socket.addClassroomInboxListener(_inboxHandler);
+    _socket.addClassroomInboxTypingListener(_inboxTypingHandler);
   }
 
   void detachInboxSocket() {
     if (!_inboxSocketAttached) return;
     _socket.removeClassroomInboxListener(_inboxHandler);
+    _socket.removeClassroomInboxTypingListener(_inboxTypingHandler);
+    for (final t in _typingTimers.values) {
+      t.cancel();
+    }
+    _typingTimers.clear();
+    _typingByRoom.clear();
     _inboxSocketAttached = false;
+  }
+
+  /// Tên người đang nhập trong [classroomId] (null nếu không có).
+  String? typingNameFor(String classroomId) => _typingByRoom[classroomId];
+
+  void _onInboxTyping(dynamic data) {
+    if (data is! Map) return;
+    final d = Map<String, dynamic>.from(data);
+    final cid = d['classroomId']?.toString();
+    if (cid == null || cid.isEmpty) return;
+    _typingTimers.remove(cid)?.cancel();
+    if (d['isTyping'] == true) {
+      final name = d['userName']?.toString().trim();
+      _typingByRoom[cid] = (name != null && name.isNotEmpty) ? name : 'Ai đó';
+      _typingTimers[cid] = Timer(const Duration(seconds: 5), () {
+        _typingByRoom.remove(cid);
+        _typingTimers.remove(cid);
+        notifyListeners();
+      });
+    } else {
+      _typingByRoom.remove(cid);
+    }
+    notifyListeners();
   }
 
   void _notifyListenersSafely() {
@@ -83,7 +119,7 @@ class ClassroomChatDockController extends ChangeNotifier {
             .where((r) => r.id.isNotEmpty)
             .toList();
         unreadConversations = (raw['unreadConversations'] as num?)?.toInt() ??
-            rooms.where((r) => r.hasUnread).length;
+            rooms.where((r) => r.hasUnread && !r.muted).length;
         _sortRooms();
       },
     );
@@ -104,7 +140,7 @@ class ClassroomChatDockController extends ChangeNotifier {
             .where((r) => r.id.isNotEmpty)
             .toList();
         unreadConversations = (raw['unreadConversations'] as num?)?.toInt() ??
-            rooms.where((r) => r.hasUnread).length;
+            rooms.where((r) => r.hasUnread && !r.muted).length;
         _sortRooms();
         notifyListeners();
       },
@@ -127,8 +163,14 @@ class ClassroomChatDockController extends ChangeNotifier {
       coverImageUrl: (m['coverImageUrl'] as String?)?.trim(),
       memberCount: (m['memberCount'] as num?)?.toInt(),
       unreadCount: (m['unreadCount'] as num?)?.toInt() ?? 0,
+      muted: m['muted'] == true,
+      online: m['online'] == true,
+      pinnedAt: m['pinnedAt'] != null
+          ? DateTime.tryParse(m['pinnedAt'].toString())
+          : null,
       lastMessagePreview: lastMap?['preview'] as String?,
       lastSenderName: lastMap?['senderName'] as String?,
+      lastMessageType: lastMap?['type'] as String?,
       lastMessageAt: at,
     );
   }
@@ -163,6 +205,7 @@ class ClassroomChatDockController extends ChangeNotifier {
       room = room.copyWith(
         lastMessagePreview: lastMap['preview'] as String?,
         lastSenderName: lastMap['senderName'] as String?,
+        lastMessageType: lastMap['type'] as String?,
         lastMessageAt: lastMap['createdAt'] != null
             ? DateTime.tryParse(lastMap['createdAt'].toString())
             : room.lastMessageAt,
@@ -191,6 +234,13 @@ class ClassroomChatDockController extends ChangeNotifier {
 
   void _sortRooms() {
     rooms = [...rooms]..sort((a, b) {
+        // Ghim lên đầu (theo pinnedAt mới nhất), rồi tới recency.
+        if (a.isPinned != b.isPinned) return a.isPinned ? -1 : 1;
+        if (a.isPinned && b.isPinned) {
+          final pa = a.pinnedAt!.millisecondsSinceEpoch;
+          final pb = b.pinnedAt!.millisecondsSinceEpoch;
+          if (pa != pb) return pb.compareTo(pa);
+        }
         final ta = a.lastMessageAt?.millisecondsSinceEpoch ?? 0;
         final tb = b.lastMessageAt?.millisecondsSinceEpoch ?? 0;
         if (ta != tb) return tb.compareTo(ta);
@@ -200,7 +250,7 @@ class ClassroomChatDockController extends ChangeNotifier {
   }
 
   void _recalcUnreadConversations() {
-    unreadConversations = rooms.where((r) => r.hasUnread).length;
+    unreadConversations = rooms.where((r) => r.hasUnread && !r.muted).length;
   }
 
   Future<void> toggleListPanel() async {
@@ -288,6 +338,55 @@ class ClassroomChatDockController extends ChangeNotifier {
       if (notify) notifyListeners();
     }
     unawaited(_chatRepo.markChatRead(classroomId));
+  }
+
+  /// Đánh dấu **tất cả** cuộc trò chuyện đã đọc — cập nhật UI ngay, gọi API nền.
+  Future<void> markAllConversationsRead() async {
+    final unreadIds =
+        rooms.where((r) => r.hasUnread).map((r) => r.id).toList();
+    if (unreadIds.isEmpty) return;
+    rooms = [
+      for (final r in rooms) r.hasUnread ? r.copyWith(unreadCount: 0) : r,
+    ];
+    _recalcUnreadConversations();
+    notifyListeners();
+    for (final id in unreadIds) {
+      unawaited(_chatRepo.markChatRead(id));
+    }
+  }
+
+  void _patchRoom(
+    String classroomId,
+    ClassroomChatRoomItem Function(ClassroomChatRoomItem) update,
+  ) {
+    final idx = rooms.indexWhere((r) => r.id == classroomId);
+    if (idx < 0) return;
+    final next = List<ClassroomChatRoomItem>.from(rooms);
+    next[idx] = update(next[idx]);
+    rooms = next;
+  }
+
+  /// Ghim / bỏ ghim hội thoại — cập nhật UI + sort ngay, gọi API nền.
+  Future<void> togglePin(ClassroomChatRoomItem room) async {
+    final pin = !room.isPinned;
+    _patchRoom(
+      room.id,
+      (r) => pin
+          ? r.copyWith(pinnedAt: DateTime.now())
+          : r.copyWith(clearPinned: true),
+    );
+    _sortRooms();
+    notifyListeners();
+    unawaited(_chatRepo.setChatPinned(room.id, pin));
+  }
+
+  /// Tắt / bật thông báo hội thoại — cập nhật UI ngay, gọi API nền.
+  Future<void> toggleMute(ClassroomChatRoomItem room) async {
+    final mute = !room.muted;
+    _patchRoom(room.id, (r) => r.copyWith(muted: mute));
+    _recalcUnreadConversations();
+    notifyListeners();
+    unawaited(_chatRepo.setChatMuted(room.id, mute));
   }
 
   @override

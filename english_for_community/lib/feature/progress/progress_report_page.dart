@@ -2,7 +2,6 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
-import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/celebrate_burst.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
@@ -16,8 +15,10 @@ import 'package:english_for_community/feature/progress/report_dialog.dart';
 import 'package:english_for_community/feature/progress/stat_detail_dialog.dart';
 import 'package:english_for_community/feature/progress/user_profile_dialog.dart';
 import 'package:english_for_community/feature/progress/widgets/weekly_activity_bars_chart.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:english_for_community/core/entity/progress_summary_entity.dart';
 
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -215,7 +216,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     final bloc = context.read<ProgressBloc>();
     bloc.add(FetchProgressData(range: _rangeToString(_range), forceRefresh: true));
     bloc.add(FetchLeaderboard());
-    await Future.delayed(AppMotion.savedFade);
+    await bloc.stream.firstWhere((s) =>
+        s.status != ProgressStatus.loading &&
+        s.leaderboardStatus != LeaderboardStatus.loading);
   }
 
   @override
@@ -249,6 +252,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               if (state.status == ProgressStatus.error && state.summary == null) {
                 return _buildErrorUI(context, state.errorMessage, t);
               }
+              if (state.summary != null && _isSummaryEmpty(state.summary!)) {
+                return _buildEmptyUI(context, t);
+              }
               if (state.summary != null) {
                 return _buildSuccessUI(context, state, t);
               }
@@ -269,6 +275,36 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           onRetry: () => _onRefresh(context),
           retryLabel: t.retry,
         ),
+      ),
+    );
+  }
+
+  bool _isSummaryEmpty(ProgressSummaryEntity s) {
+    final noTime =
+        s.studyTime.totalMinutesInRange == 0 && s.studyTime.todayMinutes == 0;
+    final noChart = s.weeklyChart.minutes.every((m) => m == 0);
+    final g = s.statsGrid;
+    final noStats = g.vocabLearned == 0 &&
+        g.lessonsCompleted == 0 &&
+        g.readingAccuracy == 0 &&
+        g.dictationAccuracy == 0 &&
+        g.speakingAccuracy == 0 &&
+        g.speakingFluency == 0 &&
+        g.readingWpm == 0 &&
+        g.avgWritingScore == 0;
+    return noTime && noChart && noStats;
+  }
+
+  Widget _buildEmptyUI(BuildContext context, AppLocalizations t) {
+    return RefreshIndicator(
+      onRefresh: () => _onRefresh(context),
+      color: AppColors.primary,
+      backgroundColor: AppColors.surfaceCard,
+      child: StudentMobileUi.emptyState(
+        context,
+        icon: Icons.insights_outlined,
+        title: t.progressEmptyTitle,
+        body: t.progressEmptyBody,
       ),
     );
   }
@@ -313,14 +349,75 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            StudentMobileUi.sectionHeader(context, title: t.progressOverview),
-            const SizedBox(height: AppSpacing.s1),
-            Text(t.progressPerformanceMetrics, style: StudentMobileUi.body(context)),
+            // KPI row (A12): streak (amber) / points / level
+            Row(
+              children: [
+                Expanded(
+                  child: StudentMobileUi.statCard(
+                    context: context,
+                    icon: Icons.local_fire_department_rounded,
+                    value: '${user?.currentStreak ?? 0}',
+                    label: t.progressStatStreak,
+                    iconColor: AppColors.accent,
+                    iconBg: AppColors.accentTint,
+                    compact: true,
+                  ),
+                ),
+                const SizedBox(width: StudentMobileUi.cardGap),
+                Expanded(
+                  child: StudentMobileUi.statCard(
+                    context: context,
+                    icon: Icons.star_rounded,
+                    value: '${user?.totalPoints ?? 0}',
+                    label: t.progressStatPoints,
+                    compact: true,
+                  ),
+                ),
+                const SizedBox(width: StudentMobileUi.cardGap),
+                Expanded(
+                  child: StudentMobileUi.statCard(
+                    context: context,
+                    icon: Icons.military_tech_rounded,
+                    value: 'Lv ${user?.level ?? 1}',
+                    label: t.progressStatLevel,
+                    compact: true,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.s3),
             StudentMobileUi.filterRow(
               labels: rangeLabels,
               selectedIndex: _range.index,
               onSelected: (i) => _onRangeSelected(context, i),
+            ),
+            const SizedBox(height: AppSpacing.s4),
+
+            AppCard(
+              variant: AppCardVariant.outline,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(t.progressActivity, style: StudentMobileUi.sectionTitle(context)),
+                      const Icon(Icons.bar_chart, color: AppColors.textSecondary, size: 18),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s3),
+                  SizedBox(
+                    height: 120,
+                    child: WeeklyActivityBarsChart(
+                      values: chart.minutes,
+                      labels: chart.labels,
+                      barColor: AppColors.chartBar,
+                      highlightIndex: chart.labels.length - 1,
+                      highlightColor: AppColors.chartHighlight,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: AppSpacing.s4),
 
@@ -357,7 +454,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                     child: StudentMobileUi.skillProgressBar(
                       context: context,
                       value: progress,
-                      color: AppColors.accent,
+                      color: AppColors.primary,
                       height: 6,
                     ),
                   ),
@@ -431,11 +528,33 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   skill: SkillType.speaking,
                   onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
                 ),
+                _StatBox(
+                  icon: Icons.speed_rounded,
+                  value: '${stats.readingWpm}',
+                  label: t.progressStatReadingWpm,
+                  skill: SkillType.reading,
+                  onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
+                ),
+                _StatBox(
+                  icon: Icons.graphic_eq_rounded,
+                  value: '${stats.speakingFluency}%',
+                  label: t.progressStatSpeakingFluency,
+                  skill: SkillType.speaking,
+                  onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
+                ),
               ],
             ),
             const SizedBox(height: AppSpacing.s4),
 
             StudentMobileUi.sectionHeader(context, title: t.progressLeaderboard),
+            if (state.myRank > 0 && state.totalUsers > 0) ...[
+              const SizedBox(height: AppSpacing.s1),
+              Text(
+                t.progressLeaderboardYouRank(state.myRank, state.totalUsers),
+                style: StudentMobileUi.caption(context)
+                    .copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
             const SizedBox(height: AppSpacing.s3),
             AppCard(
               variant: AppCardVariant.outline,
@@ -444,33 +563,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             ),
             const SizedBox(height: AppSpacing.s4),
 
-            AppCard(
-              variant: AppCardVariant.outline,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(t.progressActivity, style: StudentMobileUi.sectionTitle(context)),
-                      const Icon(Icons.bar_chart, color: AppColors.textSecondary, size: 18),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.s3),
-                  SizedBox(
-                    height: 120,
-                    child: WeeklyActivityBarsChart(
-                      values: chart.minutes,
-                      labels: chart.labels,
-                      barColor: AppColors.chartBar,
-                      highlightIndex: chart.labels.length - 1,
-                      highlightColor: AppColors.chartHighlight,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.s4),
             AppCard(
               variant: AppCardVariant.outline,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
@@ -491,7 +583,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right, color: AppColors.success, size: 18),
                 ],
               ),
             ),
@@ -624,7 +715,7 @@ class _LeaderRow extends StatelessWidget {
                   shape: BoxShape.circle,
                   border: Border.all(color: AppColors.outline),
                   image: (avatarUrl != null && avatarUrl!.isNotEmpty)
-                      ? DecorationImage(image: NetworkImage(avatarUrl!), fit: BoxFit.cover)
+                      ? DecorationImage(image: CachedNetworkImageProvider(avatarUrl!), fit: BoxFit.cover)
                       : null,
                   color: AppColors.surfaceSubtle,
                 ),

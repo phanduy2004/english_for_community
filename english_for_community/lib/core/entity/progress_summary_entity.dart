@@ -59,6 +59,7 @@ class StatsGridEntity {
   final int speakingAccuracy;
   final int speakingFluency;
   final int lessonsCompleted; // ✍️ THÊM TRƯỜNG MỚI
+  final int readingWpm;
 
   StatsGridEntity({
     required this.vocabLearned,
@@ -68,6 +69,7 @@ class StatsGridEntity {
     required this.speakingAccuracy,
     required this.speakingFluency,
     required this.lessonsCompleted, // ✍️ THÊM VÀO CONSTRUCTOR
+    required this.readingWpm,
   });
 
   factory StatsGridEntity.fromJson(Map<String, dynamic> json) =>
@@ -79,6 +81,7 @@ class StatsGridEntity {
         speakingAccuracy: json["speakingAccuracy"],
         speakingFluency: json["speakingFluency"] ?? 0,
         lessonsCompleted: json["lessonsCompleted"], // ✍️ THÊM VÀO FACTORY
+        readingWpm: json["readingWpm"] ?? 0,
       );
 }
 

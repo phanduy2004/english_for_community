@@ -167,3 +167,15 @@ class ClassroomChatSocketSettingsUpdated extends ClassroomChatEvent {
   @override
   List<Object?> get props => [name, coverImageUrl];
 }
+
+/// Một thành viên khác đã đọc tới [lastReadAt] → dùng cho ✓✓ "Đã xem".
+class ClassroomChatSocketReadReceipt extends ClassroomChatEvent {
+  final String userId;
+  final DateTime lastReadAt;
+  const ClassroomChatSocketReadReceipt({
+    required this.userId,
+    required this.lastReadAt,
+  });
+  @override
+  List<Object?> get props => [userId, lastReadAt];
+}
