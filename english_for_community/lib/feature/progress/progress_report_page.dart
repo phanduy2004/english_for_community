@@ -18,7 +18,6 @@ import 'package:english_for_community/feature/progress/widgets/weekly_activity_b
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:english_for_community/core/entity/progress_summary_entity.dart';
 
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -252,9 +251,8 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               if (state.status == ProgressStatus.error && state.summary == null) {
                 return _buildErrorUI(context, state.errorMessage, t);
               }
-              if (state.summary != null && _isSummaryEmpty(state.summary!)) {
-                return _buildEmptyUI(context, t);
-              }
+              // Luôn hiện layout khi có summary — kể cả toàn 0 (hiển thị data
+              // sẵn có như bản gốc), KHÔNG thay bằng full-screen empty-state.
               if (state.summary != null) {
                 return _buildSuccessUI(context, state, t);
               }
@@ -275,36 +273,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           onRetry: () => _onRefresh(context),
           retryLabel: t.retry,
         ),
-      ),
-    );
-  }
-
-  bool _isSummaryEmpty(ProgressSummaryEntity s) {
-    final noTime =
-        s.studyTime.totalMinutesInRange == 0 && s.studyTime.todayMinutes == 0;
-    final noChart = s.weeklyChart.minutes.every((m) => m == 0);
-    final g = s.statsGrid;
-    final noStats = g.vocabLearned == 0 &&
-        g.lessonsCompleted == 0 &&
-        g.readingAccuracy == 0 &&
-        g.dictationAccuracy == 0 &&
-        g.speakingAccuracy == 0 &&
-        g.speakingFluency == 0 &&
-        g.readingWpm == 0 &&
-        g.avgWritingScore == 0;
-    return noTime && noChart && noStats;
-  }
-
-  Widget _buildEmptyUI(BuildContext context, AppLocalizations t) {
-    return RefreshIndicator(
-      onRefresh: () => _onRefresh(context),
-      color: AppColors.primary,
-      backgroundColor: AppColors.surfaceCard,
-      child: StudentMobileUi.emptyState(
-        context,
-        icon: Icons.insights_outlined,
-        title: t.progressEmptyTitle,
-        body: t.progressEmptyBody,
       ),
     );
   }
