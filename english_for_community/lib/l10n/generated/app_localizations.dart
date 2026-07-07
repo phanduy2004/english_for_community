@@ -2456,6 +2456,12 @@ abstract class AppLocalizations {
   /// **'Fluency'**
   String get progressStatSpeakingFluency;
 
+  /// No description provided for @progressStatFluencyInline.
+  ///
+  /// In en, this message translates to:
+  /// **'Fluency {pct}%'**
+  String progressStatFluencyInline(int pct);
+
   /// No description provided for @progressLeaderboard.
   ///
   /// In en, this message translates to:
@@ -10456,6 +10462,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{seconds}s · {turns} turns · {cefr}'**
   String speakingFbHistoryMeta(int seconds, int turns, String cefr);
+
+  /// No description provided for @speakingHistorySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your speaking activity'**
+  String get speakingHistorySummaryTitle;
+
+  /// No description provided for @speakingHistoryStatSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get speakingHistoryStatSessions;
+
+  /// No description provided for @speakingHistoryStatAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg band'**
+  String get speakingHistoryStatAvg;
+
+  /// No description provided for @speakingHistoryStatBest.
+  ///
+  /// In en, this message translates to:
+  /// **'Best band'**
+  String get speakingHistoryStatBest;
+
+  /// No description provided for @speakingHistoryTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Band trend'**
+  String get speakingHistoryTrend;
+
+  /// No description provided for @speakingHistoryViewProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get speakingHistoryViewProgress;
+
+  /// No description provided for @speakingHistoryFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get speakingHistoryFilterAll;
+
+  /// No description provided for @speakingHistorySort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort'**
+  String get speakingHistorySort;
+
+  /// No description provided for @speakingHistorySortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest'**
+  String get speakingHistorySortNewest;
+
+  /// No description provided for @speakingHistorySortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest'**
+  String get speakingHistorySortOldest;
+
+  /// No description provided for @speakingHistorySortHighest.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest band'**
+  String get speakingHistorySortHighest;
+
+  /// No description provided for @speakingHistorySortLongest.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest'**
+  String get speakingHistorySortLongest;
+
+  /// No description provided for @speakingHistoryDefaultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Free speaking'**
+  String get speakingHistoryDefaultTitle;
+
+  /// No description provided for @speakingHistoryStartCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start speaking'**
+  String get speakingHistoryStartCta;
+
+  /// No description provided for @speakingHistoryFilterEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No sessions match this filter.'**
+  String get speakingHistoryFilterEmpty;
+
+  /// No description provided for @speakingHistorySessionsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions'**
+  String speakingHistorySessionsCount(int count);
+
+  /// No description provided for @speakingHistoryTurns.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} turns'**
+  String speakingHistoryTurns(int count);
 
   /// No description provided for @speakingFbTaskAchievement.
   ///

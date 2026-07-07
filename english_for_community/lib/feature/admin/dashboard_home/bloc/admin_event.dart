@@ -11,12 +11,14 @@ class GetAllUsersEvent extends AdminEvent {
   final int page;
   final int limit;
   final String filter;
+  final String role;
   final String? search;
 
   GetAllUsersEvent({
     this.page = 1,
     this.limit = 20,
     this.filter = 'all',
+    this.role = 'all',
     this.search,
   });
 }
@@ -50,12 +52,11 @@ class BanUserEvent extends AdminEvent {
   final int? durationInHours;
   final String? reason;
 
-  BanUserEvent({
-    required this.userId,
-    required this.banType,
-    this.durationInHours,
-    this.reason
-  });
+  BanUserEvent(
+      {required this.userId,
+      required this.banType,
+      this.durationInHours,
+      this.reason});
 }
 
 class DeleteUserEvent extends AdminEvent {

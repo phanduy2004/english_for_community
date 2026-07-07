@@ -151,54 +151,55 @@ class _GrammarBlankField extends StatelessWidget {
     return SizedBox(
       width: width,
       height: _blankHeight,
+      // Fill + border drawn in one Material shape (single paint pass) so the two
+      // rounded-rect edges coincide exactly — avoids the antialiased corner seam
+      // (visible as a "missing corner" on the right, where no badge tint masks it).
       child: Material(
         color: GrammarAccentPalette.fillBg(accent, alpha: filled ? 0.08 : 0.05),
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: accent, width: 1.5),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: 30,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.15),
-                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
-                ),
-                child: Text(
-                  blankId,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: accent,
-                    fontSize: 12,
-                    height: 1,
-                  ),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          side: BorderSide(color: accent, width: 1.5),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              width: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.15),
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
+              ),
+              child: Text(
+                blankId,
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                  fontSize: 12,
+                  height: 1,
                 ),
               ),
-              Expanded(
-                child: TextField(
-                  key: fieldKey,
-                  enabled: enabled,
-                  controller: controller,
-                  onChanged: onChanged,
-                  maxLines: 1,
-                  style: ExamSystemUi.captionSecondary,
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                  ),
+            ),
+            Expanded(
+              child: TextField(
+                key: fieldKey,
+                enabled: enabled,
+                controller: controller,
+                onChanged: onChanged,
+                maxLines: 1,
+                style: ExamSystemUi.captionSecondary,
+                decoration: const InputDecoration(
+                  isDense: true,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  disabledBorder: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

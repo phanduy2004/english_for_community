@@ -168,6 +168,10 @@ class _ClassroomChatScaffoldState extends State<_ClassroomChatScaffold> {
 
   bool _settingsOpen = false;
 
+  // Đếm tin để mark-read khi có tin MỚI lúc trang full đang mở (mini-window đã tự lo
+  // qua dock controller; trang full trước đây bỏ sót nên badge chưa đọc vẫn sáng).
+  int _lastMsgCount = 0;
+
 
 
   Future<void> _openSettings(BuildContext context) async {
@@ -199,6 +203,16 @@ class _ClassroomChatScaffoldState extends State<_ClassroomChatScaffold> {
   Widget build(BuildContext context) {
 
     return BlocListener<ClassroomChatBloc, ClassroomChatState>(
+      listenWhen: (p, c) => p.messages.length != c.messages.length,
+      listener: (context, state) {
+        // Có tin mới trong lúc đang mở trang → đánh dấu đã đọc phía server.
+        // Bỏ qua lần load đầu (0 → N) vì bloc đã markChatRead trong _onLoaded.
+        if (_lastMsgCount > 0 && state.messages.length > _lastMsgCount) {
+          di.getIt<ClassroomChatRepository>().markChatRead(widget.classroomId);
+        }
+        _lastMsgCount = state.messages.length;
+      },
+      child: BlocListener<ClassroomChatBloc, ClassroomChatState>(
       listenWhen: (p, c) => p.isUpdatingSettings && !c.isUpdatingSettings,
       listener: (context, state) {
         if (state.errorMessage != null) {
@@ -280,6 +294,8 @@ class _ClassroomChatScaffoldState extends State<_ClassroomChatScaffold> {
           ],
 
         ),
+
+      ),
 
       ),
 

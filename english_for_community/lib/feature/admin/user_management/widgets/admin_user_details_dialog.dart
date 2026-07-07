@@ -4,7 +4,6 @@ import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -50,9 +49,11 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
   // Function to toggle between 2 pages
   void _togglePage() {
     if (_currentPage == 0) {
-      _pageController.animateToPage(1, duration: AppMotion.page, curve: Curves.easeInOut);
+      _pageController.animateToPage(1,
+          duration: AppMotion.page, curve: Curves.easeInOut);
     } else {
-      _pageController.animateToPage(0, duration: AppMotion.page, curve: Curves.easeInOut);
+      _pageController.animateToPage(0,
+          duration: AppMotion.page, curve: Curves.easeInOut);
     }
   }
 
@@ -61,7 +62,8 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     return Dialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card)),
       insetPadding: const EdgeInsets.all(16),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 500, maxHeight: 750),
@@ -74,14 +76,18 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                 children: [
                   Text(
                     _currentPage == 0 ? 'Learning Profile' : 'Personal Info',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: textMain),
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: textMain),
                   ),
                   const Spacer(),
                   // Quick Switch Button
                   TextButton(
                     onPressed: _togglePage,
                     style: TextButton.styleFrom(foregroundColor: Colors.blue),
-                    child: Text(_currentPage == 0 ? 'View Info >' : '< View Stats'),
+                    child: Text(
+                        _currentPage == 0 ? 'View Info >' : '< View Stats'),
                   ),
                   const SizedBox(width: 8),
                   IconButton(
@@ -103,12 +109,14 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                     return AdminSkeleton.page(AdminSkeleton.cardList());
                   }
                   if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+                    return Center(
+                        child: Text('Error: ${snapshot.error}',
+                            style: const TextStyle(color: Colors.red)));
                   }
 
                   return snapshot.data!.fold(
-                        (failure) => Center(child: Text(failure.message)),
-                        (UserEntity user) => Column(
+                    (failure) => Center(child: Text(failure.message)),
+                    (UserEntity user) => Column(
                       children: [
                         // 1. IDENTITY HEADER (Always visible and clickable to slide)
                         _buildIdentityHeader(user),
@@ -118,10 +126,11 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                         Expanded(
                           child: PageView(
                             controller: _pageController,
-                            onPageChanged: (idx) => setState(() => _currentPage = idx),
+                            onPageChanged: (idx) =>
+                                setState(() => _currentPage = idx),
                             children: [
                               _buildLearningStats(user), // Page 0
-                              _buildPersonalInfo(user),  // Page 1
+                              _buildPersonalInfo(user), // Page 1
                             ],
                           ),
                         ),
@@ -142,7 +151,7 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     return Material(
       color: Colors.white,
       child: InkWell(
-        onTap: _togglePage, // 🔥 Click here to slide page
+        onTap: _togglePage,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Row(
@@ -155,25 +164,37 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                   children: [
                     Row(
                       children: [
-                        Text(user.fullName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: textMain)),
+                        Text(user.fullName,
+                            style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textMain)),
                         const SizedBox(width: 8),
                         if (_currentPage == 0)
-                          const Icon(Icons.info_outline, size: 16, color: Colors.blue) // Hint to click
+                          const Icon(Icons.info_outline,
+                              size: 16, color: Colors.blue) // Hint to click
                         else
-                          const Icon(Icons.bar_chart, size: 16, color: Colors.blue)
+                          const Icon(Icons.bar_chart,
+                              size: 16, color: Colors.blue)
                       ],
                     ),
-                    Text(user.email, style: const TextStyle(fontSize: 13, color: textMuted)),
+                    Text(user.email,
+                        style: const TextStyle(fontSize: 13, color: textMuted)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        _StatusBadge(label: user.isOnline ? 'Online' : 'Offline', color: user.isOnline ? Colors.green : Colors.grey),
+                        _StatusBadge(
+                            label: user.isOnline ? 'Online' : 'Offline',
+                            color: user.isOnline ? Colors.green : Colors.grey),
                         const SizedBox(width: 8),
                         UserRoleBadge(role: user.role),
                         const SizedBox(width: 8),
-                        _StatusBadge(label: 'Level ${user.level ?? 1}', color: Colors.blue),
-                        _StatusBadge(label: '${user.totalPoints ?? 1} Exp', color: Colors.amber[700]!),
-
+                        _StatusBadge(
+                            label: 'Level ${user.level ?? 1}',
+                            color: Colors.blue),
+                        _StatusBadge(
+                            label: '${user.totalPoints ?? 1} Exp',
+                            color: Colors.amber[700]!),
                       ],
                     )
                   ],
@@ -202,83 +223,135 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // HIGHLIGHTS
-          const Text('LEARNING OVERVIEW', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('LEARNING OVERVIEW',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textMuted,
+                  letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _SummaryCard(label: 'Total Time', value: _fmtMinutes(studyTime?.totalMinutesInRange ?? 0), icon: Icons.history_toggle_off, color: Colors.orange)),
+              Expanded(
+                  child: _SummaryCard(
+                      label: 'Total Time',
+                      value: _fmtMinutes(studyTime?.totalMinutesInRange ?? 0),
+                      icon: Icons.history_toggle_off,
+                      color: Colors.orange)),
               const SizedBox(width: 12),
-              Expanded(child: _SummaryCard(label: 'Daily Goal', value: '${studyTime?.goalMinutes ?? 30} min', icon: Icons.flag_circle, color: Colors.purple)),
+              Expanded(
+                  child: _SummaryCard(
+                      label: 'Daily Goal',
+                      value: '${studyTime?.goalMinutes ?? 30} min',
+                      icon: Icons.flag_circle,
+                      color: Colors.purple)),
             ],
           ),
           const SizedBox(height: 24),
 
           // STATS GRID
-          const Text('DETAILED STATS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('DETAILED STATS',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textMuted,
+                  letterSpacing: 0.5)),
           const SizedBox(height: 12),
           GridView.count(
-            shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2, childAspectRatio: 2.8, crossAxisSpacing: 12, mainAxisSpacing: 12,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            childAspectRatio: 2.8,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
             children: [
-              _StatSmallItem(icon: Icons.library_books, label: 'Lessons Done', value: '${stats?.lessonsCompleted ?? 0}', color: Colors.indigo),
-              _StatSmallItem(icon: Icons.translate, label: 'Vocab Learned', value: '${stats?.vocabLearned ?? 0}', color: Colors.purple),
-              _StatSmallItem(icon: Icons.headphones, label: 'Listening Acc', value: '${stats?.dictationAccuracy ?? 0}%', color: Colors.blue),
-              _StatSmallItem(icon: Icons.menu_book, label: 'Reading Acc', value: '${stats?.readingAccuracy ?? 0}%', color: Colors.cyan),
-              _StatSmallItem(icon: Icons.mic, label: 'Speaking Acc', value: '${stats?.speakingAccuracy ?? 0}%', color: Colors.red),
-              _StatSmallItem(icon: Icons.edit, label: 'Writing Avg', value: '${stats?.avgWritingScore ?? 0}/10', color: Colors.orange),
+              _StatSmallItem(
+                  icon: Icons.library_books,
+                  label: 'Lessons Done',
+                  value: '${stats?.lessonsCompleted ?? 0}',
+                  color: Colors.indigo),
+              _StatSmallItem(
+                  icon: Icons.translate,
+                  label: 'Vocab Learned',
+                  value: '${stats?.vocabLearned ?? 0}',
+                  color: Colors.purple),
+              _StatSmallItem(
+                  icon: Icons.headphones,
+                  label: 'Listening Acc',
+                  value: '${stats?.dictationAccuracy ?? 0}%',
+                  color: Colors.blue),
+              _StatSmallItem(
+                  icon: Icons.menu_book,
+                  label: 'Reading Acc',
+                  value: '${stats?.readingAccuracy ?? 0}%',
+                  color: Colors.cyan),
+              _StatSmallItem(
+                  icon: Icons.mic,
+                  label: 'Speaking Acc',
+                  value: '${stats?.speakingAccuracy ?? 0}%',
+                  color: Colors.red),
+              _StatSmallItem(
+                  icon: Icons.edit,
+                  label: 'Writing Avg',
+                  value: '${stats?.avgWritingScore ?? 0}/10',
+                  color: Colors.orange),
             ],
           ),
           const SizedBox(height: 24),
 
           // CHART
-          const Text('ACTIVITY (LAST 7 DAYS)', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('ACTIVITY (LAST 7 DAYS)',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textMuted,
+                  letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             height: 120,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: borderCol)),
-            child: LayoutBuilder( // Optional: Helps with constraints
+            decoration: BoxDecoration(
+                color: bgSubtle,
+                borderRadius: BorderRadius.circular(AppRadius.input),
+                border: Border.all(color: borderCol)),
+            child: LayoutBuilder(// Optional: Helps with constraints
                 builder: (context, constraints) {
-                  final minutes = summary?.weeklyChart.minutes ?? [];
+              final minutes = summary?.weeklyChart.minutes ?? [];
 
-                  // 1. Safe Calculation for Max Value
-                  // If list is empty or max is 0, default to 1 to avoid Division by Zero
-                  final maxValRaw = minutes.isNotEmpty
-                      ? minutes.reduce((a, b) => a > b ? a : b)
-                      : 1;
-                  final maxVal = maxValRaw == 0 ? 1 : maxValRaw;
+              // 1. Safe Calculation for Max Value
+              // If list is empty or max is 0, default to 1 to avoid Division by Zero
+              final maxValRaw = minutes.isNotEmpty
+                  ? minutes.reduce((a, b) => a > b ? a : b)
+                  : 1;
+              final maxVal = maxValRaw == 0 ? 1 : maxValRaw;
 
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: minutes.asMap().entries.map((entry) {
-                      // 2. Safe Height Calculation
-                      // 60 is the max height in pixels for the bar
-                      final h = (entry.value / maxVal) * 60;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: minutes.asMap().entries.map((entry) {
+                  // 2. Safe Height Calculation
+                  // 60 is the max height in pixels for the bar
+                  final h = (entry.value / maxVal) * 60;
 
-                      return Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                                width: 20,
-                                // Ensure height is finite and valid
-                                height: h <= 0 ? 4 : h.toDouble(),
-                                decoration: BoxDecoration(
-                                    color: AppColors.textPrimary,
-                                    borderRadius: BorderRadius.circular(AppRadius.xs)
-                                )
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                                summary?.weeklyChart.labels[entry.key] ?? '',
-                                style: const TextStyle(fontSize: 10, color: textMuted)
-                            ),
-                          ]
-                      );
-                    }).toList(),
-                  );
-                }
-            ),
+                  return Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                            width: 20,
+                            // Ensure height is finite and valid
+                            height: h <= 0 ? 4 : h.toDouble(),
+                            decoration: BoxDecoration(
+                                color: AppColors.textPrimary,
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.xs))),
+                        const SizedBox(height: 8),
+                        Text(summary?.weeklyChart.labels[entry.key] ?? '',
+                            style: const TextStyle(
+                                fontSize: 10, color: textMuted)),
+                      ]);
+                }).toList(),
+              );
+            }),
           )
         ],
       ),
@@ -294,34 +367,68 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
         children: [
           // Bio
           if (user.bio != null && user.bio!.isNotEmpty) ...[
-            const Text('BIO', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+            const Text('BIO',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: textMuted,
+                    letterSpacing: 0.5)),
             const SizedBox(height: 8),
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: borderCol)),
-              child: Text(user.bio!, style: const TextStyle(fontSize: 14, color: textMain, fontStyle: FontStyle.italic)),
+              decoration: BoxDecoration(
+                  color: bgSubtle,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  border: Border.all(color: borderCol)),
+              child: Text(user.bio!,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: textMain,
+                      fontStyle: FontStyle.italic)),
             ),
             const SizedBox(height: 24),
           ],
 
           // Detailed Info
-          const Text('DETAILS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('DETAILS',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textMuted,
+                  letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: borderCol)),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: borderCol)),
             child: Column(
               children: [
-                _DetailRow(icon: Icons.alternate_email, label: 'Username', value: '@${user.username}'),
+                _DetailRow(
+                    icon: Icons.alternate_email,
+                    label: 'Username',
+                    value: '@${user.username}'),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.cake_outlined, label: 'Date of Birth', value: _fmtDate(user.dateOfBirth)),
+                _DetailRow(
+                    icon: Icons.cake_outlined,
+                    label: 'Date of Birth',
+                    value: _fmtDate(user.dateOfBirth)),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.transgender_outlined, label: 'Gender', value: _capitalize(user.gender)),
+                _DetailRow(
+                    icon: Icons.transgender_outlined,
+                    label: 'Gender',
+                    value: _capitalize(user.gender)),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.phone_outlined, label: 'Phone Number', value: user.phone),
+                _DetailRow(
+                    icon: Icons.phone_outlined,
+                    label: 'Phone Number',
+                    value: user.phone),
                 const Divider(height: 1, color: bgSubtle),
-                _DetailRow(icon: Icons.location_on_outlined, label: 'Timezone', value: user.timezone),
+                _DetailRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Timezone',
+                    value: user.timezone),
               ],
             ),
           ),
@@ -329,14 +436,26 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
           const SizedBox(height: 24),
 
           // System Info
-          const Text('SYSTEM', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: textMuted, letterSpacing: 0.5)),
+          const Text('SYSTEM',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: textMuted,
+                  letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(color: bgSubtle, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: borderCol)),
+            decoration: BoxDecoration(
+                color: bgSubtle,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: borderCol)),
             child: Column(
               children: [
-                _DetailRow(icon: Icons.key, label: 'User ID', value: user.id, isCopyable: true),
+                _DetailRow(
+                    icon: Icons.key,
+                    label: 'User ID',
+                    value: user.id,
+                    isCopyable: true),
                 const Divider(height: 1, color: borderCol),
                 _DetailRow(
                   icon: Icons.verified_user_outlined,
@@ -351,19 +470,41 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
                     children: [
                       const Icon(Icons.swap_horiz, size: 18, color: textMuted),
                       const SizedBox(width: 12),
-                      const Text('Change Role', style: TextStyle(fontSize: 13, color: textMuted)),
+                      const Text('Change Role',
+                          style: TextStyle(fontSize: 13, color: textMuted)),
                       const Spacer(),
-                      SizedBox(
-                        height: 32,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            side: BorderSide(color: user.role == 'admin' ? Colors.orange : Colors.blue),
-                          ),
-                          onPressed: () => _confirmRoleChange(user),
-                          child: Text(
-                            user.role == 'admin' ? 'Demote to User' : 'Promote to Admin',
-                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: user.role == 'admin' ? Colors.orange : Colors.blue),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(AppRadius.input),
+                          border: Border.all(color: borderCol),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: _supportedRoles.contains(user.role)
+                                  ? user.role
+                                  : 'user',
+                              icon: const Icon(Icons.expand_more,
+                                  size: 16, color: textMuted),
+                              style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: textMain),
+                              onChanged: (role) {
+                                if (role == null || role == user.role) return;
+                                _confirmRoleChange(user, role);
+                              },
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'user', child: Text('Student')),
+                                DropdownMenuItem(
+                                    value: 'teacher', child: Text('Teacher')),
+                                DropdownMenuItem(
+                                    value: 'admin', child: Text('Admin')),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -378,30 +519,43 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  Future<void> _confirmRoleChange(UserEntity user) async {
-    final newRole = user.role == 'admin' ? 'user' : 'admin';
+  static const List<String> _supportedRoles = ['user', 'teacher', 'admin'];
+
+  String _roleLabel(String role) {
+    switch (role) {
+      case 'admin':
+        return 'Admin';
+      case 'teacher':
+        return 'Teacher';
+      default:
+        return 'Student';
+    }
+  }
+
+  Future<void> _confirmRoleChange(UserEntity user, String newRole) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.card)),
         title: Text(
-          newRole == 'admin' ? 'Promote to Admin?' : 'Demote to User?',
+          'Change role to ${_roleLabel(newRole)}?',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
         content: Text(
-          newRole == 'admin'
-              ? '${user.fullName} will have full admin access to the management console.'
-              : '${user.fullName} will lose admin access and be redirected to the user app.',
+          '${user.fullName} will move from ${_roleLabel(user.role)} to ${_roleLabel(newRole)}. Their next login route and permissions will follow the new role.',
           style: const TextStyle(fontSize: 14),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: newRole == 'admin' ? Colors.blue : Colors.orange,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(newRole == 'admin' ? 'Promote' : 'Demote'),
+            child: const Text('Change'),
           ),
         ],
       ),
@@ -409,12 +563,15 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     if (confirmed != true || !mounted) return;
 
     try {
-      await getIt<AdminRemoteDatasource>().promoteUser(userId: user.id, role: newRole);
+      await getIt<AdminRemoteDatasource>()
+          .promoteUser(userId: user.id, role: newRole);
       if (!mounted) return;
       setState(() {
         _userFuture = getIt<UserRepository>().getUserById(widget.userId);
       });
-      AppCornerToast.show(context, '${user.fullName} is now ${newRole.toUpperCase()}');
+      AppCornerToast.show(
+          context, '${user.fullName} is now ${_roleLabel(newRole)}');
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       AppCornerToast.show(context, 'Failed: $e', error: true);
@@ -430,15 +587,28 @@ class _AdminUserDetailsDialogState extends State<AdminUserDetailsDialog> {
     );
   }
 
-  String _fmtMinutes(int min) => min < 60 ? '$min m' : '${(min/60).toStringAsFixed(1)} h';
-  String _fmtDate(DateTime? d) => d != null ? DateFormat('dd/MM/yyyy').format(d) : 'Not updated';
-  String _capitalize(String? s) => (s != null && s.isNotEmpty) ? '${s[0].toUpperCase()}${s.substring(1)}' : 'Not updated';
+  String _fmtMinutes(int min) =>
+      min < 60 ? '$min m' : '${(min / 60).toStringAsFixed(1)} h';
+  String _fmtDate(DateTime? d) =>
+      d != null ? DateFormat('dd/MM/yyyy').format(d) : 'Not updated';
+  String _capitalize(String? s) => (s != null && s.isNotEmpty)
+      ? '${s[0].toUpperCase()}${s.substring(1)}'
+      : 'Not updated';
 }
 
 // Widget for detail row (Used in Page 1)
 class _DetailRow extends StatelessWidget {
-  final IconData icon; final String label; final String? value; final bool isCopyable; final Color? valueColor;
-  const _DetailRow({required this.icon, required this.label, required this.value, this.isCopyable = false, this.valueColor});
+  final IconData icon;
+  final String label;
+  final String? value;
+  final bool isCopyable;
+  final Color? valueColor;
+  const _DetailRow(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      this.isCopyable = false,
+      this.valueColor});
 
   @override
   Widget build(BuildContext context) {
@@ -448,26 +618,35 @@ class _DetailRow extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: AppColors.textMuted),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
+          Text(label,
+              style: const TextStyle(fontSize: 13, color: AppColors.textMuted)),
           const Spacer(),
           Expanded(
             flex: 2,
             child: GestureDetector(
-              onTap: isCopyable && value != null ? () {
-                Clipboard.setData(ClipboardData(text: value!));
-                AppCornerToast.show(context, 'Copied to clipboard');
-              } : null,
+              onTap: isCopyable && value != null
+                  ? () {
+                      Clipboard.setData(ClipboardData(text: value!));
+                      AppCornerToast.show(context, 'Copied to clipboard');
+                    }
+                  : null,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Flexible(
                     child: Text(
                       (value == null || value!.isEmpty) ? 'N/A' : value!,
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: valueColor ?? AppColors.textPrimary),
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: valueColor ?? AppColors.textPrimary),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isCopyable) ...[const SizedBox(width: 4), const Icon(Icons.copy, size: 12, color: AppColors.textMuted)]
+                  if (isCopyable) ...[
+                    const SizedBox(width: 4),
+                    const Icon(Icons.copy, size: 12, color: AppColors.textMuted)
+                  ]
                 ],
               ),
             ),
@@ -480,30 +659,103 @@ class _DetailRow extends StatelessWidget {
 
 // ... (Existing helpers)
 class _SummaryCard extends StatelessWidget {
-  final String label; final String value; final IconData icon; final Color color;
-  const _SummaryCard({required this.label, required this.value, required this.icon, required this.color});
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+  const _SummaryCard(
+      {required this.label,
+      required this.value,
+      required this.icon,
+      required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppRadius.card), border: Border.all(color: AppColors.outline), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))]), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: color, size: 24), const SizedBox(height: 8), Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)), Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textMuted))]));
+    return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.outline),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2))
+            ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary)),
+          Text(label,
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted))
+        ]));
   }
 }
+
 class _StatSmallItem extends StatelessWidget {
-  final IconData icon; final String label; final String value; final Color color;
-  const _StatSmallItem({required this.icon, required this.label, required this.value, required this.color});
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+  const _StatSmallItem(
+      {required this.icon,
+      required this.label,
+      required this.value,
+      required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: AppColors.outline)), child: Row(children: [Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: AppColors.outline)), child: Icon(icon, size: 16, color: color)), const SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis), Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted), overflow: TextOverflow.ellipsis)]))]));
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.input),
+            border: Border.all(color: AppColors.outline)),
+        child: Row(children: [
+          Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.outline)),
+              child: Icon(icon, size: 16, color: color)),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary),
+                    overflow: TextOverflow.ellipsis),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 11, color: AppColors.textMuted),
+                    overflow: TextOverflow.ellipsis)
+              ]))
+        ]));
   }
 }
+
 class _StatusBadge extends StatelessWidget {
-  final String label; final Color color;
+  final String label;
+  final Color color;
   const _StatusBadge({required this.label, required this.color});
   @override
   Widget build(BuildContext context) {
-    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(AppRadius.xs)), child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)));
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.xs)),
+        child: Text(label,
+            style: TextStyle(
+                fontSize: 11, fontWeight: FontWeight.w700, color: color)));
   }
 }
-
-
-
-

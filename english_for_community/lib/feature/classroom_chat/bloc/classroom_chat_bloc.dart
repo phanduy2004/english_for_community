@@ -210,6 +210,17 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       }
     }
 
+    // Snapshot tin hiện có trước khi fetch — để nhận ra tin đến qua socket TRONG LÚC
+    // đang fetch (không có trong snapshot) rồi gộp lại, tránh bị bản fetch ghi đè mất.
+    final beforeIds = {
+      for (final m in state.messages)
+        if (m.id.isNotEmpty) m.id,
+    };
+    final beforeClientIds = {
+      for (final m in state.messages)
+        if (m.clientId != null && m.clientId!.isNotEmpty) m.clientId!,
+    };
+
     final msgFuture = repo.getMessages(classroomId, limit: 25);
     final memFuture = repo.getChatMembers(classroomId);
     final results = await Future.wait([msgFuture, memFuture]);
@@ -241,9 +252,31 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
       (r) {
         if (isClosed) return;
         final resolvedMembers = members.isNotEmpty ? members : state.members;
+
+        // Giữ lại tin MỚI đến qua socket trong lúc fetch (không có trong snapshot đầu
+        // và cũng chưa nằm trong bản fetch) — append vào cuối (newest) theo đúng thứ tự.
+        final fetchedIds = {
+          for (final m in r.messages)
+            if (m.id.isNotEmpty) m.id,
+        };
+        final fetchedClientIds = {
+          for (final m in r.messages)
+            if (m.clientId != null && m.clientId!.isNotEmpty) m.clientId!,
+        };
+        final liveExtras = state.messages.where((m) {
+          final existedBefore = (m.id.isNotEmpty && beforeIds.contains(m.id)) ||
+              (m.clientId != null && beforeClientIds.contains(m.clientId));
+          if (existedBefore) return false; // tin cũ (cache) → dùng bản fetch
+          final inFetched = (m.id.isNotEmpty && fetchedIds.contains(m.id)) ||
+              (m.clientId != null && fetchedClientIds.contains(m.clientId));
+          return !inFetched; // tin mới đến khi đang fetch → giữ lại
+        }).toList();
+        final mergedMessages =
+            liveExtras.isEmpty ? r.messages : [...r.messages, ...liveExtras];
+
         ClassroomChatSessionCache.put(
           classroomId: classroomId,
-          messages: r.messages,
+          messages: mergedMessages,
           members: resolvedMembers,
           hasMore: r.hasMore,
           nextCursor: r.nextCursor,
@@ -252,7 +285,7 @@ class ClassroomChatBloc extends Bloc<ClassroomChatEvent, ClassroomChatState> {
         );
         emit(state.copyWith(
           status: ClassroomChatStatus.ready,
-          messages: r.messages,
+          messages: mergedMessages,
           members: resolvedMembers,
           hasMore: r.hasMore,
           nextCursor: r.nextCursor,

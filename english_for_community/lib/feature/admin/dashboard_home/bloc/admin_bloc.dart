@@ -27,8 +27,9 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     emit(state.copyWith(status: AdminStatus.loading));
     final result = await adminRepository.getDashboardStats(range: event.range);
     result.fold(
-          (failure) => emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message)),
-          (data) => emit(state.copyWith(status: AdminStatus.success, stats: data)),
+      (failure) => emit(state.copyWith(
+          status: AdminStatus.error, errorMessage: failure.message)),
+      (data) => emit(state.copyWith(status: AdminStatus.success, stats: data)),
     );
   }
 
@@ -36,11 +37,15 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
       GetAllUsersEvent event, Emitter<AdminState> emit) async {
     emit(state.copyWith(status: AdminStatus.loading));
     final result = await adminRepository.getAllUsers(
-        page: event.page, limit: event.limit, filter: event.filter, search: event.search
-    );
+        page: event.page,
+        limit: event.limit,
+        filter: event.filter,
+        role: event.role,
+        search: event.search);
     result.fold(
-          (failure) => emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message)),
-          (data) => emit(state.copyWith(status: AdminStatus.success, users: data)),
+      (failure) => emit(state.copyWith(
+          status: AdminStatus.error, errorMessage: failure.message)),
+      (data) => emit(state.copyWith(status: AdminStatus.success, users: data)),
     );
   }
 
@@ -51,12 +56,17 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
 
     // Gọi Repository (Repository trả về Either<Failure, PaginatedResponse<ReportEntity>>)
     final result = await adminRepository.getReports(
-      page: event.page, limit: event.limit, status: event.status, search: event.search,
+      page: event.page,
+      limit: event.limit,
+      status: event.status,
+      search: event.search,
     );
 
     result.fold(
-          (failure) => emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message)),
-          (paginatedData) => emit(state.copyWith(status: AdminStatus.success, reports: paginatedData)),
+      (failure) => emit(state.copyWith(
+          status: AdminStatus.error, errorMessage: failure.message)),
+      (paginatedData) => emit(
+          state.copyWith(status: AdminStatus.success, reports: paginatedData)),
     );
   }
 
@@ -67,39 +77,42 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     // emit(state.copyWith(status: AdminStatus.loading));
 
     final result = await adminRepository.updateReportStatus(
-      id: event.reportId, status: event.status, adminResponse: event.adminResponse,
+      id: event.reportId,
+      status: event.status,
+      adminResponse: event.adminResponse,
     );
 
     result.fold(
-          (failure) => emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message)),
-          (updatedReport) {
+      (failure) => emit(state.copyWith(
+          status: AdminStatus.error, errorMessage: failure.message)),
+      (updatedReport) {
         // Lấy danh sách hiện tại
         PaginatedResponse<ReportEntity>? currentReports = state.reports;
 
         if (currentReports != null) {
           // Tạo list mới đã cập nhật item
-          final updatedList = currentReports.data.map((r) => r.id == updatedReport.id ? updatedReport : r).toList();
+          final updatedList = currentReports.data
+              .map((r) => r.id == updatedReport.id ? updatedReport : r)
+              .toList();
 
           // Gán lại vào object PaginatedResponse mới
           currentReports = PaginatedResponse(
-              data: updatedList,
-              pagination: currentReports.pagination
-          );
+              data: updatedList, pagination: currentReports.pagination);
         }
 
         // Emit state mới
         emit(state.copyWith(
-            status: AdminStatus.actionSuccess, // Để UI hiện snackbar "Thành công"
-            reports: currentReports
-        ));
+            status:
+                AdminStatus.actionSuccess, // Để UI hiện snackbar "Thành công"
+            reports: currentReports));
 
         // Reset về success để không hiện snackbar liên tục
         emit(state.copyWith(status: AdminStatus.success));
       },
     );
   }
-  Future<void> _onBanUser(
-      BanUserEvent event, Emitter<AdminState> emit) async {
+
+  Future<void> _onBanUser(BanUserEvent event, Emitter<AdminState> emit) async {
     emit(state.copyWith(status: AdminStatus.loading));
 
     final result = await adminRepository.banUser(
@@ -110,10 +123,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     );
 
     result.fold(
-          (failure) {
-        emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message));
+      (failure) {
+        emit(state.copyWith(
+            status: AdminStatus.error, errorMessage: failure.message));
       },
-          (updatedUser) {
+      (updatedUser) {
         PaginatedResponse<UserEntity>? currentUsers = state.users;
 
         if (currentUsers != null) {
@@ -122,15 +136,11 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
           }).toList();
 
           currentUsers = PaginatedResponse(
-              data: updatedList,
-              pagination: currentUsers.pagination
-          );
+              data: updatedList, pagination: currentUsers.pagination);
         }
 
         emit(state.copyWith(
-            status: AdminStatus.actionSuccess,
-            users: currentUsers
-        ));
+            status: AdminStatus.actionSuccess, users: currentUsers));
         emit(state.copyWith(status: AdminStatus.success));
       },
     );
@@ -143,25 +153,23 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
     final result = await adminRepository.deleteUser(event.userId);
 
     result.fold(
-          (failure) {
-        emit(state.copyWith(status: AdminStatus.error, errorMessage: failure.message));
+      (failure) {
+        emit(state.copyWith(
+            status: AdminStatus.error, errorMessage: failure.message));
       },
-          (_) {
+      (_) {
         PaginatedResponse<UserEntity>? currentUsers = state.users;
 
         if (currentUsers != null) {
-          final updatedList = currentUsers.data.where((u) => u.id != event.userId).toList();
+          final updatedList =
+              currentUsers.data.where((u) => u.id != event.userId).toList();
 
           currentUsers = PaginatedResponse(
-              data: updatedList,
-              pagination: currentUsers.pagination
-          );
+              data: updatedList, pagination: currentUsers.pagination);
         }
 
         emit(state.copyWith(
-            status: AdminStatus.actionSuccess,
-            users: currentUsers
-        ));
+            status: AdminStatus.actionSuccess, users: currentUsers));
         emit(state.copyWith(status: AdminStatus.success));
       },
     );

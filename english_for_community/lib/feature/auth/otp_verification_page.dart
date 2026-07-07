@@ -123,7 +123,7 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
 
         if (state.status == UserStatus.unauthenticated &&
             state.errorMessage != null) {
-          AppFeedback.error(context, state.errorMessage!);
+          AppFeedback.success(context, state.errorMessage!);
           context.goNamed(LoginPage.routeName);
         }
       },
@@ -146,96 +146,99 @@ class _OtpVerificationPageState extends State<OtpVerificationPage> {
           ),
           body: SingleChildScrollView(
             padding: StudentMobileUi.pagePadding,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: StudentMobileUi.skillIconBox(
-                      Icons.lock_person_outlined,
-                      size: 64,
-                      colors: SkillColorSet(
-                        color: AppColors.accent,
-                        tint: AppColors.accentTint,
-                        dark: AppColors.accentDark,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.s7),
-                  Text(
-                    t.enterVerificationCode,
-                    textAlign: TextAlign.center,
-                    style: context.h1Style,
-                  ),
-                  const SizedBox(height: AppSpacing.s3),
-                  RichText(
-                    textAlign: TextAlign.center,
-                    text: TextSpan(
-                      style: StudentMobileUi.body(context).copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                      children: [
-                        TextSpan(text: t.otpSentPrefix),
-                        TextSpan(
-                          text: widget.email,
-                          style: AppTypography.label(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: StudentMobileUi.skillIconBox(
+                        Icons.lock_person_outlined,
+                        size: 64,
+                        colors: SkillColorSet(
+                          color: AppColors.accent,
+                          tint: AppColors.accentTint,
+                          dark: AppColors.accentDark,
                         ),
-                        TextSpan(text: t.otpSentSuffix),
-                      ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  AuthOtpInput(
-                    controller: _textController,
-                    focusNode: _focusNode,
-                    onCompleted: (_) => _onVerify(isLoading),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
-                  FilledButton(
-                    onPressed: () => _onVerify(isLoading),
-                    style: AuthFormUi.primaryButtonStyle(),
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: AppLoadingIndicator.button(
-                              color: AppColors.onPrimary,
-                            ),
-                          )
-                        : Text(t.verifyButton),
-                  ),
-                  const SizedBox(height: AppSpacing.s7),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        t.didNotReceiveCode,
+                    const SizedBox(height: AppSpacing.s7),
+                    Text(
+                      t.enterVerificationCode,
+                      textAlign: TextAlign.center,
+                      style: context.h1Style,
+                    ),
+                    const SizedBox(height: AppSpacing.s3),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
                         style: StudentMobileUi.body(context).copyWith(
                           color: AppColors.textSecondary,
                         ),
-                      ),
-                      if (_canResend)
-                        TextButton(
-                          onPressed: _onResend,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.s3,
-                            ),
-                            minimumSize: const Size(44, 36),
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        children: [
+                          TextSpan(text: t.otpSentPrefix),
+                          TextSpan(
+                            text: widget.email,
+                            style: AppTypography.label(),
                           ),
-                          child: Text(t.resendAction, style: AppTypography.label()),
-                        )
-                      else
+                          TextSpan(text: t.otpSentSuffix),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: StudentMobileUi.sectionGap),
+                    AuthOtpInput(
+                      controller: _textController,
+                      focusNode: _focusNode,
+                      onCompleted: (_) => _onVerify(isLoading),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    FilledButton(
+                      onPressed: () => _onVerify(isLoading),
+                      style: AuthFormUi.primaryButtonStyle(),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: AppLoadingIndicator.button(
+                                color: AppColors.onPrimary,
+                              ),
+                            )
+                          : Text(t.verifyButton),
+                    ),
+                    const SizedBox(height: AppSpacing.s7),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
                         Text(
-                          t.resendCooldown(_start),
-                          style: StudentMobileUi.caption(context),
+                          t.didNotReceiveCode,
+                          style: StudentMobileUi.body(context).copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                    ],
-                  ),
-                ],
+                        if (_canResend)
+                          TextButton(
+                            onPressed: _onResend,
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.primary,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.s3,
+                              ),
+                              minimumSize: const Size(44, 36),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(t.resendAction,
+                                style: AppTypography.label()),
+                          )
+                        else
+                          Text(
+                            t.resendCooldown(_start),
+                            style: StudentMobileUi.caption(context),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

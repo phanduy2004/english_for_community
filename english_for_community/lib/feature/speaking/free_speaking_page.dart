@@ -398,8 +398,8 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
   }
 
   void _handleTranscript(Map<String, dynamic> data) {
-    final String text = data['text'];
-    final bool isFinal = data['isFinal'];
+    final String text = (data['text'] ?? '') as String;
+    final bool isFinal = data['isFinal'] == true;
     final roleStr = data['role'];
     final MessageRole role =
         roleStr == 'user' ? MessageRole.user : MessageRole.ai;

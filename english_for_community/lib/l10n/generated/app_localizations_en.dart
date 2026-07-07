@@ -1265,6 +1265,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressStatSpeakingFluency => 'Fluency';
 
   @override
+  String progressStatFluencyInline(int pct) {
+    return 'Fluency $pct%';
+  }
+
+  @override
   String get progressLeaderboard => 'Leaderboard';
 
   @override
@@ -5860,6 +5865,61 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String speakingFbHistoryMeta(int seconds, int turns, String cefr) {
     return '${seconds}s · $turns turns · $cefr';
+  }
+
+  @override
+  String get speakingHistorySummaryTitle => 'Your speaking activity';
+
+  @override
+  String get speakingHistoryStatSessions => 'Sessions';
+
+  @override
+  String get speakingHistoryStatAvg => 'Avg band';
+
+  @override
+  String get speakingHistoryStatBest => 'Best band';
+
+  @override
+  String get speakingHistoryTrend => 'Band trend';
+
+  @override
+  String get speakingHistoryViewProgress => 'Progress';
+
+  @override
+  String get speakingHistoryFilterAll => 'All';
+
+  @override
+  String get speakingHistorySort => 'Sort';
+
+  @override
+  String get speakingHistorySortNewest => 'Newest';
+
+  @override
+  String get speakingHistorySortOldest => 'Oldest';
+
+  @override
+  String get speakingHistorySortHighest => 'Highest band';
+
+  @override
+  String get speakingHistorySortLongest => 'Longest';
+
+  @override
+  String get speakingHistoryDefaultTitle => 'Free speaking';
+
+  @override
+  String get speakingHistoryStartCta => 'Start speaking';
+
+  @override
+  String get speakingHistoryFilterEmpty => 'No sessions match this filter.';
+
+  @override
+  String speakingHistorySessionsCount(int count) {
+    return '$count sessions';
+  }
+
+  @override
+  String speakingHistoryTurns(int count) {
+    return '$count turns';
   }
 
   @override

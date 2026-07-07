@@ -8,12 +8,12 @@ import '../model/failure.dart';
 abstract class AdminRepository {
   Future<Either<Failure, AdminStatsEntity>> getDashboardStats({String range});
 
-  Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers({
-    int page,
-    int limit,
-    String filter,
-    String? search
-  });
+  Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers(
+      {int page = 1,
+      int limit = 20,
+      String filter = 'all',
+      String role = 'all',
+      String? search});
 
   // Admin quản lý
   Future<Either<Failure, PaginatedResponse<ReportEntity>>> getReports({
@@ -25,11 +25,8 @@ abstract class AdminRepository {
 
   Future<Either<Failure, ReportEntity>> getReportDetail(String id);
 
-  Future<Either<Failure, ReportEntity>> updateReportStatus({
-    required String id,
-    required String status,
-    String? adminResponse
-  });
+  Future<Either<Failure, ReportEntity>> updateReportStatus(
+      {required String id, required String status, String? adminResponse});
 
   // --- 🆕 METHODS MỚI ---
   Future<Either<Failure, UserEntity>> banUser({

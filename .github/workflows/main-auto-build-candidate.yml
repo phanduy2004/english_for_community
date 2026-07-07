@@ -210,7 +210,10 @@ jobs:
             exit 1
           fi
 
-          CHANGELOG="Auto candidate from main commit ${GITHUB_SHA}"
+          # Để trống changelog: app sẽ tự hiển thị câu thông báo mặc định theo
+          # ngôn ngữ (updateAvailableBody) và ẩn mục "What is new". SHA vẫn được
+          # lưu riêng ở field gitSha bên dưới để truy vết.
+          CHANGELOG=""
           RUN_URL="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
           HTTP_CODE=$(curl -sS -o /tmp/ci_release_candidate_response.json -w "%{http_code}" -X POST "${BACKEND_BASE_URL}/api/app/releases/ci-candidates" \

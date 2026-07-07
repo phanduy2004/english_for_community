@@ -11,7 +11,9 @@ import 'user_role_badge.dart';
 
 class UserCard extends StatelessWidget {
   final UserEntity user;
-  const UserCard({super.key, required this.user});
+  final VoidCallback? onChanged;
+
+  const UserCard({super.key, required this.user, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +25,13 @@ class UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isBanned ? AppColors.dangerBg : Colors.white,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: isBanned ? AppColors.dangerBg : AppColors.outline),
+        border: Border.all(
+            color: isBanned ? AppColors.dangerBg : AppColors.outline),
         boxShadow: [
-          BoxShadow(color: AppColors.textPrimary.withValues(alpha: 0.03), blurRadius: 4, offset: const Offset(0, 2))
+          BoxShadow(
+              color: AppColors.textPrimary.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2))
         ],
       ),
       child: Material(
@@ -33,11 +39,14 @@ class UserCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.card),
           // ?? CLICK CARD TO OPEN DIALOG
-          onTap: () {
-            showDialog(
+          onTap: () async {
+            final changed = await showDialog<bool>(
               context: context,
-              builder: (ctx) => AdminUserDetailsDialog(userId: user.id,),
+              builder: (ctx) => AdminUserDetailsDialog(
+                userId: user.id,
+              ),
             );
+            if (changed == true) onChanged?.call();
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -59,25 +68,36 @@ class UserCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              user.fullName.isNotEmpty ? user.fullName : 'Unknown User',
+                              user.fullName.isNotEmpty
+                                  ? user.fullName
+                                  : 'Unknown User',
                               style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: isBanned ? AppColors.danger : AppColors.textPrimary,
-                                  decoration: isBanned ? TextDecoration.lineThrough : null
-                              ),
+                                  color: isBanned
+                                      ? AppColors.danger
+                                      : AppColors.textPrimary,
+                                  decoration: isBanned
+                                      ? TextDecoration.lineThrough
+                                      : null),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
                           if (isBanned)
-                            const _StatusChip(label: 'BANNED', color: Colors.red, icon: Icons.block)
+                            const _StatusChip(
+                                label: 'BANNED',
+                                color: Colors.red,
+                                icon: Icons.block)
                           else
                             _StatusChip(
-                                label: isOnline ? t.adminUserStatusOnline : t.adminUserStatusOffline,
-                                color: isOnline ? AppColors.success : AppColors.textMuted,
-                                isDot: true
-                            ),
+                                label: isOnline
+                                    ? t.adminUserStatusOnline
+                                    : t.adminUserStatusOffline,
+                                color: isOnline
+                                    ? AppColors.success
+                                    : AppColors.textMuted,
+                                isDot: true),
                           const SizedBox(width: 6),
                           UserRoleBadge(role: user.role),
                         ],
@@ -85,21 +105,26 @@ class UserCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         user.email.isNotEmpty ? user.email : 'No email',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        style: const TextStyle(
+                            fontSize: 12, color: AppColors.textMuted),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.access_time, size: 12, color: AppColors.textMuted),
+                          const Icon(Icons.access_time,
+                              size: 12, color: AppColors.textMuted),
                           const SizedBox(width: 4),
                           Text(
                             isOnline
                                 ? t.adminUserActiveNow
                                 : (user.lastActivityDate != null
-                                ? t.adminUserLastActive(DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal()))
-                                : t.adminUserNeverActive),
-                            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                                    ? t.adminUserLastActive(
+                                        DateFormat('HH:mm dd/MM').format(
+                                            user.lastActivityDate!.toLocal()))
+                                    : t.adminUserNeverActive),
+                            style: const TextStyle(
+                                fontSize: 11, color: AppColors.textMuted),
                           ),
                         ],
                       )
@@ -108,7 +133,7 @@ class UserCard extends StatelessWidget {
                 ),
 
                 // --- 3 DOT MENU ---
-                UserActionMenu(user: user),
+                UserActionMenu(user: user, onChanged: onChanged),
               ],
             ),
           ),
@@ -124,7 +149,11 @@ class _StatusChip extends StatelessWidget {
   final bool isDot;
   final IconData? icon;
 
-  const _StatusChip({required this.label, required this.color, this.isDot = false, this.icon});
+  const _StatusChip(
+      {required this.label,
+      required this.color,
+      this.isDot = false,
+      this.icon});
 
   @override
   Widget build(BuildContext context) {
@@ -142,16 +171,17 @@ class _StatusChip extends StatelessWidget {
           children: [
             if (isDot)
               Container(
-                width: 6, height: 6,
+                width: 6,
+                height: 6,
                 decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               )
             else if (icon != null)
               Icon(icon, size: 10, color: color),
-
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+              style: TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: color),
             ),
           ],
         ),
@@ -159,5 +189,3 @@ class _StatusChip extends StatelessWidget {
     );
   }
 }
-
-

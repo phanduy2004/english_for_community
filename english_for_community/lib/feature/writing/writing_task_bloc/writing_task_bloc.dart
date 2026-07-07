@@ -121,6 +121,8 @@ class WritingTaskBloc extends Bloc<WritingTaskEvent, WritingTaskState> {
       SubmitForFeedback event,
       Emitter<WritingTaskState> emit,
       ) async {
+    // Chặn nộp trùng khi đang chấm bài (tránh gọi AI chấm 2 lần).
+    if (state.status == WritingTaskStatus.submitting) return;
     // 1. Client-side validation để đỡ tốn resource server
     if (isLikelyGibberish(event.essayContent)) {
       emit(state.copyWith(

@@ -6,13 +6,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/entity/user_entity.dart';
 import '../../dashboard_home/bloc/admin_bloc.dart';
 import '../../dashboard_home/bloc/admin_event.dart';
-import '../widgets/admin_user_details_dialog.dart'; // 🔥 Import detailed dialog
+import '../widgets/admin_user_details_dialog.dart';
 import 'user_ban_dialog.dart';
 
 class UserActionMenu extends StatelessWidget {
   final UserEntity user;
+  final VoidCallback? onChanged;
 
-  const UserActionMenu({super.key, required this.user});
+  const UserActionMenu({super.key, required this.user, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +31,8 @@ class UserActionMenu extends StatelessWidget {
       elevation: 4,
       onSelected: (value) => _handleAction(context, value, isBanned),
       itemBuilder: (context) => [
-        // 🔥 CHANGED: Edit -> View Info
-        _buildItem('view', Icons.visibility_outlined, 'View Details', Colors.black87),
-
+        _buildItem(
+            'view', Icons.visibility_outlined, 'View Details', Colors.black87),
         _buildItem(
           'ban',
           isBanned ? Icons.lock_open_rounded : Icons.block_rounded,
@@ -40,12 +40,14 @@ class UserActionMenu extends StatelessWidget {
           isBanned ? Colors.green : Colors.orange,
         ),
         const PopupMenuDivider(height: 1),
-        _buildItem('delete', Icons.delete_outline, 'Delete Permanently', Colors.red),
+        _buildItem(
+            'delete', Icons.delete_outline, 'Delete Permanently', Colors.red),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildItem(String value, IconData icon, String label, Color color) {
+  PopupMenuItem<String> _buildItem(
+      String value, IconData icon, String label, Color color) {
     return PopupMenuItem<String>(
       value: value,
       height: 40,
@@ -53,7 +55,9 @@ class UserActionMenu extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 10),
-          Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: color)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 13, fontWeight: FontWeight.w500, color: color)),
         ],
       ),
     );
@@ -62,27 +66,26 @@ class UserActionMenu extends StatelessWidget {
   void _handleAction(BuildContext context, String value, bool isBanned) {
     switch (value) {
       case 'view':
-      // 🔥 CALL DETAIL DIALOG
-        showDialog(
+        showDialog<bool>(
           context: context,
-          builder: (ctx) => AdminUserDetailsDialog(userId: user.id,),
-        );
+          builder: (ctx) => AdminUserDetailsDialog(
+            userId: user.id,
+          ),
+        ).then((changed) {
+          if (changed == true) onChanged?.call();
+        });
         break;
 
       case 'ban':
         if (isBanned) {
-          _showConfirmDialog(
-              context,
+          _showConfirmDialog(context,
               title: 'Unban Account?',
               content: 'User will be able to login and use services normally.',
               confirmText: 'Unban',
-              confirmColor: Colors.green,
-              onConfirm: () {
-                context.read<AdminBloc>().add(
-                    BanUserEvent(userId: user.id, banType: 'unban', reason: 'Admin unlocked')
-                );
-              }
-          );
+              confirmColor: Colors.green, onConfirm: () {
+            context.read<AdminBloc>().add(BanUserEvent(
+                userId: user.id, banType: 'unban', reason: 'Admin unlocked'));
+          });
         } else {
           final adminBloc = context.read<AdminBloc>();
           showDialog(
@@ -99,7 +102,8 @@ class UserActionMenu extends StatelessWidget {
         _showConfirmDialog(
           context,
           title: 'Delete User?',
-          content: 'This action CANNOT be undone. All learning data will be lost.',
+          content:
+              'This action CANNOT be undone. All learning data will be lost.',
           confirmText: 'Delete',
           confirmColor: Colors.red,
           onConfirm: () {
@@ -110,13 +114,12 @@ class UserActionMenu extends StatelessWidget {
     }
   }
 
-  void _showConfirmDialog(BuildContext context, {
-    required String title,
-    required String content,
-    required String confirmText,
-    required Color confirmColor,
-    required VoidCallback onConfirm
-  }) {
+  void _showConfirmDialog(BuildContext context,
+      {required String title,
+      required String content,
+      required String confirmText,
+      required Color confirmColor,
+      required VoidCallback onConfirm}) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -124,7 +127,8 @@ class UserActionMenu extends StatelessWidget {
         return AlertDialog(
           backgroundColor: Colors.white,
           surfaceTintColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.sheet)),
           titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
           contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
           actionsPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
@@ -136,10 +140,15 @@ class UserActionMenu extends StatelessWidget {
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16))),
+              Expanded(
+                  child: Text(title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16))),
             ],
           ),
-          content: Text(content, style: const TextStyle(fontSize: 13, color: AppColors.textMuted, height: 1.35)),
+          content: Text(content,
+              style: const TextStyle(
+                  fontSize: 13, color: AppColors.textMuted, height: 1.35)),
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.pop(ctx),
@@ -158,7 +167,8 @@ class UserActionMenu extends StatelessWidget {
                 backgroundColor: confirmColor,
                 foregroundColor: Colors.white,
               ),
-              child: Text(confirmText, style: const TextStyle(fontWeight: FontWeight.w700)),
+              child: Text(confirmText,
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
             ),
           ],
         );
@@ -166,5 +176,3 @@ class UserActionMenu extends StatelessWidget {
     );
   }
 }
-
-

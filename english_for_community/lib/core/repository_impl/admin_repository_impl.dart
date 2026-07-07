@@ -11,23 +11,30 @@ import '../repository/admin_repository.dart';
 
 class AdminRepositoryImpl implements AdminRepository {
   final AdminRemoteDatasource adminRemoteDatasource;
-  final ReportRemoteDatasource  reportRemoteDatasource;
-  AdminRepositoryImpl({required this.adminRemoteDatasource,required this.reportRemoteDatasource});
+  final ReportRemoteDatasource reportRemoteDatasource;
+  AdminRepositoryImpl(
+      {required this.adminRemoteDatasource,
+      required this.reportRemoteDatasource});
 
   String _handleDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
       return "Kết nối quá hạn. Vui lòng kiểm tra mạng.";
     }
-    if (e.response != null && e.response!.data is Map && (e.response!.data as Map).containsKey('message')) {
+    if (e.response != null &&
+        e.response!.data is Map &&
+        (e.response!.data as Map).containsKey('message')) {
       return e.response!.data['message'].toString();
     }
     return e.message ?? "Lỗi không xác định";
   }
+
   @override
-  Future<Either<Failure, AdminStatsEntity>> getDashboardStats({String range = 'week'}) async {
+  Future<Either<Failure, AdminStatsEntity>> getDashboardStats(
+      {String range = 'week'}) async {
     try {
-      final result = await adminRemoteDatasource.getDashboardStats(range: range);
+      final result =
+          await adminRemoteDatasource.getDashboardStats(range: range);
       return Right(result);
     } on DioException catch (e) {
       return Left(UserFailure(message: _handleDioError(e)));
@@ -37,16 +44,15 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers({
-    int page = 1,
-    int limit = 20,
-    String filter = 'all',
-    String? search
-  }) async {
+  Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers(
+      {int page = 1,
+      int limit = 20,
+      String filter = 'all',
+      String role = 'all',
+      String? search}) async {
     try {
       final result = await adminRemoteDatasource.getAllUsers(
-          page: page, limit: limit, filter: filter, search: search
-      );
+          page: page, limit: limit, filter: filter, role: role, search: search);
       return Right(result);
     } on DioException catch (e) {
       return Left(UserFailure(message: _handleDioError(e)));
@@ -71,7 +77,8 @@ class AdminRepositoryImpl implements AdminRepository {
       );
       return Right(result);
     } on DioException catch (e) {
-      return Left(ServerFailure(message: _handleDioError(e))); // Sử dụng hàm handle lỗi của bạn
+      return Left(ServerFailure(
+          message: _handleDioError(e))); // Sử dụng hàm handle lỗi của bạn
     } catch (e) {
       return Left(ServerFailure(message: e.toString()));
     }
@@ -111,16 +118,17 @@ class AdminRepositoryImpl implements AdminRepository {
 
   // --- 🆕 IMPLEMENT BAN USER ---
   @override
-  Future<Either<Failure, UserEntity>> banUser({
-    required String userId,
-    required String banType,
-    int? durationInHours,
-    String? reason
-  }) async {
+  Future<Either<Failure, UserEntity>> banUser(
+      {required String userId,
+      required String banType,
+      int? durationInHours,
+      String? reason}) async {
     try {
       final result = await adminRemoteDatasource.banUser(
-          userId: userId, banType: banType, durationInHours: durationInHours, reason: reason
-      );
+          userId: userId,
+          banType: banType,
+          durationInHours: durationInHours,
+          reason: reason);
       return Right(result);
     } on DioException catch (e) {
       return Left(UserFailure(message: _handleDioError(e)));

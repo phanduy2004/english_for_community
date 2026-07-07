@@ -23,12 +23,14 @@ class AdminRemoteDatasource {
     int page = 1,
     int limit = 20,
     String filter = 'all',
+    String role = 'all',
     String? search,
   }) async {
     final Map<String, dynamic> query = {
       'page': page,
       'limit': limit,
       'filter': filter,
+      'role': role,
     };
     if (search != null && search.isNotEmpty) {
       query['search'] = search;

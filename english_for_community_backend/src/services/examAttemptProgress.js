@@ -66,8 +66,99 @@ export function computeCurrentFocus(attempt) {
   return { currentItemId: null, currentItemKind: null, currentItemLabel: '' };
 }
 
+/** Normalize a blank answer/key the same way submission grading does (scoreFillBlank). */
+function normalizeGrammarBlank(value, def = {}) {
+  const caseInsensitive = def.caseInsensitive !== false;
+  const trim = def.trim !== false;
+  let v = String(value ?? '');
+  if (trim) v = v.trim();
+  if (caseInsensitive) v = v.toLowerCase();
+  return v;
+}
+
 /**
- * Grammar MCQ answers with correctness check for teacher live monitor.
+ * Answered + correctness for one grammar item, mirroring the submission grader
+ * (grammarAnswerComplete / scoreGrammarItem in examAttemptService) so the teacher
+ * live strip matches final grading. Handles every kind, not just MCQ — cloze/gap
+ * store answers under `blanks` (an object keyed by blankId), matching under
+ * `matching`, reorder under `order`; treating those as MCQ left them stuck "gray".
+ */
+function grammarItemAnsweredCorrect(item, ans) {
+  const kind = String(item.kind || 'mcq_single');
+
+  if (kind === 'grammar_cloze' || kind === 'grammar_gap') {
+    const blanks = ans && typeof ans.blanks === 'object' && !Array.isArray(ans.blanks) ? ans.blanks : {};
+    const defs = Array.isArray(item.blanks) ? item.blanks : [];
+    const filled = (d) => {
+      const v = blanks[d.blankId];
+      return v != null && String(v).trim().length > 0;
+    };
+    const answered = defs.length > 0 && defs.some(filled);
+    let isCorrect = null;
+    if (answered) {
+      const allFilled = defs.every(filled);
+      isCorrect =
+        allFilled &&
+        defs.every((d) => {
+          const norm = normalizeGrammarBlank(blanks[d.blankId], d);
+          const accepted = Array.isArray(d.acceptedAnswers) ? d.acceptedAnswers : [];
+          return accepted.some((a) => normalizeGrammarBlank(a, d) === norm);
+        });
+    }
+    return { answered, isCorrect, selectedIndexes: [], correctOptionIndexes: [] };
+  }
+
+  if (kind === 'grammar_matching') {
+    const chosen = ans && typeof ans.matching === 'object' && ans.matching ? ans.matching : {};
+    const left = Array.isArray(item.leftItems)
+      ? item.leftItems
+      : Array.isArray(item.leftColumn)
+        ? item.leftColumn
+        : [];
+    const paired = (row) => {
+      const v = chosen[row.id];
+      return v != null && String(v).trim().length > 0;
+    };
+    const answered = left.some(paired);
+    let isCorrect = null;
+    if (answered) {
+      const corr = Array.isArray(item.correctPairs) ? item.correctPairs : [];
+      const allPaired = left.length > 0 && left.every(paired);
+      isCorrect =
+        allPaired &&
+        corr.length > 0 &&
+        corr.every((pair) => Array.isArray(pair) && String(chosen[pair[0]]) === String(pair[1]));
+    }
+    return { answered, isCorrect, selectedIndexes: [], correctOptionIndexes: [] };
+  }
+
+  if (kind === 'grammar_reorder') {
+    const order = Array.isArray(ans?.order) ? ans.order : null;
+    const cor = (Array.isArray(item.correctOrder) ? item.correctOrder : []).map(Number);
+    const answered = order != null && order.length > 0;
+    let isCorrect = null;
+    if (answered && cor.length > 0) {
+      isCorrect = order.length === cor.length && order.every((v, i) => Number(v) === cor[i]);
+    }
+    return { answered, isCorrect, selectedIndexes: [], correctOptionIndexes: [] };
+  }
+
+  // mcq_single / mcq_multi (and unknown fallthrough)
+  const selected = Array.isArray(ans?.selectedIndexes) ? ans.selectedIndexes.map(Number) : [];
+  const correct = Array.isArray(item.correctOptionIndexes)
+    ? item.correctOptionIndexes.map(Number).sort((a, b) => a - b)
+    : null;
+  const answered = selected.length > 0;
+  let isCorrect = null;
+  if (answered && correct != null) {
+    const sortedSel = [...selected].sort((a, b) => a - b);
+    isCorrect = sortedSel.length === correct.length && sortedSel.every((v, i) => v === correct[i]);
+  }
+  return { answered, isCorrect, selectedIndexes: selected, correctOptionIndexes: correct || [] };
+}
+
+/**
+ * Grammar answers with correctness for teacher live monitor (all kinds).
  */
 export function computeGrammarAnswers(attempt) {
   const snap = attempt.examSnapshot || {};
@@ -76,21 +167,8 @@ export function computeGrammarAnswers(attempt) {
   const answers = attempt.answers || {};
   return grammarItems.map((it) => {
     const ans = answers[it.itemId];
-    const selected = Array.isArray(ans?.selectedIndexes)
-      ? ans.selectedIndexes.map(Number)
-      : Array.isArray(ans?.blanks)
-        ? ans.blanks
-        : null;
-    const correct = Array.isArray(it.correctOptionIndexes)
-      ? it.correctOptionIndexes.map(Number).sort((a, b) => a - b)
-      : null;
-    const answered = selected != null && (Array.isArray(selected) ? selected.length > 0 : true);
-    let isCorrect = null;
-    if (answered && correct != null && Array.isArray(selected)) {
-      const sortedSel = [...selected].sort((a, b) => a - b);
-      isCorrect =
-        sortedSel.length === correct.length && sortedSel.every((v, i) => v === correct[i]);
-    }
+    const { answered, isCorrect, selectedIndexes, correctOptionIndexes } =
+      grammarItemAnsweredCorrect(it, ans);
     const options = Array.isArray(it.options)
       ? it.options.map((o) => (typeof o === 'string' ? o : o?.text ?? String(o)))
       : [];
@@ -98,8 +176,8 @@ export function computeGrammarAnswers(attempt) {
       itemId: it.itemId,
       kind: it.kind || 'mcq_single',
       answered,
-      selectedIndexes: Array.isArray(selected) ? selected : [],
-      correctOptionIndexes: correct || [],
+      selectedIndexes,
+      correctOptionIndexes,
       isCorrect,
       options,
     };

@@ -137,7 +137,8 @@ class _RegisterPageState extends State<RegisterPage> {
         }
 
         if (state.status == UserStatus.otpRequired) {
-          context.goNamed(OtpVerificationPage.routeName, extra: state.errorMessage);
+          context.goNamed(OtpVerificationPage.routeName,
+              extra: state.errorMessage);
         }
       },
       builder: (context, state) {
@@ -159,224 +160,228 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
           body: SingleChildScrollView(
             padding: StudentMobileUi.pagePadding,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 450),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: StudentMobileUi.skillIconBox(
-                      Icons.person_add_alt_1_rounded,
-                      size: 64,
-                      skill: SkillType.speaking,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 450),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: StudentMobileUi.skillIconBox(
+                        Icons.person_add_alt_1_rounded,
+                        size: 64,
+                        skill: SkillType.speaking,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.s7),
-                  Text(
-                    t.registerHeroTitle,
-                    textAlign: TextAlign.center,
-                    style: context.h1Style,
-                  ),
-                  const SizedBox(height: AppSpacing.s3),
-                  Text(
-                    t.registerHeroSubtitle,
-                    textAlign: TextAlign.center,
-                    style: StudentMobileUi.body(context).copyWith(
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: AppSpacing.s7),
+                    Text(
+                      t.registerHeroTitle,
+                      textAlign: TextAlign.center,
+                      style: context.h1Style,
                     ),
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  AppCard(
-                    variant: AppCardVariant.outline,
-                    radius: AppRadius.card,
-                    padding: const EdgeInsets.all(AppSpacing.s7),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AuthFieldLabel(t.registerAccountTypeLabel),
-                        const SizedBox(height: AppSpacing.s3),
-                        SegmentedButton<String>(
-                          segments: [
-                            ButtonSegment(
-                              value: 'student',
-                              label: Text(t.registerAccountTypeStudent),
-                              icon: const Icon(Icons.school_outlined, size: 18),
-                            ),
-                            ButtonSegment(
-                              value: 'teacher',
-                              label: Text(t.registerAccountTypeTeacher),
-                              icon: const Icon(Icons.co_present_outlined, size: 18),
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(
+                      t.registerHeroSubtitle,
+                      textAlign: TextAlign.center,
+                      style: StudentMobileUi.body(context).copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: StudentMobileUi.sectionGap),
+                    AppCard(
+                      variant: AppCardVariant.outline,
+                      radius: AppRadius.card,
+                      padding: const EdgeInsets.all(AppSpacing.s7),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          AuthFieldLabel(t.registerAccountTypeLabel),
+                          const SizedBox(height: AppSpacing.s3),
+                          SegmentedButton<String>(
+                            segments: [
+                              ButtonSegment(
+                                value: 'student',
+                                label: Text(t.registerAccountTypeStudent),
+                                icon:
+                                    const Icon(Icons.school_outlined, size: 18),
+                              ),
+                              ButtonSegment(
+                                value: 'teacher',
+                                label: Text(t.registerAccountTypeTeacher),
+                                icon: const Icon(Icons.co_present_outlined,
+                                    size: 18),
+                              ),
+                            ],
+                            selected: {_accountType},
+                            onSelectionChanged: isLoading
+                                ? null
+                                : (s) => setState(() => _accountType = s.first),
+                          ),
+                          if (_accountType == 'teacher') ...[
+                            const SizedBox(height: AppSpacing.s4),
+                            Text(
+                              t.registerAccountTypeTeacherHint,
+                              style: StudentMobileUi.caption(context).copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ],
-                          selected: {_accountType},
-                          onSelectionChanged: isLoading
-                              ? null
-                              : (s) => setState(() => _accountType = s.first),
-                        ),
-                        if (_accountType == 'teacher') ...[
-                          const SizedBox(height: AppSpacing.s4),
-                          Text(
-                            t.registerAccountTypeTeacherHint,
-                            style: StudentMobileUi.caption(context).copyWith(
-                              color: AppColors.textSecondary,
+                          const SizedBox(height: AppSpacing.s5),
+                          AuthFieldLabel(t.labelFullName),
+                          const SizedBox(height: AppSpacing.s3),
+                          AuthTextField(
+                            controller: _nameController,
+                            hintText: t.hintFullName,
+                            prefixIcon: Icons.badge_outlined,
+                            enabled: !isLoading,
+                          ),
+                          const SizedBox(height: AppSpacing.s5),
+                          AuthFieldLabel(t.labelUsername),
+                          const SizedBox(height: AppSpacing.s3),
+                          AuthTextField(
+                            controller: _usernameController,
+                            hintText: t.hintUsername,
+                            prefixIcon: Icons.alternate_email,
+                            enabled: !isLoading,
+                          ),
+                          const SizedBox(height: AppSpacing.s5),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AuthFieldLabel(t.labelPhone),
+                                    const SizedBox(height: AppSpacing.s3),
+                                    AuthTextField(
+                                      controller: _phoneController,
+                                      hintText: t.hintPhoneShort,
+                                      prefixIcon: Icons.phone_outlined,
+                                      enabled: !isLoading,
+                                      keyboardType: TextInputType.phone,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.s5),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    AuthFieldLabel(t.labelDateOfBirth),
+                                    const SizedBox(height: AppSpacing.s3),
+                                    AuthTextField(
+                                      controller: _dobController,
+                                      hintText: t.hintDatePlaceholder,
+                                      prefixIcon: Icons.calendar_today_outlined,
+                                      enabled: !isLoading,
+                                      readOnly: true,
+                                      onTap: () => _selectDate(context),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.s5),
+                          AuthFieldLabel('${t.labelEmail} *'),
+                          const SizedBox(height: AppSpacing.s3),
+                          AuthTextField(
+                            controller: _emailController,
+                            hintText: t.hintEmail,
+                            prefixIcon: Icons.email_outlined,
+                            enabled: !isLoading,
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: AppSpacing.s5),
+                          AuthFieldLabel('${t.labelPassword} *'),
+                          const SizedBox(height: AppSpacing.s3),
+                          AuthTextField(
+                            controller: _passController,
+                            hintText: t.hintPasswordMask,
+                            prefixIcon: Icons.lock_outline,
+                            obscureText: _obscurePass,
+                            enabled: !isLoading,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePass
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: () =>
+                                  setState(() => _obscurePass = !_obscurePass),
                             ),
+                          ),
+                          const SizedBox(height: AppSpacing.s5),
+                          AuthFieldLabel(t.labelConfirmPassword),
+                          const SizedBox(height: AppSpacing.s3),
+                          AuthTextField(
+                            controller: _confirmPassController,
+                            hintText: t.hintPasswordMask,
+                            prefixIcon: Icons.verified_user_outlined,
+                            obscureText: _obscureConfirm,
+                            enabled: !isLoading,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscureConfirm
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.s7),
+                          FilledButton(
+                            onPressed: isLoading
+                                ? null
+                                : () => _onSignUp(isLoading: isLoading),
+                            style: AuthFormUi.primaryButtonStyle(),
+                            child: isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: AppLoadingIndicator.button(
+                                      color: AppColors.onPrimary,
+                                    ),
+                                  )
+                                : Text(t.registerButton),
                           ),
                         ],
-                        const SizedBox(height: AppSpacing.s5),
-                        AuthFieldLabel(t.labelFullName),
-                        const SizedBox(height: AppSpacing.s3),
-                        AuthTextField(
-                          controller: _nameController,
-                          hintText: t.hintFullName,
-                          prefixIcon: Icons.badge_outlined,
-                          enabled: !isLoading,
-                        ),
-                        const SizedBox(height: AppSpacing.s5),
-                        AuthFieldLabel(t.labelUsername),
-                        const SizedBox(height: AppSpacing.s3),
-                        AuthTextField(
-                          controller: _usernameController,
-                          hintText: t.hintUsername,
-                          prefixIcon: Icons.alternate_email,
-                          enabled: !isLoading,
-                        ),
-                        const SizedBox(height: AppSpacing.s5),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AuthFieldLabel(t.labelPhone),
-                                  const SizedBox(height: AppSpacing.s3),
-                                  AuthTextField(
-                                    controller: _phoneController,
-                                    hintText: t.hintPhoneShort,
-                                    prefixIcon: Icons.phone_outlined,
-                                    enabled: !isLoading,
-                                    keyboardType: TextInputType.phone,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.s5),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AuthFieldLabel(t.labelDateOfBirth),
-                                  const SizedBox(height: AppSpacing.s3),
-                                  AuthTextField(
-                                    controller: _dobController,
-                                    hintText: t.hintDatePlaceholder,
-                                    prefixIcon: Icons.calendar_today_outlined,
-                                    enabled: !isLoading,
-                                    readOnly: true,
-                                    onTap: () => _selectDate(context),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.s5),
-                        AuthFieldLabel('${t.labelEmail} *'),
-                        const SizedBox(height: AppSpacing.s3),
-                        AuthTextField(
-                          controller: _emailController,
-                          hintText: t.hintEmail,
-                          prefixIcon: Icons.email_outlined,
-                          enabled: !isLoading,
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: AppSpacing.s5),
-                        AuthFieldLabel('${t.labelPassword} *'),
-                        const SizedBox(height: AppSpacing.s3),
-                        AuthTextField(
-                          controller: _passController,
-                          hintText: t.hintPasswordMask,
-                          prefixIcon: Icons.lock_outline,
-                          obscureText: _obscurePass,
-                          enabled: !isLoading,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePass
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 18,
-                              color: AppColors.textSecondary,
-                            ),
-                            onPressed: () =>
-                                setState(() => _obscurePass = !_obscurePass),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s7),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          t.alreadyHaveAccount,
+                          style: StudentMobileUi.body(context).copyWith(
+                            color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: AppSpacing.s5),
-                        AuthFieldLabel(t.labelConfirmPassword),
-                        const SizedBox(height: AppSpacing.s3),
-                        AuthTextField(
-                          controller: _confirmPassController,
-                          hintText: t.hintPasswordMask,
-                          prefixIcon: Icons.verified_user_outlined,
-                          obscureText: _obscureConfirm,
-                          enabled: !isLoading,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirm
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 18,
-                              color: AppColors.textSecondary,
+                        TextButton(
+                          onPressed: () => context.goNamed('LoginPage'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.s3,
                             ),
-                            onPressed: () => setState(
-                              () => _obscureConfirm = !_obscureConfirm,
-                            ),
+                            minimumSize: const Size(44, 36),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.s7),
-                        FilledButton(
-                          onPressed: isLoading
-                              ? null
-                              : () => _onSignUp(isLoading: isLoading),
-                          style: AuthFormUi.primaryButtonStyle(),
-                          child: isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: AppLoadingIndicator.button(
-                                    color: AppColors.onPrimary,
-                                  ),
-                                )
-                              : Text(t.registerButton),
+                          child: Text(t.signIn, style: AppTypography.label()),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.s7),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        t.alreadyHaveAccount,
-                        style: StudentMobileUi.body(context).copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.goNamed('LoginPage'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.s3,
-                          ),
-                          minimumSize: const Size(44, 36),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(t.signIn, style: AppTypography.label()),
-                      ),
-                    ],
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

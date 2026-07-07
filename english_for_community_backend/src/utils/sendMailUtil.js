@@ -30,7 +30,7 @@ transporter.verify().then(() => {
 
 export default async function sendMail(to, subject, text, html) {
   if (!to) throw new Error('Missing "to" email')
-  const fromName = SMTP_FROM_NAME || 'Konnect'
+  const fromName = SMTP_FROM_NAME || 'E4C'
   const fromEmail = SMTP_FROM_EMAIL || SMTP_USER
 
   const info = await transporter.sendMail({

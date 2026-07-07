@@ -48,20 +48,32 @@ class ReviewBloc extends Bloc<ReviewEvent, ReviewState> {
       SubmitFeedback event,
       Emitter<ReviewState> emit,
       ) async {
-    await userVocabRepository.submitReviewFeedback(
+    final result = await userVocabRepository.submitReviewFeedback(
       event.word.id!,
       event.feedback,
       event.duration, // Gửi duration xuống repository
     );
 
-    final nextIndex = state.currentIndex + 1;
-    if (nextIndex >= state.wordsToReview.length) {
-      emit(state.copyWith(status: ReviewStatus.complete));
-    } else {
-      emit(state.copyWith(
-        currentIndex: nextIndex,
-        isFlipped: false,
-      ));
-    }
+    await result.fold(
+      (failure) async {
+        // Lưu thất bại (mạng/server) → KHÔNG advance, giữ nguyên thẻ hiện tại.
+        // Từ vẫn còn "due" nên không mất kết quả; UI hiện lỗi + cho thử lại.
+        emit(state.copyWith(
+          status: ReviewStatus.error,
+          errorMessage: failure.message,
+        ));
+      },
+      (_) async {
+        final nextIndex = state.currentIndex + 1;
+        if (nextIndex >= state.wordsToReview.length) {
+          emit(state.copyWith(status: ReviewStatus.complete));
+        } else {
+          emit(state.copyWith(
+            currentIndex: nextIndex,
+            isFlipped: false,
+          ));
+        }
+      },
+    );
   }
 }

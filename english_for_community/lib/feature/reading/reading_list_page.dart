@@ -32,6 +32,11 @@ class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchM
   String _selectedDifficulty = 'easy';
   late final ReadingBloc _bloc;
 
+  // Chưa có load-more thật → tạm nâng trần 1 lần tải để bài thứ >10 vẫn hiện & search
+  // được (trước đây cứng limit:10 nên bài 11+ không bao giờ tới được).
+  // TODO: chuyển sang phân trang theo pagination.hasNextPage + search phía server.
+  static const int _kListLimit = 50;
+
   @override
   void initState() {
     super.initState();
@@ -40,7 +45,7 @@ class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchM
       ..add(FetchReadingListEvent(
         difficulty: _selectedDifficulty,
         page: 1,
-        limit: 10,
+        limit: _kListLimit,
       ));
   }
 
@@ -105,7 +110,7 @@ class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchM
                                 _bloc.add(FetchReadingListEvent(
                                   difficulty: _selectedDifficulty,
                                   page: 1,
-                                  limit: 10,
+                                  limit: _kListLimit,
                                 ));
                               },
                             ),
@@ -209,7 +214,7 @@ class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchM
     _bloc.add(FetchReadingListEvent(
       difficulty: _selectedDifficulty,
       page: 1,
-      limit: 10,
+      limit: _kListLimit,
       forceRefresh: true,
     ));
   }
@@ -229,7 +234,7 @@ class _ReadingListPageState extends State<ReadingListPage> with SkillListSearchM
         _bloc.add(FetchReadingListEvent(
           difficulty: _selectedDifficulty,
           page: 1,
-          limit: 10,
+          limit: _kListLimit,
           forceRefresh: true,
         ));
       }

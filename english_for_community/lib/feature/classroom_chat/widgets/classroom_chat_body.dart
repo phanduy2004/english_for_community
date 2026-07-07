@@ -62,7 +62,18 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
 
   bool _stickToBottom = true;
   int _prevMessageCount = 0;
+  String? _prevLastKey;
   String? _prevErrorMessage;
+
+  // Định danh ổn định cho tin cuối (newest) — ưu tiên clientId để pending→confirmed
+  // vẫn cùng key (không coi là "tin mới" khi được server xác nhận).
+  String? _lastMessageKey(List<ClassroomChatMessage> messages) {
+    if (messages.isEmpty) return null;
+    final m = messages.last;
+    final c = m.clientId;
+    if (c != null && c.isNotEmpty) return 'c:$c';
+    return m.id.isNotEmpty ? 'i:${m.id}' : null;
+  }
 
   @override
   void initState() {
@@ -160,17 +171,23 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
   void _handleMessagesChanged(ClassroomChatState state) {
     final count = state.messages.length;
     final countDelta = count - _prevMessageCount;
+    final lastKey = _lastMessageKey(state.messages);
 
     if (countDelta <= 0) {
       _prevMessageCount = count;
+      _prevLastKey = lastKey;
       return;
     }
 
+    // Chỉ auto-cuộn khi có TIN MỚI ở cuối (tail đổi). Khi phân trang (prepend tin
+    // cũ) count tăng nhưng tail giữ nguyên → KHÔNG cuộn (tránh giật về đáy).
+    final tailChanged = lastKey != _prevLastKey;
     final last = state.messages.last;
-    final shouldScroll = last.senderId == widget.currentUserId ||
-        last.isPending ||
-        _stickToBottom ||
-        _isNearBottom;
+    final shouldScroll = tailChanged &&
+        (last.senderId == widget.currentUserId ||
+            last.isPending ||
+            _stickToBottom ||
+            _isNearBottom);
 
     if (shouldScroll) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -180,6 +197,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
     }
 
     _prevMessageCount = count;
+    _prevLastKey = lastKey;
   }
 
   @override

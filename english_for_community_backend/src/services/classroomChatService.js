@@ -17,6 +17,7 @@ import User from '../models/User.js';
 import { uploadMulterFileToCloudinary } from '../config/cloudinary.js';
 import mongoose from 'mongoose';
 import { getIO } from '../socket/socketManager.js';
+import { createNotification } from './notificationService.js';
 
 const PAGE_SIZE = 30;
 const MAX_CONTENT_LENGTH = 4000;
@@ -345,7 +346,7 @@ export async function getMessages(classroomId, userId, query) {
 // ─── React to message ────────────────────────────────────────────────────────
 
 export async function reactMessage(classroomId, userId, messageId, emoji) {
-  await assertMember(classroomId, userId);
+  const { room } = await assertMember(classroomId, userId);
 
   if (!ALLOWED_EMOJIS.includes(emoji)) throw httpErr(400, 'Emoji không hợp lệ');
 
@@ -355,9 +356,11 @@ export async function reactMessage(classroomId, userId, messageId, emoji) {
 
   const uid = new mongoose.Types.ObjectId(userId);
   let reactionGroup = msg.reactions.find((r) => r.emoji === emoji);
+  let isNewReaction = false;
 
   if (!reactionGroup) {
     msg.reactions.push({ emoji, userIds: [uid] });
+    isNewReaction = true;
   } else {
     const idx = reactionGroup.userIds.findIndex((id) => id.equals(uid));
     if (idx >= 0) {
@@ -367,6 +370,7 @@ export async function reactMessage(classroomId, userId, messageId, emoji) {
       }
     } else {
       reactionGroup.userIds.push(uid);
+      isNewReaction = true;
     }
   }
 
@@ -382,6 +386,31 @@ export async function reactMessage(classroomId, userId, messageId, emoji) {
     })),
   };
   emitToRoom(classroomId, 'classroom_message_react_update', payload);
+
+  // Notify chủ tin nhắn khi có reaction MỚI (bỏ react / tự react → không notify)
+  if (isNewReaction && String(msg.senderId) !== String(userId)) {
+    const preview =
+      msg.type === 'text'
+        ? `: "${(msg.content || '').slice(0, 30)}"`
+        : msg.type === 'image'
+        ? ' (image)'
+        : msg.type === 'video'
+        ? ' (video)'
+        : ' (file)';
+    await createNotification({
+      recipientId: msg.senderId,
+      senderId: userId,
+      type: 'CLASSROOM_CHAT_REACTION',
+      title: 'New reaction',
+      message: `reacted ${emoji} to your message${preview}`,
+      data: {
+        classroomId: String(classroomId),
+        messageId: String(messageId),
+        classroomName: room?.name || '',
+      },
+    });
+  }
+
   return payload;
 }
 

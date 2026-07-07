@@ -317,43 +317,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // KPI row (A12): streak (amber) / points / level
-            Row(
-              children: [
-                Expanded(
-                  child: StudentMobileUi.statCard(
-                    context: context,
-                    icon: Icons.local_fire_department_rounded,
-                    value: '${user?.currentStreak ?? 0}',
-                    label: t.progressStatStreak,
-                    iconColor: AppColors.accent,
-                    iconBg: AppColors.accentTint,
-                    compact: true,
-                  ),
-                ),
-                const SizedBox(width: StudentMobileUi.cardGap),
-                Expanded(
-                  child: StudentMobileUi.statCard(
-                    context: context,
-                    icon: Icons.star_rounded,
-                    value: '${user?.totalPoints ?? 0}',
-                    label: t.progressStatPoints,
-                    compact: true,
-                  ),
-                ),
-                const SizedBox(width: StudentMobileUi.cardGap),
-                Expanded(
-                  child: StudentMobileUi.statCard(
-                    context: context,
-                    icon: Icons.military_tech_rounded,
-                    value: 'Lv ${user?.level ?? 1}',
-                    label: t.progressStatLevel,
-                    compact: true,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.s3),
             StudentMobileUi.filterRow(
               labels: rangeLabels,
               selectedIndex: _range.index,
@@ -453,7 +416,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               crossAxisCount: 3,
               crossAxisSpacing: StudentMobileUi.cardGap,
               mainAxisSpacing: StudentMobileUi.cardGap,
-              childAspectRatio: 1.12,
+              childAspectRatio: 0.9,
               children: [
                 _StatBox(
                   icon: Icons.style_rounded,
@@ -484,7 +447,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 ),
                 _StatBox(
                   icon: Icons.edit_note_rounded,
-                  value: stats.avgWritingScore.toStringAsFixed(1),
+                  value: '${stats.avgWritingScore.toStringAsFixed(1)}/9',
                   label: t.progressStatWriting,
                   skill: SkillType.writing,
                   onTap: () => _showStatDetailDialog(progressBloc, 'writing', _range),
@@ -493,20 +456,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   icon: Icons.record_voice_over_rounded,
                   value: '${stats.speakingAccuracy}%',
                   label: t.progressStatSpeaking,
-                  skill: SkillType.speaking,
-                  onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
-                ),
-                _StatBox(
-                  icon: Icons.speed_rounded,
-                  value: '${stats.readingWpm}',
-                  label: t.progressStatReadingWpm,
-                  skill: SkillType.reading,
-                  onTap: () => _showStatDetailDialog(progressBloc, 'reading', _range),
-                ),
-                _StatBox(
-                  icon: Icons.graphic_eq_rounded,
-                  value: '${stats.speakingFluency}%',
-                  label: t.progressStatSpeakingFluency,
+                  subtitle: t.progressStatFluencyInline(stats.speakingFluency),
                   skill: SkillType.speaking,
                   onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
                 ),
@@ -716,6 +666,7 @@ class _StatBox extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
+  final String? subtitle;
   final VoidCallback? onTap;
   final SkillType? skill;
 
@@ -723,6 +674,7 @@ class _StatBox extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    this.subtitle,
     this.onTap,
     this.skill,
   });
@@ -744,9 +696,20 @@ class _StatBox extends StatelessWidget {
             label,
             style: StudentMobileUi.caption(context),
             textAlign: TextAlign.center,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              subtitle!,
+              style: StudentMobileUi.caption(context)
+                  .copyWith(color: AppColors.textMuted, fontSize: 10),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

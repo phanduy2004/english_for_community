@@ -529,6 +529,12 @@
   "progressStatLevel": "Level",
   "progressStatReadingWpm": "Reading WPM",
   "progressStatSpeakingFluency": "Fluency",
+  "progressStatFluencyInline": "Fluency {pct}%",
+  "@progressStatFluencyInline": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
   "progressLeaderboard": "Leaderboard",
   "progressActivity": "Activity",
   "progressEmptyTitle": "No activity yet",
@@ -2536,6 +2542,33 @@
       "seconds": { "type": "int" },
       "turns": { "type": "int" },
       "cefr": { "type": "String" }
+    }
+  },
+  "speakingHistorySummaryTitle": "Your speaking activity",
+  "speakingHistoryStatSessions": "Sessions",
+  "speakingHistoryStatAvg": "Avg band",
+  "speakingHistoryStatBest": "Best band",
+  "speakingHistoryTrend": "Band trend",
+  "speakingHistoryViewProgress": "Progress",
+  "speakingHistoryFilterAll": "All",
+  "speakingHistorySort": "Sort",
+  "speakingHistorySortNewest": "Newest",
+  "speakingHistorySortOldest": "Oldest",
+  "speakingHistorySortHighest": "Highest band",
+  "speakingHistorySortLongest": "Longest",
+  "speakingHistoryDefaultTitle": "Free speaking",
+  "speakingHistoryStartCta": "Start speaking",
+  "speakingHistoryFilterEmpty": "No sessions match this filter.",
+  "speakingHistorySessionsCount": "{count} sessions",
+  "@speakingHistorySessionsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "speakingHistoryTurns": "{count} turns",
+  "@speakingHistoryTurns": {
+    "placeholders": {
+      "count": { "type": "int" }
     }
   },
   "speakingFbTaskAchievement": "Task achievement",

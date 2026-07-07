@@ -3,19 +3,23 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/user_vocab_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_score_scale.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/speaking/free_speaking_page.dart';
+import 'package:english_for_community/feature/speaking/speaking_progress_dashboard_page.dart';
 import 'package:english_for_community/feature/speaking/speaking_feedback_bloc/speaking_feedback_bloc.dart';
 import 'package:english_for_community/feature/speaking/speaking_feedback_bloc/speaking_feedback_event.dart';
 import 'package:english_for_community/feature/speaking/speaking_feedback_bloc/speaking_feedback_state.dart';
 import 'package:english_for_community/feature/writing/widgets/interactive_diff_text.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 class SpeakingFeedbackPageArgs {
   final List<SpeakingTurnEntity>? turns;
@@ -215,8 +219,54 @@ class SpeakingFeedbackHistoryPage extends StatelessWidget {
   }
 }
 
-class _SpeakingFeedbackHistoryView extends StatelessWidget {
+enum _HistorySort { newest, oldest, highest, longest }
+
+const List<String> _cefrOrder = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+class _SpeakingFeedbackHistoryView extends StatefulWidget {
   const _SpeakingFeedbackHistoryView();
+
+  @override
+  State<_SpeakingFeedbackHistoryView> createState() =>
+      _SpeakingFeedbackHistoryViewState();
+}
+
+class _SpeakingFeedbackHistoryViewState
+    extends State<_SpeakingFeedbackHistoryView> {
+  String? _cefr; // null = all levels
+  _HistorySort _sort = _HistorySort.newest;
+
+  Future<void> _refresh() async {
+    final bloc = context.read<SpeakingFeedbackBloc>();
+    bloc.add(const LoadConversationHistoryEvent());
+    await bloc.stream.firstWhere(
+      (s) =>
+          s.status == SpeakingFeedbackStatus.historyLoaded ||
+          s.status == SpeakingFeedbackStatus.error,
+    );
+  }
+
+  List<SpeakingConversationSummaryEntity> _visible(
+    List<SpeakingConversationSummaryEntity> items,
+  ) {
+    final list = _cefr == null
+        ? List<SpeakingConversationSummaryEntity>.from(items)
+        : items.where((e) => (e.cefr ?? '') == _cefr).toList();
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    switch (_sort) {
+      case _HistorySort.newest:
+        list.sort(
+            (a, b) => (b.createdAt ?? epoch).compareTo(a.createdAt ?? epoch));
+      case _HistorySort.oldest:
+        list.sort(
+            (a, b) => (a.createdAt ?? epoch).compareTo(b.createdAt ?? epoch));
+      case _HistorySort.highest:
+        list.sort((a, b) => (b.overall ?? 0).compareTo(a.overall ?? 0));
+      case _HistorySort.longest:
+        list.sort((a, b) => b.durationSeconds.compareTo(a.durationSeconds));
+    }
+    return list;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,73 +277,427 @@ class _SpeakingFeedbackHistoryView extends StatelessWidget {
         context,
         title: t.speakingFbHistoryTitle,
         skill: SkillType.speaking,
+        actions: [
+          StudentMobileUi.headerIconButton(
+            context: context,
+            icon: Icons.insights_outlined,
+            tooltip: t.speakingHistoryViewProgress,
+            onPressed: () =>
+                context.pushNamed(SpeakingProgressDashboardPage.routeName),
+          ),
+          const SizedBox(width: AppSpacing.s2),
+        ],
       ),
       body: BlocBuilder<SpeakingFeedbackBloc, SpeakingFeedbackState>(
         builder: (context, state) {
           if (state.status == SpeakingFeedbackStatus.loading) {
-            return Center(child: StudentMobileUi.runnerLoading());
+            return StudentMobileUi.listLoading();
           }
           if (state.status == SpeakingFeedbackStatus.error) {
-            return Padding(
-              padding: StudentMobileUi.pagePadding,
-              child: StudentMobileUi.errorBanner(
-                message: state.errorMessage ?? t.loadDataFailed,
-                onRetry: () => context
-                    .read<SpeakingFeedbackBloc>()
-                    .add(const LoadConversationHistoryEvent()),
-                retryLabel: t.commonRetry,
-              ),
+            return StudentMobileUi.errorRetry(
+              context,
+              title: t.speakingErrorTitle,
+              message: state.errorMessage ?? t.speakingErrorBody,
+              onRetry: () => context
+                  .read<SpeakingFeedbackBloc>()
+                  .add(const LoadConversationHistoryEvent()),
+              retryLabel: t.commonRetry,
             );
           }
-          if (state.history.isEmpty) {
+          final all = state.history;
+          if (all.isEmpty) {
             return StudentMobileUi.emptyState(
               context,
               icon: Icons.history_rounded,
               title: t.speakingFbHistoryEmptyTitle,
               body: t.speakingFbHistoryEmptyBody,
               skill: SkillType.speaking,
+              ctaLabel: t.speakingHistoryStartCta,
+              onCta: () => context.go(FreeSpeakingPage.routePath),
             );
           }
-          return ListView.separated(
-            padding: StudentMobileUi.pagePadding,
-            itemCount: state.history.length,
-            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s3),
-            itemBuilder: (context, index) {
-              final item = state.history[index];
-              final date =
-                  item.createdAt?.toLocal().toString().split('.').first ?? '';
-              return AppCard(
-                variant: AppCardVariant.outline,
-                padding: const EdgeInsets.all(AppSpacing.s4),
-                child: ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    date,
-                    style: StudentMobileUi.cardTitle(context),
+          final levels = _cefrLevels(all);
+          final visible = _visible(all);
+          return RefreshIndicator(
+            color: AppSkillColors.speaking.color,
+            onRefresh: _refresh,
+            child: ListView(
+              padding: StudentMobileUi.pagePadding,
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                Text(t.speakingHistorySummaryTitle,
+                    style: StudentMobileUi.sectionTitle(context)),
+                const SizedBox(height: AppSpacing.s3),
+                _HistoryKpiRow(items: all),
+                if (all.where((e) => e.overall != null).length >= 3) ...[
+                  const SizedBox(height: AppSpacing.s3),
+                  _HistorySparkline(items: all),
+                ],
+                const SizedBox(height: AppSpacing.s5),
+                if (levels.length > 1) ...[
+                  StudentMobileUi.filterRow(
+                    labels: [t.speakingHistoryFilterAll, ...levels],
+                    selectedIndex:
+                        _cefr == null ? 0 : levels.indexOf(_cefr!) + 1,
+                    onSelected: (i) =>
+                        setState(() => _cefr = i == 0 ? null : levels[i - 1]),
+                    skill: SkillType.speaking,
                   ),
-                  subtitle: Text(
-                    t.speakingFbHistoryMeta(
-                      item.durationSeconds,
-                      item.turnCount,
-                      item.cefr ?? '-',
+                  const SizedBox(height: AppSpacing.s4),
+                ],
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        t.speakingHistorySessionsCount(visible.length),
+                        style: StudentMobileUi.sectionTitle(context),
+                      ),
                     ),
-                    style: StudentMobileUi.body(context)
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-                  trailing: Text(
-                    item.overall?.toStringAsFixed(1) ?? '-',
-                    style: StudentMobileUi.sectionTitle(context)
-                        .copyWith(color: AppColors.primary),
-                  ),
-                  onTap: () => context.pushNamed(
-                    SpeakingFeedbackPage.routeName,
-                    extra: SpeakingFeedbackPageArgs.load(item.id),
-                  ),
+                    _SortButton(
+                      value: _sort,
+                      onChanged: (v) => setState(() => _sort = v),
+                    ),
+                  ],
                 ),
-              );
-            },
+                const SizedBox(height: AppSpacing.s3),
+                if (visible.isEmpty)
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+                    child: Text(
+                      t.speakingHistoryFilterEmpty,
+                      textAlign: TextAlign.center,
+                      style: StudentMobileUi.body(context)
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  )
+                else
+                  ...visible.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.s3),
+                      child: _HistorySessionCard(item: item),
+                    ),
+                  ),
+              ],
+            ),
           );
         },
+      ),
+    );
+  }
+}
+
+List<String> _cefrLevels(List<SpeakingConversationSummaryEntity> items) {
+  final levels = items
+      .map((e) => e.cefr)
+      .whereType<String>()
+      .where((e) => e.isNotEmpty)
+      .toSet()
+      .toList();
+  int rank(String l) {
+    final i = _cefrOrder.indexOf(l);
+    return i < 0 ? 99 : i;
+  }
+
+  levels.sort((a, b) => rank(a).compareTo(rank(b)));
+  return levels;
+}
+
+String _fmtDuration(int seconds) {
+  if (seconds < 60) return '${seconds}s';
+  final m = seconds ~/ 60;
+  final r = seconds % 60;
+  return r == 0 ? '${m}m' : '${m}m ${r}s';
+}
+
+/// KPI row (sessions / avg band / best band) computed from the loaded history.
+class _HistoryKpiRow extends StatelessWidget {
+  final List<SpeakingConversationSummaryEntity> items;
+
+  const _HistoryKpiRow({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final scores =
+        items.map((e) => e.overall).whereType<double>().toList(growable: false);
+    final avg =
+        scores.isEmpty ? 0.0 : scores.reduce((a, b) => a + b) / scores.length;
+    final best = scores.isEmpty ? 0.0 : scores.reduce((a, b) => a > b ? a : b);
+    return Row(
+      children: [
+        Expanded(
+          child: StudentMobileUi.statCard(
+            context: context,
+            icon: Icons.forum_outlined,
+            value: '${items.length}',
+            label: t.speakingHistoryStatSessions,
+            compact: true,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s3),
+        Expanded(
+          child: StudentMobileUi.statCard(
+            context: context,
+            icon: Icons.equalizer_rounded,
+            value: avg.toStringAsFixed(1),
+            label: t.speakingHistoryStatAvg,
+            compact: true,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s3),
+        Expanded(
+          child: StudentMobileUi.statCard(
+            context: context,
+            icon: Icons.emoji_events_outlined,
+            value: best.toStringAsFixed(1),
+            label: t.speakingHistoryStatBest,
+            compact: true,
+            iconColor: AppColors.accent,
+            iconBg: AppColors.accentTint,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Compact band-score sparkline (chronological) — deep dive lives on the
+/// progress dashboard.
+class _HistorySparkline extends StatelessWidget {
+  final List<SpeakingConversationSummaryEntity> items;
+
+  const _HistorySparkline({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final epoch = DateTime.fromMillisecondsSinceEpoch(0);
+    final scored = items.where((e) => e.overall != null).toList()
+      ..sort((a, b) => (a.createdAt ?? epoch).compareTo(b.createdAt ?? epoch));
+    final spots = <FlSpot>[
+      for (var i = 0; i < scored.length; i++)
+        FlSpot(i.toDouble(), scored[i].overall!),
+    ];
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(t.speakingHistoryTrend,
+              style: StudentMobileUi.cardTitle(context)),
+          const SizedBox(height: AppSpacing.s3),
+          SizedBox(
+            height: 88,
+            child: LineChart(
+              LineChartData(
+                minY: 0,
+                maxY: 9,
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                titlesData: const FlTitlesData(show: false),
+                lineTouchData: const LineTouchData(enabled: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: AppSkillColors.speaking.color,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color:
+                          AppSkillColors.speaking.color.withValues(alpha: 0.12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Circular band-score badge, colour-coded by [AppScoreScale].
+class _ScoreBadge extends StatelessWidget {
+  final double? score;
+
+  const _ScoreBadge({required this.score});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = score;
+    final color = s == null ? AppColors.textMuted : AppScoreScale.forScore10(s);
+    return Container(
+      width: 46,
+      height: 46,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+        border: Border.all(color: color.withValues(alpha: 0.45)),
+      ),
+      child: Text(
+        s == null ? '–' : s.toStringAsFixed(1),
+        style: StudentMobileUi.cardTitle(context).copyWith(color: color),
+      ),
+    );
+  }
+}
+
+class _CefrChip extends StatelessWidget {
+  final String label;
+
+  const _CefrChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.s2, vertical: 1),
+      decoration: BoxDecoration(
+        color: AppSkillColors.speaking.tint,
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        border: Border.all(
+          color: AppSkillColors.speaking.color.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Text(
+        label,
+        style: StudentMobileUi.caption(context).copyWith(
+          color: AppSkillColors.speaking.dark,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _HistorySessionCard extends StatelessWidget {
+  final SpeakingConversationSummaryEntity item;
+
+  const _HistorySessionCard({required this.item});
+
+  String _meta(BuildContext context) {
+    final parts = <String>[];
+    final d = item.createdAt?.toLocal();
+    if (d != null) parts.add(DateFormat('d MMM · HH:mm').format(d));
+    parts.add(_fmtDuration(item.durationSeconds));
+    parts.add(context.l10n.speakingHistoryTurns(item.turnCount));
+    return parts.join('  ·  ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.l10n;
+    final title = item.title.trim().isNotEmpty
+        ? item.title
+        : t.speakingHistoryDefaultTitle;
+    return StudentMobileUi.skillAccentCard(
+      skill: SkillType.speaking,
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      onTap: () => context.pushNamed(
+        SpeakingFeedbackPage.routeName,
+        extra: SpeakingFeedbackPageArgs.load(item.id),
+      ),
+      child: Row(
+        children: [
+          _ScoreBadge(score: item.overall),
+          const SizedBox(width: AppSpacing.s4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: StudentMobileUi.cardTitle(context),
+                ),
+                const SizedBox(height: AppSpacing.s2),
+                Row(
+                  children: [
+                    if ((item.cefr ?? '').isNotEmpty) ...[
+                      _CefrChip(label: item.cefr!),
+                      const SizedBox(width: AppSpacing.s2),
+                    ],
+                    Expanded(
+                      child: Text(
+                        _meta(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: StudentMobileUi.caption(context)
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s2),
+          const Icon(Icons.chevron_right_rounded,
+              size: 18, color: AppColors.textSecondary),
+        ],
+      ),
+    );
+  }
+}
+
+class _SortButton extends StatelessWidget {
+  final _HistorySort value;
+  final ValueChanged<_HistorySort> onChanged;
+
+  const _SortButton({required this.value, required this.onChanged});
+
+  String _label(BuildContext context, _HistorySort sort) {
+    final t = context.l10n;
+    switch (sort) {
+      case _HistorySort.newest:
+        return t.speakingHistorySortNewest;
+      case _HistorySort.oldest:
+        return t.speakingHistorySortOldest;
+      case _HistorySort.highest:
+        return t.speakingHistorySortHighest;
+      case _HistorySort.longest:
+        return t.speakingHistorySortLongest;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_HistorySort>(
+      initialValue: value,
+      tooltip: context.l10n.speakingHistorySort,
+      position: PopupMenuPosition.under,
+      onSelected: onChanged,
+      itemBuilder: (context) => _HistorySort.values
+          .map((s) => PopupMenuItem<_HistorySort>(
+                value: s,
+                child: Text(_label(context, s)),
+              ))
+          .toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s3, vertical: AppSpacing.s3),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.outline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.swap_vert_rounded,
+                size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.s2),
+            Text(_label(context, value),
+                style: StudentMobileUi.caption(context)),
+          ],
+        ),
       ),
     );
   }
@@ -716,8 +1120,7 @@ class _VocabUpgradeCardState extends State<_VocabUpgradeCard> {
     );
     if (!mounted) return;
     result.fold(
-      (failure) =>
-          AppFeedback.error(context, context.l10n.speakingFbSaveError),
+      (failure) => AppFeedback.error(context, context.l10n.speakingFbSaveError),
       (_) {
         setState(() => _saved = true);
         AppFeedback.success(context, context.l10n.speakingFbSaved);
@@ -962,8 +1365,8 @@ class _BulletedList extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item,
-                        style: StudentMobileUi.body(context)
-                            .copyWith(height: 1.4),
+                        style:
+                            StudentMobileUi.body(context).copyWith(height: 1.4),
                       ),
                     ),
                   ],

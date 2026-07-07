@@ -19,9 +19,9 @@ const getAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-    const { filter, search } = req.query;
+    const { filter, search, role } = req.query;
 
-    const result = await adminService.getAllUsers(page, limit, filter, search);
+    const result = await adminService.getAllUsers(page, limit, filter, search, role);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching users', error: error.message });

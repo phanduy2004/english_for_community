@@ -110,24 +110,28 @@ class _StatDetailDialogState extends State<StatDetailDialog> {
     }
 
     if (statKey == 'reading') {
-      final scoreDisplay = (item.score).toString();
+      final scoreDisplay = item.score.round().toString();
       subtitle = t.statDetailReadingSubtitle(scoreDisplay, dateDisplay);
       valueDisplay = scoreDisplay;
       unit = '%';
       icon = Icons.menu_book_rounded;
     } else if (statKey == 'speaking') {
-      subtitle = t.statDetailScoreDateSubtitle(item.score.toString(), dateDisplay);
-      valueDisplay = item.score.toString();
+      final scoreDisplay = item.score.round().toString();
+      subtitle = t.statDetailScoreDateSubtitle(scoreDisplay, dateDisplay);
+      valueDisplay = scoreDisplay;
       unit = '%';
       icon = Icons.mic_external_on_rounded;
     } else if (statKey == 'writing') {
-      subtitle = t.statDetailWritingSubtitle(item.score.toString(), dateDisplay);
-      valueDisplay = item.score.toString();
+      // Band Viết có bước 0.5 → giữ 1 chữ số thập phân, không làm tròn xuống.
+      final scoreDisplay = item.score.toStringAsFixed(1);
+      subtitle = t.statDetailWritingSubtitle(scoreDisplay, dateDisplay);
+      valueDisplay = scoreDisplay;
       unit = '';
       icon = Icons.edit_note_rounded;
     } else if (statKey == 'dictation' || statKey == 'listening') {
-      subtitle = t.statDetailScoreDateSubtitle(item.score.toString(), dateDisplay);
-      valueDisplay = item.score.toString();
+      final scoreDisplay = item.score.round().toString();
+      subtitle = t.statDetailScoreDateSubtitle(scoreDisplay, dateDisplay);
+      valueDisplay = scoreDisplay;
       unit = '%';
       icon = Icons.headphones_rounded;
     } else {

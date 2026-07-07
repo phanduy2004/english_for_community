@@ -424,6 +424,12 @@
   "progressStatLevel": "Cấp độ",
   "progressStatReadingWpm": "Tốc độ đọc",
   "progressStatSpeakingFluency": "Độ trôi chảy",
+  "progressStatFluencyInline": "Trôi chảy {pct}%",
+  "@progressStatFluencyInline": {
+    "placeholders": {
+      "pct": {"type": "int"}
+    }
+  },
   "progressLeaderboard": "Bảng xếp hạng",
   "progressActivity": "Hoạt động",
   "progressEmptyTitle": "Chưa có hoạt động",
@@ -2286,6 +2292,33 @@
       "seconds": { "type": "int" },
       "turns": { "type": "int" },
       "cefr": { "type": "String" }
+    }
+  },
+  "speakingHistorySummaryTitle": "Hoạt động luyện nói",
+  "speakingHistoryStatSessions": "Buổi nói",
+  "speakingHistoryStatAvg": "Band TB",
+  "speakingHistoryStatBest": "Band cao nhất",
+  "speakingHistoryTrend": "Xu hướng band",
+  "speakingHistoryViewProgress": "Tiến độ",
+  "speakingHistoryFilterAll": "Tất cả",
+  "speakingHistorySort": "Sắp xếp",
+  "speakingHistorySortNewest": "Mới nhất",
+  "speakingHistorySortOldest": "Cũ nhất",
+  "speakingHistorySortHighest": "Điểm cao nhất",
+  "speakingHistorySortLongest": "Dài nhất",
+  "speakingHistoryDefaultTitle": "Luyện nói tự do",
+  "speakingHistoryStartCta": "Bắt đầu luyện nói",
+  "speakingHistoryFilterEmpty": "Không có buổi nói nào khớp bộ lọc.",
+  "speakingHistorySessionsCount": "{count} buổi nói",
+  "@speakingHistorySessionsCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "speakingHistoryTurns": "{count} lượt",
+  "@speakingHistoryTurns": {
+    "placeholders": {
+      "count": { "type": "int" }
     }
   },
   "speakingFbTaskAchievement": "Mức hoàn thành nhiệm vụ",

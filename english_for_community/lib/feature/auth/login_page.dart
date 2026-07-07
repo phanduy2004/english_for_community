@@ -151,205 +151,212 @@ class _LoginPageState extends State<LoginPage> {
                 child: Center(
                   child: SingleChildScrollView(
                     padding: StudentMobileUi.pagePadding,
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: AppSpacing.s6),
-                          AuthLoginRiveMascot(
-                            onReady: (inputs) {
-                              _riveInputs = inputs;
-                              _syncRiveFromFocus();
-                            },
-                          ),
-                          const SizedBox(height: AppSpacing.s5),
-                          Text(
-                            context.l10n.loginWelcomeBack,
-                            textAlign: TextAlign.center,
-                            style: context.h1Style,
-                          ),
-                          const SizedBox(height: AppSpacing.s3),
-                          Text(
-                            context.l10n.loginSubtitle,
-                            textAlign: TextAlign.center,
-                            style: StudentMobileUi.body(context).copyWith(
-                              color: AppColors.textSecondary,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(height: AppSpacing.s6),
+                            AuthLoginRiveMascot(
+                              onReady: (inputs) {
+                                _riveInputs = inputs;
+                                _syncRiveFromFocus();
+                              },
                             ),
-                          ),
-                          const SizedBox(height: StudentMobileUi.sectionGap),
-                          AppCard(
-                            variant: AppCardVariant.outline,
-                            radius: AppRadius.card,
-                            padding: const EdgeInsets.all(AppSpacing.s7),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                AuthFieldLabel(context.l10n.loginEmailOrUsername),
-                                const SizedBox(height: AppSpacing.s3),
-                                AuthTextField(
-                                  controller: _emailController,
-                                  focusNode: _emailFocus,
-                                  hintText: context.l10n.hintLoginEmailOrUsername,
-                                  keyboardType: TextInputType.emailAddress,
-                                  prefixIcon: Icons.email_outlined,
-                                  enabled: !isLoading,
-                                  onChanged: (_) => _syncRiveFromText(),
-                                ),
-                                const SizedBox(height: AppSpacing.s5),
-                                AuthFieldLabel(context.l10n.labelPassword),
-                                const SizedBox(height: AppSpacing.s3),
-                                AuthTextField(
-                                  controller: _passController,
-                                  focusNode: _passFocus,
-                                  hintText: context.l10n.hintPassword,
-                                  prefixIcon: Icons.lock_outline,
-                                  obscureText: _obscurePassword,
-                                  enabled: !isLoading,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
-                                      size: 18,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                    onPressed: () {
-                                      setState(
-                                        () => _obscurePassword = !_obscurePassword,
-                                      );
-                                      if (_passFocus.hasFocus) {
-                                        _riveInputs?.passwordActive(
-                                          focused: true,
-                                          obscure: _obscurePassword,
-                                        );
-                                      }
-                                    },
+                            const SizedBox(height: AppSpacing.s5),
+                            Text(
+                              context.l10n.loginWelcomeBack,
+                              textAlign: TextAlign.center,
+                              style: context.h1Style,
+                            ),
+                            const SizedBox(height: AppSpacing.s3),
+                            Text(
+                              context.l10n.loginSubtitle,
+                              textAlign: TextAlign.center,
+                              style: StudentMobileUi.body(context).copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: StudentMobileUi.sectionGap),
+                            AppCard(
+                              variant: AppCardVariant.outline,
+                              radius: AppRadius.card,
+                              padding: const EdgeInsets.all(AppSpacing.s7),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  AuthFieldLabel(
+                                      context.l10n.loginEmailOrUsername),
+                                  const SizedBox(height: AppSpacing.s3),
+                                  AuthTextField(
+                                    controller: _emailController,
+                                    focusNode: _emailFocus,
+                                    hintText:
+                                        context.l10n.hintLoginEmailOrUsername,
+                                    keyboardType: TextInputType.emailAddress,
+                                    prefixIcon: Icons.email_outlined,
+                                    enabled: !isLoading,
+                                    onChanged: (_) => _syncRiveFromText(),
                                   ),
-                                  onSubmitted: (_) =>
-                                      _onSignIn(isLoading: isLoading),
-                                ),
-                                const SizedBox(height: AppSpacing.s6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => setState(
-                                        () => _rememberMe = !_rememberMe,
+                                  const SizedBox(height: AppSpacing.s5),
+                                  AuthFieldLabel(context.l10n.labelPassword),
+                                  const SizedBox(height: AppSpacing.s3),
+                                  AuthTextField(
+                                    controller: _passController,
+                                    focusNode: _passFocus,
+                                    hintText: context.l10n.hintPassword,
+                                    prefixIcon: Icons.lock_outline,
+                                    obscureText: _obscurePassword,
+                                    enabled: !isLoading,
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_outlined
+                                            : Icons.visibility_outlined,
+                                        size: 18,
+                                        color: AppColors.textSecondary,
                                       ),
-                                      child: Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: Checkbox(
-                                              value: _rememberMe,
-                                              activeColor: AppColors.primary,
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
-                                              ),
-                                              onChanged: (v) => setState(
-                                                () => _rememberMe = v ?? false,
+                                      onPressed: () {
+                                        setState(
+                                          () => _obscurePassword =
+                                              !_obscurePassword,
+                                        );
+                                        if (_passFocus.hasFocus) {
+                                          _riveInputs?.passwordActive(
+                                            focused: true,
+                                            obscure: _obscurePassword,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                    onSubmitted: (_) =>
+                                        _onSignIn(isLoading: isLoading),
+                                  ),
+                                  const SizedBox(height: AppSpacing.s6),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => setState(
+                                          () => _rememberMe = !_rememberMe,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: Checkbox(
+                                                value: _rememberMe,
+                                                activeColor: AppColors.primary,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                onChanged: (v) => setState(
+                                                  () =>
+                                                      _rememberMe = v ?? false,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: AppSpacing.s3),
-                                          Text(
-                                            context.l10n.rememberMe,
-                                            style: AppTypography.label(),
-                                          ),
-                                        ],
+                                            const SizedBox(
+                                                width: AppSpacing.s3),
+                                            Text(
+                                              context.l10n.rememberMe,
+                                              style: AppTypography.label(),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => context.pushNamed(
-                                        'ForgotPasswordPage',
+                                      TextButton(
+                                        onPressed: () => context.pushNamed(
+                                          'ForgotPasswordPage',
+                                        ),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: AppColors.primary,
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: const Size(44, 36),
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                        ),
+                                        child: Text(
+                                          context.l10n.forgotPasswordLink,
+                                          style: AppTypography.label(),
+                                        ),
                                       ),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: AppColors.primary,
-                                        padding: EdgeInsets.zero,
-                                        minimumSize: const Size(44, 36),
-                                        tapTargetSize:
-                                            MaterialTapTargetSize.shrinkWrap,
-                                      ),
-                                      child: Text(
-                                        context.l10n.forgotPasswordLink,
-                                        style: AppTypography.label(),
-                                      ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.s7),
+                                  FilledButton(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () => _onSignIn(isLoading: isLoading),
+                                    style: AuthFormUi.primaryButtonStyle(),
+                                    child: isLoading
+                                        ? const AppLoadingIndicator.button(
+                                            color: AppColors.onPrimary,
+                                          )
+                                        : Text(context.l10n.signIn),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.s7),
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Divider(color: AppColors.outline),
                                 ),
-                                const SizedBox(height: AppSpacing.s7),
-                                FilledButton(
-                                  onPressed: isLoading
-                                      ? null
-                                      : () => _onSignIn(isLoading: isLoading),
-                                  style: AuthFormUi.primaryButtonStyle(),
-                                  child: isLoading
-                                      ? const AppLoadingIndicator.button(
-                                          color: AppColors.onPrimary,
-                                        )
-                                      : Text(context.l10n.signIn),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppSpacing.s4,
+                                  ),
+                                  child: Text(
+                                    context.l10n.orDivider,
+                                    style: context.captionStyle.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(
+                                  child: Divider(color: AppColors.outline),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: AppSpacing.s7),
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Divider(color: AppColors.outline),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.s4,
-                                ),
-                                child: Text(
-                                  context.l10n.orDivider,
-                                  style: context.captionStyle.copyWith(
+                            const SizedBox(height: AppSpacing.s7),
+                            _buildGoogleButton(context, isLoading),
+                            const SizedBox(height: AppSpacing.s8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  context.l10n.noAccountPrompt,
+                                  style: StudentMobileUi.body(context).copyWith(
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
-                              ),
-                              const Expanded(
-                                child: Divider(color: AppColors.outline),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.s7),
-                          _buildGoogleButton(context, isLoading),
-                          const SizedBox(height: AppSpacing.s8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                context.l10n.noAccountPrompt,
-                                style: StudentMobileUi.body(context).copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () =>
-                                    context.pushNamed('RegisterPage'),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: AppColors.primary,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.s3,
+                                TextButton(
+                                  onPressed: () =>
+                                      context.pushNamed('RegisterPage'),
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.s3,
+                                    ),
+                                    minimumSize: const Size(44, 36),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  minimumSize: const Size(44, 36),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  child: Text(
+                                    context.l10n.signUp,
+                                    style: AppTypography.label(),
+                                  ),
                                 ),
-                                child: Text(
-                                  context.l10n.signUp,
-                                  style: AppTypography.label(),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

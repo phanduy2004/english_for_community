@@ -231,9 +231,13 @@ const getDashboardStats = async (range) => {
   };
 };
 
-const getAllUsers = async (page = 1, limit = 20, filter, search) => {
+const getAllUsers = async (page = 1, limit = 20, filter, search, role = 'all') => {
   const skip = (page - 1) * limit;
-  let query = { role: 'user', _destroy: { $ne: true } };
+  const allowedRoles = ['user', 'teacher'];
+  let query = {
+    role: role && allowedRoles.includes(role) ? role : { $in: allowedRoles },
+    _destroy: { $ne: true },
+  };
 
   if (search) {
     query.$or = [

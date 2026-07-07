@@ -228,6 +228,8 @@ class _WritingTaskViewState extends State<WritingTaskView> {
       setState(() => _showMinWordsError = true);
       return;
     }
+    // Huỷ autosave đang chờ để nó không bắn SaveDraft đè mất trạng thái submitting.
+    _autoSaveTimer?.cancel();
     FocusScope.of(context).unfocus();
     final durationInSeconds = _writingStopwatch.elapsed.inSeconds;
     context.read<WritingTaskBloc>().add(
@@ -346,6 +348,11 @@ class _WritingTaskViewState extends State<WritingTaskView> {
     _autoSaveTimer?.cancel();
     _autoSaveTimer = Timer(_autoSaveDebounce, () {
       if (!mounted) return;
+      // Đừng autosave khi đang nộp bài (tránh đè mất trạng thái submitting).
+      if (context.read<WritingTaskBloc>().state.status ==
+          WritingTaskStatus.submitting) {
+        return;
+      }
       setState(() => _isAutoSaving = true);
       context.read<WritingTaskBloc>().add(
             SaveDraftEvent(

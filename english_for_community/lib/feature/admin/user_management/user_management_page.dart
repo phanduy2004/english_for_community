@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
@@ -49,12 +48,14 @@ class _UserManagementView extends StatefulWidget {
   State<_UserManagementView> createState() => _UserManagementViewState();
 }
 
-class _UserManagementViewState extends State<_UserManagementView> with SingleTickerProviderStateMixin {
+class _UserManagementViewState extends State<_UserManagementView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
   int _page = 1;
   int _rowsPerPage = kAdminDefaultRowsPerPage;
+  String _roleFilter = 'all';
 
   @override
   void initState() {
@@ -62,9 +63,15 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     _tabController = TabController(length: 3, vsync: this);
 
     switch (widget.initialFilter) {
-      case UserFilter.all: _tabController.index = 0; break;
-      case UserFilter.today: _tabController.index = 1; break;
-      case UserFilter.online: _tabController.index = 2; break;
+      case UserFilter.all:
+        _tabController.index = 0;
+        break;
+      case UserFilter.today:
+        _tabController.index = 1;
+        break;
+      case UserFilter.online:
+        _tabController.index = 2;
+        break;
     }
 
     // 1. Call API initially
@@ -118,8 +125,19 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
         page: _page,
         limit: _rowsPerPage,
         filter: filter,
-        search: _searchController.text.trim().isNotEmpty ? _searchController.text.trim() : null
-    ));
+        role: _roleFilter,
+        search: _searchController.text.trim().isNotEmpty
+            ? _searchController.text.trim()
+            : null));
+  }
+
+  void _onRoleFilterChanged(String? value) {
+    if (value == null || value == _roleFilter) return;
+    setState(() {
+      _roleFilter = value;
+      _page = 1;
+    });
+    _fetchUsers();
   }
 
   void _onSearchChanged(String query) {
@@ -151,9 +169,12 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.restore_from_trash_outlined, size: 20, color: AppColors.textMuted),
+                      const Icon(Icons.restore_from_trash_outlined,
+                          size: 20, color: AppColors.textMuted),
                       const SizedBox(width: 8),
-                      const Text('Deleted Users', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18)),
+                      const Text('Deleted Users',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700, fontSize: 18)),
                       const Spacer(),
                       IconButton(
                         onPressed: () => Navigator.pop(ctx),
@@ -195,7 +216,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                                 onPressed: () async {
                                   await datasource.restoreUser(u.id);
                                   if (!mounted) return;
-                                  AppCornerToast.show(context, l10n.adminUserRestored(u.fullName));
+                                  AppCornerToast.show(context,
+                                      l10n.adminUserRestored(u.fullName));
                                   Navigator.pop(ctx);
                                   _fetchUsers();
                                 },
@@ -243,7 +265,9 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
       scrollable: false,
       maxWidth: AdminWebUi.contentMaxTable,
       breadcrumbs: [
-        AdminBreadcrumb(label: l10n.adminOverviewTitle, location: AdminDashboardPage.routePath),
+        AdminBreadcrumb(
+            label: l10n.adminOverviewTitle,
+            location: AdminDashboardPage.routePath),
         AdminBreadcrumb(label: l10n.usersMenuTitle),
       ],
       actions: [
@@ -261,7 +285,8 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
         indicatorColor: AppColors.primary,
         indicatorWeight: 2,
         indicatorSize: TabBarIndicatorSize.label,
-        labelStyle: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+        labelStyle:
+            AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
         tabs: const [
           Tab(text: 'All'),
           Tab(text: 'Today'),
@@ -273,17 +298,57 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.s5),
-            child: AdminSearchField(
-              controller: _searchController,
-              hint: l10n.adminSearchUsersHint,
-              onChanged: _onSearchChanged,
-              width: double.infinity,
+            child: Row(
+              children: [
+                Expanded(
+                  child: AdminSearchField(
+                    controller: _searchController,
+                    hint: l10n.adminSearchUsersHint,
+                    onChanged: _onSearchChanged,
+                    width: double.infinity,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s4),
+                SizedBox(
+                  height: AdminWebUi.buttonHeightPrimary,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceCard,
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                      border: Border.all(color: AppColors.outline),
+                    ),
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpacing.s3),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _roleFilter,
+                          icon: const Icon(Icons.expand_more,
+                              size: 16, color: AppColors.textMuted),
+                          style: AdminWebUi.webBody(context)
+                              .copyWith(color: AppColors.textPrimary),
+                          onChanged: _onRoleFilterChanged,
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'all', child: Text('All roles')),
+                            DropdownMenuItem(
+                                value: 'user', child: Text('Students')),
+                            DropdownMenuItem(
+                                value: 'teacher', child: Text('Teachers')),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
             child: BlocBuilder<AdminBloc, AdminState>(
               builder: (context, state) {
-                if (state.status == AdminStatus.loading && state.users == null) {
+                if (state.status == AdminStatus.loading &&
+                    state.users == null) {
                   return AdminSkeleton.page(AdminSkeleton.cardList());
                 }
 
@@ -295,7 +360,9 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                     child: AdminEmptyCard(
                       message: l10n.adminNoUsersFound,
                       icon: Icons.search_off_rounded,
-                      actionLabel: _searchController.text.trim().isNotEmpty ? l10n.retry : null,
+                      actionLabel: _searchController.text.trim().isNotEmpty
+                          ? l10n.retry
+                          : null,
                       onAction: _searchController.text.trim().isNotEmpty
                           ? () {
                               _searchController.clear();
@@ -314,13 +381,18 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
                       child: ListView.separated(
                         padding: const EdgeInsets.only(bottom: AppSpacing.s4),
                         itemCount: users.length,
-                        separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
-                        itemBuilder: (context, index) => UserCard(user: users[index]),
+                        separatorBuilder: (c, i) =>
+                            const SizedBox(height: AppSpacing.s4),
+                        itemBuilder: (context, index) => UserCard(
+                          user: users[index],
+                          onChanged: _fetchUsers,
+                        ),
                       ),
                     ),
                     if (pagination != null && pagination.totalPages > 0)
                       Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.s4, bottom: AppSpacing.s7),
+                        padding: const EdgeInsets.only(
+                            top: AppSpacing.s4, bottom: AppSpacing.s7),
                         child: AdminPaginationBar(
                           page: pagination.page,
                           totalPages: pagination.totalPages,
@@ -349,6 +421,3 @@ class _UserManagementViewState extends State<_UserManagementView> with SingleTic
     );
   }
 }
-
-
-

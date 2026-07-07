@@ -1261,6 +1261,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get progressStatSpeakingFluency => 'Độ trôi chảy';
 
   @override
+  String progressStatFluencyInline(int pct) {
+    return 'Trôi chảy $pct%';
+  }
+
+  @override
   String get progressLeaderboard => 'Bảng xếp hạng';
 
   @override
@@ -5838,6 +5843,61 @@ class AppLocalizationsVi extends AppLocalizations {
   @override
   String speakingFbHistoryMeta(int seconds, int turns, String cefr) {
     return '${seconds}s · $turns lượt · $cefr';
+  }
+
+  @override
+  String get speakingHistorySummaryTitle => 'Hoạt động luyện nói';
+
+  @override
+  String get speakingHistoryStatSessions => 'Buổi nói';
+
+  @override
+  String get speakingHistoryStatAvg => 'Band TB';
+
+  @override
+  String get speakingHistoryStatBest => 'Band cao nhất';
+
+  @override
+  String get speakingHistoryTrend => 'Xu hướng band';
+
+  @override
+  String get speakingHistoryViewProgress => 'Tiến độ';
+
+  @override
+  String get speakingHistoryFilterAll => 'Tất cả';
+
+  @override
+  String get speakingHistorySort => 'Sắp xếp';
+
+  @override
+  String get speakingHistorySortNewest => 'Mới nhất';
+
+  @override
+  String get speakingHistorySortOldest => 'Cũ nhất';
+
+  @override
+  String get speakingHistorySortHighest => 'Điểm cao nhất';
+
+  @override
+  String get speakingHistorySortLongest => 'Dài nhất';
+
+  @override
+  String get speakingHistoryDefaultTitle => 'Luyện nói tự do';
+
+  @override
+  String get speakingHistoryStartCta => 'Bắt đầu luyện nói';
+
+  @override
+  String get speakingHistoryFilterEmpty => 'Không có buổi nói nào khớp bộ lọc.';
+
+  @override
+  String speakingHistorySessionsCount(int count) {
+    return '$count buổi nói';
+  }
+
+  @override
+  String speakingHistoryTurns(int count) {
+    return '$count lượt';
   }
 
   @override

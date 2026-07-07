@@ -100,7 +100,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
 
         if (state.status == UserStatus.unauthenticated &&
             state.errorMessage != null) {
-          AppFeedback.error(context, state.errorMessage!);
+          AppFeedback.success(context, state.errorMessage!);
           context.goNamed(LoginPage.routeName);
         }
       },
@@ -123,93 +123,95 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           ),
           body: SingleChildScrollView(
             padding: StudentMobileUi.pagePadding,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(
-                    child: StudentMobileUi.skillIconBox(
-                      Icons.key_outlined,
-                      size: 64,
-                      colors: SkillColorSet(
-                        color: AppColors.accent,
-                        tint: AppColors.accentTint,
-                        dark: AppColors.accentDark,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: StudentMobileUi.skillIconBox(
+                        Icons.key_outlined,
+                        size: 64,
+                        colors: SkillColorSet(
+                          color: AppColors.accent,
+                          tint: AppColors.accentTint,
+                          dark: AppColors.accentDark,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.s7),
-                  Text(
-                    t.setNewPasswordTitle,
-                    textAlign: TextAlign.center,
-                    style: context.h1Style,
-                  ),
-                  const SizedBox(height: AppSpacing.s3),
-                  Text(
-                    t.setNewPasswordSubtitle,
-                    textAlign: TextAlign.center,
-                    style: StudentMobileUi.body(context).copyWith(
-                      color: AppColors.textSecondary,
+                    const SizedBox(height: AppSpacing.s7),
+                    Text(
+                      t.setNewPasswordTitle,
+                      textAlign: TextAlign.center,
+                      style: context.h1Style,
                     ),
-                  ),
-                  const SizedBox(height: StudentMobileUi.sectionGap),
-                  AuthFieldLabel(t.labelNewPassword),
-                  const SizedBox(height: AppSpacing.s3),
-                  AuthTextField(
-                    controller: _passController,
-                    hintText: t.hintEnterNewPassword,
-                    prefixIcon: Icons.lock_outline,
-                    obscureText: _obscurePass,
-                    enabled: !isLoading,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePass
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 18,
+                    const SizedBox(height: AppSpacing.s3),
+                    Text(
+                      t.setNewPasswordSubtitle,
+                      textAlign: TextAlign.center,
+                      style: StudentMobileUi.body(context).copyWith(
                         color: AppColors.textSecondary,
                       ),
-                      onPressed: () =>
-                          setState(() => _obscurePass = !_obscurePass),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.s5),
-                  AuthFieldLabel(t.labelConfirmNewPassword),
-                  const SizedBox(height: AppSpacing.s3),
-                  AuthTextField(
-                    controller: _confirmPassController,
-                    hintText: t.hintConfirmNewPassword,
-                    prefixIcon: Icons.verified_user_outlined,
-                    obscureText: _obscureConfirm,
-                    enabled: !isLoading,
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscureConfirm
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
-                        size: 18,
-                        color: AppColors.textSecondary,
+                    const SizedBox(height: StudentMobileUi.sectionGap),
+                    AuthFieldLabel(t.labelNewPassword),
+                    const SizedBox(height: AppSpacing.s3),
+                    AuthTextField(
+                      controller: _passController,
+                      hintText: t.hintEnterNewPassword,
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscurePass,
+                      enabled: !isLoading,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePass
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscurePass = !_obscurePass),
                       ),
-                      onPressed: () =>
-                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.s8),
-                  FilledButton(
-                    onPressed: () => _onReset(isLoading: isLoading),
-                    style: AuthFormUi.primaryButtonStyle(),
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: AppLoadingIndicator.button(
-                              color: AppColors.onPrimary,
-                            ),
-                          )
-                        : Text(t.resetPasswordButton),
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.s5),
+                    AuthFieldLabel(t.labelConfirmNewPassword),
+                    const SizedBox(height: AppSpacing.s3),
+                    AuthTextField(
+                      controller: _confirmPassController,
+                      hintText: t.hintConfirmNewPassword,
+                      prefixIcon: Icons.verified_user_outlined,
+                      obscureText: _obscureConfirm,
+                      enabled: !isLoading,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirm
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscureConfirm = !_obscureConfirm),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.s8),
+                    FilledButton(
+                      onPressed: () => _onReset(isLoading: isLoading),
+                      style: AuthFormUi.primaryButtonStyle(),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: AppLoadingIndicator.button(
+                                color: AppColors.onPrimary,
+                              ),
+                            )
+                          : Text(t.resetPasswordButton),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

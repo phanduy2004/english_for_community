@@ -121,7 +121,7 @@ class CalloutEntity {
 class ProgressDetailEntity {
   final String id;
   final String title;
-  final int score; // Điểm số (ví dụ: 85% hoặc band score 6)
+  final double score; // Điểm số (85% hoặc band Viết 6.5 — giữ thập phân, format ở UI)
   final int duration; // Thời gian (phút)
   final String date; // ISO Date String
   final String type;
@@ -148,7 +148,7 @@ class ProgressDetailEntity {
       date: dateFromJson ?? 'N/A',
 
       // Sửa lỗi cho số (như đã thảo luận trước):
-      score: (json['score'] as num? ?? 0).toInt(),
+      score: (json['score'] as num? ?? 0).toDouble(),
       duration: (json['duration'] as num? ?? 0).toInt(),
 
       // Trường bổ sung

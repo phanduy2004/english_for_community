@@ -24,6 +24,13 @@ const _getStartDateInUserTz = (date, timezone) => {
   return new Date(startOfUtcDay - offsetMs);
 }
 
+// Lấy thứ trong tuần (0=CN) và ngày trong tháng THEO timezone user, không phụ thuộc
+// TZ của server host. getDay()/getDate() thô đọc theo TZ host → lệch 1 ngày trên host UTC.
+const _userWeekdayAndDate = (instant, timezone) => {
+  const local = new Date(instant.toLocaleString('en-US', { timeZone: timezone }));
+  return { weekday: local.getDay(), dayOfMonth: local.getDate() };
+};
+
 const _calculateDateRange = (range, timezone) => {
   const now = new Date();
   const userTodayStart = _getStartDateInUserTz(now, timezone);
@@ -34,11 +41,11 @@ const _calculateDateRange = (range, timezone) => {
   if (range === 'day') {
     startDate = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
   } else if (range === 'week') {
-    const dayOfWeek = userTodayStart.getDay();
-    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
+    const { weekday } = _userWeekdayAndDate(userTodayStart, timezone);
+    const offset = (weekday === 0) ? 6 : weekday - 1;
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
   } else if (range === 'month') {
-    const dayOfMonth = userTodayStart.getDate();
+    const { dayOfMonth } = _userWeekdayAndDate(userTodayStart, timezone);
     startDate = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
   }
 
@@ -65,7 +72,7 @@ const _getDateRangeConfig = (range, timezone) => {
   let dayCount = 0;
 
   if (range === 'month') {
-    const dayOfMonth = userTodayStart.getDate();
+    const { dayOfMonth } = _userWeekdayAndDate(userTodayStart, timezone);
     startDate = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
     dayCount = dayOfMonth;
   } else if (range === 'day') {
@@ -102,20 +109,11 @@ const getSummaryData = async (userId, range) => {
 
   const { startDate: userTodayStart, chartLabels, queryDateKeys } = _getDateRangeConfig(range, userTimezone);
 
-  let startDateForStats;
-  if (range === 'day') {
-    startDateForStats = userTodayStart;
-  } else if (range === 'week') {
-    const dayOfWeek = userTodayStart.getDay();
-    const offset = (dayOfWeek === 0) ? 6 : dayOfWeek - 1;
-    startDateForStats = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
-  } else {
-    const dayOfMonth = userTodayStart.getDate();
-    startDateForStats = new Date(userTodayStart.getTime() - (dayOfMonth - 1) * 24 * 60 * 60 * 1000);
-  }
-
-  const startDateString = startDateForStats.toLocaleDateString('en-CA', { timeZone: userTimezone });
   const todayString = userTodayStart.toLocaleDateString('en-CA', { timeZone: userTimezone });
+  // Stats 'day' = chỉ hôm nay; 'week'/'month' = từ đầu range. Dùng queryDateKeys[0]
+  // (đã tz-correct từ _getDateRangeConfig) để stats KHỚP với chart, tránh lệch 1 ngày
+  // trên host UTC do getDay()/getDate() thô đọc theo TZ server.
+  const startDateString = range === 'day' ? todayString : queryDateKeys[0];
 
   let minQueryDate = queryDateKeys[0];
 
