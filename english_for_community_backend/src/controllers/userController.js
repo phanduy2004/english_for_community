@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import UserDailyProgress from "../models/UserDailyProgress.js";
 import bcrypt from "bcrypt";
 import { touchDailyStreak } from '../services/gamificationService.js';
+import { messaging, fcmDeliveryOptions } from '../config/firebase.js';
 const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
 
 // 🔥 API ADMIN: Lấy chi tiết User + Thống kê học tập
@@ -344,5 +345,64 @@ export const updateFcmToken = async (req, res) => {
   } catch (error) {
     console.error('Update FCM Token Error:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Gửi 1 push TEST tới chính user hiện tại — dùng để kiểm tra push khi app đóng
+ * độc lập với cron/reminder. Trả về số token + kết quả gửi để dễ chẩn đoán.
+ */
+export const sendTestNotification = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select('fcmTokens').lean();
+    const tokens = user?.fcmTokens || [];
+
+    if (!tokens.length) {
+      return res.status(400).json({
+        ok: false,
+        reason: 'NO_TOKEN',
+        message: 'Tài khoản chưa có FCM token nào. Mở app (màn Home) để đăng ký token trước.',
+        tokenCount: 0,
+      });
+    }
+    if (!messaging) {
+      return res.status(503).json({
+        ok: false,
+        reason: 'FCM_NOT_CONFIGURED',
+        message: 'Firebase Admin chưa cấu hình (thiếu FIREBASE_CONFIG_BASE64).',
+        tokenCount: tokens.length,
+      });
+    }
+
+    const response = await messaging.sendEachForMulticast({
+      notification: {
+        title: 'Test push E4C 🔔',
+        body: 'Nếu bạn thấy thông báo này khi app đang đóng → push nền hoạt động!',
+      },
+      data: { type: 'TEST_PUSH', click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      ...fcmDeliveryOptions,
+      tokens,
+    });
+
+    // Dọn token lỗi (giống notificationService)
+    if (response.failureCount > 0) {
+      const failed = [];
+      response.responses.forEach((r, i) => { if (!r.success) failed.push(tokens[i]); });
+      if (failed.length) {
+        await User.findByIdAndUpdate(userId, { $pull: { fcmTokens: { $in: failed } } });
+      }
+    }
+
+    return res.status(200).json({
+      ok: response.successCount > 0,
+      message: `Đã gửi: ${response.successCount} thành công, ${response.failureCount} lỗi.`,
+      tokenCount: tokens.length,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    });
+  } catch (error) {
+    console.error('Send Test Notification Error:', error);
+    res.status(500).json({ ok: false, message: error.message });
   }
 };

@@ -57,9 +57,19 @@ class _TeacherStudentLiveScreenDisposeScope extends StatefulWidget {
 }
 
 class _TeacherStudentLiveScreenDisposeScopeState extends State<_TeacherStudentLiveScreenDisposeScope> {
+  // Lưu ref bloc từ didChangeDependencies — KHÔNG lookup ancestor trong dispose()
+  // (lúc đó element đã deactivate → "deactivated widget's ancestor is unsafe").
+  TeacherStudentLiveScreenBloc? _bloc;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _bloc = context.read<TeacherStudentLiveScreenBloc>();
+  }
+
   @override
   void dispose() {
-    context.read<TeacherStudentLiveScreenBloc>().add(const TeacherStudentLiveScreenStopped());
+    _bloc?.add(const TeacherStudentLiveScreenStopped());
     super.dispose();
   }
 

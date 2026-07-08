@@ -72,6 +72,10 @@ export const joinExamSession = async (req, res) => {
     const doc = await examSessionService.joinSession(req.user._id, req.params.sessionId);
     return res.status(200).json(doc);
   } catch (error) {
+    // Chỉ log lỗi ngoài dự kiến (không có statusCode) để không spam các 4xx nghiệp vụ.
+    if (!error.statusCode) {
+      console.error('[joinExamSession] unexpected error:', req.params.sessionId, error);
+    }
     return res.status(getStatusCode(error)).json({ message: error.message });
   }
 };

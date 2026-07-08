@@ -18,45 +18,88 @@ class DictDb {
 
   Future<Database> get db async => _db ??= await _open();
 
+  static const String _assetDbPath = 'assets/db/dictionary.db';
+
   Future<Database> _open() async {
-    // ✍️ BƯỚC 1: Đặt phiên bản DB mới của bạn
-    // (Giả sử file DB mới trong assets là bản 1)
+    // ✍️ Tăng số này mỗi khi thay file DB trong assets để buộc copy lại.
     const int myDbVersion = 1;
 
     final prefs = await SharedPreferences.getInstance();
-    int currentVersion = prefs.getInt('db_version') ?? 0;
+    final int currentVersion = prefs.getInt('db_version') ?? 0;
 
     final dir = await getDatabasesPath();
     _dbPath = p.join(dir, 'dictionary.db');
+    await Directory(dir).create(recursive: true);
 
-    if (currentVersion < myDbVersion) {
-      if (kDebugMode) debugPrint('[DictDb] Phát hiện phiên bản DB mới. Đang xóa file cũ...');
-      // Xóa file DB cũ đi
-      if (await File(_dbPath).exists()) {
-        await File(_dbPath).delete();
-        if (kDebugMode) debugPrint('[DictD] Đã xóa DB cũ (phiên bản $currentVersion)');
+    // Copy lại từ asset khi: (1) có phiên bản DB mới, HOẶC
+    // (2) file hiện tại KHÔNG hợp lệ (thiếu bảng / rỗng / bị cắt dở).
+    // Điều kiện (2) là mấu chốt sửa bug "cài lại báo no such table: entry":
+    // cờ db_version trong SharedPreferences có thể bị Android Auto Backup khôi
+    // phục (=1) trong khi file dictionary.db thật đã mất/rỗng sau khi gỡ app,
+    // khiến logic cũ tưởng đã có DB nên bỏ qua bước copy.
+    final bool needCopy =
+        currentVersion < myDbVersion || !await _dbIsValid(_dbPath);
+
+    if (needCopy) {
+      if (kDebugMode) {
+        debugPrint('[DictDb] (Re)install bundled DB '
+            '(version $currentVersion -> $myDbVersion) -> $_dbPath');
       }
-      // Cập nhật phiên bản đã lưu
+      await _installFromAsset(_dbPath);
+      if (!await _dbIsValid(_dbPath)) {
+        throw StateError('dictionary.db không hợp lệ sau khi copy từ asset: $_dbPath');
+      }
       await prefs.setInt('db_version', myDbVersion);
-    }
-
-    if (!await File(_dbPath).exists()) {
-      await Directory(dir).create(recursive: true);
-      final bytes = await rootBundle.load('assets/db/dictionary.db');
-      await File(_dbPath).writeAsBytes(
-        bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
-        flush: true,
-      );
-      if (kDebugMode) debugPrint('[DictDb] Đã copy file DB mới (phiên bản $myDbVersion) -> $_dbPath');
     }
 
     final d = await openDatabase(_dbPath, readOnly: false);
     if (kDebugMode) {
       final t = await d.rawQuery(
           "SELECT name FROM sqlite_master WHERE type IN ('table','view') ORDER BY name");
-      debugPrint('[DictDb] Opened. Tables=${t.map((e)=>e['name']).toList()}');
+      debugPrint('[DictDb] Opened. Tables=${t.map((e) => e['name']).toList()}');
     }
     return d;
+  }
+
+  /// Ghi file DB từ asset ra ổ đĩa một cách "nguyên tử": ghi ra file .tmp rồi
+  /// rename. Nếu app bị kill giữa chừng, ta chỉ còn file .tmp dở dang chứ không
+  /// để lại một dictionary.db cắt dở mà lần mở sau lại tưởng là hợp lệ.
+  Future<void> _installFromAsset(String dbPath) async {
+    final target = File(dbPath);
+    final tmp = File('$dbPath.tmp');
+    if (await target.exists()) await target.delete();
+    if (await tmp.exists()) await tmp.delete();
+
+    final bytes = await rootBundle.load(_assetDbPath);
+    await tmp.writeAsBytes(
+      bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes),
+      flush: true,
+    );
+    await tmp.rename(dbPath);
+  }
+
+  /// Kiểm tra file DB có THẬT SỰ dùng được không: tồn tại, đủ lớn, mở được và
+  /// có bảng dữ liệu ('entry' hoặc 'entries'). Trả false với file rỗng/hỏng để
+  /// buộc copy lại từ asset.
+  Future<bool> _dbIsValid(String dbPath) async {
+    final f = File(dbPath);
+    if (!await f.exists()) return false;
+    // File từ điển thật ~225MB; file rỗng/cắt dở sẽ nhỏ hơn ngưỡng này rất nhiều.
+    if (await f.length() < 100 * 1024) return false;
+
+    Database? probe;
+    try {
+      probe = await openDatabase(dbPath, readOnly: true);
+      final r = await probe.rawQuery(
+        "SELECT name FROM sqlite_master "
+        "WHERE type IN ('table','view') AND name IN ('entry','entries') LIMIT 1",
+      );
+      return r.isNotEmpty;
+    } catch (_) {
+      return false;
+    } finally {
+      await probe?.close();
+    }
   }
 
   Future<String?> _mainTable(Database d) async {

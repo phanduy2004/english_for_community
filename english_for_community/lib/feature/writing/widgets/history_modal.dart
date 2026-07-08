@@ -123,7 +123,7 @@ class HistoryItemCard extends StatelessWidget {
         : t.dateUnknown;
 
     final score = submission.score ?? 0;
-    final isDraft = submission.status.toLowerCase() == 'draft';
+    final isDraft = submission.status.toLowerCase() == 'draft' && submission.feedback == null;
     // Màu sắc theo điểm số
     final color = score >= 7.0 ? AppColors.success : (score >= 5.0 ? AppColors.warning : AppColors.danger);
     final bg = score >= 7.0 ? AppColors.successBg : (score >= 5.0 ? AppColors.warningBg : AppColors.dangerBg);
@@ -132,7 +132,7 @@ class HistoryItemCard extends StatelessWidget {
       onTap: () {
         // Đóng modal rồi mở trang chi tiết
         Navigator.pop(context);
-        final isDraft = submission.status.toLowerCase() == 'draft';
+        final isDraft = submission.status.toLowerCase() == 'draft' && submission.feedback == null;
         if (isDraft) {
           final topic = WritingTopicEntity(
             id: submission.topicId,

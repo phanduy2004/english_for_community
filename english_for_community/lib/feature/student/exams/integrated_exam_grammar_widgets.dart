@@ -8,7 +8,6 @@ import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_answer_review_widgets.dart';
-import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -187,7 +186,6 @@ class _GrammarBlankField extends StatelessWidget {
                 key: fieldKey,
                 enabled: enabled,
                 controller: controller,
-                contextMenuBuilder: examPasteAwareContextMenu,
                 onChanged: onChanged,
                 maxLines: 1,
                 style: ExamSystemUi.captionSecondary,

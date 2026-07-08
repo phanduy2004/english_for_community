@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import User from '../models/User.js';
 import Word from '../models/Word.js';
 import { vocabService } from '../services/vocabularyService.js';
-import { messaging } from '../config/firebase.js';
+import { messaging, fcmDeliveryOptions } from '../config/firebase.js';
 import { notificationService } from '../services/notificationService.js';
 
 // --- HELPER: Lấy giờ phút theo Timezone User ---
@@ -50,6 +50,7 @@ const triggerDailyVocabSequence = async (user) => {
         ...data,
         click_action: 'FLUTTER_NOTIFICATION_CLICK'
       },
+      ...fcmDeliveryOptions, // high-priority + channel + apns
       tokens: user.fcmTokens
     };
 
@@ -139,6 +140,7 @@ const sendPush = async (user, { title, body, type }) => {
     const payload = {
       notification: { title, body },
       data: { type, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      ...fcmDeliveryOptions, // high-priority + channel + apns
       tokens: user.fcmTokens
     };
 

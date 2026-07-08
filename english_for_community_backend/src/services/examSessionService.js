@@ -398,8 +398,10 @@ export const examSessionService = {
         }
         const ids = (session.joinedUserIds || []).map((x) => x.toString());
         if (!ids.includes(uid)) {
+          // Atomic $addToSet: idempotent + tránh VersionError khi nhiều request join đồng thời
+          // (nhất quán với setParticipantReady/removeParticipantFromSession).
+          await ExamSession.updateOne({ _id: session._id }, { $addToSet: { joinedUserIds: userId } });
           session.joinedUserIds = [...(session.joinedUserIds || []), userId];
-          await session.save();
         }
         await this.emitSessionStateBroadcast(session._id);
         return session;
@@ -407,8 +409,10 @@ export const examSessionService = {
 
       const ids = (session.joinedUserIds || []).map((x) => x.toString());
       if (!ids.includes(uid)) {
+        // Atomic $addToSet: idempotent + tránh VersionError khi nhiều request join đồng thời
+        // (nhất quán với setParticipantReady/removeParticipantFromSession).
+        await ExamSession.updateOne({ _id: session._id }, { $addToSet: { joinedUserIds: userId } });
         session.joinedUserIds = [...(session.joinedUserIds || []), userId];
-        await session.save();
       }
     }
     await this.emitSessionStateBroadcast(session._id);

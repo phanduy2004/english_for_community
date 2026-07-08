@@ -20,7 +20,6 @@ import '../../core/ui/exam_system_ui.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../student/exams/exam_embedded_skill_scope.dart';
-import '../student/exams/exam_integrity_tracker.dart';
 import '../auth/bloc/user_bloc.dart';
 
 class WritingTaskPage extends StatelessWidget {
@@ -722,7 +721,6 @@ class _Editor extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 20),
       child: TextField(
         controller: controller,
-        contextMenuBuilder: examPasteAwareContextMenu,
         focusNode: focusNode,
         readOnly: readOnly,
         maxLines: null,

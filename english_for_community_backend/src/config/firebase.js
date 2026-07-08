@@ -30,4 +30,33 @@ try {
 
 // Export messaging service để dùng ở chỗ khác
 export const messaging = admin.apps.length ? admin.messaging() : null;
+
+/**
+ * ID kênh thông báo mặc định — PHẢI khớp:
+ *  - meta-data `default_notification_channel_id` trong AndroidManifest
+ *  - channel tạo ở Flutter (LocalNotificationService.init)
+ */
+export const FCM_CHANNEL_ID = 'e4c_reminders';
+
+/**
+ * Tuỳ chọn giao nhận high-priority + channel (Android) + APNs (iOS) để push
+ * đánh thức máy và hiển thị cả khi app đã bị kill (chống battery-optimization).
+ * Spread vào message object bên cạnh notification/data/tokens.
+ */
+export const fcmDeliveryOptions = {
+  android: {
+    priority: 'high',
+    notification: {
+      channelId: FCM_CHANNEL_ID,
+      sound: 'default',
+      defaultSound: true,
+      priority: 'high',
+    },
+  },
+  apns: {
+    headers: { 'apns-priority': '10' },
+    payload: { aps: { sound: 'default' } },
+  },
+};
+
 export default admin;

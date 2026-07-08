@@ -5,7 +5,7 @@ import {
   updateProfile,
   deleteAccount,
   getPublicProfile,
-  getUserDetailsForAdmin, changePassword, updateFcmToken
+  getUserDetailsForAdmin, changePassword, updateFcmToken, sendTestNotification
 } from '../controllers/userController.js';
 import { getMyActivities, getMyActivityDetail } from '../controllers/userActivityController.js';
 import { authenticate, requirePermissions } from '../middleware/auth.js';
@@ -26,4 +26,5 @@ router.get('/:id/public', getPublicProfile);
 router.get('/:id/admin-details', requirePermissions(Permission.USERS_READ), getUserDetailsForAdmin);
 router.post('/change-password', changePassword);
 router.post('/fcm-token', updateFcmToken);
+router.post('/test-notification', sendTestNotification);
 export default router;

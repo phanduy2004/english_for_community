@@ -65,6 +65,21 @@ class LocalNotificationService {
         }
       },
     );
+
+    // F. Tạo channel high-importance cho PUSH NỀN (FCM). Backend gửi kèm
+    //    channelId='e4c_reminders' + AndroidManifest khai báo cùng id qua
+    //    default_notification_channel_id → thông báo hiện heads-up khi app đóng.
+    if (Platform.isAndroid) {
+      const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
+        'e4c_reminders',
+        'Nhắc học tập & thông báo',
+        description: 'Nhắc học hằng ngày, ôn từ, kết quả bài thi & thông báo lớp học',
+        importance: Importance.max,
+      );
+      await _flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.createNotificationChannel(reminderChannel);
+    }
   }
 
   // 🟢 2. SHOW THÔNG BÁO NGAY LẬP TỨC (Dùng cho Socket/Push)

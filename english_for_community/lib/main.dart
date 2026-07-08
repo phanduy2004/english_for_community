@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,6 +30,15 @@ import 'feature/app_update/bloc/app_update_bloc.dart';
 import 'feature/app_update/app_update_guard.dart';
 import 'firebase_options.dart';
 
+/// Handler chạy ở ISOLATE NỀN khi app ở background/bị kill (bắt buộc top-level +
+/// vm:entry-point). Với message có sẵn khối `notification`, Android tự hiển thị ở
+/// khay nên không cần làm gì thêm; nếu sau này gửi data-only thì hiển thị thủ công tại đây.
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  debugPrint('📩 [FCM BG] ${message.messageId} type=${message.data['type']}');
+}
+
 Future<void> main() async {
   await runAppWithErrorZone(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -38,6 +48,8 @@ Future<void> main() async {
     configureWebUrlStrategy();
     await NotificationService.I.init();
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    // Đăng ký handler nền NGAY sau khi init Firebase (trước runApp).
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await ApiConfig.init();
     if (kDebugMode) {
       debugPrint('[ApiConfig] API base: ${ApiConfig.Base_URL}');

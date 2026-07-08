@@ -37,7 +37,9 @@ export async function getTopicSubmissions(userId, topicId) {
     userId,
     status: 'reviewed',
   })
-    .select('score generatedPrompt createdAt wordCount durationInSeconds feedback content')
+    // status/userId/topicId bắt buộc: client dùng status để phân biệt draft/reviewed
+    // (thiếu → default 'draft' → mở nhầm trang soạn với topicId rỗng → "something wrong").
+    .select('score generatedPrompt createdAt wordCount durationInSeconds feedback content status userId topicId')
     .sort({ createdAt: -1 })
     .lean();
 }

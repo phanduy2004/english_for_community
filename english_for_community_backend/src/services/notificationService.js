@@ -1,7 +1,7 @@
 import Notification from '../models/Notification.js';
 import { getIO } from '../socket/socketManager.js';
 import User from "../models/User.js";
-import { messaging } from '../config/firebase.js';
+import { messaging, fcmDeliveryOptions } from '../config/firebase.js';
 import { serializeNotificationRows } from '../lib/leanApiSerialize.js';
 
 /** Plain JSON for Socket.IO clients (Flutter/web). */
@@ -108,6 +108,7 @@ const createNotification = async ({
               }, {}),
               click_action: 'FLUTTER_NOTIFICATION_CLICK'
             },
+            ...fcmDeliveryOptions, // high-priority + channel + apns
             tokens: recipient.fcmTokens
           };
 
