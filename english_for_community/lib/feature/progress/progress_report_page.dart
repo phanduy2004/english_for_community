@@ -245,18 +245,18 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         body: SafeArea(
           child: BlocBuilder<ProgressBloc, ProgressState>(
             builder: (context, state) {
-              if (state.status == ProgressStatus.loading || state.status == ProgressStatus.initial) {
-                return StudentMobileUi.listLoading();
-              }
-              if (state.status == ProgressStatus.error && state.summary == null) {
-                return _buildErrorUI(context, state.errorMessage, t);
-              }
-              // Luôn hiện layout khi có summary — kể cả toàn 0 (hiển thị data
-              // sẵn có như bản gốc), KHÔNG thay bằng full-screen empty-state.
+              // Đã có dữ liệu → luôn giữ nguyên layout, chỉ thay data bên trong.
+              // Khi đổi Day/Week/Month, bloc vẫn giữ summary cũ trong lúc loading
+              // (copyWith không xoá summary) nên KHÔNG full-screen loading lại cả
+              // màn hình — chỉ swap data + chart tự chạy lại animation, mượt hơn.
               if (state.summary != null) {
                 return _buildSuccessUI(context, state, t);
               }
-              return const SizedBox.shrink();
+              if (state.status == ProgressStatus.error) {
+                return _buildErrorUI(context, state.errorMessage, t);
+              }
+              // Lần đầu vào trang, chưa có dữ liệu nào.
+              return StudentMobileUi.listLoading();
             },
           ),
         ),
@@ -322,7 +322,20 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
               selectedIndex: _range.index,
               onSelected: (i) => _onRangeSelected(context, i),
             ),
-            const SizedBox(height: AppSpacing.s4),
+            const SizedBox(height: AppSpacing.s2),
+            // Thanh loading mảnh khi đang đổi filter — báo "đang cập nhật" mà
+            // không che cả màn hình (chiều cao cố định 2px để layout không giật).
+            SizedBox(
+              height: 2,
+              child: state.status == ProgressStatus.loading
+                  ? const LinearProgressIndicator(
+                      minHeight: 2,
+                      backgroundColor: Colors.transparent,
+                      color: AppColors.primary,
+                    )
+                  : null,
+            ),
+            const SizedBox(height: AppSpacing.s2),
 
             AppCard(
               variant: AppCardVariant.outline,

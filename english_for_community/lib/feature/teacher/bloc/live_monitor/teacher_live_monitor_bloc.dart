@@ -144,16 +144,15 @@ class TeacherLiveMonitorBloc extends Bloc<TeacherLiveMonitorEvent, TeacherLiveMo
   ) async {
     emit(state.copyWith(status: TeacherLiveMonitorStatus.loading, clearError: true));
 
+    // Gỡ listener cũ trước khi đăng ký lại — tránh rò nếu _onStarted chạy lại.
+    _detachLiveListeners();
     _onLiveProgress = (payload) {
       if (payload['sessionId']?.toString() != sessionId) return;
       add(TeacherLiveMonitorProgressUpdated(payload));
     };
-    _onLiveScreen = (payload) {
-      if (payload['sessionId']?.toString() != sessionId) return;
-      add(TeacherLiveMonitorProgressUpdated(payload));
-    };
+    // CHỈ nghe live_progress cho roster — backend phát cùng payload trên cả 2 event,
+    // nghe thêm live_screen chỉ khiến mỗi cập nhật bị xử lý 2 lần (thừa).
     socketService.listenExamSessionLiveProgress(_onLiveProgress!);
-    socketService.listenExamSessionLiveScreen(_onLiveScreen!);
 
     final initial = event.initialSnapshot;
     if (initial != null && initial.isNotEmpty) {

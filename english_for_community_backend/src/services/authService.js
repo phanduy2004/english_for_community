@@ -204,14 +204,18 @@ const verifyOtp = async (email, otp, purpose) => {
   }
 
   // --> OTP ĐÚNG
-  user.resetOtp = null;
-  user.resetOtpExpiresAt = null;
   user.resetOtpAttempts = 0;
-  user.otpPurpose = null;
 
   if (purpose === 'signup') {
+    // Signup: OTP dùng một lần — tiêu thụ ngay và kích hoạt tài khoản.
+    user.resetOtp = null;
+    user.resetOtpExpiresAt = null;
+    user.otpPurpose = null;
     user.isVerified = true; // Kích hoạt tài khoản
   }
+  // Forgot (và purpose khác): CHỈ xác thực ở bước này, GIỮ NGUYÊN OTP để bước
+  // reset-password tiêu thụ. Nếu clear tại đây, resetPassword sẽ báo 'Invalid
+  // OTP' vì resetOtp/otpPurpose đã bị xoá.
 
   await user.save();
   return true;

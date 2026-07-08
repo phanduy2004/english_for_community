@@ -112,6 +112,31 @@ class ReadingRepositoryImpl implements ReadingRepository {
       return Left(ReadingFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, ReadingEntity>> updateReading(
+      String id, ReadingEntity reading) async {
+    try {
+      final body = reading.toJson();
+      body.remove('id');
+      body.remove('_id');
+      if (body['questions'] != null && body['questions'] is List) {
+        for (var q in body['questions']) {
+          if (q is Map) {
+            q.remove('_id');
+            q.remove('id');
+          }
+        }
+      }
+      final result = await readingRemoteDatasource.updateReading(id, body);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(ReadingFailure(message: e.response?.data['message'] ?? e.message));
+    } catch (e) {
+      return Left(ReadingFailure(message: e.toString()));
+    }
+  }
+
   @override
   Future<Either<Failure, void>> deleteReading(String id) async {
     try {

@@ -13,9 +13,14 @@ import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import ExamAssignment from '../models/ExamAssignment.js';
+import Notification from '../models/Notification.js';
 import { toSpeakingSetObjectId } from '../lib/speakingSetId.js';
 import ReadingAttempt from '../models/ReadingAttempt.js';
 import historyService from '../services/historyService.js';
+import {
+  summarizeSchedule,
+  latestAttemptsByAssignmentForUser,
+} from '../services/assignmentCardEnrichment.js';
 import {
   isPlainYmd,
   utcRangeForCalendarDate,
@@ -93,6 +98,22 @@ const normalizePeriodArg = (range) => {
   if (range === 'day' || range === 'week' || range === 'month') return range;
   return 'week';
 };
+
+/**
+ * Loại thông báo LIÊN QUAN LỚP HỌC/BÀI THI mà học sinh được xem (privacy-safe:
+ * chỉ notification của CHÍNH họ). Cố tình loại COMMENT_* (community/chat) và
+ * DAILY_REMINDER (nhắc học cá nhân) khỏi feed "hoạt động lớp".
+ */
+const CLASSROOM_ACTIVITY_TYPES = [
+  'EXAM_ASSIGNED',
+  'EXAM_ASSIGNMENT_UPDATED',
+  'EXAM_ASSIGNMENT_CLOSED',
+  'EXAM_SESSION_LIVE',
+  'EXAM_RESULTS_RELEASED',
+  'CLASSROOM_JOIN_APPROVED',
+  'CLASSROOM_JOIN_REJECTED',
+  'SYSTEM_ANNOUNCEMENT',
+];
 
 export const toolImplementations = {
 
@@ -280,6 +301,179 @@ export const toolImplementations = {
         vocabLearned: days.reduce((sum, day) => sum + day.vocabLearned, 0),
         lessons: days.reduce((sum, day) => sum + day.lessonsCompleted, 0),
       },
+    };
+  },
+
+  /**
+   * Bài tập/đề thi được giao trong CÁC LỚP của học sinh: hạn nộp + trạng thái
+   * của chính học sinh (chưa làm/đang làm/đã nộp/đã chấm) + điểm nếu GV đã trả.
+   * Read-only, userId server-injected. Batch tránh N+1.
+   */
+  get_classroom_assignments: async (userId, args) => {
+    const limit = Math.min(Math.max(Number(args.limit) || 20, 1), 50);
+    const statusFilter = args.status || 'all'; // all | todo | done
+    const nameFilter = (args.classroomName || '').trim().toLowerCase();
+    console.log(`🛠️ Tool: get_classroom_assignments (status ${statusFilter}, limit ${limit})`);
+
+    const memberships = await ClassroomMember.find({ userId, status: 'active' })
+      .select('classroomId')
+      .lean();
+    const classIds = memberships.map((m) => m.classroomId).filter(Boolean);
+    if (!classIds.length) {
+      return { total: 0, assignments: [], note: 'Bạn chưa tham gia lớp học nào.' };
+    }
+
+    const assignments = await ExamAssignment.find({
+      status: 'active',
+      audience: 'classroom',
+      classroomId: { $in: classIds },
+      mode: { $in: ['self_paced', 'scheduled', 'realtime', 'practice'] },
+    })
+      .select('examId classroomId mode config createdAt updatedAt')
+      .sort({ updatedAt: -1 })
+      .populate('examId', 'title')
+      .populate('classroomId', 'name')
+      .lean();
+
+    if (!assignments.length) {
+      return { total: 0, assignments: [], note: 'Chưa có bài tập nào trong các lớp của bạn.' };
+    }
+
+    const ids = assignments.map((a) => a._id);
+    const assignmentById = new Map(assignments.map((a) => [a._id.toString(), a]));
+    const myAttemptMap = await latestAttemptsByAssignmentForUser(userId, ids, { assignmentById });
+
+    const now = Date.now();
+    const computeTiming = (a) => {
+      const cfg = a.config || {};
+      if (a.mode === 'practice') return 'practice';
+      if (a.mode === 'self_paced') {
+        const due = cfg.dueAt ? new Date(cfg.dueAt).getTime() : null;
+        return due != null && now > due ? 'overdue' : 'open';
+      }
+      if (a.mode === 'scheduled') {
+        const opens = cfg.opensAt ? new Date(cfg.opensAt).getTime() : null;
+        const closes = cfg.closesAt ? new Date(cfg.closesAt).getTime() : null;
+        if (closes != null && now > closes) return 'closed';
+        if (opens != null && now < opens) return 'upcoming';
+        return 'open';
+      }
+      return 'realtime'; // thi trực tiếp — do giáo viên điều khiển phiên
+    };
+
+    const myStatusOf = (att) => {
+      if (!att) return 'not_started';
+      if (att.status === 'in_progress') return 'in_progress';
+      if (att.status === 'expired') return 'expired';
+      if (att.status === 'submitted') {
+        return att.gradingState === 'finalized' ? 'graded' : 'submitted';
+      }
+      return att.status || 'not_started';
+    };
+
+    const rows = assignments.map((a) => {
+      const att = myAttemptMap.get(a._id.toString());
+      const schedule = summarizeSchedule(a);
+      const released = att?.resultsReleased === true;
+      const scores = att?.scores || {};
+      const awarded = released ? (scores.finalScore ?? scores.totalAwarded ?? null) : null;
+      const max = released ? (scores.finalMax ?? scores.totalMax ?? null) : null;
+      const scorePercent =
+        max != null && max > 0 && awarded != null
+          ? Math.round((Number(awarded) / Number(max)) * 1000) / 10
+          : null;
+      return {
+        classroomName: a.classroomId?.name || '',
+        examTitle: a.examId?.title || 'Bài tập',
+        mode: a.mode,
+        timingStatus: computeTiming(a),
+        dueAt: schedule.dueAt || null,
+        opensAt: schedule.opensAt || null,
+        closesAt: schedule.closesAt || null,
+        scheduledStartAt: schedule.scheduledStartAt || null,
+        myStatus: myStatusOf(att),
+        score: awarded,
+        maxScore: max,
+        scorePercent,
+        resultsReleased: released,
+        submittedAt: att?.submittedAt ? new Date(att.submittedAt).toISOString() : null,
+        assignedAt: a.createdAt ? new Date(a.createdAt).toISOString() : null,
+      };
+    });
+
+    const isDone = (r) => r.myStatus === 'submitted' || r.myStatus === 'graded';
+    let filtered = rows;
+    if (statusFilter === 'todo') {
+      filtered = rows.filter((r) => !isDone(r) && r.timingStatus !== 'closed');
+    } else if (statusFilter === 'done') {
+      filtered = rows.filter(isDone);
+    }
+    if (nameFilter) {
+      filtered = filtered.filter((r) => r.classroomName.toLowerCase().includes(nameFilter));
+    }
+
+    const capped = filtered.slice(0, limit);
+    return {
+      total: capped.length,
+      total_matched: filtered.length,
+      assignments: capped,
+      note:
+        'score chỉ có khi giáo viên đã trả kết quả (resultsReleased=true). ' +
+        'timingStatus: open=đang mở, upcoming=chưa tới giờ mở, overdue=quá hạn (self_paced), ' +
+        'closed=đã đóng, realtime=thi trực tiếp do GV điều khiển, practice=luyện tập không hạn. ' +
+        'myStatus: not_started/in_progress/submitted(chờ chấm)/graded(đã chấm)/expired.',
+    };
+  },
+
+  /**
+   * Thông báo/hoạt động lớp học của CHÍNH học sinh (bài mới giao, kết quả đã trả,
+   * lịch thi trực tiếp, thông báo hệ thống…). Đọc từ Notification theo recipientId —
+   * KHÔNG lộ hoạt động của học sinh khác.
+   */
+  get_classroom_activity: async (userId, args) => {
+    const limit = Math.min(Math.max(Number(args.limit) || 15, 1), 40);
+    const unreadOnly = args.unreadOnly === true;
+    console.log(`🛠️ Tool: get_classroom_activity (limit ${limit}, unreadOnly ${unreadOnly})`);
+
+    const query = { recipientId: userId, type: { $in: CLASSROOM_ACTIVITY_TYPES } };
+    if (unreadOnly) query.isRead = false;
+
+    const [items, unreadCount] = await Promise.all([
+      Notification.find(query)
+        .select('type title message data isRead createdAt')
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean(),
+      Notification.countDocuments({
+        recipientId: userId,
+        type: { $in: CLASSROOM_ACTIVITY_TYPES },
+        isRead: false,
+      }),
+    ]);
+
+    if (!items.length) {
+      return {
+        total: 0,
+        unreadCount,
+        activities: [],
+        note: unreadOnly
+          ? 'Không có thông báo lớp học chưa đọc.'
+          : 'Chưa có thông báo/hoạt động lớp học nào.',
+      };
+    }
+
+    return {
+      total: items.length,
+      unreadCount,
+      activities: items.map((n) => ({
+        type: n.type,
+        title: n.title || '',
+        message: n.message || '',
+        classroomName: n.data?.classroomName || null,
+        examTitle: n.data?.examTitle || null,
+        isRead: n.isRead === true,
+        createdAt: n.createdAt ? new Date(n.createdAt).toISOString() : null,
+      })),
     };
   },
 

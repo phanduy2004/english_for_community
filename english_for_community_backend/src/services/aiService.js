@@ -88,16 +88,47 @@ const countCorrectionTags = (text = "") => {
   return matches ? matches.length : 0;
 };
 
-const needsRewriteRepair = (feedback = {}) => {
+// Bỏ tag {{old||new||reason}} -> lấy lại phần "old" (bản gốc mà model coi là input).
+// Dùng để kiểm tra model có chép trung thực bài gốc hay đã tự ý paraphrase (silent edit).
+const stripTagsToOriginal = (text = "") =>
+  String(text).replace(/\{\{(.*?)\|\|(.*?)\|\|(.*?)\}\}/g, "$1");
+
+const tokenizeWords = (value = "") =>
+  new Set(
+    String(value)
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((w) => w.length >= 3),
+  );
+
+// Jaccard similarity giữa 2 khối text (0..1).
+const wordSimilarity = (a, b) => {
+  const sa = tokenizeWords(a);
+  const sb = tokenizeWords(b);
+  if (!sa.size || !sb.size) return 0;
+  let inter = 0;
+  for (const w of sa) if (sb.has(w)) inter++;
+  const union = sa.size + sb.size - inter;
+  return union === 0 ? 0 : inter / union;
+};
+
+// Guard MỚI (nới lỏng độ nghiêm ngặt): chỉ chạy repair khi model KHÔNG trung thực với
+// bài gốc — thiếu paragraphs, hoặc tự ý paraphrase/summarize thay vì chép nguyên + gắn tag.
+// KHÔNG còn ép sửa chỉ vì "ít tag": bài tốt có 0 lỗi => 0 tag là kết quả HỢP LỆ.
+const needsRewriteRepair = (feedback = {}, essayText = "") => {
   const paragraphs = Array.isArray(feedback.paragraphs) ? feedback.paragraphs : [];
   if (!paragraphs.length) return true;
 
-  // Nếu phần lớn paragraph không có tag sửa, coi như model không tuân thủ.
-  const tagCounts = paragraphs.map((p) => countCorrectionTags(p?.rewrite || ""));
-  const withTags = tagCounts.filter((n) => n > 0).length;
+  // Ghép lại "bản gốc" mà model đã dựng (bỏ tag về phía old) rồi so với bài thật.
+  const reconstructedOriginal = paragraphs
+    .map((p) => stripTagsToOriginal(p?.rewrite || ""))
+    .join("\n");
 
-  // Trường hợp rất dễ xảy ra ở log của bạn: model chỉ paraphrase/summarize, không có inline correction tags.
-  return withTags < Math.max(1, Math.ceil(paragraphs.length / 2));
+  // Similarity cao => model chép trung thực (chỉ đánh dấu chỗ sai) => KHÔNG cần repair
+  // dù có 0 tag. Similarity thấp => model đã viết lại/tóm tắt => repair để ép giữ gốc + tag.
+  const similarity = wordSimilarity(reconstructedOriginal, essayText);
+  return similarity < 0.6;
 };
 
 const repairParagraphRewrites = async (essayText, feedback, taskType) => {
@@ -162,6 +193,36 @@ Rules:
       comment: p?.comment ?? paragraphs[idx]?.comment ?? "",
       rewrite: p?.rewrite ?? paragraphs[idx]?.rewrite ?? "",
     })),
+  };
+};
+
+// Sinh riêng 2 bài mẫu. Dùng làm fallback khi call chấm điểm chính bỏ trống
+// sampleMid/sampleHigh (rất dễ xảy ra vì JSON chấm điểm quá lớn) -> đảm bảo tab
+// Samples luôn có nội dung mà không làm phình call chính.
+const generateWritingSamples = async (essayText, taskType) => {
+  const systemContent = `
+Bạn là giám khảo IELTS Writing. Dựa trên bài của học viên, viết 2 bài mẫu bằng Tiếng Anh.
+Chỉ trả về JSON thuần (không markdown):
+{
+  "sampleMid": "Bài mẫu Band 7.0-8.0: viết lại theo ý chính của học viên, sửa hết lỗi, mạch lạc. FULL ESSAY tối thiểu 250 từ, dùng \\n\\n để tách đoạn.",
+  "sampleHigh": "Bài mẫu Band 9.0: ý tưởng sâu sắc, từ vựng academic cao cấp. FULL ESSAY tối thiểu 250 từ, dùng \\n\\n để tách đoạn."
+}
+KHÔNG tóm tắt, KHÔNG cắt bớt. Chỉ trả JSON.
+`;
+  const completion = await groq.chat.completions.create({
+    messages: [
+      { role: "system", content: systemContent },
+      { role: "user", content: `TaskType: ${taskType}\n\nessay_text:\n${essayText}` },
+    ],
+    model: MODEL_NAME,
+    temperature: 0.4,
+    response_format: { type: "json_object" },
+  });
+
+  const parsed = parseLenient(cleanJson(completion.choices[0].message.content)) || {};
+  return {
+    sampleMid: typeof parsed.sampleMid === "string" ? parsed.sampleMid : "",
+    sampleHigh: typeof parsed.sampleHigh === "string" ? parsed.sampleHigh : "",
   };
 };
 
@@ -380,8 +441,8 @@ export const aiService = {
     try {
       // PROMPT CHI TIẾT ĐẦY ĐỦ
       const systemInstruction = `
-Bạn là giám khảo IELTS Writing Task 2 khó tính và chuyên nghiệp.
-Nhiệm vụ: Chấm điểm, nhận xét chi tiết, sửa lỗi ngữ pháp/từ vựng và viết bài mẫu.
+Bạn là giám khảo IELTS Writing Task 2 công bằng, thực tế và mang tính xây dựng (KHÔNG bắt bẻ).
+Nhiệm vụ: Chấm điểm hợp lý, nhận xét chi tiết, CHỈ sửa những lỗi THẬT SỰ, và viết bài mẫu.
 Format Output: JSON Object (Tuyệt đối không dùng Markdown, chỉ trả về JSON thuần).
 
 === 1. QUY ĐỊNH VỀ NGÔN NGỮ & ĐỊNH DẠNG ===
@@ -390,18 +451,26 @@ Format Output: JSON Object (Tuyệt đối không dùng Markdown, chỉ trả v�
 - **JSON Strict:** Đảm bảo cấu trúc JSON hợp lệ, thoát các ký tự đặc biệt nếu cần.
 
 === 2. QUY ĐỊNH VỀ SỬA LỖI (REWRITE) - QUAN TRỌNG ===
-- MỤC TIÊU: Giữ nguyên toàn bộ văn bản gốc. CHỈ sửa khi có lỗi sai thật sự (ngữ pháp, chính tả, sai ngữ cảnh). KHÔNG sửa chỉ để câu văn hay hơn.
-- QUY TẮC ĐÁNH DẤU (BẮT BUỘC): Nếu bạn thay đổi, thêm, hoặc bớt BẤT KỲ từ nào so với bản gốc, bạn PHẢI bọc nó trong tag {{từ_cũ||từ_mới||lý_do_ngắn_gọn_bằng_tiếng_Việt}}.
-- LỆNH CẤM: TUYỆT ĐỐI KHÔNG ĐƯỢC "SỬA NGẦM" (Tức là sửa lỗi nhưng không dùng tag). 
+- TRIẾT LÝ: Đây KHÔNG phải chấm gắt để trừ điểm. Mục tiêu là chỉ ra lỗi THẬT giúp người học, KHÔNG bắt bẻ hành văn.
+- CHỈ SỬA khi có LỖI THẬT SỰ, gồm:
+  • Lỗi chính tả / gõ nhầm (typo).
+  • Sai ngữ pháp: chia thì, số ít/số nhiều, hoà hợp chủ ngữ–động từ, mạo từ (a/an/the), giới từ, dạng từ (word form).
+  • Dùng sai từ / sai nghĩa / sai collocation rõ ràng (sai "từ điển").
+  • Dấu câu gây SAI NGHĨA.
+- TUYỆT ĐỐI KHÔNG SỬA những trường hợp sau (dù bạn nghĩ có cách hay hơn):
+  • Câu đã đúng ngữ pháp nhưng bạn muốn đổi cho "văn vẻ" / "academic" hơn.
+  • Thay một từ đúng bằng từ đồng nghĩa "xịn" hơn.
+  • Đổi cấu trúc câu cho mượt hơn trong khi câu gốc đã chấp nhận được.
+  → Mức "vừa đủ, đúng ngữ pháp" thì GIỮ NGUYÊN, không cần tối ưu.
+- QUY TẮC ĐÁNH DẤU (BẮT BUỘC): Mỗi chỗ bạn THẬT SỰ sửa PHẢI bọc trong tag {{từ_cũ||từ_mới||lý_do_ngắn_gọn_bằng_tiếng_Việt}}. Cấm "sửa ngầm" (đổi chữ mà không dùng tag).
 
 🔴 VÍ DỤ THỰC TẾ:
 - Input gốc: "It is accessible sand convenient. It nows allows users to learn."
 - Output SAI (Bị cấm vì sửa ngầm không dùng tag): "It is accessible and convenient. It now allows users to learn."
 - Output CHUẨN (BẮT BUỘC): "It is accessible {{sand||and||Lỗi chính tả dư chữ s}} convenient. It {{nows allows||now allows||Sai ngữ pháp}} users to learn."
 
-- BẮT BUỘC PHẢI TRẢ VỀ TOÀN BỘ ĐOẠN VĂN GỐC. Chép y nguyên các câu đúng, và CHỈ dùng tag ở những chữ bị sai.
-- ƯU TIÊN PHÁT HIỆN LỖI CHÍNH TẢ / GÕ NHẦM (ví dụ: "alternastives", "tsshey", "ffor") và BẮT BUỘC gắn tag sửa.
-- KHÔNG được xóa câu chỉ vì câu đúng; chỉ sửa lỗi thực sự.
+- BẮT BUỘC chép lại TOÀN BỘ đoạn văn gốc y nguyên: câu nào đúng thì copy nguyên văn, KHÔNG gắn tag, KHÔNG xoá.
+- QUAN TRỌNG NHẤT: Nếu một đoạn (hoặc cả bài) không có lỗi thật sự nào, hãy chép nguyên văn với 0 tag. Một bài tốt HOÀN TOÀN có thể có rất ít hoặc KHÔNG có tag nào — đó là kết quả ĐÚNG và ĐƯỢC MONG ĐỢI, KHÔNG phải là bạn làm sai nhiệm vụ.
 
 === 3. QUY ĐỊNH VỀ BÀI MẪU (SAMPLES) - QUAN TRỌNG ===
 - **sampleMid (Band 7.0-8.0):** Viết lại bài của user (giữ ý tưởng chính) thành một bài luận hoàn chỉnh, sửa hết lỗi, flow trôi chảy.
@@ -500,15 +569,31 @@ Nếu bài làm quá ngắn hoặc spam, hãy trả về JSON với điểm 0 v�
       });
 
       const content = completion.choices[0].message.content;
-      const jsonStr = cleanJson(content);
-      let hehe = JSON.parse(jsonStr);
+      // parseLenient: thử JSON.parse -> jsonrepair -> recover JSON cụt, tránh fail cả feedback.
+      let hehe = parseLenient(cleanJson(content));
+      if (!hehe) throw new Error("AI feedback JSON parse failed");
 
-      // Guardrail: nếu model không tuân thủ rewrite-tag format, chạy pass repair.
-      if (needsRewriteRepair(hehe)) {
+      // Guardrail: chỉ repair khi model KHÔNG chép trung thực bài gốc (paraphrase/summarize),
+      // KHÔNG còn ép sửa chỉ vì ít tag -> bài tốt giữ nguyên, hết cảnh "bịa lỗi để sửa".
+      if (needsRewriteRepair(hehe, essayText)) {
         try {
           hehe = await repairParagraphRewrites(essayText, hehe, taskType);
         } catch (repairError) {
           console.error("AI rewrite repair failed:", repairError?.message || repairError);
+        }
+      }
+
+      // Fallback bài mẫu: nếu call chính bỏ trống sampleMid/sampleHigh, sinh riêng để tab
+      // Samples luôn có nội dung. Lỗi ở đây KHÔNG làm hỏng feedback (chỉ log lại).
+      const missingMid = !hehe.sampleMid || !String(hehe.sampleMid).trim();
+      const missingHigh = !hehe.sampleHigh || !String(hehe.sampleHigh).trim();
+      if (missingMid || missingHigh) {
+        try {
+          const samples = await generateWritingSamples(essayText, taskType);
+          if (missingMid && samples.sampleMid) hehe.sampleMid = samples.sampleMid;
+          if (missingHigh && samples.sampleHigh) hehe.sampleHigh = samples.sampleHigh;
+        } catch (sampleError) {
+          console.error("AI sample fallback failed:", sampleError?.message || sampleError);
         }
       }
 

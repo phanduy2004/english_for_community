@@ -98,7 +98,11 @@ class _UserDropdownSearchState extends State<UserDropdownSearch> {
       );
 
       result.fold(
-            (failure) {},
+            (failure) {
+          // Reset loading khi fetch lỗi (Left) — nếu không, guard `if(_isLoading) return`
+          // sẽ khoá dropdown vĩnh viễn sau 1 lần lỗi mạng.
+          if (mounted) setState(() => _isLoading = false);
+        },
             (response) {
           if (!mounted) return;
           setState(() {

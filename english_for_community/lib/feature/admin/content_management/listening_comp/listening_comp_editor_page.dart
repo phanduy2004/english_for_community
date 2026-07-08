@@ -24,8 +24,10 @@ class ListeningCompEditorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<AdminListeningCompBloc>(),
+    // create → provider tự close bloc factory khi rời editor (hết leak); instance mới
+    // mỗi lần mở nên không cần ClearSelected ở dispose.
+    return BlocProvider(
+      create: (_) => getIt<AdminListeningCompBloc>(),
       child: _ListeningCompEditorView(id: id),
     );
   }
@@ -68,7 +70,6 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
   void dispose() {
     _titleCtrl.dispose();
     _timeCtrl.dispose();
-    getIt<AdminListeningCompBloc>().add(ClearSelectedListeningCompEvent());
     super.dispose();
   }
 
@@ -120,6 +121,7 @@ class _ListeningCompEditorViewState extends State<_ListeningCompEditorView> {
   }
 
   void _onSubmit() {
+    if (_isSubmitting) return; // chặn double-submit tạo bản trùng
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_titleCtrl.text.isEmpty) {

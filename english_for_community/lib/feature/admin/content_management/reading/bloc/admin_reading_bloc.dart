@@ -9,6 +9,7 @@ class AdminReadingBloc extends Bloc<AdminReadingEvent, AdminReadingState> {
 
   AdminReadingBloc(this._repository) : super(const AdminReadingState()) {
     on<CreateReadingEvent>(_onCreateReading);
+    on<UpdateReadingEvent>(_onUpdateReading);
     on<GetAdminReadingListEvent>(_onGetList);
     on<GetReadingDetailEvent>(_onGetDetail);
     on<DeleteReadingEvent>(_onDeleteReading);
@@ -72,6 +73,23 @@ class AdminReadingBloc extends Bloc<AdminReadingEvent, AdminReadingState> {
         status: AdminReadingStatus.saved, // 👈 SỬA THÀNH saved
         // selectedReading: null, // Clear nếu cần
       )),
+    );
+  }
+
+  Future<void> _onUpdateReading(
+      UpdateReadingEvent event,
+      Emitter<AdminReadingState> emit,
+      ) async {
+    emit(state.copyWith(status: AdminReadingStatus.loading));
+
+    final result = await _repository.updateReading(event.id, event.reading);
+
+    result.fold(
+          (failure) => emit(state.copyWith(
+        status: AdminReadingStatus.failure,
+        errorMessage: failure.message,
+      )),
+          (_) => emit(state.copyWith(status: AdminReadingStatus.saved)),
     );
   }
 

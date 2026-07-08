@@ -5,7 +5,9 @@ import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart'
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
+import '../../core/repository/auth_repository.dart';
 import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
@@ -34,6 +36,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   final _focusNode = FocusNode();
 
   bool _showOtpInput = false;
+  bool _verifying = false;
   String? _email;
   Timer? _timer;
   int _start = 60;
@@ -84,8 +87,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     context.read<UserBloc>().add(RequestForgotPasswordEvent(email: email));
   }
 
-  void _onNext(bool isLoading) {
-    if (isLoading || !_showOtpInput) return;
+  Future<void> _onNext(bool isLoading) async {
+    if (isLoading || _verifying || !_showOtpInput) return;
     final otp = _textController.text;
 
     if (otp.length < 6) {
@@ -98,9 +101,32 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    context.pushNamed(
-      ResetPasswordPage.routeName,
-      extra: {'email': _email, 'otp': otp},
+    final email = _email;
+    if (email == null) return;
+
+    // Xác thực OTP với server TRƯỚC khi sang màn đổi mật khẩu. Backend giữ
+    // nguyên OTP cho purpose 'forgot' để bước reset-password tiêu thụ sau.
+    setState(() => _verifying = true);
+    final result =
+        await getIt<AuthRepository>().verifyOtp(email, otp, 'forgot');
+    if (!mounted) return;
+    setState(() => _verifying = false);
+
+    result.fold(
+      (failure) {
+        showAuthFeedbackDialog(
+          context,
+          title: context.l10n.errorTitle,
+          message: failure.message,
+          isError: true,
+        );
+      },
+      (_) {
+        context.pushNamed(
+          ResetPasswordPage.routeName,
+          extra: {'email': email, 'otp': otp},
+        );
+      },
     );
   }
 
@@ -259,9 +285,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                       ),
                       const SizedBox(height: AppSpacing.s8),
                       FilledButton(
-                        onPressed: () => _onNext(isLoading),
+                        onPressed: _verifying ? null : () => _onNext(isLoading),
                         style: AuthFormUi.primaryButtonStyle(),
-                        child: isLoading
+                        child: (isLoading || _verifying)
                             ? const SizedBox(
                                 width: 20,
                                 height: 20,

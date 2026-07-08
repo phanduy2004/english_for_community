@@ -17,7 +17,6 @@ import User from '../models/User.js';
 import { uploadMulterFileToCloudinary } from '../config/cloudinary.js';
 import mongoose from 'mongoose';
 import { getIO } from '../socket/socketManager.js';
-import { createNotification } from './notificationService.js';
 
 const PAGE_SIZE = 30;
 const MAX_CONTENT_LENGTH = 4000;
@@ -185,6 +184,27 @@ async function emitInboxUpdates(classroomId, messageView, senderId) {
   }
 }
 
+// Báo cho CHỦ tin nhắn khi có người thả reaction mới: badge danh sách chat +1
+// và card hội thoại hiện preview "X đã thả <emoji> vào tin nhắn của bạn".
+// Chỉ đẩy tới đúng chủ tin nhắn (không phải cả lớp) và chỉ khi là reaction mới.
+async function emitReactionInboxUpdate(classroomId, ownerId, reactorId, emoji) {
+  const reactor = await User.findById(reactorId).select('fullName username').lean();
+  const reactorName = reactor?.fullName || reactor?.username || 'Thành viên';
+  emitToUser(String(ownerId), 'classroom_chat_inbox_updated', {
+    classroomId: String(classroomId),
+    lastMessage: {
+      // Cả câu nằm trong preview + senderName rỗng: client ghép "{firstWord(senderName)}: {preview}",
+      // để rỗng để không lặp tên và giữ đúng câu đầy đủ.
+      preview: `${reactorName} đã thả ${emoji} vào tin nhắn của bạn`,
+      senderName: '',
+      senderId: String(reactorId),
+      type: 'reaction',
+      createdAt: new Date().toISOString(),
+    },
+    unreadDelta: 1,
+  });
+}
+
 // ─── Send message ────────────────────────────────────────────────────────────
 
 export async function sendMessage(classroomId, senderId, body) {
@@ -346,7 +366,7 @@ export async function getMessages(classroomId, userId, query) {
 // ─── React to message ────────────────────────────────────────────────────────
 
 export async function reactMessage(classroomId, userId, messageId, emoji) {
-  const { room } = await assertMember(classroomId, userId);
+  await assertMember(classroomId, userId);
 
   if (!ALLOWED_EMOJIS.includes(emoji)) throw httpErr(400, 'Emoji không hợp lệ');
 
@@ -387,28 +407,10 @@ export async function reactMessage(classroomId, userId, messageId, emoji) {
   };
   emitToRoom(classroomId, 'classroom_message_react_update', payload);
 
-  // Notify chủ tin nhắn khi có reaction MỚI (bỏ react / tự react → không notify)
+  // Reaction MỚI (không phải bỏ react) và không tự-react → báo chủ tin nhắn qua chat inbox
+  // (badge danh sách chat + card preview). KHÔNG dùng notification chuông (đó chỉ cho thông báo hệ thống).
   if (isNewReaction && String(msg.senderId) !== String(userId)) {
-    const preview =
-      msg.type === 'text'
-        ? `: "${(msg.content || '').slice(0, 30)}"`
-        : msg.type === 'image'
-        ? ' (image)'
-        : msg.type === 'video'
-        ? ' (video)'
-        : ' (file)';
-    await createNotification({
-      recipientId: msg.senderId,
-      senderId: userId,
-      type: 'CLASSROOM_CHAT_REACTION',
-      title: 'New reaction',
-      message: `reacted ${emoji} to your message${preview}`,
-      data: {
-        classroomId: String(classroomId),
-        messageId: String(messageId),
-        classroomName: room?.name || '',
-      },
-    });
+    await emitReactionInboxUpdate(classroomId, msg.senderId, userId, emoji);
   }
 
   return payload;

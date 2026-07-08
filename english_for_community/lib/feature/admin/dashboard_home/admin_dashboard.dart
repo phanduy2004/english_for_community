@@ -325,39 +325,43 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
   }
 
   Widget _buildBarChart(ChartData chartData) {
-    // ... (Giữ nguyên logic cũ của bạn) ...
-    final List<BarChartGroupData> barGroups = [];
     final int dataLength = chartData.labels.length;
     final double maxY = _calculateMaxY(chartData);
 
-    for (int i = 0; i < dataLength; i++) {
-      final double w =
-          (i < chartData.writing.length) ? chartData.writing[i].toDouble() : 0;
-      final double s = (i < chartData.speaking.length)
-          ? chartData.speaking[i].toDouble()
-          : 0;
-      final double r =
-          (i < chartData.reading.length) ? chartData.reading[i].toDouble() : 0;
-      final double d = (i < chartData.dictation.length)
-          ? chartData.dictation[i].toDouble()
-          : 0;
+    // Bọc trong _GrowingBarChart để các cột "mọc" từ 0 lên khi hiện lần đầu và
+    // mỗi khi đổi Day/Week/Month (fl_chart tween 0 → giá trị thật, easeOutCubic).
+    return _GrowingBarChart(
+      dataKey: _chartKey(chartData),
+      builder: (grown) {
+        final List<BarChartGroupData> barGroups = [];
+        for (int i = 0; i < dataLength; i++) {
+          final double w =
+              (i < chartData.writing.length) ? chartData.writing[i].toDouble() : 0;
+          final double s = (i < chartData.speaking.length)
+              ? chartData.speaking[i].toDouble()
+              : 0;
+          final double r =
+              (i < chartData.reading.length) ? chartData.reading[i].toDouble() : 0;
+          final double d = (i < chartData.dictation.length)
+              ? chartData.dictation[i].toDouble()
+              : 0;
 
-      barGroups.add(
-        BarChartGroupData(
-          x: i,
-          barsSpace: 4,
-          barRods: [
-            _makeRod(w, AdminSkillPalette.writing, maxY),
-            _makeRod(s, AdminSkillPalette.speaking, maxY),
-            _makeRod(r, AdminSkillPalette.reading, maxY),
-            _makeRod(d, AdminSkillPalette.listening, maxY),
-          ],
-        ),
-      );
-    }
+          barGroups.add(
+            BarChartGroupData(
+              x: i,
+              barsSpace: 4,
+              barRods: [
+                _makeRod(grown ? w : 0, AdminSkillPalette.writing, maxY),
+                _makeRod(grown ? s : 0, AdminSkillPalette.speaking, maxY),
+                _makeRod(grown ? r : 0, AdminSkillPalette.reading, maxY),
+                _makeRod(grown ? d : 0, AdminSkillPalette.listening, maxY),
+              ],
+            ),
+          );
+        }
 
-    return BarChart(
-      BarChartData(
+        return BarChart(
+          BarChartData(
         alignment: BarChartAlignment.spaceAround,
         maxY: maxY,
         gridData: FlGridData(
@@ -442,7 +446,11 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
                     fontWeight: FontWeight.bold));
           },
         )),
-      ),
+          ),
+          duration: const Duration(milliseconds: 900),
+          curve: Curves.easeOutCubic,
+        );
+      },
     );
   }
 
@@ -472,6 +480,49 @@ class _AdminDashboardViewState extends State<_AdminDashboardView> {
       backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxY, color: AppColors.surfaceSubtle),
     );
   }
+
+  /// Khoá nhận diện tập dữ liệu hiện tại — đổi khoá thì chart mọc lại từ 0.
+  String _chartKey(ChartData c) =>
+      '${_selectedRange.name}|${c.labels.join(',')}|${c.writing.join(',')}'
+      '|${c.speaking.join(',')}|${c.reading.join(',')}|${c.dictation.join(',')}';
+}
+
+/// Bọc [BarChart] để các cột "mọc" từ 0 lên khi xuất hiện lần đầu và mỗi khi
+/// dữ liệu đổi (đổi Day/Week/Month). fl_chart tự tween 0 → giá trị thật.
+class _GrowingBarChart extends StatefulWidget {
+  const _GrowingBarChart({required this.dataKey, required this.builder});
+
+  final String dataKey;
+  final Widget Function(bool grown) builder;
+
+  @override
+  State<_GrowingBarChart> createState() => _GrowingBarChartState();
+}
+
+class _GrowingBarChartState extends State<_GrowingBarChart> {
+  bool _grown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _grown = true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _GrowingBarChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.dataKey != widget.dataKey) {
+      _grown = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _grown = true);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.builder(_grown);
 }
 
 class _LegendItem extends StatelessWidget {

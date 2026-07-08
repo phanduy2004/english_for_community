@@ -29,7 +29,6 @@ const notificationSchema = new mongoose.Schema({
       'CO_TEACHER_INVITE_ACCEPTED',
       'CO_TEACHER_INVITE_DECLINED',
       'CO_TEACHER_REMOVED',
-      'CLASSROOM_CHAT_REACTION',
     ],
     required: true
   },

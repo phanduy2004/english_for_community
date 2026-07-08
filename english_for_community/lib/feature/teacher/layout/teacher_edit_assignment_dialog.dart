@@ -135,23 +135,31 @@ class _TeacherEditAssignmentDialogState
     DateTime? firstDate,
   }) async {
     final now = DateTime.now();
+    final first = firstDate ?? now.subtract(const Duration(days: 1));
+    final last = now.add(const Duration(days: 365 * 2));
+    final base = (current ?? now).toLocal();
+    // initialDate phải nằm trong [first, last]. Bài đã qua có current < first
+    // → clamp để tránh assert "initialDate must be on or after firstDate" (crash).
+    final initial = base.isBefore(first) ? first : (base.isAfter(last) ? last : base);
     final d = await showDatePicker(
       context: context,
-      initialDate: current ?? now,
-      firstDate:
-          firstDate ?? now.subtract(const Duration(days: 1)),
-      lastDate: now.add(const Duration(days: 365 * 2)),
+      initialDate: initial,
+      firstDate: first,
+      lastDate: last,
     );
     if (d == null || !mounted) return;
     final t = await showTimePicker(
       context: context,
-      initialTime: current != null ? TimeOfDay.fromDateTime(current) : TimeOfDay.now(),
+      initialTime: current != null
+          ? TimeOfDay.fromDateTime(current.toLocal())
+          : TimeOfDay.now(),
     );
     if (t == null || !mounted) return;
     onPicked(DateTime(d.year, d.month, d.day, t.hour, t.minute));
   }
 
   Future<void> _save() async {
+    if (_saving) return; // chặn double-click patch assignment trùng
     final l10n = context.l10n;
     if (_mode == 'realtime' &&
         _realtimeScheduleMode == 'scheduled' &&

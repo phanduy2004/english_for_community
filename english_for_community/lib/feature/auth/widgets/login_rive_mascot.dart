@@ -87,9 +87,9 @@ class _AuthLoginRiveMascotState extends State<AuthLoginRiveMascot> {
 
   double _height(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
-    if (w >= 600) return 220;
-    if (w >= 400) return 200;
-    return 180;
+    if (w >= 600) return 168;
+    if (w >= 400) return 148;
+    return 128;
   }
 
   @override

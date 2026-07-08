@@ -25,8 +25,9 @@ class ReportManagementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<AdminBloc>(),
+    // create (không .value) → provider tự close bloc factory khi rời trang (hết leak).
+    return BlocProvider(
+      create: (_) => getIt<AdminBloc>(),
       child: const _ReportManagementView(),
     );
   }

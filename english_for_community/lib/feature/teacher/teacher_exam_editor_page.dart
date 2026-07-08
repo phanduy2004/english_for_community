@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
@@ -64,7 +65,14 @@ class _TeacherExamEditorViewState extends State<_TeacherExamEditorView> {
 
   void _scheduleAutosave(TeacherExamEditorState state) {
     if (!state.isDraft || state.status != TeacherExamEditorStatus.success) return;
-    final snap = '${state.title}|${state.description}|${state.showResultsPolicy}|${state.items.length}';
+    // Snapshot phải bắt cả NỘI DUNG item (không chỉ .length) — sửa stem/option/points
+    // không đổi length nên trước đây autosave bỏ sót.
+    final snap = jsonEncode({
+      't': state.title,
+      'd': state.description,
+      'p': state.showResultsPolicy,
+      'items': state.items,
+    });
     if (_lastSnapshot == null) {
       _lastSnapshot = snap;
       return;
@@ -194,7 +202,6 @@ class _TeacherExamEditorViewState extends State<_TeacherExamEditorView> {
           (curr.errorMessage != null && prev.errorMessage != curr.errorMessage) ||
           (curr.successMessage != null && prev.successMessage != curr.successMessage),
       listener: (context, state) {
-        _scheduleAutosave(state);
         if (state.errorMessage != null && state.saving == false) {
           if (_saveState == TeacherSaveState.saving) {
             _onSaveError();
@@ -211,6 +218,9 @@ class _TeacherExamEditorViewState extends State<_TeacherExamEditorView> {
         }
       },
       builder: (context, state) {
+        // Autosave đặt ở builder (chạy theo mọi thay đổi content), KHÔNG ở listener
+        // message-only (trước đây khiến autosave không bao giờ chạy khi sửa).
+        _scheduleAutosave(state);
         final loading = state.status == TeacherExamEditorStatus.loading;
         final error = state.status == TeacherExamEditorStatus.error ? state.errorMessage : null;
         final isDraft = state.isDraft;
@@ -511,12 +521,14 @@ class _ItemEditorTileState extends State<_ItemEditorTile> {
 
   void _emitMcq() {
     final parts = _options.text.split('|').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-    final ci = int.tryParse(_correct.text.trim()) ?? 0;
+    final effOpts = parts.isEmpty ? ['A', 'B'] : parts;
+    // Clamp chỉ số đáp án vào [0, số option - 1] — tránh trỏ ra ngoài options.
+    final ci = (int.tryParse(_correct.text.trim()) ?? 0).clamp(0, effOpts.length - 1);
     final p = int.tryParse(_points.text.trim()) ?? 1;
     widget.onChanged({
       ...widget.item,
       'stem': _stemOrPrompt.text,
-      'options': parts.isEmpty ? ['A', 'B'] : parts,
+      'options': effOpts,
       'correctOptionIndexes': [ci],
       'points': p,
     });

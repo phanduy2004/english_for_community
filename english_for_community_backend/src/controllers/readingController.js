@@ -70,6 +70,18 @@ const createReading = async (req, res) => {
   }
 };
 
+const updateReading = async (req, res) => {
+  try {
+    const updated = await readingService.updateReading(req.params.id, req.body);
+    res.status(200).json({ message: 'Cập nhật bài đọc thành công!', data: updated });
+  } catch (err) {
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Dữ liệu không hợp lệ', error: err.message });
+    }
+    res.status(err.statusCode || 500).json({ message: 'Lỗi máy chủ: ' + err.message });
+  }
+};
+
 /**
  * Nộp kết quả bài đọc
  */
@@ -150,6 +162,7 @@ const restoreReading = async (req, res) => {
 export const readingController = {
   getAllReadings,
   createReading, // 👈 Export hàm mới
+  updateReading,
   submitAttempt,
   getAttemptHistory,
   getReadingById,

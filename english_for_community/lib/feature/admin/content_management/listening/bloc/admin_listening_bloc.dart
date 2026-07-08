@@ -33,7 +33,7 @@ class AdminListeningBloc extends Bloc<AdminListeningEvent, AdminListeningState> 
   }
 
   Future<void> _onGetList(GetAdminListeningListEvent event, Emitter<AdminListeningState> emit) async {
-    if (event.page != 1 && (!state.hasNextPage || state.status == AdminListeningStatus.loading)) return;
+    if (event.page != 1 && state.status == AdminListeningStatus.loading) return;
     if (event.page == 1) emit(state.copyWith(status: AdminListeningStatus.loading));
 
     final result = await _repository.getListenings(page: event.page, limit: event.limit);
@@ -41,7 +41,9 @@ class AdminListeningBloc extends Bloc<AdminListeningEvent, AdminListeningState> 
     result.fold(
           (failure) => emit(state.copyWith(status: AdminListeningStatus.failure, errorMessage: failure.message)),
           (paginatedResult) {
-        final newItems = event.page == 1 ? paginatedResult.data : [...state.listenings, ...paginatedResult.data];
+        // Phân trang prev/next (rời rạc) → luôn THAY bằng trang vừa tải, không nối
+        // (nối gây trùng dòng + guard hasNextPage cũ khoá điều hướng ở trang cuối).
+        final newItems = paginatedResult.data;
         emit(state.copyWith(
           status: AdminListeningStatus.success,
           listenings: newItems,

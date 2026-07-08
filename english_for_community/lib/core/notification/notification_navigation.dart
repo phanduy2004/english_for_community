@@ -5,9 +5,6 @@ import 'package:english_for_community/feature/student/exams/exam_runner_page.dar
 import 'package:english_for_community/feature/student/exams/exam_session_lobby_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_classroom_detail_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exam_grading_page.dart';
-import 'package:english_for_community/feature/classroom_chat/classroom_chat_page.dart';
-import 'package:english_for_community/core/utils/global_keys.dart';
-import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:go_router/go_router.dart';
 
 /// Deep-link navigation for notification taps (in-app list, FCM, local push).
@@ -74,31 +71,6 @@ bool navigateFromNotification(GoRouter router, {NotificationEntity? item, Map<St
         final attemptId = payload['attemptId']?.toString();
         if (attemptId != null && attemptId.isNotEmpty) {
           router.push('${ExamRunnerPage.routePath}/$attemptId');
-          return true;
-        }
-        break;
-
-      case 'CLASSROOM_CHAT_REACTION':
-        final chatClassroomId = payload['classroomId']?.toString();
-        if (chatClassroomId != null && chatClassroomId.isNotEmpty) {
-          final extra = <String, dynamic>{
-            'classroomName':
-                payload['classroomName']?.toString() ?? 'Nhóm lớp học',
-          };
-          final ctx = rootNavigatorKey.currentContext;
-          final isWeb = ctx != null && WorkspaceLayoutScope.isWebWorkspace(ctx);
-          if (isWeb) {
-            router.push(
-              ClassroomChatPage.routePathFor(chatClassroomId),
-              extra: extra,
-            );
-          } else {
-            router.pushNamed(
-              ClassroomChatPage.studentRouteName,
-              pathParameters: {'classroomId': chatClassroomId},
-              extra: extra,
-            );
-          }
           return true;
         }
         break;

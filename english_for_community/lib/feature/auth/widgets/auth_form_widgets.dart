@@ -168,60 +168,95 @@ class _AuthOtpInputState extends State<AuthOtpInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const sideMargin = AppSpacing.s2; // 4dp each side => 8dp between boxes
+        final available =
+            constraints.maxWidth.isFinite ? constraints.maxWidth : 320.0;
+        // Responsive box width so the row never overflows or overlaps.
+        final boxWidth =
+            ((available / widget.length) - sideMargin * 2).clamp(34.0, 48.0);
+        final rowWidth = (boxWidth + sideMargin * 2) * widget.length;
+
+        return SizedBox(
           width: double.infinity,
           height: AuthFormUi.fieldHeight,
-          child: TextField(
-            controller: widget.controller,
-            focusNode: widget.focusNode,
-            keyboardType: TextInputType.number,
-            maxLength: widget.length,
-            showCursor: false,
-            enableInteractiveSelection: false,
-            style: const TextStyle(color: Colors.transparent),
-            decoration: const InputDecoration(
-              counterText: '',
-              border: InputBorder.none,
-              filled: false,
-            ),
-          ),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(widget.length, (index) {
-            final text = widget.controller.text;
-            final char = index < text.length ? text[index] : '';
-            final isFocused =
-                index == text.length && widget.focusNode.hasFocus;
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: AppSpacing.s2),
-              width: 44,
-              height: AuthFormUi.fieldHeight,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceCard,
-                borderRadius: BorderRadius.circular(AppRadius.input),
-                border: Border.all(
-                  color: isFocused
-                      ? AppColors.primary
-                      : (char.isNotEmpty
-                          ? AppColors.textSecondary
-                          : AppColors.outlineStrong),
-                  width: isFocused ? 1.5 : 1,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  widget.length,
+                  (index) => _box(context, index, boxWidth, sideMargin),
                 ),
               ),
-              child: Text(
-                char,
-                style: context.h2Style.copyWith(fontWeight: FontWeight.w600),
+              // Transparent capture field — width-clamped to the boxes so it
+              // can't render a full-width input frame on web.
+              SizedBox(
+                width: rowWidth,
+                height: AuthFormUi.fieldHeight,
+                child: TextField(
+                  controller: widget.controller,
+                  focusNode: widget.focusNode,
+                  keyboardType: TextInputType.number,
+                  maxLength: widget.length,
+                  showCursor: false,
+                  enableInteractiveSelection: false,
+                  textAlign: TextAlign.center,
+                  autofillHints: const [AutofillHints.oneTimeCode],
+                  style: const TextStyle(color: Colors.transparent),
+                  decoration: const InputDecoration(
+                    counterText: '',
+                    isCollapsed: true,
+                    filled: false,
+                    contentPadding: EdgeInsets.zero,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    disabledBorder: InputBorder.none,
+                  ),
+                ),
               ),
-            );
-          }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _box(
+    BuildContext context,
+    int index,
+    double width,
+    double sideMargin,
+  ) {
+    final text = widget.controller.text;
+    final char = index < text.length ? text[index] : '';
+    final isFocused = index == text.length && widget.focusNode.hasFocus;
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: sideMargin),
+      width: width,
+      height: AuthFormUi.fieldHeight,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(
+          color: isFocused
+              ? AppColors.primary
+              : (char.isNotEmpty
+                  ? AppColors.textSecondary
+                  : AppColors.outlineStrong),
+          width: isFocused ? 1.5 : 1,
         ),
-      ],
+      ),
+      child: Text(
+        char,
+        style: context.h2Style.copyWith(fontWeight: FontWeight.w600),
+      ),
     );
   }
 }

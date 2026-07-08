@@ -27,8 +27,10 @@ class ListeningEditorPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<AdminListeningBloc>(),
+    // create (không .value) → provider tự close bloc factory khi rời editor (hết leak);
+    // mỗi lần mở là instance mới (state sạch) nên không cần ClearSelected ở dispose.
+    return BlocProvider(
+      create: (_) => getIt<AdminListeningBloc>(),
       child: _ListeningEditorView(id: id),
     );
   }
@@ -76,7 +78,6 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
     _cefrCtrl.dispose();
     _scrollController.dispose();
     _audioPlayer.dispose();
-    getIt<AdminListeningBloc>().add(ClearSelectedListeningEvent());
     super.dispose();
   }
 
@@ -192,6 +193,7 @@ class _ListeningEditorViewState extends State<_ListeningEditorView> {
   }
 
   void _onSubmit() {
+    if (_isSubmitting) return; // chặn double-submit tạo bản trùng + upload audio 2 lần
     FocusManager.instance.primaryFocus?.unfocus();
 
     if (_titleCtrl.text.isEmpty) {

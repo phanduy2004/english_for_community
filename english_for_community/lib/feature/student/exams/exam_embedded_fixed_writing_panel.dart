@@ -2,6 +2,7 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:flutter/material.dart';
 
 /// Writing part when the exam has [fixedWritingPrompt] but no CMS topic id (exam-only draft).
@@ -65,6 +66,7 @@ class _ExamEmbeddedFixedWritingPanelState extends State<ExamEmbeddedFixedWriting
           variant: AppCardVariant.outline,
           child: TextField(
             controller: _controller,
+            contextMenuBuilder: examPasteAwareContextMenu,
             readOnly: widget.locked,
             maxLines: boundedHeight ? null : 14,
             expands: boundedHeight,

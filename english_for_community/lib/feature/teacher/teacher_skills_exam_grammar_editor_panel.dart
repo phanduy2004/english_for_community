@@ -226,17 +226,33 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
     switch (_kind) {
       case 'mcq_single':
       case 'mcq_multi':
-        final opts = _mcqOptions.map((c) => c.text.trim()).where((s) => s.isNotEmpty).toList();
+        // Lọc option rỗng + remap chỉ số đáp án theo vị trí SAU khi lọc — nếu không,
+        // 1 option rỗng phía trước sẽ làm chỉ số đúng lệch/ra ngoài phạm vi.
+        final rawOpts = _mcqOptions.map((c) => c.text.trim()).toList();
+        final opts = <String>[];
+        final indexMap = <int, int>{}; // chỉ số cũ (chưa lọc) -> chỉ số mới (đã lọc)
+        for (var i = 0; i < rawOpts.length; i++) {
+          if (rawOpts[i].isNotEmpty) {
+            indexMap[i] = opts.length;
+            opts.add(rawOpts[i]);
+          }
+        }
         final stem = _prompt.text.trim();
         if (stem.isEmpty || opts.length < 2) {
           AppCornerToast.show(context, l10n.teacherExamMcqNeedsStem, error: true);
           return;
         }
-        if (_mcqCorrect.isEmpty) {
+        final correct = (_mcqCorrect
+            .where((i) => indexMap.containsKey(i))
+            .map((i) => indexMap[i]!)
+            .toSet()
+            .toList()
+          ..sort());
+        if (correct.isEmpty) {
           AppCornerToast.show(context, l10n.teacherExamGrammarCorrectOptions, error: true);
           return;
         }
-        if (_kind == 'mcq_single' && _mcqCorrect.length != 1) {
+        if (_kind == 'mcq_single' && correct.length != 1) {
           AppCornerToast.show(context, l10n.teacherExamGrammarCorrectOptions, error: true);
           return;
         }
@@ -245,7 +261,7 @@ class _TeacherSkillsExamGrammarEditorPanelState extends State<TeacherSkillsExamG
           'kind': _kind,
           'prompt': stem,
           'options': opts,
-          'correctOptionIndexes': (_mcqCorrect.toList()..sort()),
+          'correctOptionIndexes': correct,
           'points': pts,
         };
         break;

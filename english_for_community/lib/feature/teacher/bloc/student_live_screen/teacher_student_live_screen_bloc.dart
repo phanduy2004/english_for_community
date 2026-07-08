@@ -37,6 +37,9 @@ class TeacherStudentLiveScreenBloc
       emit(state.copyWith(status: TeacherStudentLiveScreenStatus.loading, clearError: true));
     }
 
+    // Gỡ listener cũ trước khi đăng ký lại — nếu _onStarted chạy lại (retry sau lỗi),
+    // closure cũ sẽ kẹt vĩnh viễn trên socket dùng chung → rò + xử lý trùng.
+    _detach();
     _onLiveScreen = (p) => add(TeacherStudentLiveScreenPayloadReceived(p));
     _onLiveProgress = (p) => add(TeacherStudentLiveScreenPayloadReceived(p));
     socketService.listenExamSessionLiveScreen(_onLiveScreen!);

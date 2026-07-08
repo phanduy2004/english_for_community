@@ -66,6 +66,21 @@ const createReading = async (payload) => {
   return await newReading.save();
 };
 
+// Cập nhật bài đọc: findByIdAndUpdate CHỈ ghi đè field trong payload, GIỮ nguyên
+// field khác (attemptsCount, status, timestamps...). runValidators để chặn dữ liệu sai.
+const updateReading = async (id, payload) => {
+  const updated = await Reading.findByIdAndUpdate(id, payload, {
+    new: true,
+    runValidators: true,
+  });
+  if (!updated) {
+    const err = new Error('Không tìm thấy bài đọc');
+    err.statusCode = 404;
+    throw err;
+  }
+  return updated;
+};
+
 // ... existing code (submitAttempt) ...
 const submitAttempt = async (userId, payload) => {
   const newAttempt = new ReadingAttempt({
@@ -153,6 +168,7 @@ const getReadingById = async (id) => {
 export const readingService = {
   getAllReadings,
   createReading, // 👈 Export hàm mới
+  updateReading,
   submitAttempt,
   getAttemptHistory,
   getReadingById,

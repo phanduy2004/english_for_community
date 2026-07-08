@@ -45,32 +45,37 @@ class _TeacherDashboardView extends StatelessWidget {
 
   Future<void> _createClass(BuildContext context) async {
     final nameCtrl = TextEditingController();
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.teacherClassCreateTitle),
-        content: TextField(
-          controller: nameCtrl,
-          decoration: InputDecoration(labelText: context.l10n.teacherClassNameLabel),
+    try {
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(context.l10n.teacherClassCreateTitle),
+          content: TextField(
+            controller: nameCtrl,
+            decoration: InputDecoration(labelText: context.l10n.teacherClassNameLabel),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.l10n.save)),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: Text(context.l10n.save)),
-        ],
-      ),
-    );
-    if (ok != true || !context.mounted) return;
-    final name = nameCtrl.text.trim();
-    if (name.isEmpty) return;
-    final r = await getIt<TeacherExamRepository>().createClassroom(name: name);
-    r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
-      (_) {
-        AppCornerToast.show(context, context.l10n.teacherClassCreated);
-        _reload(context);
-      },
-    );
-    nameCtrl.dispose();
+      );
+      if (ok != true || !context.mounted) return;
+      final name = nameCtrl.text.trim();
+      if (name.isEmpty) return;
+      final r = await getIt<TeacherExamRepository>().createClassroom(name: name);
+      if (!context.mounted) return;
+      r.fold(
+        (f) => AppCornerToast.show(context, f.message, error: true),
+        (_) {
+          AppCornerToast.show(context, context.l10n.teacherClassCreated);
+          _reload(context);
+        },
+      );
+    } finally {
+      // Dispose ở finally để không rò controller trên nhánh Cancel / tên rỗng.
+      nameCtrl.dispose();
+    }
   }
 
   int _memberCount(Map<String, dynamic> m, String key) {

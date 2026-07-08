@@ -202,4 +202,28 @@ export const chatTools = [
       },
     }
   ),
+  tool(
+    'get_classroom_assignments',
+    'List exam/homework assignments in the authenticated student classrooms, with deadlines (dueAt/opensAt/closesAt), timing status, the student own attempt status, and score if released. Use for questions about classroom homework, deadlines, what is due, or what has not been done yet.',
+    {
+      status: {
+        type: 'string',
+        enum: ['all', 'todo', 'done'],
+        description: 'todo = not submitted/graded and still open; done = submitted or graded; default all',
+      },
+      classroomName: {
+        type: 'string',
+        description: 'Optional case-insensitive substring to filter by classroom name',
+      },
+      limit: { type: 'number', description: 'Max assignments, default 20, max 50' },
+    }
+  ),
+  tool(
+    'get_classroom_activity',
+    'List the student own classroom/exam notifications (new assignment, results released, live exam, announcements). Privacy-safe: only the authenticated user notifications. Use for questions about class announcements, what is new, or recent class activity.',
+    {
+      limit: { type: 'number', description: 'Max items, default 15, max 40' },
+      unreadOnly: { type: 'boolean', description: 'If true, only unread notifications' },
+    }
+  ),
 ];

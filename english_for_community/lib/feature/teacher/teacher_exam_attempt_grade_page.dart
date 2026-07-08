@@ -84,6 +84,9 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
   TeacherExamAttemptGradeBloc get _bloc => context.read<TeacherExamAttemptGradeBloc>();
 
   Map<String, dynamic>? get _attempt => _bloc.state.attempt;
+  // Attempt map lần cuối đã nạp vào controllers — chỉ re-sync khi attempt THỰC SỰ đổi.
+  // Tránh nạp đè controllers trên nhánh lỗi save (attempt giữ nguyên) → mất điểm vừa gõ.
+  Map<String, dynamic>? _lastSyncedAttempt;
 
   @override
   void dispose() {
@@ -442,16 +445,10 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
 
   void _runAi() => _bloc.add(const TeacherExamAttemptGradeRunAiRequested());
 
-  Future<void> _finalize() async {
-    final r = await getIt<TeacherExamRepository>().finalizeExamAttempt(widget.attemptId);
-    if (!mounted) return;
-    r.fold(
-      (f) => AppCornerToast.show(context, f.message, error: true),
-      (_) {
-        AppCornerToast.show(context, context.l10n.teacherGradingFinalized);
-        _bloc.add(const TeacherExamAttemptGradeLoadRequested());
-      },
-    );
+  void _finalize() {
+    // Lưu điểm đang gõ RỒI finalize trong 1 lượt (bloc hỗ trợ save+finalize atomic),
+    // tránh finalize với điểm cũ và mất điểm giáo viên chưa bấm Save.
+    _save(finalize: true);
   }
 
   Future<void> _release() async {
@@ -1376,10 +1373,14 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
           AppCornerToast.show(context, msg);
         } else if (success == 'saved') {
           AppCornerToast.show(context, l10n.teacherGradingSaved);
+        } else if (success == 'finalized') {
+          AppCornerToast.show(context, l10n.teacherGradingFinalized);
         } else if (success == 'skill_saved') {
           AppCornerToast.show(context, l10n.integratedSkillScoreSaved);
         }
-        if (state.attempt != null) {
+        if (state.attempt != null &&
+            !identical(state.attempt, _lastSyncedAttempt)) {
+          _lastSyncedAttempt = state.attempt;
           _syncControllersFromAttempt(state.attempt!);
         }
       },

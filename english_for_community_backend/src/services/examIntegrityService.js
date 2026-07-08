@@ -30,10 +30,11 @@ function mergeIntegrity(prev = {}, patch = {}) {
   const tabs = Number(out.tabSwitchCount) || 0;
   const focus = Number(out.focusLossSeconds) || 0;
   const copy = Number(out.copyPasteAttempts) || 0;
+  const fsExited = out.fullscreenExited === true;
   out.riskLevel =
     tabs >= RISK_TAB_SWITCHES || focus >= RISK_FOCUS_LOSS_SEC || copy >= 3
       ? 'high'
-      : tabs >= 2 || focus >= 45 || copy >= 1
+      : tabs >= 2 || focus >= 45 || copy >= 1 || fsExited
         ? 'medium'
         : 'low';
   return out;

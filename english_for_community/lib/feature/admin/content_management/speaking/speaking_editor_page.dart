@@ -85,6 +85,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
     setState(() {
       sentences = item.sentences.map((s) => {
         "key": UniqueKey(),
+        "id": s.id, // giữ id gốc để update KHÔNG cấp lại id mới (orphan tiến độ HS)
         "speaker": s.speaker,
         "script": s.script,
         "phonetic": s.phoneticScript,
@@ -104,7 +105,7 @@ class _SpeakingEditorViewState extends State<_SpeakingEditorView> {
     for (int i = 0; i < sentences.length; i++) {
       final s = sentences[i];
       sentEntities.add(SentenceEntity(
-        id: '',
+        id: s['id']?.toString() ?? '', // câu cũ giữ id; câu mới để '' → backend cấp id
         order: i + 1,
         speaker: s['speaker']?.toString().trim() ?? 'You',
         script: s['script']?.toString().trim() ?? '',

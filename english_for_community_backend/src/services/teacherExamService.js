@@ -188,6 +188,14 @@ function validateGrammarItem(it, idx) {
     if (!Array.isArray(it.correctOptionIndexes) || it.correctOptionIndexes.length === 0) {
       throw httpError(400, `${label} needs correctOptionIndexes`);
     }
+    // Mọi chỉ số đáp án phải là số nguyên trong [0, options.length) — chặn đáp án trỏ
+    // ra ngoài/không tồn tại (câu hỏi không thể trả lời đúng, chấm sai thầm lặng).
+    if (it.correctOptionIndexes.some((i) => {
+      const idx = Number(i);
+      return !Number.isInteger(idx) || idx < 0 || idx >= it.options.length;
+    })) {
+      throw httpError(400, `${label} has correctOptionIndexes out of range`);
+    }
     return;
   }
 
@@ -367,6 +375,12 @@ async function validatePublishedExam(exam) {
       }
       if (!Array.isArray(it.correctOptionIndexes) || it.correctOptionIndexes.length === 0) {
         throw httpError(400, `MCQ ${it.itemId} needs correctOptionIndexes`);
+      }
+      if (it.correctOptionIndexes.some((i) => {
+        const idx = Number(i);
+        return !Number.isInteger(idx) || idx < 0 || idx >= it.options.length;
+      })) {
+        throw httpError(400, `MCQ ${it.itemId} has correctOptionIndexes out of range`);
       }
     }
     if (it.kind === 'fill_blank') {

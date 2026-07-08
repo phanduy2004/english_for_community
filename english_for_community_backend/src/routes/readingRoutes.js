@@ -12,6 +12,7 @@ router.post('/submit', readingController.submitAttempt);
 router.get('/admin/deleted', requireAdmin, readingController.getDeletedReadings);
 router.post('/:id/restore', requireAdmin, readingController.restoreReading);
 router.post('/', requireAdmin, readingController.createReading);
+router.put('/:id', requireAdmin, readingController.updateReading);
 router.delete('/:id', requireAdmin, readingController.deleteReading);
 
 router.get('/:id', readingController.getReadingById);

@@ -102,15 +102,16 @@ class TeacherExamEditorBloc extends Bloc<TeacherExamEditorEvent, TeacherExamEdit
     Emitter<TeacherExamEditorState> emit,
   ) async {
     if (!state.isDraft) return;
-    emit(state.copyWith(saving: true));
+    // clearSuccess ở đầu → mỗi lần lưu, successMessage đổi null→'draft_saved' nên
+    // listener luôn fire (chỉ báo "Saved" 1 lần trước đây do message không đổi).
+    emit(state.copyWith(saving: true, clearSuccess: true));
     final r = await repository.updateExamDraft(examId, _draftPayload());
     emit(state.copyWith(saving: false));
     r.fold(
       (f) => emit(state.copyWith(errorMessage: f.message)),
-      (_) {
-        emit(state.copyWith(successMessage: 'draft_saved'));
-        add(const TeacherExamEditorLoadRequested());
-      },
+      // KHÔNG reload sau save: autosave chạy khi đang gõ, reload sẽ nạp đè & revert
+      // chữ đang nhập. Draft do client làm chủ; item id được backend giữ nguyên.
+      (_) => emit(state.copyWith(successMessage: 'draft_saved')),
     );
   }
 

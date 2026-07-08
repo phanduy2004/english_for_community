@@ -366,6 +366,10 @@ ${text || '(empty)'}`;
       assignmentId,
       status: 'submitted',
       resultsReleased: { $ne: true },
+      // Chỉ release khi grading ĐÃ XONG: loại attempt còn kỹ năng chờ chấm tay
+      // ('partial'/'pending'), tránh phát điểm final thổi phồng cho học sinh.
+      // $nin khớp cả doc không có finalStatus (exam thường auto-graded) → vẫn release.
+      'scores.finalStatus': { $nin: ['partial', 'pending'] },
     }).populate({
       path: 'assignmentId',
       select: 'teacherId classroomId',
@@ -390,6 +394,9 @@ ${text || '(empty)'}`;
       assignmentId,
       status: 'submitted',
       gradingState: { $ne: 'finalized' },
+      // Không finalize attempt còn kỹ năng chờ chấm tay (partial/pending) — nếu không
+      // sẽ khoá điểm với phần chưa chấm. $nin khớp cả exam thường (không có finalStatus).
+      'scores.finalStatus': { $nin: ['partial', 'pending'] },
     }).populate({
       path: 'assignmentId',
       select: 'teacherId classroomId',

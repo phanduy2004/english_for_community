@@ -45,7 +45,11 @@ const rejectSchema = z.object({
 });
 
 const scheduleSchema = z.object({
-  scheduledPublishAt: z.coerce.date(),
+  // Phải là thời điểm TƯƠNG LAI — nếu không, cron publishDueScheduledReleases (chạy mỗi
+  // phút) sẽ auto-publish ngay, bỏ qua xác nhận FORCE ở UI.
+  scheduledPublishAt: z.coerce.date().refine((d) => d.getTime() > Date.now(), {
+    message: 'Thời điểm hẹn publish phải ở tương lai.',
+  }),
 });
 
 async function writeReleaseAudit({ context, action, release, metadata = {}, afterStatus }) {
@@ -264,6 +268,23 @@ async function publishRelease(id, context = {}) {
     throw error;
   }
 
+  // Chặn publish bản có versionCode <= bản đang active (cùng platform/env) → tránh đẩy
+  // bản CŨ hơn thành "latest" + force-update = downgrade toàn bộ user.
+  const currentActive = await AppRelease.findOne({
+    platform: release.platform,
+    environment: release.environment,
+    status: ReleaseStatus.published,
+    isActive: true,
+    _id: { $ne: release._id },
+  }).select('versionCode').lean();
+  if (currentActive && Number(release.versionCode) <= Number(currentActive.versionCode)) {
+    const error = new Error(
+      `Không thể publish versionCode ${release.versionCode} — phải lớn hơn bản đang active (${currentActive.versionCode}).`,
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
   await AppRelease.updateMany(
     {
       platform: release.platform,
@@ -300,12 +321,16 @@ async function rollbackRelease(id, context = {}) {
   }
   assertTransition(release.status, ReleaseStatus.archived);
 
+  // Chọn bản để rollback theo versionCode (lịch sử), KHÔNG theo publishedAt — vì rollback
+  // ghi lại publishedAt=now nên sort theo publishedAt sẽ chọn lại đúng bản vừa rollback
+  // (flip-flop). Chỉ lùi về bản CŨ hơn (versionCode nhỏ hơn bản đang gỡ).
   const previous = await AppRelease.findOne({
     platform: release.platform,
     environment: release.environment,
     status: ReleaseStatus.archived,
     _id: { $ne: release._id },
-  }).sort({ publishedAt: -1, createdAt: -1 });
+    versionCode: { $lt: release.versionCode },
+  }).sort({ versionCode: -1, createdAt: -1 });
 
   if (!previous) {
     const error = new Error('No previous archived release to rollback');

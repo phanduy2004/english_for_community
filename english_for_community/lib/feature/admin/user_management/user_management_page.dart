@@ -33,8 +33,9 @@ class UserManagementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: getIt<AdminBloc>(),
+    // create (không .value) → provider tự close bloc factory khi rời trang (hết leak).
+    return BlocProvider(
+      create: (_) => getIt<AdminBloc>(),
       child: _UserManagementView(initialFilter: initialFilter),
     );
   }
@@ -345,7 +346,15 @@ class _UserManagementViewState extends State<_UserManagementView>
             ),
           ),
           Expanded(
-            child: BlocBuilder<AdminBloc, AdminState>(
+            child: BlocConsumer<AdminBloc, AdminState>(
+              listenWhen: (p, c) =>
+                  c.status == AdminStatus.error && p.status != AdminStatus.error,
+              listener: (context, state) {
+                // Trước đây ban/unban/xoá lỗi IM LẶNG (chỉ có BlocBuilder) → thêm toast.
+                if (state.errorMessage != null) {
+                  AppCornerToast.show(context, state.errorMessage!, error: true);
+                }
+              },
               builder: (context, state) {
                 if (state.status == AdminStatus.loading &&
                     state.users == null) {

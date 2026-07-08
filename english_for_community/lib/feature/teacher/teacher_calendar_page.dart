@@ -226,7 +226,7 @@ class _TeacherCalendarView extends StatelessWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _CalendarKpiRow(counts: _computeKpis(state.visibleEvents)),
+                        _CalendarKpiRow(counts: _computeKpis(state.events)),
                         const SizedBox(height: AppSpacing.s5),
                         _CalendarLegendBar(l10n: l10n),
                         const SizedBox(height: AppSpacing.s4),

@@ -29,4 +29,5 @@ abstract class ReadingRepository {
   Future<Either<Failure, List<ReadingAttemptEntity>>> getAttemptHistory(String readingId);
   Future<Either<Failure, void>> deleteReading(String id);
   Future<Either<Failure, ReadingEntity>> createReading(ReadingEntity reading);
+  Future<Either<Failure, ReadingEntity>> updateReading(String id, ReadingEntity reading);
 }

@@ -128,7 +128,9 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
           if (id == wanted) { pickId = id; break; }
         }
       }
-      if (pickId == null && list.isNotEmpty) {
+      // Chỉ default sang lớp đầu khi KHÔNG yêu cầu lớp cụ thể. Nếu có initialClassroomId
+      // mà không khớp → để null, bắt chọn tay (tránh giao bài nhầm lớp).
+      if (pickId == null && list.isNotEmpty && (wanted == null || wanted.isEmpty)) {
         final first = Map<String, dynamic>.from(list.first as Map);
         pickId = (first['id'] ?? first['_id'])?.toString();
       }
@@ -220,6 +222,7 @@ class _TeacherAssignExamDialogState extends State<TeacherAssignExamDialog> {
   }
 
   Future<void> _submit() async {
+    if (_submitting) return; // chặn double-click tạo assignment trùng
     final l10n = context.l10n;
     final examErr = _examStatus != 'published' ? l10n.teacherAssignmentExamNotPublished : null;
     final classErr = _audience == 'classroom' && (_classroomId == null || _classroomId!.isEmpty)

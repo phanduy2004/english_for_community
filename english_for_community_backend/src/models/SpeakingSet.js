@@ -21,7 +21,8 @@ const SentenceSchema = new mongoose.Schema({
   },
   phonetic_script: {
     type: String,
-    required: true,
+    required: false, // UI đánh dấu "Optional" → cho phép trống (trước đây required → 500 khi tạo)
+    default: '',
   },
 }, { _id: false }); // Không cần _id cho sub-document
 

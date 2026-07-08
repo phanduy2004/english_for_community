@@ -95,8 +95,8 @@ class SocketService {
       }
 
       if (_pendingAdminJoin) {
+        // Giữ cờ để rejoin admin_room sau MỖI reconnect (clear khi logout).
         _socket.emit('admin_join');
-        _pendingAdminJoin = false;
       }
 
       reconnectClassroomChats();

@@ -238,12 +238,12 @@ class WritingFeedbackPage extends StatelessWidget {
             ListView(
               padding: StudentMobileUi.pagePadding,
               children: [
-                if (fb.sampleMid != null)
-                  _SampleCard(title: t.writingFbSampleMidTitle, content: fb.sampleMid!),
-                if (fb.sampleHigh != null) ...[
-                  const SizedBox(height: 16),
-                  _SampleCard(title: t.writingFbSampleHighTitle, content: fb.sampleHigh!),
-                ]
+                if ((fb.sampleMid ?? '').trim().isNotEmpty)
+                  _SampleCard(title: t.writingFbSampleMidTitle, content: fb.sampleMid!.trim()),
+                if ((fb.sampleHigh ?? '').trim().isNotEmpty) ...[
+                  if ((fb.sampleMid ?? '').trim().isNotEmpty) const SizedBox(height: 16),
+                  _SampleCard(title: t.writingFbSampleHighTitle, content: fb.sampleHigh!.trim()),
+                ],
               ],
             ),
           ],

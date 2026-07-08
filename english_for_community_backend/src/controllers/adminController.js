@@ -283,6 +283,18 @@ const promoteUser = async (req, res) => {
     const oldRole = target.role;
     if (oldRole === role) return res.status(200).json({ message: 'No change', user: target });
 
+    // Chặn tự đổi vai trò của chính mình (tránh tự gỡ quyền admin).
+    if (req.user?._id?.toString() === String(id)) {
+      return res.status(400).json({ message: 'Không thể đổi vai trò của chính bạn' });
+    }
+    // Chặn hạ cấp admin cuối cùng → nếu không sẽ khoá cứng toàn hệ thống (không còn admin).
+    if (oldRole === 'admin' && role !== 'admin') {
+      const adminCount = await User.countDocuments({ role: 'admin', _destroy: { $ne: true } });
+      if (adminCount <= 1) {
+        return res.status(400).json({ message: 'Không thể hạ cấp admin cuối cùng của hệ thống' });
+      }
+    }
+
     target.role = role;
     await target.save();
 

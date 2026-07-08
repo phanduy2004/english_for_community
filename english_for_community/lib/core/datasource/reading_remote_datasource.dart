@@ -55,6 +55,15 @@ class ReadingRemoteDatasource {
     return ReadingEntity.fromJson(responseData as Map<String, dynamic>);
   }
 
+  Future<ReadingEntity> updateReading(String id, Map<String, dynamic> body) async {
+    final res = await dio.put(
+      'reading/$id',
+      data: body,
+    );
+    final responseData = res.data['data'] ?? res.data;
+    return ReadingEntity.fromJson(responseData as Map<String, dynamic>);
+  }
+
   Future<ReadingAttemptEntity> submitReadingAttempt({
     required String readingId,
     required List<AnswerPayload> answers,

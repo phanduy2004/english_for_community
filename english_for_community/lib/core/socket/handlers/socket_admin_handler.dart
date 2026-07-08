@@ -4,10 +4,11 @@ extension SocketAdminHandler on SocketService {
 
   void joinAdminRoom() {
     if (!_isInitialized) init();
+    // Giữ cờ bền (giống _currentUserId) để onConnect re-emit 'admin_join' sau MỖI
+    // reconnect — không tắt sau lần join đầu (chỉ clear khi logout).
     _pendingAdminJoin = true;
     if (isConnected) {
       _socket.emit('admin_join');
-      _pendingAdminJoin = false;
     }
   }
 

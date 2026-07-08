@@ -16,15 +16,16 @@ class AdminSpeakingBloc extends Bloc<AdminSpeakingEvent, AdminSpeakingState> {
   }
 
   Future<void> _onGetList(GetAdminSpeakingListEvent event, Emitter<AdminSpeakingState> emit) async {
-    if (event.page != 1 && (!state.hasNextPage || state.status == AdminSpeakingStatus.loading)) return;
+    if (event.page != 1 && state.status == AdminSpeakingStatus.loading) return;
     if (event.page == 1) emit(state.copyWith(status: AdminSpeakingStatus.loading));
 
     final result = await _repository.getAdminSpeakingList(page: event.page, limit: event.limit);
     result.fold(
           (l) => emit(state.copyWith(status: AdminSpeakingStatus.failure, errorMessage: l.message)),
+          // Phân trang prev/next rời rạc → luôn THAY bằng trang vừa tải (không nối).
           (r) => emit(state.copyWith(
         status: AdminSpeakingStatus.success,
-        speakingSets: event.page == 1 ? r.data : [...state.speakingSets, ...r.data],
+        speakingSets: r.data,
         pagination: r.pagination,
       )),
     );

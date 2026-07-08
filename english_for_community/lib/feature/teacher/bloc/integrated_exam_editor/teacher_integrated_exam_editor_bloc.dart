@@ -279,6 +279,7 @@ class TeacherIntegratedExamEditorBloc
     TeacherIntegratedExamEditorSaveDraftRequested event,
     Emitter<TeacherIntegratedExamEditorState> emit,
   ) async {
+    if (state.saving) return; // chặn double-submit khi đang lưu
     if (!state.canEditSkillContent) return;
     emit(state.copyWith(saving: true, clearError: true, clearSuccess: true));
     final r = await repository.updateExamDraft(
@@ -305,6 +306,7 @@ class TeacherIntegratedExamEditorBloc
     TeacherIntegratedExamEditorPublishRequested event,
     Emitter<TeacherIntegratedExamEditorState> emit,
   ) async {
+    if (state.saving) return; // chặn double-submit khi đang publish/lưu
     final failure = teacherIntegratedExamEditorValidatePublish(
       skillIncluded: state.skillIncluded,
       skillSection: state.skillSection,

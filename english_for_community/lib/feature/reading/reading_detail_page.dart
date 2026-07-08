@@ -382,7 +382,10 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             foregroundColor: AppColors.textPrimary,
             leading: IconButton(
               icon: const Icon(Icons.close_rounded, size: 20),
-              onPressed: () => Navigator.of(context).pop(),
+              // maybePop đi qua PopScope guard (runnerPopScope) → bật dialog xác nhận
+              // thoát khi đang làm bài, giống Listening/Speaking. pop() trực tiếp sẽ
+              // force-pop, bỏ qua PopScope.
+              onPressed: () => Navigator.maybePop(context),
             ),
             title: Text(
               widget.reading.title,

@@ -19,6 +19,17 @@ class CreateReadingEvent extends AdminReadingEvent {
   List<Object?> get props => [reading];
 }
 
+// Sự kiện cập nhật bài đọc (edit mode) — trước đây thiếu nên sửa = tạo bản trùng.
+class UpdateReadingEvent extends AdminReadingEvent {
+  final String id;
+  final ReadingEntity reading;
+
+  const UpdateReadingEvent(this.id, this.reading);
+
+  @override
+  List<Object?> get props => [id, reading];
+}
+
 // Sự kiện lấy danh sách (có phân trang)
 class GetAdminReadingListEvent extends AdminReadingEvent {
   final int page;

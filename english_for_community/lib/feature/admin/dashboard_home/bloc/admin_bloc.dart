@@ -90,9 +90,10 @@ class AdminBloc extends Bloc<AdminEvent, AdminState> {
         PaginatedResponse<ReportEntity>? currentReports = state.reports;
 
         if (currentReports != null) {
-          // Tạo list mới đã cập nhật item
+          // Sau khi đổi status, report không còn thuộc tab hiện tại (Pending/Reviewed/…)
+          // → GỠ khỏi list (thay vì map giữ chỗ) để không bị kẹt lại ở tab cũ.
           final updatedList = currentReports.data
-              .map((r) => r.id == updatedReport.id ? updatedReport : r)
+              .where((r) => r.id != updatedReport.id)
               .toList();
 
           // Gán lại vào object PaginatedResponse mới

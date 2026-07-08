@@ -11,6 +11,7 @@ import 'package:english_for_community/feature/teacher/layout/teacher_action_bar.
 import 'package:english_for_community/feature/teacher/layout/teacher_page_scaffold.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_web_ui.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dart';
+import 'package:english_for_community/feature/progress/widgets/weekly_activity_bars_chart.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
 import 'package:english_for_community/feature/teacher/teacher_exams_list_page.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -100,7 +101,7 @@ class _TeacherAnalyticsView extends StatelessWidget {
                           selector: (s) => (s.submissionRows, s.submissionMaxY),
                           builder: (context, data) => SizedBox(
                             height: 200,
-                            child: _SubmissionsChart(rows: data.$1, maxY: data.$2),
+                            child: _SubmissionsChart(rows: data.$1),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.s6),
@@ -226,7 +227,9 @@ class _KpiRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final attempts = summary['attempts'] is Map ? summary['attempts'] as Map : {};
-    final trend = summary['trend'] is Map ? summary['trend'] as Map : {};
+    // Backend đặt trend dưới charts.trend.submissions (không phải summary.trend) →
+    // trước đây badge trend luôn null. Đọc từ charts.
+    final trend = charts['trend'] is Map ? charts['trend'] as Map : {};
     final submissionTrend = (trend['submissions'] as num?)?.toDouble();
     final pendingGrading = (summary['pendingGradingCount'] as num?)?.toInt() ??
         (charts['pendingGradingCount'] as num?)?.toInt() ?? 0;
@@ -327,86 +330,35 @@ class _TrendBadge extends StatelessWidget {
 
 // ── Submissions bar chart ──────────────────────────────────────────────────────
 
-class _SubmissionsChart extends StatefulWidget {
-  const _SubmissionsChart({required this.rows, required this.maxY});
+class _SubmissionsChart extends StatelessWidget {
+  const _SubmissionsChart({required this.rows});
 
   final List<Map<String, dynamic>> rows;
-  final double maxY;
-
-  @override
-  State<_SubmissionsChart> createState() => _SubmissionsChartState();
-}
-
-class _SubmissionsChartState extends State<_SubmissionsChart> {
-  List<BarChartGroupData>? _barGroups;
-  String? _rowsKey;
-  double? _maxY;
-
-  String _cacheKey(List<Map<String, dynamic>> rows) =>
-      rows.map((r) => '${r['date']}:${r['count']}').join('|');
-
-  List<BarChartGroupData> _barGroupsFor(List<Map<String, dynamic>> rows) {
-    final key = _cacheKey(rows);
-    if (_barGroups != null && _rowsKey == key && _maxY == widget.maxY) {
-      return _barGroups!;
-    }
-    final today = DateTime.now().toIso8601String().substring(0, 10);
-    _rowsKey = key;
-    _maxY = widget.maxY;
-    _barGroups = [
-      for (var i = 0; i < rows.length; i++)
-        BarChartGroupData(
-          x: i,
-          barRods: [
-            BarChartRodData(
-              toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
-              color: rows[i]['date'] == today ? AppColors.chartHighlight : AppColors.chartBar,
-              width: rows.length > 14 ? 8 : 12,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-            ),
-          ],
-        ),
-    ];
-    return _barGroups!;
-  }
 
   @override
   Widget build(BuildContext context) {
-    final rows = widget.rows;
     if (rows.isEmpty) {
       return Center(child: Text(context.l10n.teacherAnalyticsNoData, style: TeacherWebUi.webBody(context)));
     }
-    return BarChart(
-      BarChartData(
-        maxY: widget.maxY + 1,
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(color: AppColors.chartGrid, strokeWidth: 1),
-        ),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: rows.length <= 7 ? 1 : (rows.length / 7).ceilToDouble(),
-              getTitlesWidget: (v, _) {
-                final i = v.toInt();
-                if (i < 0 || i >= rows.length) return const SizedBox.shrink();
-                final d = rows[i]['date'] as String? ?? '';
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(d.length >= 5 ? d.substring(5) : d, style: const TextStyle(fontSize: 9)),
-                );
-              },
-            ),
-          ),
-        ),
-        barGroups: _barGroupsFor(rows),
-      ),
+    // Dùng đúng widget biểu đồ ở màn mobile (cột "mọc" lên + đường xu hướng
+    // nét đứt vẽ dần từ điểm đầu → điểm cuối) thay cho fl_chart, để có luôn
+    // đường mô tả xu hướng số bài nộp theo ngày.
+    final today = DateTime.now().toIso8601String().substring(0, 10);
+    final values = <int>[];
+    final labels = <String>[];
+    int? highlightIndex;
+    for (var i = 0; i < rows.length; i++) {
+      values.add(((rows[i]['count'] as num?) ?? 0).toInt());
+      final d = rows[i]['date'] as String? ?? '';
+      labels.add(d.length >= 5 ? d.substring(5) : d);
+      if (d == today) highlightIndex = i;
+    }
+    return WeeklyActivityBarsChart(
+      values: values,
+      labels: labels,
+      barColor: AppColors.chartBar,
+      highlightIndex: highlightIndex,
+      highlightColor: AppColors.chartHighlight,
     );
   }
 }
@@ -429,24 +381,47 @@ class _ScoreDistChartState extends State<_ScoreDistChart> {
   List<BarChartGroupData>? _barGroups;
   String? _rowsKey;
   double? _maxY;
+  bool _grown = false;
+  bool _cachedGrown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _grown = true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _ScoreDistChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Dữ liệu đổi → cho cột "mọc" lại từ 0 (fl_chart tween 0 → giá trị thật).
+    if (_cacheKey(widget.rows) != _cacheKey(oldWidget.rows)) {
+      _grown = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _grown = true);
+      });
+    }
+  }
 
   String _cacheKey(List<Map<String, dynamic>> rows) =>
       rows.map((r) => '${r['range']}:${r['count']}').join('|');
 
   List<BarChartGroupData> _barGroupsFor(List<Map<String, dynamic>> rows) {
     final key = _cacheKey(rows);
-    if (_barGroups != null && _rowsKey == key && _maxY == widget.maxY) {
+    if (_barGroups != null && _rowsKey == key && _maxY == widget.maxY && _cachedGrown == _grown) {
       return _barGroups!;
     }
     _rowsKey = key;
     _maxY = widget.maxY;
+    _cachedGrown = _grown;
     _barGroups = [
       for (var i = 0; i < rows.length; i++)
         BarChartGroupData(
           x: i,
           barRods: [
             BarChartRodData(
-              toY: (rows[i]['count'] as num?)?.toDouble() ?? 0,
+              toY: _grown ? ((rows[i]['count'] as num?)?.toDouble() ?? 0) : 0,
               color: _ScoreDistChart._bucketColors[i % _ScoreDistChart._bucketColors.length],
               width: 28,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
@@ -500,6 +475,8 @@ class _ScoreDistChartState extends State<_ScoreDistChart> {
         ),
         barGroups: _barGroupsFor(rows),
       ),
+      duration: const Duration(milliseconds: 900),
+      curve: Curves.easeOutCubic,
     );
   }
 }

@@ -230,7 +230,13 @@ class _ReadingEditorViewState extends State<_ReadingEditorView> {
         ),
       );
 
-      context.read<AdminReadingBloc>().add(CreateReadingEvent(newReading));
+      // Edit mode (có id) → Update (tránh tạo bản trùng); ngược lại → Create.
+      final bloc = context.read<AdminReadingBloc>();
+      if (widget.id != null && widget.id!.isNotEmpty) {
+        bloc.add(UpdateReadingEvent(widget.id!, newReading));
+      } else {
+        bloc.add(CreateReadingEvent(newReading));
+      }
 
     } catch (e) {
       AppCornerToast.show(context, "Error processing data: $e", error: true);
