@@ -4,6 +4,7 @@ import '../../core/entity/writing_submission_entity.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/ui/motion/app_score_reveal.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
 
@@ -133,9 +134,11 @@ class WritingFeedbackPage extends StatelessWidget {
                       children: [
                         Text(t.writingFbOverallBand, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
-                        Text(
-                          (fb.overall ?? 0).toStringAsFixed(1),
-                          style: StudentMobileUi.greeting(context).copyWith(fontSize: 48, height: 1),
+                        AppScoreReveal(
+                          score: (fb.overall ?? 0).toDouble(),
+                          maxScore: 9,
+                          textStyle: StudentMobileUi.greeting(context)
+                              .copyWith(fontSize: 48, height: 1),
                         ),
                       ],
                     ),

@@ -257,6 +257,13 @@
       "n": {"type": "int"}
     }
   },
+  "homeStreakAtRisk": "Do {remaining} more to keep your {streak}-day streak 🔥",
+  "@homeStreakAtRisk": {
+    "placeholders": {
+      "remaining": {"type": "int"},
+      "streak": {"type": "int"}
+    }
+  },
   "fullProgressStats": "Full progress & stats",
   "noStudyWeek": "No study minutes this week yet — start a lesson!",
   "speakingDescReadAloud": "Read text passages clearly.",

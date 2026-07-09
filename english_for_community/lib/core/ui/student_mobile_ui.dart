@@ -642,6 +642,8 @@ abstract final class StudentMobileUi {
     EdgeInsetsGeometry padding = const EdgeInsets.all(AppSpacing.s4),
     EdgeInsetsGeometry? margin,
     bool emphasized = false,
+    /// Thêm micro scale khi nhấn (dùng cho các card hành động chính, vd. Home).
+    bool scaleOnPress = false,
   }) {
     final colors = AppSkillColors.of(skill);
     final radius = BorderRadius.circular(AppRadius.card + 2);
@@ -650,12 +652,20 @@ abstract final class StudentMobileUi {
 
     Widget cardBody = Padding(padding: padding, child: child);
     if (effectiveOnTap != null) {
-      cardBody = inkTap(
-        onTap: effectiveOnTap,
-        borderRadius: radius,
-        splashColor: colors.color.withValues(alpha: 0.10),
-        child: cardBody,
-      );
+      cardBody = scaleOnPress
+          ? ScalePressable(
+              onTap: effectiveOnTap,
+              borderRadius: radius,
+              minScale: 0.985,
+              splashColor: colors.color.withValues(alpha: 0.10),
+              child: cardBody,
+            )
+          : inkTap(
+              onTap: effectiveOnTap,
+              borderRadius: radius,
+              splashColor: colors.color.withValues(alpha: 0.10),
+              child: cardBody,
+            );
     }
 
     Widget card = Container(
@@ -788,6 +798,11 @@ abstract final class StudentMobileUi {
     Color? iconBg,
     SkillType? skill,
     bool compact = false,
+    /// Thay `Text(value)` bằng widget tuỳ biến (vd. count-up) — vẫn giữ [value]
+    /// cho fallback/semantics.
+    Widget? valueContent,
+    /// Thay glyph icon bằng widget tuỳ biến (vd. ngọn lửa streak động).
+    Widget? iconContent,
   }) {
     final set = skill != null ? AppSkillColors.of(skill) : null;
     final fg = iconColor ?? set?.color ?? AppColors.textSecondary;
@@ -812,10 +827,10 @@ abstract final class StudentMobileUi {
             height: iconBox,
             alignment: Alignment.center,
             decoration: BoxDecoration(color: bg, shape: BoxShape.circle),
-            child: Icon(icon, size: iconGlyph, color: fg),
+            child: iconContent ?? Icon(icon, size: iconGlyph, color: fg),
           ),
           SizedBox(height: compact ? AppSpacing.s1 : AppSpacing.s2),
-          Text(value, style: kpi(context)),
+          valueContent ?? Text(value, style: kpi(context)),
           const SizedBox(height: AppSpacing.s1),
           Text(
             label,
@@ -1234,6 +1249,7 @@ abstract final class StudentMobileUi {
     bool showReviewCorrect = false,
     bool showReviewWrong = false,
     String? subtitle,
+    SkillType? skill,
     EdgeInsetsGeometry margin = const EdgeInsets.only(bottom: AppSpacing.s2),
   }) {
     var bg = AppColors.surfaceCard;
@@ -1253,11 +1269,16 @@ abstract final class StudentMobileUi {
       trailIcon = Icons.cancel_rounded;
       trailColor = AppColors.danger;
     } else if (selected || (multiSelect && checked)) {
-      bg = AppColors.infoBg;
-      border = AppColors.info;
-      textColor = AppSkillColors.listening.dark;
+      final set = skill != null ? AppSkillColors.of(skill) : null;
+      bg = set?.tint ?? AppColors.infoBg;
+      border = set?.color ?? AppColors.info;
+      textColor = set?.dark ?? AppSkillColors.listening.dark;
     }
 
+    final bool active = selected ||
+        showReviewCorrect ||
+        showReviewWrong ||
+        (multiSelect && checked);
     final bodyStyle = body(context);
     final semanticsLabel = '${mcqLetter(index)}. $text';
 
@@ -1268,21 +1289,24 @@ abstract final class StudentMobileUi {
         selected: selected || (multiSelect && checked),
         inMutuallyExclusiveGroup: !multiSelect,
         label: semanticsLabel,
-        child: inkTap(
-          onTap: onTap == null
-              ? null
-              : () {
-                  AppHaptics.select(context);
-                  onTap();
-                },
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          materialColor: bg,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              border: Border.all(color: border),
-            ),
+        child: AnimatedContainer(
+          duration: theme_motion.AppMotion.effective(
+              context, theme_motion.AppMotion.segment),
+          curve: Curves.easeOutCubic,
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: border, width: active ? 1.5 : 1),
+          ),
+          child: inkTap(
+            onTap: onTap == null
+                ? null
+                : () {
+                    AppHaptics.select(context);
+                    onTap();
+                  },
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            materialColor: Colors.transparent,
             child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1330,7 +1354,10 @@ abstract final class StudentMobileUi {
                     top: AppSpacing.s4,
                     right: AppSpacing.s4,
                   ),
-                  child: Icon(trailIcon, color: trailColor, size: 22),
+                  child: _popIn(
+                    context,
+                    Icon(trailIcon, color: trailColor, size: 22),
+                  ),
                 )
               else if (multiSelect)
                 Padding(
@@ -1351,6 +1378,18 @@ abstract final class StudentMobileUi {
           ),
         ),
       ),
+    );
+  }
+
+  /// Pop-in scale (icon đúng/sai khi review) — tôn trọng reduce-motion.
+  static Widget _popIn(BuildContext context, Widget child) {
+    if (MediaQuery.disableAnimationsOf(context)) return child;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.4, end: 1),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutBack,
+      builder: (_, s, c) => Transform.scale(scale: s, child: c),
+      child: child,
     );
   }
 

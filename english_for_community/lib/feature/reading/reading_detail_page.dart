@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 // Import các file trong project của bạn
@@ -17,6 +16,7 @@ import '../../core/locale/l10n_context.dart';
 import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/repository/reading_repository.dart';
 import '../../core/theme/app_color.dart';
+import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/util/app_haptics.dart';
 import '../../core/ui/exam_system_ui.dart';
@@ -679,6 +679,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                   index: optionIndex,
                   text: optionText,
                   subtitle: sub,
+                  skill: SkillType.reading,
                   selected: isSelected,
                   showReviewCorrect: isSubmitted && isCorrect,
                   showReviewWrong: isSubmitted && isSelected && !isCorrect,

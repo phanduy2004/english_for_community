@@ -1322,6 +1322,12 @@ abstract class AppLocalizations {
   /// **'{n} day streak'**
   String streakDays(int n);
 
+  /// No description provided for @homeStreakAtRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Do {remaining} more to keep your {streak}-day streak 🔥'**
+  String homeStreakAtRisk(int remaining, int streak);
+
   /// No description provided for @fullProgressStats.
   ///
   /// In en, this message translates to:

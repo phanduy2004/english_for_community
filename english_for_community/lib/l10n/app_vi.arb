@@ -219,6 +219,7 @@
   "continueAction": "Tiếp tục",
   "appNameBrand": "E4C",
   "streakDays": "Chuỗi {n} ngày",
+  "homeStreakAtRisk": "Học thêm {remaining} bài để giữ chuỗi {streak} ngày 🔥",
   "fullProgressStats": "Xem đầy đủ tiến độ & thống kê",
   "noStudyWeek": "Chưa có phút học tuần này — hãy bắt đầu một bài!",
   "speakingDescReadAloud": "Đọc đoạn văn rõ ràng.",

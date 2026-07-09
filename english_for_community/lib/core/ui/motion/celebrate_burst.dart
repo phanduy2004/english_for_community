@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../theme/app_color.dart';
-import '../../theme/app_motion.dart' as theme_motion;
 import '../../util/app_haptics.dart';
 
 /// Overlay ăn mừng gamification — `docs/ui-ux-system/20` §5.3.
@@ -112,18 +111,23 @@ class _BurstPainter extends CustomPainter {
   bool shouldRepaint(covariant _BurstPainter oldDelegate) => oldDelegate.progress != progress;
 }
 
-/// Bắt mốc streak/level tăng và kích hoạt [CelebrateBurst] — `20` §5.3.
+/// Bắt mốc streak/level tăng (và daily goal đạt) → kích hoạt [CelebrateBurst] — `20` §5.3.
 class GamificationCelebrateHost extends StatefulWidget {
   const GamificationCelebrateHost({
     super.key,
     required this.child,
     this.streak,
     this.level,
+    this.dailyGoalReached,
   });
 
   final Widget child;
   final int? streak;
   final int? level;
+
+  /// True khi học sinh vừa hoàn thành mục tiêu ngày. Burst chỉ bắn ở nhịp
+  /// chuyển false→true (không bắn lại khi mở lại màn lúc đã đạt sẵn).
+  final bool? dailyGoalReached;
 
   @override
   State<GamificationCelebrateHost> createState() => _GamificationCelebrateHostState();
@@ -132,6 +136,7 @@ class GamificationCelebrateHost extends StatefulWidget {
 class _GamificationCelebrateHostState extends State<GamificationCelebrateHost> {
   int? _lastStreak;
   int? _lastLevel;
+  bool? _lastGoalReached;
   bool _trigger = false;
 
   @override
@@ -139,6 +144,7 @@ class _GamificationCelebrateHostState extends State<GamificationCelebrateHost> {
     super.initState();
     _lastStreak = widget.streak;
     _lastLevel = widget.level;
+    _lastGoalReached = widget.dailyGoalReached;
   }
 
   @override
@@ -146,14 +152,19 @@ class _GamificationCelebrateHostState extends State<GamificationCelebrateHost> {
     super.didUpdateWidget(oldWidget);
     final s = widget.streak;
     final l = widget.level;
+    final g = widget.dailyGoalReached;
     if (s != null && _lastStreak != null && s > _lastStreak! && s > 0) {
       _trigger = true;
     }
     if (l != null && _lastLevel != null && l > _lastLevel! && l > 1) {
       _trigger = true;
     }
+    if (g == true && _lastGoalReached == false) {
+      _trigger = true;
+    }
     _lastStreak = s ?? _lastStreak;
     _lastLevel = l ?? _lastLevel;
+    _lastGoalReached = g ?? _lastGoalReached;
   }
 
   @override

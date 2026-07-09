@@ -652,6 +652,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String homeStreakAtRisk(int remaining, int streak) {
+    return 'Do $remaining more to keep your $streak-day streak 🔥';
+  }
+
+  @override
   String get fullProgressStats => 'Full progress & stats';
 
   @override

@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -7,22 +8,27 @@ import 'app_fonts.dart';
 
 /// Typography — **Inter**. Compact density v3 (`docs/ui-ux-system/00-compact-density-v3.md`).
 ///
-/// - Body: **13** mobile & web.
+/// - Body: **13** web (& mobile web); app mobile native ~11.7 (scale 0.9, xem [_mobileScale]).
 /// - Web page title: **16** semibold (không 18–22).
 /// - KPI / số: **15** semibold + tabular figures.
 abstract final class AppTypography {
   static const String _f = AppFonts.fontFamily;
 
   // ─── Mobile sizes (dp ≈ px) ───────────────────────────────────────────
-  static const double mobileBody = 13;
-  static const double mobileBodyLg = 15;
-  static const double mobileH3 = 13;
-  static const double mobileH2 = 14;
-  static const double mobileH1 = 16;
-  static const double mobileDisplay = 18;
-  static const double mobileKpi = 15;
-  static const double mobileCaption = 11;
-  static const double mobileLabel = 11;
+  /// App mobile **native** thu nhỏ chữ thêm ~10% cho gọn (`kIsWeb == false`).
+  /// Mọi bản **web** — học sinh mở web lẫn teacher/admin — giữ nguyên cỡ chuẩn
+  /// (`kIsWeb == true` → 1.0), nên web hoàn toàn không đổi. Chỉnh 1 số này để tinh chỉnh.
+  static const double _mobileScale = kIsWeb ? 1.0 : 0.9;
+
+  static const double mobileBody = 13 * _mobileScale;
+  static const double mobileBodyLg = 15 * _mobileScale;
+  static const double mobileH3 = 13 * _mobileScale;
+  static const double mobileH2 = 14 * _mobileScale;
+  static const double mobileH1 = 16 * _mobileScale;
+  static const double mobileDisplay = 18 * _mobileScale;
+  static const double mobileKpi = 15 * _mobileScale;
+  static const double mobileCaption = 11 * _mobileScale;
+  static const double mobileLabel = 11 * _mobileScale;
 
   // ─── Web sizes ────────────────────────────────────────────────────────
   static const double webBody = 13;

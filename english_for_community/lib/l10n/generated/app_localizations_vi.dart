@@ -653,6 +653,11 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String homeStreakAtRisk(int remaining, int streak) {
+    return 'Học thêm $remaining bài để giữ chuỗi $streak ngày 🔥';
+  }
+
+  @override
   String get fullProgressStats => 'Xem đầy đủ tiến độ & thống kê';
 
   @override

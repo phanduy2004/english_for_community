@@ -15,6 +15,7 @@ import '../../../../core/util/app_haptics.dart';
 import '../../../../core/ui/feedback/app_feedback.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../../../../core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/ui/student_mobile_ui.dart';
 import '../../../../core/ui/widget/app_card.dart';
@@ -692,6 +693,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                     index: optIdx,
                     text: q.options[optIdx],
                     subtitle: sub,
+                    skill: SkillType.listening,
                     selected: !isSubmitted && isSelected,
                     showReviewCorrect: isSubmitted && isCorrect,
                     showReviewWrong: isSubmitted && isSelected && !isCorrect,
