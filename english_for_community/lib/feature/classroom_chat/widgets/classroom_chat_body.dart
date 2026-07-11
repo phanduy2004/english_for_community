@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/widget/app_skeleton.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
@@ -237,7 +238,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                   const SizedBox(height: 8),
                   Text(state.errorMessage ?? 'Lỗi tải tin nhắn',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileBody)),
                   const SizedBox(height: 12),
                   FilledButton(
                     onPressed: () =>
@@ -270,7 +271,7 @@ class _ClassroomChatBodyState extends State<ClassroomChatBody> {
                       Expanded(
                         child: Text(
                           state.errorMessage!,
-                          style: const TextStyle(fontSize: 12, color: AppColors.danger),
+                          style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.danger),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -714,7 +715,7 @@ class _DateSeparator extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: AppTypography.mobileCaption,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textSecondary,
                   letterSpacing: 0.3,
@@ -775,7 +776,7 @@ class _TypingIndicator extends StatelessWidget {
                 child: Text(
                   label,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileCaption,
                     color: AppColors.textSecondary,
                     fontStyle: FontStyle.italic,
                   ),

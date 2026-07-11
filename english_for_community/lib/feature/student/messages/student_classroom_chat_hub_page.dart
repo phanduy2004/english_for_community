@@ -4,8 +4,11 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/classroom_chat_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 // (messages tab dùng Editorial Black primary, không dùng skill color)
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/motion/ambient_motion.dart';
+import 'package:english_for_community/core/ui/motion/app_entrance.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/classroom_chat/classroom_chat_page.dart';
@@ -162,7 +165,7 @@ class _StudentClassroomChatHubPageState
               'Đã đọc',
               style: TextStyle(
                 color: AppColors.success,
-                fontSize: 13,
+                fontSize: AppTypography.mobileH3,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -488,11 +491,113 @@ class _StudentClassroomChatHubPageState
                   );
                 },
               ),
+              // "Đã đọc hết" — thổi sức sống vào khoảng trống khi quiet: có lớp,
+              // ít lớp (còn chỗ trống), xem Tất cả, không tìm kiếm, hết tin chưa đọc.
+              ListenableBuilder(
+                listenable: _controller,
+                builder: (context, _) {
+                  final rooms = _controller.rooms;
+                  final filtered = _filteredRooms(rooms);
+                  final quiet = _filter == _StudentChatHubFilter.all &&
+                      !hasQuery &&
+                      _controller.roomsError == null &&
+                      !(_controller.loadingRooms && rooms.isEmpty) &&
+                      _controller.unreadConversations == 0 &&
+                      filtered.isNotEmpty &&
+                      filtered.length <= 3;
+                  if (!quiet) {
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  }
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        StudentMobileUi.pageHPadding,
+                        AppSpacing.s5,
+                        StudentMobileUi.pageHPadding,
+                        StudentMobileUi.pageBottomPadding,
+                      ),
+                      child: const Center(child: _CaughtUpFooter()),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+/// Khối "đã đọc hết" — hiển thị dưới list khi học sinh đã bắt kịp mọi tin nhắn.
+/// Ấm + có sức sống (entrance trồi lên + ánh sáng lướt nhẹ), amber chỉ 1 chấm.
+class _CaughtUpFooter extends StatelessWidget {
+  const _CaughtUpFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    final content = Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 76,
+          height: 76,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              AmbientMotion.shimmer(
+                context,
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: const BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.mark_chat_read_outlined,
+                    size: 30,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              // Amber sparkle — 1 chấm "ăn mừng" tích cực (đã đọc hết).
+              const Positioned(
+                top: -2,
+                right: -2,
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 18,
+                  color: AppColors.accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.s4),
+        Text(
+          l10n.studentChatHubCaughtUpTitle,
+          style: StudentMobileUi.cardTitle(context),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.s1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6),
+          child: Text(
+            l10n.studentChatHubCaughtUpBody,
+            style: StudentMobileUi.caption(context)
+                .copyWith(color: AppColors.textMuted),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+
+    return AppEntrance.item(context, content, index: 0);
   }
 }
 
@@ -586,7 +691,7 @@ class _GroupLabel extends StatelessWidget {
           Text(
             label.toUpperCase(),
             style: TextStyle(
-              fontSize: 11,
+              fontSize: AppTypography.mobileLabel,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.6,
               color:
@@ -597,7 +702,7 @@ class _GroupLabel extends StatelessWidget {
           Text(
             '$count',
             style: const TextStyle(
-              fontSize: 11,
+              fontSize: AppTypography.mobileCaption,
               fontWeight: FontWeight.w600,
               color: AppColors.textMuted,
             ),

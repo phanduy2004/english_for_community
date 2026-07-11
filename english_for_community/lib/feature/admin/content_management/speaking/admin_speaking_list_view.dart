@@ -1,9 +1,12 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/datasource/admin_remote_datasource.dart';
@@ -184,7 +187,7 @@ class _SpeakingListBodyState extends State<_SpeakingListBody> {
             child: BlocBuilder<AdminSpeakingBloc, AdminSpeakingState>(
               builder: (context, state) {
                 if (state.status == AdminSpeakingStatus.loading && state.speakingSets.isEmpty) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
                 if (state.status == AdminSpeakingStatus.failure && state.speakingSets.isEmpty) {
                   return Center(
@@ -215,45 +218,7 @@ class _SpeakingListBodyState extends State<_SpeakingListBody> {
                   );
                 }
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: state.speakingSets.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final item = state.speakingSets[index];
-                    return ShadcnCard(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      onTap: () => _openEditor(context, item.id),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 4,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(AppRadius.xs),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(item.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                                const SizedBox(height: 4),
-                                Text('${item.totalSentences} sentences', style: const TextStyle(fontSize: 12, color: kTextMuted)),
-                              ],
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                            onPressed: () => _confirmDelete(context, item.id),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
+                return _buildTable(context, state.speakingSets);
               },
             ),
           ),
@@ -289,10 +254,68 @@ class _SpeakingListBodyState extends State<_SpeakingListBody> {
       ),
     );
   }
+
+  Widget _buildTable(BuildContext context, List<SpeakingSetEntity> items) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: WebDataTable(
+        columns: [
+          WebTableColumn(label: l10n.adminTableContent, flex: 4),
+          WebTableColumn(label: l10n.adminTableSentences, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableSubmissions, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+        ],
+        rowCount: items.length,
+        decoration: AdminWebUi.panelDecoration(),
+        headStyle: AdminWebUi.webTableHead(context),
+        scrollable: true,
+        onRowTap: (row) => () => _openEditor(context, items[row].id),
+        cellBuilder: (context, row, column) {
+          final item = items[row];
+          return switch (column) {
+            0 => Row(children: [
+                const Icon(Icons.record_voice_over_outlined, size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: AppSpacing.s2),
+                Expanded(child: _tableText(item.title, weight: FontWeight.w600)),
+              ]),
+            1 => _tableText('${item.totalSentences}'),
+            2 => _tableText('${item.attemptsCount}'),
+            3 => StatusBadge(text: item.adminStatus, color: item.adminStatus.toLowerCase() == 'published' ? AppColors.success : AppColors.textSecondary),
+            4 => _contentMenu(
+                onEdit: () => _openEditor(context, item.id),
+                onDelete: () => _confirmDelete(context, item.id),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
+      ),
+    );
+  }
+
+  Widget _contentMenu({required VoidCallback onEdit, required VoidCallback onDelete}) => PopupMenuButton<String>(
+        tooltip: 'Content actions',
+        icon: const Icon(Icons.more_horiz, size: 20),
+        onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit')])),
+          PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: AppColors.danger), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.danger))])),
+        ],
+      );
+
+  Widget _tableText(String value, {FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 12, fontWeight: weight, color: AppColors.textPrimary, fontFeatures: const [FontFeature.tabularFigures()]),
+      );
 }
 
-class _MetaBadge extends StatelessWidget {
-  const _MetaBadge({
+@Deprecated('The speaking list uses WebDataTable.')
+class SpeakingLegacyMetaBadge extends StatelessWidget {
+  const SpeakingLegacyMetaBadge({
+    super.key,
     required this.text,
     required this.color,
     required this.textColor,

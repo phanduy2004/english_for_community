@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/entity/writing_submission_entity.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/entity/writing_topic_entity.dart';
@@ -46,8 +47,8 @@ class HistoryModal extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(t.submissionHistoryTitle, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
-                      Text(topicName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      Text(t.submissionHistoryTitle, style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary)),
+                      Text(topicName, style: const TextStyle(fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                     ],
                   ),
                 ),
@@ -151,7 +152,8 @@ class HistoryItemCard extends StatelessWidget {
         }
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) => WritingFeedbackPage(submission: submission),
+            builder: (_) =>
+                WritingFeedbackPage(submission: submission, celebrate: false),
           ),
         );
       },
@@ -170,7 +172,7 @@ class HistoryItemCard extends StatelessWidget {
               child: Center(
                 child: Text(
                   score.toStringAsFixed(1),
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                  style: TextStyle(fontSize: AppTypography.mobileH1, fontWeight: FontWeight.bold, color: color),
                 ),
               ),
             ),
@@ -186,7 +188,7 @@ class HistoryItemCard extends StatelessWidget {
                           submission.generatedPrompt?.title ?? t.writingTaskDefaultTitle,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: AppColors.textPrimary),
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileBodyLg, color: AppColors.textPrimary),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -202,7 +204,7 @@ class HistoryItemCard extends StatelessWidget {
                         child: Text(
                           isDraft ? 'Draft' : 'Reviewed',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppTypography.mobileCaption,
                             fontWeight: FontWeight.w700,
                             color: isDraft ? AppColors.warning : AppColors.success,
                           ),
@@ -215,11 +217,11 @@ class HistoryItemCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.calendar_today, size: 12, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text(dateStr, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(dateStr, style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textSecondary)),
                       const SizedBox(width: 12),
                       const Icon(Icons.short_text, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
-                      Text(t.wordCountN(submission.wordCount ?? 0), style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(t.wordCountN(submission.wordCount ?? 0), style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textSecondary)),
                     ],
                   )
                 ],

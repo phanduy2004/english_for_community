@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_controller.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_room_tile.dart';
@@ -75,7 +76,7 @@ class _ClassroomChatListPanelState extends State<ClassroomChatListPanel> {
                 child: TextField(
                   controller: _searchCtrl,
                   onChanged: (v) => setState(() => _query = v),
-                  style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                  style: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textPrimary),
                   decoration: ClassroomChatUi.searchFieldDecoration(hintText: 'Tìm nhóm lớp…'),
                 ),
               ),
@@ -181,7 +182,7 @@ class _PanelHeader extends StatelessWidget {
               children: [
                 Text(
                   'Nhóm chat lớp',
-                  style: ClassroomChatUi.headerTitle().copyWith(fontSize: 15),
+                  style: ClassroomChatUi.headerTitle().copyWith(fontSize: AppTypography.mobileBodyLg),
                 ),
                 Text(
                   'Chọn lớp để trò chuyện',

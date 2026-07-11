@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 
 import '../../../core/locale/l10n_context.dart';
@@ -35,7 +36,7 @@ class WritingHeader extends StatelessWidget {
                   context.l10n.writingHeaderEssayTitle,
                   style: const TextStyle(
                     color: AppColors.onPrimary,
-                    fontSize: 18,
+                    fontSize: AppTypography.mobileDisplay,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -44,7 +45,7 @@ class WritingHeader extends StatelessWidget {
                   context.l10n.writingHeaderEssaySubtitle,
                   style: TextStyle(
                     color: AppColors.onPrimary.withValues(alpha: 0.8),
-                    fontSize: 13,
+                    fontSize: AppTypography.mobileBody,
                     height: 1.4,
                   ),
                 ),
@@ -58,7 +59,7 @@ class WritingHeader extends StatelessWidget {
                   ),
                   child: Text(
                     context.l10n.writingAiFeedbackBadge,
-                    style: const TextStyle(color: AppColors.onPrimary, fontSize: 11, fontWeight: FontWeight.w600),
+                    style: const TextStyle(color: AppColors.onPrimary, fontSize: AppTypography.mobileLabel, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -103,10 +104,10 @@ class WritingSearchBox extends StatelessWidget {
       ),
       child: TextField(
         readOnly: true,
-        style: const TextStyle(fontSize: 14),
+        style: const TextStyle(fontSize: AppTypography.mobileH2),
         decoration: InputDecoration(
           hintText: context.l10n.writingSearchTopicsTasksHint,
-          hintStyle: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
+          hintStyle: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary),
           prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -167,7 +168,7 @@ class WritingFilterRow extends StatelessWidget {
                 child: Text(
                   filters[i],
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: AppTypography.mobileBody,
                     fontWeight: FontWeight.w500,
                     color: selected ? AppColors.onPrimary : AppColors.textSecondary,
                   ),
@@ -202,7 +203,7 @@ class WritingEmptyView extends StatelessWidget {
             child: const Icon(Icons.edit_off_outlined, size: 40, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
-          Text(context.l10n.writingNoTopicsFound, style: const TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w500)),
+          Text(context.l10n.writingNoTopicsFound, style: const TextStyle(color: AppColors.textSecondary, fontSize: AppTypography.mobileH2, fontWeight: FontWeight.w500)),
         ],
       ),
     );

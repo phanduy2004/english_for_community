@@ -43,7 +43,7 @@ export const classroomService = {
     return user;
   },
 
-  async createClassroom(teacherId, { name, description = '', joinPolicy = 'open' }) {
+  async createClassroom(teacherId, { name, tag = '', description = '', joinPolicy = 'open' }) {
     await this.assertTeacher(teacherId);
     if (!name || !String(name).trim()) throw httpError(400, 'Name is required');
 
@@ -53,6 +53,7 @@ export const classroomService = {
     const classroom = await Classroom.create({
       teacherId,
       name: String(name).trim(),
+      tag: String(tag || '').trim(),
       description: String(description || '').trim(),
       inviteCode,
       inviteToken,
@@ -291,6 +292,7 @@ export const classroomService = {
     const classroom = await Classroom.findById(classroomId);
     if (!classroom) throw httpError(404, 'Classroom not found');
     if (patch.name != null) classroom.name = String(patch.name).trim();
+    if (patch.tag != null) classroom.tag = String(patch.tag).trim();
     if (patch.description != null) classroom.description = String(patch.description);
     if (patch.joinPolicy != null) {
       if (!['open', 'approval_required'].includes(patch.joinPolicy)) throw httpError(400, 'Invalid joinPolicy');

@@ -43,14 +43,14 @@ abstract final class ExamSystemUi {
 
   static const TextStyle captionSecondary = TextStyle(
     color: AppColors.textSecondary,
-    fontSize: 12,
+    fontSize: AppTypography.mobileCaption,
     fontWeight: FontWeight.w400,
     height: 1.4,
   );
 
   static const TextStyle captionMuted = TextStyle(
     color: AppColors.textMuted,
-    fontSize: 12,
+    fontSize: AppTypography.mobileCaption,
     fontWeight: FontWeight.w400,
     height: 1.35,
   );
@@ -58,7 +58,7 @@ abstract final class ExamSystemUi {
   // --- Embedded skill panels (compact, teacher-dashboard-like) ---
 
   static const TextStyle embeddedCardTitleStyle = TextStyle(
-    fontSize: 14,
+    fontSize: AppTypography.mobileH2,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
     letterSpacing: -0.15,
@@ -66,7 +66,7 @@ abstract final class ExamSystemUi {
   );
 
   static const TextStyle embeddedSectionLabelStyle = TextStyle(
-    fontSize: 13,
+    fontSize: AppTypography.mobileH3,
     fontWeight: FontWeight.w500,
     color: AppColors.textSecondary,
     letterSpacing: 0.05,
@@ -74,28 +74,28 @@ abstract final class ExamSystemUi {
   );
 
   static const TextStyle embeddedBodyStyle = TextStyle(
-    fontSize: 13,
+    fontSize: AppTypography.mobileBody,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
     height: 1.45,
   );
 
   static const TextStyle embeddedCaptionStyle = TextStyle(
-    fontSize: 12,
+    fontSize: AppTypography.mobileCaption,
     fontWeight: FontWeight.w400,
     color: AppColors.textMuted,
     height: 1.35,
   );
 
   static const TextStyle embeddedButtonLabelStyle = TextStyle(
-    fontSize: 13,
+    fontSize: AppTypography.mobileBody,
     fontWeight: FontWeight.w500,
     letterSpacing: 0,
     height: 1.2,
   );
 
   static const TextStyle embeddedTabLabelStyle = TextStyle(
-    fontSize: 13,
+    fontSize: AppTypography.mobileH3,
     fontWeight: FontWeight.w500,
     height: 1.2,
   );

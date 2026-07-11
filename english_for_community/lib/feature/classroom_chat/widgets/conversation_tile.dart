@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/widget/app_skeleton.dart';
 import 'package:english_for_community/feature/classroom_chat/dock/classroom_chat_dock_models.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
@@ -81,8 +82,21 @@ class _ConversationTileState extends State<ConversationTile> {
     );
 
     Widget inner;
-    if (_isWeb || !hasUnread) {
+    if (_isWeb) {
       inner = avatar;
+    } else if (!hasUnread) {
+      // Đã đọc (mobile): vòng mảnh màu-định-danh — thêm màu nhẹ, không "hét".
+      inner = Container(
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: colors.foreground.withValues(alpha: 0.28),
+            width: 1.5,
+          ),
+        ),
+        child: avatar,
+      );
     } else {
       final ring = colors.foreground;
       inner = Container(
@@ -149,6 +163,11 @@ class _ConversationTileState extends State<ConversationTile> {
     if (mediaIcon != null) preview = _stripMediaEmoji(preview);
     final time = ClassroomChatRoomSubtitle.timeLabel(room);
     final avatarColors = ClassroomChatUi.groupAvatarColors(room.name);
+    // Mobile: tách "10A1 — Ca sáng · HK2" → tên + chip meta màu-định-danh
+    // (thêm tí màu + dễ đọc). Web dock giữ nguyên tên đầy đủ.
+    final splitName = _splitRoomName(room.name);
+    final displayTitle = _isWeb ? room.name : splitName.title;
+    final metaLabel = _isWeb ? null : splitName.meta;
     // Mỗi lớp một "màu unread" theo identity (ring/badge/time) — web giữ đen.
     final unreadAccent = _isWeb ? AppColors.primary : avatarColors.foreground;
     final isMuted = room.muted;
@@ -176,7 +195,7 @@ class _ConversationTileState extends State<ConversationTile> {
     );
 
     final timeStyle = TextStyle(
-      fontSize: 12,
+      fontSize: AppTypography.mobileCaption,
       fontWeight: hasUnread ? FontWeight.w700 : FontWeight.w500,
       color: hasUnread ? effectiveAccent : AppColors.textMuted,
     );
@@ -212,11 +231,28 @@ class _ConversationTileState extends State<ConversationTile> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(
-                              room.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: titleStyle,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    displayTitle,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: titleStyle,
+                                  ),
+                                ),
+                                if (metaLabel != null) ...[
+                                  const SizedBox(width: AppSpacing.s2),
+                                  Flexible(
+                                    child: _MetaChip(
+                                      text: metaLabel,
+                                      background: avatarColors.background,
+                                      foreground: avatarColors.foreground,
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                           if (isPinned) ...[
@@ -330,8 +366,56 @@ class _UnreadBadge extends StatelessWidget {
         count > 99 ? '99+' : '$count',
         style: const TextStyle(
           color: AppColors.textInverse,
-          fontSize: 11,
+          fontSize: AppTypography.mobileCaption,
           fontWeight: FontWeight.w700,
+          height: 1.1,
+        ),
+      ),
+    );
+  }
+}
+
+/// Tách "10A1 — Ca sáng · HK2" → ("10A1", "Ca sáng · HK2"). Không có dấu ngăn
+/// (— / – / -) thì trả (name, null) — an toàn với mọi định dạng tên.
+({String title, String? meta}) _splitRoomName(String name) {
+  final match = RegExp(r'\s[—–-]\s').firstMatch(name);
+  if (match == null) return (title: name, meta: null);
+  final title = name.substring(0, match.start).trim();
+  final meta = name.substring(match.end).trim();
+  if (title.isEmpty || meta.isEmpty) return (title: name, meta: null);
+  return (title: title, meta: meta);
+}
+
+/// Chip meta màu-định-danh cạnh tên lớp (mobile) — pastel bg + chữ cùng tông,
+/// dùng lại palette avatar (`ClassroomChatUi.groupAvatarColors`).
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.text,
+    required this.background,
+    required this.foreground,
+  });
+
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+      ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
+        style: TextStyle(
+          fontSize: AppTypography.mobileCaption,
+          fontWeight: FontWeight.w600,
+          color: foreground,
           height: 1.1,
         ),
       ),

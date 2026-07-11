@@ -6,7 +6,9 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_score_scale.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
+import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/speaking/free_speaking_page.dart';
@@ -148,7 +150,12 @@ class _SpeakingFeedbackView extends StatelessWidget {
           );
         }
 
-        return DefaultTabController(
+        return CelebrationTrigger(
+          // Chỉ tung hoa ở luồng vừa chấm xong (evaluate), không bắn khi mở lại
+          // hội thoại cũ từ lịch sử (load theo conversationId).
+          enabled: args.conversationId == null,
+          level: CompletionCelebration.levelForScore(fb.overall.toDouble(), 9),
+          child: DefaultTabController(
           length: 4,
           child: Scaffold(
             backgroundColor: AppColors.surface,
@@ -196,6 +203,7 @@ class _SpeakingFeedbackView extends StatelessWidget {
               ],
             ),
             bottomNavigationBar: _FeedbackFooter(feedback: fb),
+          ),
           ),
         );
       },
@@ -724,7 +732,7 @@ class _OverviewTab extends StatelessWidget {
               Text(
                 feedback.cefr,
                 style: StudentMobileUi.greeting(context)
-                    .copyWith(fontSize: 44, height: 1),
+                    .copyWith(fontSize: AppTypography.mobileHero, height: 1),
               ),
               const SizedBox(height: AppSpacing.s2),
               Text(

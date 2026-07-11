@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
@@ -189,7 +189,7 @@ class _ReleaseManagementPageState extends State<ReleaseManagementPage> {
       lastDate: DateTime.now().add(const Duration(days: 30)),
       initialDate: now,
     );
-    if (pickedDate == null || !mounted) return;
+    if (pickedDate == null || !context.mounted) return;
     final pickedTime = await showTimePicker(
         context: context, initialTime: TimeOfDay.fromDateTime(now));
     if (pickedTime == null) return;
@@ -652,7 +652,7 @@ class _ReleaseListSection extends StatelessWidget {
         title: 'Danh sách release',
         child: Padding(
           padding: const EdgeInsets.all(40),
-          child: AdminSkeleton.page(AdminSkeleton.cardList()),
+          child: AdminSkeleton.page(AdminSkeleton.table(rows: 6)),
         ),
       );
     }
@@ -676,184 +676,176 @@ class _ReleaseListSection extends StatelessWidget {
       );
     }
 
-    return _SectionCard(
-      title: 'Danh sách release (${items.length})',
-      child: Column(
-        children: [
-          for (int i = 0; i < items.length; i++)
-            _ReleaseItemCard(
-              item: items[i],
-              fmtDate: fmtDate,
-              showDivider: i < items.length - 1,
-              onApprove: onApprove,
-              onReject: onReject,
-              onSchedule: onSchedule,
-              onPublish: onPublish,
-              onRollback: onRollback,
+    return _buildReleaseTable(context);
+  }
+
+  Widget _buildReleaseTable(BuildContext context) {
+    final l10n = context.l10n;
+    return WebDataTable(
+      columns: [
+        WebTableColumn(label: l10n.adminTableVersion, flex: 3),
+        WebTableColumn(label: l10n.adminTablePlatform, width: 120),
+        WebTableColumn(label: l10n.adminTableStatus, width: 130),
+        WebTableColumn(label: l10n.adminTableMinimumVersion, width: 120, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+        WebTableColumn(label: l10n.adminTableCreated, width: 150),
+        // Cột icon 56px — header để trống (nhãn "ACTIONS" không vừa, tự hiểu qua icon).
+        WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+      ],
+      rowCount: items.length,
+      decoration: AdminWebUi.panelDecoration(),
+      headStyle: AdminWebUi.webTableHead(context),
+      onRowTap: (row) => () => _showReleaseDetail(context, items[row]),
+      cellBuilder: (context, row, column) {
+        final item = items[row];
+        return switch (column) {
+          0 => _versionCell(item),
+          1 => _tableText(item.platform.toUpperCase()),
+          2 => _StatusPill(status: item.status),
+          3 => _tableText('${item.minSupportedVersionCode}'),
+          4 => _tableText(fmtDate(item.createdAt), muted: true),
+          5 => _releaseMenu(item),
+          _ => const SizedBox.shrink(),
+        };
+      },
+    );
+  }
+
+  // Row-tap = read-only detail (safe). Status changes go through the ⋯ menu
+  // (each with its own confirm guard) — never via a whole-row tap.
+  void _showReleaseDetail(BuildContext context, AppReleaseAdminEntity item) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.sheet)),
+        title: Row(
+          children: [
+            Icon(item.platform.toLowerCase() == 'ios' ? Icons.apple : Icons.android,
+                size: 20, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.s2),
+            Expanded(
+              child: Text('v${item.versionName}+${item.versionCode}', style: AdminWebUi.webH2(ctx)),
             ),
+            _StatusPill(status: item.status),
+            IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close, size: 20)),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _detailRow('Platform', item.platform.toUpperCase()),
+              _detailRow('Environment', item.environment),
+              _detailRow('Update type', item.updateType),
+              _detailRow('Force update', item.isForce ? 'Có' : 'Không'),
+              _detailRow('Min version', '${item.minSupportedVersionCode}'),
+              if (item.gitBranch != null && item.gitBranch!.isNotEmpty)
+                _detailRow('Branch', item.gitBranch!),
+              if (item.gitSha != null && item.gitSha!.isNotEmpty)
+                _detailRow('Commit', item.gitSha!),
+              if (item.ciRunId != null && item.ciRunId!.isNotEmpty)
+                _detailRow('CI run', item.ciRunId!),
+              _detailRow('Tạo', fmtDate(item.createdAt)),
+              if (item.scheduledPublishAt != null)
+                _detailRow('Lên lịch', fmtDate(item.scheduledPublishAt)),
+              if (item.publishedAt != null)
+                _detailRow('Publish', fmtDate(item.publishedAt)),
+              if (item.changelog != null && item.changelog!.trim().isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.s3),
+                const Text('Changelog',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                const SizedBox(height: AppSpacing.s1),
+                Text(item.changelog!,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng')),
         ],
       ),
     );
   }
-}
 
-class _ReleaseItemCard extends StatelessWidget {
-  const _ReleaseItemCard({
-    required this.item,
-    required this.fmtDate,
-    required this.showDivider,
-    required this.onApprove,
-    required this.onReject,
-    required this.onSchedule,
-    required this.onPublish,
-    required this.onRollback,
-  });
-
-  final AppReleaseAdminEntity item;
-  final String Function(dynamic) fmtDate;
-  final bool showDivider;
-  final ValueChanged<String> onApprove;
-  final ValueChanged<String> onReject;
-  final ValueChanged<String> onSchedule;
-  final ValueChanged<AppReleaseAdminEntity> onPublish;
-  final ValueChanged<String> onRollback;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top row: platform icon + version + badges
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Platform icon
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceSubtle,
-                      borderRadius: BorderRadius.circular(AppRadius.card),
-                    ),
-                    child: Icon(
-                      item.platform.toLowerCase() == 'ios'
-                          ? Icons.apple
-                          : Icons.android,
-                      size: 22,
-                      color: item.platform.toLowerCase() == 'ios'
-                          ? AppColors.textMuted
-                          : AppColors.success,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Version info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              'v${item.versionName}+${item.versionCode}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            _StatusPill(status: item.status),
-                            if (item.isForce) ...[
-                              const SizedBox(width: 6),
-                              _ForceBadge(),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Wrap(
-                          spacing: 12,
-                          children: [
-                            _MetaText(
-                                icon: Icons.smartphone_outlined,
-                                label: item.platform.toUpperCase()),
-                            _MetaText(
-                                icon: Icons.low_priority_outlined,
-                                label: 'min: ${item.minSupportedVersionCode}'),
-                            _MetaText(
-                                icon: Icons.schedule_outlined,
-                                label: fmtDate(item.createdAt)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 12),
-
-              // Action buttons
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (item.status == 'pending_approval')
-                    _ActionButton(
-                      label: 'Approve',
-                      icon: Icons.check_circle_outline,
-                      color: AppColors.success,
-                      onTap: () => onApprove(item.id),
-                    ),
-                  if (item.status == 'pending_approval' ||
-                      item.status == 'approved' ||
-                      item.status == 'scheduled')
-                    _ActionButton(
-                      label: 'Từ chối',
-                      icon: Icons.cancel_outlined,
-                      color: AppColors.danger,
-                      outlined: true,
-                      onTap: () => onReject(item.id),
-                    ),
-                  if (item.status == 'approved')
-                    _ActionButton(
-                      label: 'Lên lịch',
-                      icon: Icons.event_outlined,
-                      color: AppColors.info,
-                      outlined: true,
-                      onTap: () => onSchedule(item.id),
-                    ),
-                  if (item.status == 'approved' || item.status == 'scheduled')
-                    _ActionButton(
-                      label: item.isForce ? 'Publish (FORCE)' : 'Publish',
-                      icon: Icons.rocket_launch_outlined,
-                      color: item.isForce
-                          ? AppColors.danger
-                          : AppColors.primary,
-                      onTap: () => onPublish(item),
-                    ),
-                  if (item.status == 'published')
-                    _ActionButton(
-                      label: 'Rollback',
-                      icon: Icons.history,
-                      color: AppColors.warning,
-                      outlined: true,
-                      onTap: () => onRollback(item.id),
-                    ),
-                ],
-              ),
-            ],
-          ),
+  Widget _detailRow(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s1),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 120,
+              child: Text(label,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            ),
+            Expanded(
+              child: Text(value,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textPrimary)),
+            ),
+          ],
         ),
-        if (showDivider)
-          const Divider(height: 1, color: AppColors.surfaceSubtle),
-      ],
+      );
+
+  Widget _versionCell(AppReleaseAdminEntity item) => Row(children: [
+        Icon(item.platform.toLowerCase() == 'ios' ? Icons.apple : Icons.android, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.s2),
+        Flexible(child: _tableText('v${item.versionName}+${item.versionCode}', weight: FontWeight.w600)),
+        if (item.isForce) ...[const SizedBox(width: AppSpacing.s2), _ForceBadge()],
+      ]);
+
+  Widget _releaseMenu(AppReleaseAdminEntity item) {
+    final entries = <PopupMenuEntry<String>>[];
+    if (item.status == 'pending_approval') {
+      entries.add(_releaseMenuItem('approve', Icons.check_circle_outline, 'Approve'));
+    }
+    if (item.status == 'pending_approval' || item.status == 'approved' || item.status == 'scheduled') {
+      entries.add(_releaseMenuItem('reject', Icons.cancel_outlined, 'Từ chối', danger: true));
+    }
+    if (item.status == 'approved') {
+      entries.add(_releaseMenuItem('schedule', Icons.event_outlined, 'Lên lịch'));
+    }
+    if (item.status == 'approved' || item.status == 'scheduled') {
+      entries.add(_releaseMenuItem('publish', Icons.rocket_launch_outlined, item.isForce ? 'Publish (FORCE)' : 'Publish', danger: item.isForce));
+    }
+    if (item.status == 'published') {
+      entries.add(_releaseMenuItem('rollback', Icons.history, 'Rollback', danger: true));
+    }
+    return PopupMenuButton<String>(
+      tooltip: 'Release actions',
+      icon: const Icon(Icons.more_horiz, size: 20),
+      onSelected: (value) {
+        switch (value) {
+          case 'approve': onApprove(item.id);
+          case 'reject': onReject(item.id);
+          case 'schedule': onSchedule(item.id);
+          case 'publish': onPublish(item);
+          case 'rollback': onRollback(item.id);
+        }
+      },
+      itemBuilder: (_) => entries,
     );
   }
+
+  PopupMenuItem<String> _releaseMenuItem(String value, IconData icon, String label, {bool danger = false}) {
+    final color = danger ? AppColors.danger : AppColors.textPrimary;
+    return PopupMenuItem(
+      value: value,
+      child: Row(children: [Icon(icon, size: 18, color: color), const SizedBox(width: AppSpacing.s2), Text(label, style: TextStyle(color: color))]),
+    );
+  }
+
+  Widget _tableText(String value, {bool muted = false, FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: weight,
+          color: muted ? AppColors.textSecondary : AppColors.textPrimary,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      );
 }
 
 // ---------------------------------------------------------------------------
@@ -940,70 +932,6 @@ class _ForceBadge extends StatelessWidget {
               color: AppColors.danger,
               fontSize: 10,
               fontWeight: FontWeight.w800)),
-    );
-  }
-}
-
-class _MetaText extends StatelessWidget {
-  const _MetaText({required this.icon, required this.label});
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: AppColors.textMuted),
-        const SizedBox(width: 4),
-        Text(label,
-            style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-      ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-    this.outlined = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  final bool outlined;
-
-  @override
-  Widget build(BuildContext context) {
-    if (outlined) {
-      return OutlinedButton.icon(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(color: color.withValues(alpha: 0.5)),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          textStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-        ),
-        icon: Icon(icon, size: 15),
-        label: Text(label),
-      );
-    }
-    return FilledButton.icon(
-      onPressed: onTap,
-      style: FilledButton.styleFrom(
-        backgroundColor: color,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        textStyle:
-            const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-      ),
-      icon: Icon(icon, size: 15),
-      label: Text(label),
     );
   }
 }

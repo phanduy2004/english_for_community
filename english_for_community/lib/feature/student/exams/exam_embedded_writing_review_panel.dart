@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
@@ -92,7 +93,7 @@ class ExamEmbeddedWritingReviewPanel extends StatelessWidget {
                 draft.isNotEmpty ? draft : l10n.integratedExamReviewNotAnswered,
                 style: ExamSystemUi.captionSecondary.copyWith(
                   height: 1.5,
-                  fontSize: 15,
+                  fontSize: AppTypography.mobileBodyLg,
                   color: draft.isEmpty ? AppColors.textMuted : AppColors.textPrimary,
                   fontStyle: draft.isEmpty ? FontStyle.italic : FontStyle.normal,
                 ),

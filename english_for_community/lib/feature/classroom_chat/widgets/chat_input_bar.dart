@@ -4,6 +4,7 @@ import 'package:english_for_community/core/datasource/classroom_chat_remote_data
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_attachment_staging.dart';
@@ -432,7 +433,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
                           textInputAction: TextInputAction.newline,
                           onChanged: _onTextChanged,
                           style: const TextStyle(
-                            fontSize: 13,
+                            fontSize: AppTypography.mobileBody,
                             color: AppColors.textPrimary,
                             height: 1.35,
                           ),
@@ -556,11 +557,11 @@ class _MentionSuggestions extends StatelessWidget {
                   backgroundColor: AppColors.primaryTint,
                   child: Text(
                     m.fullName.isNotEmpty ? m.fullName[0].toUpperCase() : '?',
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                    style: const TextStyle(fontSize: AppTypography.mobileCaption, fontWeight: FontWeight.w600, color: AppColors.primary),
                   ),
                 ),
-                title: Text(m.fullName, style: const TextStyle(fontSize: 13)),
-                subtitle: Text('@${m.username}', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                title: Text(m.fullName, style: const TextStyle(fontSize: AppTypography.mobileH3)),
+                subtitle: Text('@${m.username}', style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted)),
                 onTap: () => onSelect(m),
               ),
             )

@@ -377,7 +377,7 @@ abstract class AppLocalizations {
   /// No description provided for @studentChatHubClassCount.
   ///
   /// In en, this message translates to:
-  /// **'{count} classes'**
+  /// **'{count, plural, =1{1 class} other{{count} classes}}'**
   String studentChatHubClassCount(int count);
 
   /// No description provided for @studentChatHubEmptyTitle.
@@ -403,6 +403,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try another keyword or clear the search.'**
   String get studentChatHubSearchEmptyBody;
+
+  /// No description provided for @studentChatHubCaughtUpTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get studentChatHubCaughtUpTitle;
+
+  /// No description provided for @studentChatHubCaughtUpBody.
+  ///
+  /// In en, this message translates to:
+  /// **'No new messages. Chat with your class anytime!'**
+  String get studentChatHubCaughtUpBody;
 
   /// No description provided for @loginWelcomeBack.
   ///
@@ -860,6 +872,108 @@ abstract class AppLocalizations {
   /// **'Admin dashboard'**
   String get adminDashboard;
 
+  /// No description provided for @adminAnalyticsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Analytics'**
+  String get adminAnalyticsTitle;
+
+  /// No description provided for @adminAnalyticsTotalUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Total users'**
+  String get adminAnalyticsTotalUsers;
+
+  /// No description provided for @adminAnalyticsStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get adminAnalyticsStudents;
+
+  /// No description provided for @adminAnalyticsTeachers.
+  ///
+  /// In en, this message translates to:
+  /// **'Teachers'**
+  String get adminAnalyticsTeachers;
+
+  /// No description provided for @adminAnalyticsActiveUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Active users'**
+  String get adminAnalyticsActiveUsers;
+
+  /// No description provided for @adminAnalyticsNewUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'New users'**
+  String get adminAnalyticsNewUsers;
+
+  /// No description provided for @adminAnalyticsReportsPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports pending'**
+  String get adminAnalyticsReportsPending;
+
+  /// No description provided for @adminAnalyticsUsersByRole.
+  ///
+  /// In en, this message translates to:
+  /// **'Users by role'**
+  String get adminAnalyticsUsersByRole;
+
+  /// No description provided for @adminAnalyticsUsersByRoleSub.
+  ///
+  /// In en, this message translates to:
+  /// **'All-time accounts by role'**
+  String get adminAnalyticsUsersByRoleSub;
+
+  /// No description provided for @adminAnalyticsNewUsersChart.
+  ///
+  /// In en, this message translates to:
+  /// **'New users over time'**
+  String get adminAnalyticsNewUsersChart;
+
+  /// No description provided for @adminAnalyticsRoleStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Students'**
+  String get adminAnalyticsRoleStudent;
+
+  /// No description provided for @adminAnalyticsRoleTeacher.
+  ///
+  /// In en, this message translates to:
+  /// **'Teachers'**
+  String get adminAnalyticsRoleTeacher;
+
+  /// No description provided for @adminAnalyticsRoleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Admins'**
+  String get adminAnalyticsRoleAdmin;
+
+  /// No description provided for @adminAnalyticsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough data yet'**
+  String get adminAnalyticsNoData;
+
+  /// No description provided for @adminAnalyticsRangeDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
+  String get adminAnalyticsRangeDay;
+
+  /// No description provided for @adminAnalyticsRangeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get adminAnalyticsRangeWeek;
+
+  /// No description provided for @adminAnalyticsRangeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get adminAnalyticsRangeMonth;
+
   /// No description provided for @filterEasy.
   ///
   /// In en, this message translates to:
@@ -1153,6 +1267,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submission history'**
   String get adminActivityHistoryTitle;
+
+  /// No description provided for @adminTableUser.
+  ///
+  /// In en, this message translates to:
+  /// **'User'**
+  String get adminTableUser;
+
+  /// No description provided for @adminTableLastActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Last active'**
+  String get adminTableLastActive;
+
+  /// No description provided for @adminTableSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill'**
+  String get adminTableSkill;
+
+  /// No description provided for @adminTableType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get adminTableType;
+
+  /// No description provided for @adminTableContent.
+  ///
+  /// In en, this message translates to:
+  /// **'Content'**
+  String get adminTableContent;
+
+  /// No description provided for @adminTableStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get adminTableStatus;
+
+  /// No description provided for @adminTableScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get adminTableScore;
+
+  /// No description provided for @adminTableDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get adminTableDate;
+
+  /// No description provided for @adminTableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get adminTableTitle;
+
+  /// No description provided for @adminTableReporter.
+  ///
+  /// In en, this message translates to:
+  /// **'Reporter'**
+  String get adminTableReporter;
+
+  /// No description provided for @adminTableCreated.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get adminTableCreated;
+
+  /// No description provided for @adminTableSubmissions.
+  ///
+  /// In en, this message translates to:
+  /// **'Submissions'**
+  String get adminTableSubmissions;
+
+  /// No description provided for @adminTableDifficulty.
+  ///
+  /// In en, this message translates to:
+  /// **'Difficulty'**
+  String get adminTableDifficulty;
+
+  /// No description provided for @adminTableReadingTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading time'**
+  String get adminTableReadingTime;
+
+  /// No description provided for @adminTableCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Code'**
+  String get adminTableCode;
+
+  /// No description provided for @adminTableCues.
+  ///
+  /// In en, this message translates to:
+  /// **'Cues'**
+  String get adminTableCues;
+
+  /// No description provided for @adminTableDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get adminTableDuration;
+
+  /// No description provided for @adminTableLevel.
+  ///
+  /// In en, this message translates to:
+  /// **'Level'**
+  String get adminTableLevel;
+
+  /// No description provided for @adminTableTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Tasks'**
+  String get adminTableTasks;
+
+  /// No description provided for @adminTableSentences.
+  ///
+  /// In en, this message translates to:
+  /// **'Sentences'**
+  String get adminTableSentences;
+
+  /// No description provided for @adminTableVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get adminTableVersion;
+
+  /// No description provided for @adminTablePlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform'**
+  String get adminTablePlatform;
+
+  /// No description provided for @adminTableMinimumVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Minimum version'**
+  String get adminTableMinimumVersion;
+
+  /// No description provided for @adminTableActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Actions'**
+  String get adminTableActions;
 
   /// No description provided for @adminSearchUsersHint.
   ///
@@ -4418,6 +4676,18 @@ abstract class AppLocalizations {
   /// **'Class name'**
   String get teacherClassNameLabel;
 
+  /// No description provided for @teacherClassTagLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tag (optional)'**
+  String get teacherClassTagLabel;
+
+  /// No description provided for @teacherClassTagHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Morning · Term 2'**
+  String get teacherClassTagHint;
+
   /// No description provided for @teacherClassCreated.
   ///
   /// In en, this message translates to:
@@ -5660,6 +5930,42 @@ abstract class AppLocalizations {
   /// **'Recent assignments'**
   String get teacherClassRecentAssignments;
 
+  /// No description provided for @teacherClassColExam.
+  ///
+  /// In en, this message translates to:
+  /// **'Exam'**
+  String get teacherClassColExam;
+
+  /// No description provided for @teacherClassColStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get teacherClassColStatus;
+
+  /// No description provided for @teacherClassColSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get teacherClassColSchedule;
+
+  /// No description provided for @teacherClassColSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherClassColSubmitted;
+
+  /// No description provided for @teacherClassColMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get teacherClassColMember;
+
+  /// No description provided for @teacherClassColJoined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get teacherClassColJoined;
+
   /// No description provided for @teacherClassViewAllAssignments.
   ///
   /// In en, this message translates to:
@@ -6434,6 +6740,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Public assignment'**
   String get teacherInboxPublicAssignment;
+
+  /// No description provided for @teacherInboxColType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get teacherInboxColType;
+
+  /// No description provided for @teacherInboxColTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get teacherInboxColTime;
 
   /// No description provided for @teacherInboxItemCount.
   ///
@@ -8332,6 +8650,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Self-paced'**
   String get teacherAnalyticsModeSelfPaced;
+
+  /// No description provided for @teacherAnalyticsCompletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Completion'**
+  String get teacherAnalyticsCompletion;
+
+  /// No description provided for @teacherAnalyticsInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get teacherAnalyticsInProgress;
+
+  /// No description provided for @teacherAnalyticsGradeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Grade now'**
+  String get teacherAnalyticsGradeNow;
+
+  /// No description provided for @teacherAnalyticsSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day summary'**
+  String teacherAnalyticsSummaryTitle(int days);
+
+  /// No description provided for @teacherAnalyticsInsightAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Class average {score}/10.'**
+  String teacherAnalyticsInsightAvg(String score);
+
+  /// No description provided for @teacherAnalyticsInsightWeakSkill.
+  ///
+  /// In en, this message translates to:
+  /// **'{skill} ({score}) is the weakest skill.'**
+  String teacherAnalyticsInsightWeakSkill(String skill, String score);
+
+  /// No description provided for @teacherAnalyticsInsightNotSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} students haven\'t submitted anything.'**
+  String teacherAnalyticsInsightNotSubmitting(int count);
+
+  /// No description provided for @teacherAnalyticsInsightPending.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} submissions awaiting grading.'**
+  String teacherAnalyticsInsightPending(int count);
+
+  /// No description provided for @teacherAnalyticsInsightEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough data to summarise yet.'**
+  String get teacherAnalyticsInsightEmpty;
+
+  /// No description provided for @teacherAnalyticsScoreTrend.
+  ///
+  /// In en, this message translates to:
+  /// **'Score trend'**
+  String get teacherAnalyticsScoreTrend;
+
+  /// No description provided for @teacherAnalyticsScoreTrendSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily class average (0–10) — hover a point for details'**
+  String get teacherAnalyticsScoreTrendSub;
+
+  /// No description provided for @teacherAnalyticsAvgShort.
+  ///
+  /// In en, this message translates to:
+  /// **'avg'**
+  String get teacherAnalyticsAvgShort;
+
+  /// No description provided for @teacherAnalyticsGradedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} graded'**
+  String teacherAnalyticsGradedCount(int count);
+
+  /// No description provided for @teacherAnalyticsPerDayAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'{value}/day avg'**
+  String teacherAnalyticsPerDayAvg(String value);
+
+  /// No description provided for @teacherAnalyticsAtRiskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Students needing attention'**
+  String get teacherAnalyticsAtRiskTitle;
+
+  /// No description provided for @teacherAnalyticsColStudent.
+  ///
+  /// In en, this message translates to:
+  /// **'Student'**
+  String get teacherAnalyticsColStudent;
+
+  /// No description provided for @teacherAnalyticsColAvg.
+  ///
+  /// In en, this message translates to:
+  /// **'Avg %'**
+  String get teacherAnalyticsColAvg;
+
+  /// No description provided for @teacherAnalyticsColSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted'**
+  String get teacherAnalyticsColSubmitted;
+
+  /// No description provided for @teacherAnalyticsColAlert.
+  ///
+  /// In en, this message translates to:
+  /// **'Alert'**
+  String get teacherAnalyticsColAlert;
+
+  /// No description provided for @teacherAnalyticsRiskNotSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'No submissions'**
+  String get teacherAnalyticsRiskNotSubmitting;
+
+  /// No description provided for @teacherAnalyticsRiskLowScore.
+  ///
+  /// In en, this message translates to:
+  /// **'Low score'**
+  String get teacherAnalyticsRiskLowScore;
+
+  /// No description provided for @teacherAnalyticsRiskLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Frequently late'**
+  String get teacherAnalyticsRiskLate;
+
+  /// No description provided for @teacherAnalyticsViewAll.
+  ///
+  /// In en, this message translates to:
+  /// **'View all {count}'**
+  String teacherAnalyticsViewAll(int count);
+
+  /// No description provided for @teacherAnalyticsItemAnalysisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Most-missed questions'**
+  String get teacherAnalyticsItemAnalysisTitle;
+
+  /// No description provided for @teacherAnalyticsItemAnalysisSub.
+  ///
+  /// In en, this message translates to:
+  /// **'% of points earned by the class'**
+  String get teacherAnalyticsItemAnalysisSub;
+
+  /// No description provided for @teacherAnalyticsCorrectLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'correct'**
+  String get teacherAnalyticsCorrectLabel;
+
+  /// No description provided for @teacherAnalyticsAttemptsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} attempts'**
+  String teacherAnalyticsAttemptsLabel(int count);
+
+  /// No description provided for @teacherAnalyticsIntegrityReasons.
+  ///
+  /// In en, this message translates to:
+  /// **'Flag reasons'**
+  String get teacherAnalyticsIntegrityReasons;
+
+  /// No description provided for @teacherAnalyticsReasonTabSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab switch / left screen'**
+  String get teacherAnalyticsReasonTabSwitch;
+
+  /// No description provided for @teacherAnalyticsReasonCopyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Content pasted'**
+  String get teacherAnalyticsReasonCopyPaste;
+
+  /// No description provided for @teacherAnalyticsReasonFullscreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Exited fullscreen'**
+  String get teacherAnalyticsReasonFullscreen;
+
+  /// No description provided for @teacherAnalyticsOnTimeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'On-time submission'**
+  String get teacherAnalyticsOnTimeTitle;
+
+  /// No description provided for @teacherAnalyticsOnTime.
+  ///
+  /// In en, this message translates to:
+  /// **'On time'**
+  String get teacherAnalyticsOnTime;
+
+  /// No description provided for @teacherAnalyticsLate.
+  ///
+  /// In en, this message translates to:
+  /// **'Late'**
+  String get teacherAnalyticsLate;
+
+  /// No description provided for @teacherAnalyticsMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing'**
+  String get teacherAnalyticsMissing;
 
   /// No description provided for @teacherNavAnalytics.
   ///

@@ -1,8 +1,7 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/teacher/bloc/dashboard/teacher_dashboard_bloc.dart';
@@ -17,7 +16,6 @@ import 'package:english_for_community/feature/teacher/layout/teacher_widgets.dar
 import 'package:english_for_community/feature/teacher/teacher_assignment_list_utils.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_inbox_builder.dart';
 import 'package:english_for_community/feature/teacher/teacher_dashboard_page.dart';
-import 'package:english_for_community/feature/teacher/teacher_exam_attempt_grade_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -110,7 +108,7 @@ class _TeacherInboxViewState extends State<_TeacherInboxView> {
             ),
           ],
           body: loading
-              ? TeacherSkeleton.page(TeacherSkeleton.cardList(n: 5, height: 64))
+              ? TeacherSkeleton.page(TeacherSkeleton.table(rows: 5))
               : error != null
                   ? Center(
                       child: Column(
@@ -219,7 +217,7 @@ class _InboxListBody extends StatelessWidget {
     );
 
     if (state.gradingLoading) {
-      return const Center(child: AppLoadingIndicator.inline(color: AppColors.primary));
+      return TeacherSkeleton.table(rows: 5);
     }
 
     if (entries.isEmpty) {
@@ -233,45 +231,131 @@ class _InboxListBody extends StatelessWidget {
       );
     }
 
-    return DecoratedBox(
-      decoration: TeacherWebUi.panelDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.s4, AppSpacing.s3, AppSpacing.s4, AppSpacing.s2),
-            child: Row(
-              children: [
-                Text(l10n.teacherCalendarSectionToday, style: TeacherWebUi.sectionTitle(context)),
-                const SizedBox(width: AppSpacing.s2),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                    border: Border.all(color: AppColors.outlineMuted),
-                  ),
-                  child: Text(
-                    l10n.teacherInboxItemCount(entries.length),
-                    style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Text(l10n.teacherCalendarSectionToday, style: TeacherWebUi.sectionTitle(context)),
+            const SizedBox(width: AppSpacing.s2),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSubtle,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                border: Border.all(color: AppColors.outlineMuted),
+              ),
+              child: Text(
+                l10n.teacherInboxItemCount(entries.length),
+                style: TeacherWebUi.webCaption(context).copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s3),
+        Expanded(
+          child: WebDataTable(
+            columns: [
+              WebTableColumn(label: l10n.teacherDashboardActionItems, flex: 4),
+              WebTableColumn(label: l10n.teacherInboxColType, width: 150),
+              WebTableColumn(label: l10n.teacherDashboardFilterByClass, flex: 2),
+              WebTableColumn(label: l10n.teacherInboxColTime, width: 120),
+              const WebTableColumn(label: '', width: 56, align: Alignment.center),
+            ],
+            rowCount: entries.length,
+            decoration: TeacherWebUi.panelDecoration(),
+            headStyle: TeacherWebUi.webTableHead(context),
+            scrollable: true,
+            onRowTap: (row) => entries[row].onTap,
+            cellBuilder: (context, row, col) {
+              final entry = entries[row];
+              return switch (col) {
+                0 => _inboxWorkCell(context, entry),
+                1 => TeacherStatusPill(label: entry.badge, tone: _toneForKind(entry.kind)),
+                2 => _singleLineMeta(context, entry.classroomName ?? '—'),
+                3 => _singleLineMeta(context, entry.timestamp ?? '—'),
+                _ => _inboxActionMenu(context, entry),
+              };
+            },
           ),
-          const Divider(height: 1, color: AppColors.outlineMuted),
-          Expanded(
-            child: ListView.separated(
-              padding: const EdgeInsets.all(AppSpacing.s4),
-              itemCount: entries.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.s3),
-              itemBuilder: (context, i) => TeacherDashboardInboxCard(entry: entries[i]),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
+
+  Widget _inboxWorkCell(BuildContext context, TeacherDashboardInboxEntry entry) {
+    final accent = TeacherDashboardInboxStyle.color(entry.kind);
+    final icon = TeacherDashboardInboxStyle.icon(entry.kind);
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+          ),
+          child: Icon(icon, size: 16, color: accent),
+        ),
+        const SizedBox(width: AppSpacing.s3),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                entry.title,
+                style: TeacherWebUi.webBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (entry.subtitle != null && entry.subtitle!.isNotEmpty)
+                Text(
+                  entry.subtitle!,
+                  style: TeacherWebUi.metaMuted,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _singleLineMeta(BuildContext context, String value) {
+    return Text(
+      value,
+      style: TeacherWebUi.webCaption(context).copyWith(color: AppColors.textSecondary),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _inboxActionMenu(BuildContext context, TeacherDashboardInboxEntry entry) {
+    return PopupMenuButton<String>(
+      tooltip: context.l10n.teacherExamMoreActions,
+      icon: const Icon(Icons.more_horiz, size: 18, color: AppColors.textSecondary),
+      padding: EdgeInsets.zero,
+      position: PopupMenuPosition.under,
+      onSelected: (_) => entry.onTap(),
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: 'open',
+          child: _teacherInboxMenuAction(TeacherDashboardInboxStyle.icon(entry.kind), context.l10n.teacherClassOpenAttemptsList),
+        ),
+      ],
+    );
+  }
+
+  TeacherStatusTone _toneForKind(TeacherDashboardInboxKind kind) => switch (kind) {
+        TeacherDashboardInboxKind.grading => TeacherStatusTone.secondary,
+        TeacherDashboardInboxKind.live => TeacherStatusTone.primary,
+        TeacherDashboardInboxKind.dueSoon => TeacherStatusTone.danger,
+        TeacherDashboardInboxKind.pendingJoin => TeacherStatusTone.success,
+      };
 }
 
 /// Dialog row for full grading queue (shared).
@@ -312,4 +396,15 @@ class TeacherInboxGradingRow extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _teacherInboxMenuAction(IconData icon, String label, {bool danger = false}) {
+  final color = danger ? AppColors.danger : AppColors.textPrimary;
+  return Row(
+    children: [
+      Icon(icon, size: 16, color: danger ? AppColors.danger : AppColors.textSecondary),
+      const SizedBox(width: AppSpacing.s3),
+      Text(label, style: TextStyle(color: color)),
+    ],
+  );
 }

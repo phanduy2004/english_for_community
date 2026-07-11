@@ -10,6 +10,7 @@ router.use(authenticate);
 
 // 1. Dashboard Stats
 router.get('/stats', requirePermissions(Permission.CONTENT_READ), adminController.getDashboardStats);
+router.get('/analytics', requirePermissions(Permission.USERS_READ), adminController.getUserAnalytics);
 router.get('/content-summary', requirePermissions(Permission.CONTENT_READ), adminController.getContentSummary);
 
 // 2. Quản lý User

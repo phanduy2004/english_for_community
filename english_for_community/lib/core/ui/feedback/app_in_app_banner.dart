@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:flutter/material.dart';
 
@@ -74,7 +75,7 @@ class AppInAppBanner {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 13,
+                              fontSize: AppTypography.mobileH3,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
@@ -86,7 +87,7 @@ class AppInAppBanner {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 12,
+                                fontSize: AppTypography.mobileCaption,
                                 color: AppColors.textSecondary,
                               ),
                             ),

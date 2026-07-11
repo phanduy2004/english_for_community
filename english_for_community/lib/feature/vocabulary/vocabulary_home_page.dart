@@ -450,6 +450,7 @@ class _WordCard extends StatelessWidget {
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.vocabulary,
       tapViaChildActionsOnWeb: action != null,
+      elevated: true,
       onTap: onTap,
       child: Row(
         children: [

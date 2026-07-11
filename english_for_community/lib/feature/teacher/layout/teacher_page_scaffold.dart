@@ -23,6 +23,7 @@ class TeacherPageScaffold extends StatelessWidget {
     required this.title,
     required this.body,
     this.subtitle,
+    this.titleTag,
     this.breadcrumbs = const [],
     this.actions = const [],
     this.maxWidth = TeacherWebUi.contentMaxDashboard,
@@ -33,6 +34,9 @@ class TeacherPageScaffold extends StatelessWidget {
   });
 
   final String title;
+
+  /// Chip meta cạnh tiêu đề (vd. phần sau "—" của tên lớp: "Ca sáng · HK2").
+  final String? titleTag;
   final String? subtitle;
   final List<TeacherBreadcrumb> breadcrumbs;
   final List<Widget> actions;
@@ -51,6 +55,7 @@ class TeacherPageScaffold extends StatelessWidget {
     final useBottomBar = mobile && bottomActions != null && bottomActions!.isNotEmpty;
     final header = _TeacherPageHeader(
       title: title,
+      titleTag: titleTag,
       subtitle: subtitle,
       breadcrumbs: breadcrumbs,
       actions: useBottomBar ? const [] : actions,
@@ -74,8 +79,10 @@ class TeacherPageScaffold extends StatelessWidget {
         ),
       );
     } else {
+      // Body tự cuộn (list/table full-height) → bỏ padding đáy để không tạo
+      // khoảng margin chết dưới panel; body chạm sát đáy layout.
       expandedChild = Padding(
-        padding: pad,
+        padding: pad.copyWith(bottom: 0),
         child: Align(
           alignment: Alignment.topCenter,
           child: ConstrainedBox(
@@ -101,6 +108,7 @@ class TeacherPageScaffold extends StatelessWidget {
 class _TeacherPageHeader extends StatelessWidget {
   const _TeacherPageHeader({
     required this.title,
+    this.titleTag,
     this.subtitle,
     required this.breadcrumbs,
     required this.actions,
@@ -109,6 +117,7 @@ class _TeacherPageHeader extends StatelessWidget {
   });
 
   final String title;
+  final String? titleTag;
   final String? subtitle;
   final List<TeacherBreadcrumb> breadcrumbs;
   final List<Widget> actions;
@@ -164,12 +173,45 @@ class _TeacherPageHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (crumbRow != null) crumbRow,
-                    Text(
-                      title,
-                      style: mobile
-                          ? TeacherMobileUi.pageTitle(context)
-                          : TeacherWebUi.webPageTitle(context),
-                    ),
+                    if (titleTag != null && titleTag!.isNotEmpty)
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: AppSpacing.s3,
+                        runSpacing: 4,
+                        children: [
+                          Text(
+                            title,
+                            style: mobile
+                                ? TeacherMobileUi.pageTitle(context)
+                                : TeacherWebUi.webPageTitle(context),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.infoBg,
+                              borderRadius: BorderRadius.circular(AppRadius.chip),
+                            ),
+                            child: Text(
+                              titleTag!,
+                              style: (mobile
+                                      ? TeacherMobileUi.caption(context)
+                                      : TeacherWebUi.webCaption(context))
+                                  .copyWith(
+                                color: AppColors.info,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Text(
+                        title,
+                        style: mobile
+                            ? TeacherMobileUi.pageTitle(context)
+                            : TeacherWebUi.webPageTitle(context),
+                      ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(

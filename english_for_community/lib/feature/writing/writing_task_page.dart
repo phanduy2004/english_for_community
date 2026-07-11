@@ -16,6 +16,7 @@ import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/ui/exam_system_ui.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -663,14 +664,14 @@ class _PromptCardState extends State<_PromptCard> {
                           widget.title,
                           style: compact
                               ? ExamSystemUi.embeddedListTitle(context)
-                              : const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                              : const TextStyle(fontSize: AppTypography.mobileBodyLg, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 2),
                         Text(
                           _isExpanded ? t.writingPromptTapCollapse : t.writingPromptTapExpand,
-                          style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textSecondary),
                         ),
                       ],
                     ),
@@ -689,7 +690,7 @@ class _PromptCardState extends State<_PromptCard> {
                 decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(AppRadius.input), border: Border.all(color: AppColors.outline.withValues(alpha: 0.5))),
                 child: Text(
                   widget.text,
-                  style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: 14, height: 1.5, color: AppColors.textPrimary),
+                  style: compact ? ExamSystemUi.embeddedBodyStyle : const TextStyle(fontSize: AppTypography.mobileH2, height: 1.5, color: AppColors.textPrimary),
                 ),
               ),
             ),
@@ -716,27 +717,58 @@ class _Editor extends StatelessWidget {
         .clamp(compact ? 120.0 : 160.0, compact ? 180.0 : 240.0)
         .toDouble();
 
-    return Container(
-      constraints: BoxConstraints(minHeight: editorMinHeight),
-      padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 20),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        readOnly: readOnly,
-        maxLines: null,
-        minLines: 1,
-        keyboardType: TextInputType.multiline,
-        textCapitalization: TextCapitalization.sentences,
-        style: compact
-            ? ExamSystemUi.embeddedBodyStyle.copyWith(color: AppColors.textPrimary)
-            : StudentMobileUi.bodyLg(context),
-        cursorColor: AppColors.primary,
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          hintText: t.writingEditorHint,
-          hintStyle: const TextStyle(color: AppColors.textMuted),
-        ),
+    final Widget field = TextField(
+      controller: controller,
+      focusNode: focusNode,
+      readOnly: readOnly,
+      maxLines: null,
+      minLines: compact ? 1 : 6,
+      keyboardType: TextInputType.multiline,
+      textCapitalization: TextCapitalization.sentences,
+      style: compact
+          ? ExamSystemUi.embeddedBodyStyle.copyWith(color: AppColors.textPrimary)
+          : StudentMobileUi.bodyLg(context).copyWith(height: 1.6),
+      cursorColor: AppColors.primary,
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        isDense: true,
+        hintText: t.writingEditorHint,
+        hintStyle: const TextStyle(color: AppColors.textMuted),
       ),
+    );
+
+    if (compact) {
+      return Container(
+        constraints: BoxConstraints(minHeight: editorMinHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: field,
+      );
+    }
+
+    // "Trang giấy" viết bài: sheet trắng nâng nhẹ, bo góc, khoảng thở rộng.
+    return Container(
+      margin:
+          const EdgeInsets.symmetric(horizontal: StudentMobileUi.pageHPadding),
+      constraints: BoxConstraints(minHeight: editorMinHeight),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outlineMuted),
+        boxShadow: const [
+          BoxShadow(
+            color: AppColors.shadowCard,
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+          BoxShadow(
+            color: AppColors.shadowAmbient,
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: field,
     );
   }
 }

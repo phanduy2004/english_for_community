@@ -11,7 +11,7 @@ import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Classroom assignment card — same visual language as [TeacherGradingAttemptCard].
+/// Classroom assignment card — compact status pill + action menu.
 class TeacherClassroomAssignmentCard extends StatelessWidget {
   const TeacherClassroomAssignmentCard({
     super.key,

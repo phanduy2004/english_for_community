@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
@@ -380,7 +381,7 @@ class ExamListeningSubNavGroup extends StatelessWidget {
                     Text(
                       sectionTitle,
                       style: TextStyle(
-                        fontSize: 11,
+                        fontSize: AppTypography.mobileCaption,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary,
                         height: 1.2,
@@ -389,7 +390,7 @@ class ExamListeningSubNavGroup extends StatelessWidget {
                     Text(
                       hint,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: AppTypography.mobileCaption,
                         fontWeight: FontWeight.w400,
                         color: AppColors.textMuted,
                         height: 1.25,

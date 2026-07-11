@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _ExamEmbeddedFixedWritingPanelState extends State<ExamEmbeddedFixedWriting
               filled: true,
               fillColor: AppColors.surfaceCard,
             ),
-            style: ExamSystemUi.captionSecondary.copyWith(fontSize: 15, height: 1.5),
+            style: ExamSystemUi.captionSecondary.copyWith(fontSize: AppTypography.mobileBodyLg, height: 1.5),
           ),
         );
 

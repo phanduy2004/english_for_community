@@ -124,6 +124,7 @@ class _WritingTopicsPageState extends State<WritingTopicsPage> with SkillListSea
                   padding: const EdgeInsets.only(bottom: StudentMobileUi.cardGap),
                   child: StudentMobileUi.skillAccentCard(
                     skill: SkillType.writing,
+                    elevated: true,
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.of(context)

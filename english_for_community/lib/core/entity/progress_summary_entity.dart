@@ -41,11 +41,11 @@ class StudyTimeEntity {
 
   factory StudyTimeEntity.fromJson(Map<String, dynamic> json) =>
       StudyTimeEntity(
-        todayMinutes: json["todayMinutes"],
-        goalMinutes: json["goalMinutes"],
-        totalMinutesInRange: json["totalMinutesInRange"],
-        // Chuyển đổi linh hoạt từ int hoặc double
-        progressPercent: (json["progressPercent"] as num).toDouble(),
+        todayMinutes: (json["todayMinutes"] as num?)?.toInt() ?? 0,
+        goalMinutes: (json["goalMinutes"] as num?)?.toInt() ?? 0,
+        totalMinutesInRange: (json["totalMinutesInRange"] as num?)?.toInt() ?? 0,
+        // Chuyển đổi linh hoạt từ int hoặc double (null-safe)
+        progressPercent: (json["progressPercent"] as num?)?.toDouble() ?? 0,
       );
 }
 
@@ -74,14 +74,14 @@ class StatsGridEntity {
 
   factory StatsGridEntity.fromJson(Map<String, dynamic> json) =>
       StatsGridEntity(
-        vocabLearned: json["vocabLearned"],
-        avgWritingScore: (json["avgWritingScore"] as num).toDouble(),
-        readingAccuracy: json["readingAccuracy"],
-        dictationAccuracy: json["dictationAccuracy"],
-        speakingAccuracy: json["speakingAccuracy"],
-        speakingFluency: json["speakingFluency"] ?? 0,
-        lessonsCompleted: json["lessonsCompleted"], // ✍️ THÊM VÀO FACTORY
-        readingWpm: json["readingWpm"] ?? 0,
+        vocabLearned: (json["vocabLearned"] as num?)?.toInt() ?? 0,
+        avgWritingScore: (json["avgWritingScore"] as num?)?.toDouble() ?? 0,
+        readingAccuracy: (json["readingAccuracy"] as num?)?.toInt() ?? 0,
+        dictationAccuracy: (json["dictationAccuracy"] as num?)?.toInt() ?? 0,
+        speakingAccuracy: (json["speakingAccuracy"] as num?)?.toInt() ?? 0,
+        speakingFluency: (json["speakingFluency"] as num?)?.toInt() ?? 0,
+        lessonsCompleted: (json["lessonsCompleted"] as num?)?.toInt() ?? 0,
+        readingWpm: (json["readingWpm"] as num?)?.toInt() ?? 0,
       );
 }
 

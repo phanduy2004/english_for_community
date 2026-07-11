@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -257,13 +258,13 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
                   children: [
                     Text(
                       widget.word,
-                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: textMain),
+                      style: const TextStyle(fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.w700, color: textMain),
                     ),
                     if (_apiResult?.phonetic.isNotEmpty ?? false) ...[
                       const SizedBox(height: 4),
                       Text(
                         _apiResult!.phonetic,
-                        style: const TextStyle(fontSize: 16, color: textMuted, fontFamily: 'NotoSans'),
+                        style: const TextStyle(fontSize: AppTypography.mobileH1, color: textMuted, fontFamily: 'NotoSans'),
                       ),
                     ],
                   ],
@@ -297,7 +298,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
                   Expanded(
                     child: Text(
                       _vietnameseMeaning,
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: primaryColor),
+                      style: TextStyle(fontSize: AppTypography.mobileH1, fontWeight: FontWeight.w600, color: primaryColor),
                     ),
                   ),
                 ],
@@ -306,7 +307,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
 
           if (_apiResult?.meanings.isNotEmpty ?? false) ...[
             const SizedBox(height: 24),
-            Text(t.dictDefinitions, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textMuted)),
+            Text(t.dictDefinitions, style: const TextStyle(fontSize: AppTypography.mobileH2, fontWeight: FontWeight.w600, color: textMuted)),
             const SizedBox(height: 12),
             ..._apiResult!.meanings.map((m) => _buildMeaningSection(m)),
           ],
@@ -326,7 +327,7 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
         children: [
           Text(
             meaning.partOfSpeech,
-            style: const TextStyle(fontSize: 14, fontStyle: FontStyle.italic, fontWeight: FontWeight.w600, color: textMain),
+            style: const TextStyle(fontSize: AppTypography.mobileH2, fontStyle: FontStyle.italic, fontWeight: FontWeight.w600, color: textMain),
           ),
           const SizedBox(height: 8),
           ...meaning.definitions.asMap().entries.map((entry) {
@@ -337,18 +338,18 @@ class _WordDetailsDialogState extends State<WordDetailsDialog> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("${index + 1}. ", style: const TextStyle(fontSize: 14, color: textMuted)),
+                  Text("${index + 1}. ", style: const TextStyle(fontSize: AppTypography.mobileH2, color: textMuted)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(def.definition, style: const TextStyle(fontSize: 14, color: textMain, height: 1.4)),
+                        Text(def.definition, style: const TextStyle(fontSize: AppTypography.mobileH2, color: textMain, height: 1.4)),
                         if (def.example != null && def.example!.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 4.0),
                             child: Text(
                               "\"${def.example}\"",
-                              style: const TextStyle(fontSize: 13, color: textMuted, fontStyle: FontStyle.italic),
+                              style: const TextStyle(fontSize: AppTypography.mobileBody, color: textMuted, fontStyle: FontStyle.italic),
                             ),
                           ),
                       ],

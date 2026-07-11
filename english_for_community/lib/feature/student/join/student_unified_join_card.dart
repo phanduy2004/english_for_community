@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
@@ -114,7 +115,7 @@ class _StudentUnifiedJoinCardState extends State<StudentUnifiedJoinCard> {
                   maxLines: 1,
                   textInputAction: TextInputAction.done,
                   onSubmitted: (_) => _submit(),
-                  style: StudentMobileUi.body(context).copyWith(fontSize: 13),
+                  style: StudentMobileUi.body(context).copyWith(fontSize: AppTypography.mobileBody),
                   decoration: InputDecoration(
                     hintText: l10n.studentUnifiedJoinHint,
                     hintStyle: StudentMobileUi.caption(context).copyWith(

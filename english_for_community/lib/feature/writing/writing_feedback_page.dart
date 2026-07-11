@@ -4,6 +4,7 @@ import '../../core/entity/writing_submission_entity.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/ui/motion/app_score_reveal.dart';
 import '../../core/ui/student_mobile_ui.dart';
 import '../../core/ui/widget/app_card.dart';
@@ -11,7 +12,15 @@ import '../../core/ui/widget/app_card.dart';
 class WritingFeedbackPage extends StatelessWidget {
   final WritingSubmissionEntity submission;
 
-  const WritingFeedbackPage({super.key, required this.submission});
+  /// Bật tung hoa confetti khi mở màn (mặc định true — luồng vừa chấm xong).
+  /// Mở lại từ lịch sử truyền `false` để không ăn mừng mỗi lần xem lại.
+  final bool celebrate;
+
+  const WritingFeedbackPage({
+    super.key,
+    required this.submission,
+    this.celebrate = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +108,7 @@ class WritingFeedbackPage extends StatelessWidget {
                                 child: Text(
                                   prompt.taskType?.toUpperCase() ?? 'WRITING',
                                   style: const TextStyle(
-                                    fontSize: 11,
+                                    fontSize: AppTypography.mobileLabel,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textSecondary,
                                   ),
@@ -120,7 +129,7 @@ class WritingFeedbackPage extends StatelessWidget {
                           // Nội dung câu hỏi
                           Text(
                             prompt.text ?? t.writingFbNoPromptContent,
-                            style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                            style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.5),
                           ),
                         ],
                       ),
@@ -132,13 +141,14 @@ class WritingFeedbackPage extends StatelessWidget {
                   _ShadcnCard(
                     child: Column(
                       children: [
-                        Text(t.writingFbOverallBand, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
+                        Text(t.writingFbOverallBand, style: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
                         const SizedBox(height: 8),
                         AppScoreReveal(
                           score: (fb.overall ?? 0).toDouble(),
                           maxScore: 9,
+                          celebrate: celebrate,
                           textStyle: StudentMobileUi.greeting(context)
-                              .copyWith(fontSize: 48, height: 1),
+                              .copyWith(fontSize: AppTypography.mobileHero, height: 1),
                         ),
                       ],
                     ),
@@ -205,12 +215,12 @@ class WritingFeedbackPage extends StatelessWidget {
                 children: [
                   Text(
                     t.writingFbDetailedCorrection,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: const TextStyle(fontSize: AppTypography.mobileH1, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     t.writingFbTapHighlighted,
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 16),
                   if (fb.paragraphs != null && fb.paragraphs!.isNotEmpty)
@@ -282,7 +292,7 @@ class _ScoreRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14, color: AppColors.textPrimary)),
+        Text(label, style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textPrimary)),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
@@ -291,7 +301,7 @@ class _ScoreRow extends StatelessWidget {
           ),
           child: Text(
             score?.toStringAsFixed(1) ?? '-',
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+            style: const TextStyle(fontSize: AppTypography.mobileBody, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
           ),
         ),
       ],
@@ -316,8 +326,8 @@ class _CriteriaCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-              Text(score?.toStringAsFixed(1) ?? 'N/A', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
+              Text(label, style: const TextStyle(fontSize: AppTypography.mobileBodyLg, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+              Text(score?.toStringAsFixed(1) ?? 'N/A', style: const TextStyle(fontSize: AppTypography.mobileH2, fontWeight: FontWeight.w700, color: AppColors.textSecondary)),
             ],
           ),
           const SizedBox(height: 12),
@@ -331,7 +341,7 @@ class _CriteriaCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.input),
                 border: Border.all(color: AppColors.outline),
               ),
-              child: Text(note!, style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
+              child: Text(note!, style: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textSecondary, fontStyle: FontStyle.italic)),
             ),
           ],
         ],
@@ -355,7 +365,7 @@ class _BulletedList extends StatelessWidget {
           children: [
             const Text('•', style: TextStyle(color: AppColors.textSecondary, height: 1.4)),
             const SizedBox(width: 8),
-            Expanded(child: Text(item, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4))),
+            Expanded(child: Text(item, style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.4))),
           ],
         ),
       )).toList(),
@@ -384,7 +394,7 @@ class _SampleCard extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: AppTypography.mobileH1,
               fontWeight: FontWeight.w600, // Shadcn thường dùng w600 cho tiêu đề
               color: AppColors.textPrimary,
             ),
@@ -401,7 +411,7 @@ class _SampleCard extends StatelessWidget {
                 paragraph.trim(),
                 // 👇 CẬP NHẬT STYLE GIỐNG HỆT INTERACTIVE DIFF TEXT
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: AppTypography.mobileBodyLg,
                   height: 1.6,
                   fontWeight: FontWeight.w400,
                   color: AppColors.textPrimary, // Màu đen chuẩn
@@ -491,7 +501,7 @@ class _RewriteParagraphCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+                    style: const TextStyle(fontSize: AppTypography.mobileBody, fontWeight: FontWeight.w700, color: AppColors.textSecondary),
                   ),
                 ),
               Container(
@@ -506,7 +516,7 @@ class _RewriteParagraphCard extends StatelessWidget {
                 child: Text(
                   hasToken ? 'Smart Tokens' : 'Auto Diff',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: AppTypography.mobileCaption,
                     fontWeight: FontWeight.w700,
                     color: hasToken ? AppColors.success : AppColors.info,
                   ),
@@ -518,7 +528,7 @@ class _RewriteParagraphCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               comment,
-              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary, height: 1.4),
+              style: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
           const SizedBox(height: 12),

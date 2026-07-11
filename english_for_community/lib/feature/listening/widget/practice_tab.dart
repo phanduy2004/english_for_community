@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
 import 'package:flutter/material.dart';
@@ -127,7 +128,7 @@ class PracticeTab extends StatelessWidget {
                     t.meaningLabel,
                     style: compact
                         ? ExamSystemUi.embeddedCaptionStyle.copyWith(color: AppColors.primary, fontWeight: FontWeight.w500)
-                        : const TextStyle(fontSize: 12, color: Colors.blue, fontWeight: FontWeight.bold),
+                        : const TextStyle(fontSize: AppTypography.mobileCaption, color: Colors.blue, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -184,7 +185,7 @@ class PracticeTab extends StatelessWidget {
               Row(children: [
                 Text(
                   t.listeningAutoPlayNext,
-                  style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: compact ? ExamSystemUi.embeddedCaptionStyle : const TextStyle(fontSize: AppTypography.mobileBody, color: Colors.grey),
                 ),
                 const Spacer(),
                 Switch(

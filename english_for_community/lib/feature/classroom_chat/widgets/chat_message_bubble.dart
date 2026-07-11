@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -322,7 +323,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                       padding: const EdgeInsets.only(top: 2, right: 2),
                       child: Text(
                         'Đang gửi…',
-                        style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+                        style: TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted),
                       ),
                     )
                   else if (!message.isPending)
@@ -463,7 +464,7 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
             children: [
               const Text(
                 'Thả cảm xúc',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(fontSize: AppTypography.mobileH1, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 16),
               Wrap(
@@ -1214,11 +1215,11 @@ class _FileBubble extends StatelessWidget {
                       message.media!.name,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: fg),
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileH3, color: fg),
                     ),
                     Text(
                       '$sizeKb KB',
-                      style: TextStyle(fontSize: 11, color: fg.withValues(alpha: 0.7)),
+                      style: TextStyle(fontSize: AppTypography.mobileCaption, color: fg.withValues(alpha: 0.7)),
                     ),
                   ],
                 ),
@@ -1276,7 +1277,7 @@ class _DeletedBubbleContent extends StatelessWidget {
             style: TextStyle(
               color: AppColors.textMuted,
               fontStyle: FontStyle.italic,
-              fontSize: 13,
+              fontSize: AppTypography.mobileBody,
             ),
           ),
         ],

@@ -3,14 +3,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../theme/app_color.dart';
 
-/// Ngọn lửa streak "sống": nhấp nháy nhẹ, đậm dần theo mốc chuỗi ngày.
+/// Ngọn lửa streak — **ánh nhiệt lướt qua liên tục** (light chạy dọc ngọn lửa),
+/// nhanh dần theo mốc chuỗi ngày. KHÔNG lắc/xoay tại chỗ.
 ///
-/// - streak 0        → xám, đứng yên.
-/// - streak 1–6      → amber, pulse nhẹ.
-/// - streak 7–29     → amber, pulse rõ hơn.
-/// - streak ≥ 30     → amber đậm, pulse mạnh nhất.
-///
-/// Tôn trọng reduce-motion (`10-accessibility` §6): tắt pulse.
+/// Tôn trọng reduce-motion (`10-accessibility` §6): để icon tĩnh.
 class StreakFlame extends StatelessWidget {
   const StreakFlame({super.key, required this.streak, this.size = 16});
 
@@ -19,10 +15,10 @@ class StreakFlame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool active = streak > 0;
+    final bool hot = streak > 0;
     final Color color = streak >= 30
         ? AppColors.accentDark
-        : (active ? AppColors.accent : AppColors.textMuted);
+        : (hot ? AppColors.accent : AppColors.textMuted);
 
     final Widget flame = Icon(
       Icons.local_fire_department_rounded,
@@ -30,25 +26,15 @@ class StreakFlame extends StatelessWidget {
       color: color,
     );
 
-    if (!active || MediaQuery.disableAnimationsOf(context)) return flame;
+    if (MediaQuery.disableAnimationsOf(context)) return flame;
 
-    // Biên độ pulse tăng dần theo mốc.
-    final double peak = streak >= 30
-        ? 1.16
-        : streak >= 7
-            ? 1.12
-            : 1.08;
-    final int ms = streak >= 30 ? 780 : 950;
+    // Nhiệt lướt càng nhanh khi streak càng cao.
+    final int sweep = streak >= 30 ? 620 : (streak >= 7 ? 760 : 920);
 
     return RepaintBoundary(
-      child: flame
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(
-            begin: const Offset(0.94, 0.94),
-            end: Offset(peak, peak),
-            duration: Duration(milliseconds: ms),
-            curve: Curves.easeInOut,
-            alignment: Alignment.bottomCenter,
+      child: flame.animate(onPlay: (c) => c.repeat()).shimmer(
+            duration: sweep.ms,
+            color: Colors.white.withValues(alpha: hot ? 0.75 : 0.40),
           ),
     );
   }

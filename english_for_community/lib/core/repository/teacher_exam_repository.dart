@@ -4,7 +4,8 @@ import '../model/failure.dart';
 abstract class TeacherExamRepository {
   Future<Either<Failure, List<dynamic>>> listMyClassroomsAsTeacher();
   Future<Either<Failure, List<dynamic>>> listEnrolledClassrooms();
-  Future<Either<Failure, dynamic>> createClassroom({required String name});
+  Future<Either<Failure, dynamic>> createClassroom(
+      {required String name, String? tag});
   Future<Either<Failure, dynamic>> getClassroom(String id);
   Future<Either<Failure, dynamic>> joinClassByCode(String inviteCode);
   Future<Either<Failure, dynamic>> joinClassByToken(String token);

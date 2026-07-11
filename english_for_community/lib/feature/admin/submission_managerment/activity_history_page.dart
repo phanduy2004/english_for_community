@@ -1,13 +1,14 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/feature/admin/submission_managerment/widget/user_dropdown_search.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/content_management/content_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -241,17 +242,41 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
               // 3. LIST CONTENT
               Expanded(
                 child: state.status == HistoryStatus.loading
-                    ? AdminSkeleton.page(AdminSkeleton.cardList())
+                    ? AdminSkeleton.page(AdminSkeleton.table(rows: 6))
                     : filteredList.isEmpty
                     ? AdminEmptyState(message: l10n.noData, icon: Icons.history_outlined)
-                    : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredList.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    return _AdminHistoryCard(item: filteredList[index]);
-                  },
-                ),
+                    : Padding(
+                        padding: const EdgeInsets.all(AppSpacing.s4),
+                        child: WebDataTable(
+                          columns: [
+                            WebTableColumn(label: l10n.adminTableUser, flex: 3),
+                            WebTableColumn(label: l10n.adminTableSkill, width: 120),
+                            WebTableColumn(label: l10n.adminTableType, width: 130),
+                            WebTableColumn(label: l10n.adminTableContent, flex: 3),
+                            WebTableColumn(label: l10n.adminTableStatus, width: 120),
+                            WebTableColumn(label: l10n.adminTableScore, width: 90, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+                            WebTableColumn(label: l10n.adminTableDate, width: 150),
+                          ],
+                          rowCount: filteredList.length,
+                          decoration: AdminWebUi.panelDecoration(),
+                          headStyle: AdminWebUi.webTableHead(context),
+                          scrollable: true,
+                          onRowTap: (row) => () => _openDetail(filteredList[row]),
+                          cellBuilder: (context, row, column) {
+                            final item = filteredList[row];
+                            return switch (column) {
+                              0 => _userCell(item),
+                              1 => _skillCell(item.type),
+                              2 => _tableText(item.subType ?? '-'),
+                              3 => _tableText(item.title, weight: FontWeight.w600),
+                              4 => _statusCell(item.status),
+                              5 => _scoreCell(item),
+                              6 => _tableText(_formatDate(item.date), muted: true),
+                              _ => const SizedBox.shrink(),
+                            };
+                          },
+                        ),
+                      ),
               ),
             ],
           );
@@ -299,174 +324,91 @@ class _ActivityHistoryViewState extends State<_ActivityHistoryView> with SingleT
     );
   }
 
-}
-
-// --- CARD & META TAGS (Giữ nguyên phần UI Card đã đẹp từ trước) ---
-class _AdminHistoryCard extends StatelessWidget {
-  final ActivityModel item;
-  const _AdminHistoryCard({required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    // Determine colors based on type
-    Color accentColor = kTextMuted;
-    Color accentBg = kBgPage;
-    IconData icon = Icons.article;
-
-    switch (item.type) {
-      case ActivityType.writing:
-        accentColor = kColWriting; accentBg = kColWritingBg; icon = Icons.edit_note; break;
-      case ActivityType.reading:
-        accentColor = kColReading; accentBg = kColReadingBg; icon = Icons.menu_book; break;
-      case ActivityType.listening:
-        accentColor = kColListening; accentBg = kColListeningBg; icon = Icons.headphones; break;
-      case ActivityType.speaking:
-        accentColor = kColSpeaking; accentBg = kColSpeakingBg; icon = Icons.mic; break;
-      default: break;
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: kBorder),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ActivityDetailPage(
-                  id: item.id,       // Truyền ID từ item trong danh sách
-                  type: item.type,   // Truyền Type (reading, writing...)
-
-                  // (Optional) Truyền thêm mấy cái này để hiện giao diện tạm
-                  // trong lúc chờ loading cho đỡ trống
-                  summaryTitle: item.title,
-                  summaryDate: item.date,
-                  subType: item.subType,
-                ),
-              ),
-            );          },
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 1. HEADER: User Info
-                if (item.user != null) ...[
-                  Row(
-                    children: [
-                      AdminWebUi.userAvatarCircle(
-                        avatarUrl: item.user!.avatar,
-                        displayName: item.user!.name,
-                        radius: 14,
-                      ),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.user!.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: kTextMain)),
-                          Text(
-                              DateFormat('dd/MM/yyyy HH:mm').format(
-                                  item.date.toUtc().add(const Duration(hours: 7))
-                              ),
-                              style: const TextStyle(fontSize: 11, color: kTextMuted)
-                          ),                        ],
-                      ),
-                      const Spacer(),
-                      _buildStatusBadge(item.status),
-                    ],
-                  ),
-                  const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider(height: 1, color: kBgPage)),
-                ],
-
-                // 2. BODY: Activity Info
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(color: accentBg, borderRadius: BorderRadius.circular(AppRadius.input)),
-                      child: Icon(icon, color: accentColor, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (item.subType != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(item.subType!.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: kTextMuted, letterSpacing: 0.5)),
-                            ),
-                          Text(item.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: kTextMain, height: 1.3)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    _buildScore(item),
-                  ],
-                ),
-              ],
-            ),
-          ),
+  void _openDetail(ActivityModel item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActivityDetailPage(
+          id: item.id,
+          type: item.type,
+          summaryTitle: item.title,
+          summaryDate: item.date,
+          subType: item.subType,
         ),
       ),
     );
   }
 
-  // Helper Widgets cho Card
-  Widget _buildScore(ActivityModel item) {
-    if ((item.status == ActivityStatus.pending || item.status == ActivityStatus.draft) && item.type == ActivityType.writing) {
-      return const SizedBox.shrink();
+  Widget _userCell(ActivityModel item) {
+    final user = item.user;
+    return Row(
+      children: [
+        AdminWebUi.userAvatarCircle(
+          avatarUrl: user?.avatar,
+          displayName: user?.name ?? 'Unknown User',
+          radius: 14,
+        ),
+        const SizedBox(width: AppSpacing.s2),
+        Expanded(child: _tableText(user?.name ?? 'Unknown User', weight: FontWeight.w600)),
+      ],
+    );
+  }
+
+  Widget _skillCell(ActivityType type) {
+    final (icon, label) = switch (type) {
+      ActivityType.writing => (Icons.edit_note_outlined, 'Writing'),
+      ActivityType.reading => (Icons.menu_book_outlined, 'Reading'),
+      ActivityType.listening => (Icons.headphones_outlined, 'Listening'),
+      ActivityType.speaking => (Icons.mic_none_outlined, 'Speaking'),
+      ActivityType.unknown => (Icons.article_outlined, 'Unknown'),
+    };
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.s2),
+        Flexible(child: _tableText(label)),
+      ],
+    );
+  }
+
+  Widget _statusCell(ActivityStatus status) {
+    final (label, color) = switch (status) {
+      ActivityStatus.pending => ('Pending', AppColors.warning),
+      ActivityStatus.reviewed => ('Reviewed', AppColors.success),
+      ActivityStatus.draft => ('Draft', AppColors.textSecondary),
+      ActivityStatus.completed => ('Completed', AppColors.success),
+      ActivityStatus.unknown => ('Unknown', AppColors.textSecondary),
+    };
+    return Semantics(
+      label: '${context.l10n.adminTableStatus}: $label',
+      child: StatusBadge(text: label, color: color),
+    );
+  }
+
+  Widget _scoreCell(ActivityModel item) {
+    if (item.type == ActivityType.writing &&
+        (item.status == ActivityStatus.pending || item.status == ActivityStatus.draft)) {
+      return _tableText('-', muted: true);
     }
+    final score = item.type == ActivityType.writing ? '${item.score} Band' : '${item.score.toInt()}%';
+    return _tableText(score, weight: FontWeight.w600);
+  }
 
-    String display = item.type == ActivityType.writing ? item.score.toString() : '${item.score.toInt()}';
-    String unit = item.type == ActivityType.writing ? 'Band' : '%';
+  String _formatDate(DateTime date) => DateFormat('dd/MM/yyyy HH:mm').format(date.toLocal());
 
-    bool isGood = item.type == ActivityType.writing ? item.score >= 5.0 : item.score >= 50;
-    Color color = isGood ? AppColors.success : AppColors.danger;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: kBgPage,
-        borderRadius: BorderRadius.circular(AppRadius.input),
-        border: Border.all(color: kBorder),
-      ),
-      child: Column(
-        children: [
-          Text(display, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: color)),
-          Text(unit, style: const TextStyle(fontSize: 10, color: kTextMuted, fontWeight: FontWeight.w600)),
-        ],
+  Widget _tableText(String value, {bool muted = false, FontWeight? weight}) {
+    return Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: weight,
+        color: muted ? AppColors.textSecondary : AppColors.textPrimary,
+        fontFeatures: const [FontFeature.tabularFigures()],
       ),
     );
   }
 
-  Widget _buildStatusBadge(ActivityStatus status) {
-    String text;
-    Color color;
-    Color bg;
-
-    switch (status) {
-      case ActivityStatus.pending: text = 'Pending'; color = AppColors.warning; bg = AppColors.warningBg; break;
-      case ActivityStatus.reviewed: text = 'Reviewed'; color = AppColors.success; bg = AppColors.successBg; break;
-      case ActivityStatus.draft: text = 'Draft'; color = kTextMuted; bg = kBgPage; break;
-      default: return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.chip)),
-      child: Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
-    );
-  }
 }
-
-
 

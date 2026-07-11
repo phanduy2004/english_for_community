@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
@@ -92,7 +93,7 @@ class ListeningHeader extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     color: AppColors.onPrimary,
-                    fontSize: 18,
+                    fontSize: AppTypography.mobileDisplay,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
                   ),
@@ -111,7 +112,7 @@ class ListeningHeader extends StatelessWidget {
                         levelText!.toUpperCase(),
                         style: const TextStyle(
                           color: AppColors.onPrimary,
-                          fontSize: 10,
+                          fontSize: AppTypography.mobileCaption,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -120,7 +121,7 @@ class ListeningHeader extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   context.l10n.listeningCueProgress(doneCount, totalCount),
-                  style: TextStyle(color: AppColors.onPrimary.withValues(alpha: 0.7), fontSize: 13),
+                  style: TextStyle(color: AppColors.onPrimary.withValues(alpha: 0.7), fontSize: AppTypography.mobileBody),
                 ),
               ],
             ),
@@ -145,7 +146,7 @@ class ListeningHeader extends StatelessWidget {
                 '${(progress * 100).toInt()}%',
                 style: const TextStyle(
                   color: AppColors.onPrimary,
-                  fontSize: 11,
+                  fontSize: AppTypography.mobileCaption,
                 ),
               ),
             ],

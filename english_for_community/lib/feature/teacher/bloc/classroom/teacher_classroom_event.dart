@@ -21,13 +21,15 @@ class TeacherClassroomSaveSettingsRequested extends TeacherClassroomEvent {
   const TeacherClassroomSaveSettingsRequested({
     required this.name,
     required this.description,
+    this.tag = '',
   });
 
   final String name;
   final String description;
+  final String tag;
 
   @override
-  List<Object?> get props => [name, description];
+  List<Object?> get props => [name, description, tag];
 }
 
 class TeacherClassroomApproveMemberRequested extends TeacherClassroomEvent {

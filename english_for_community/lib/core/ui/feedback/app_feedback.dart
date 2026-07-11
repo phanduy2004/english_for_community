@@ -2,6 +2,7 @@ import 'package:english_for_community/core/debug/app_dev_log.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:flutter/material.dart';
@@ -76,7 +77,7 @@ abstract final class AppFeedback {
       child: Text(
         message,
         style: const TextStyle(
-          fontSize: 12,
+          fontSize: AppTypography.mobileCaption,
           fontWeight: FontWeight.w500,
           color: AppColors.danger,
           height: 1.3,

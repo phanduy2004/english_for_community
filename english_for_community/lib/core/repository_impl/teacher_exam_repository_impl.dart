@@ -39,9 +39,14 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> createClassroom({required String name}) async {
+  Future<Either<Failure, dynamic>> createClassroom(
+      {required String name, String? tag}) async {
     try {
-      return Right(await remote.createClassroom({'name': name, 'joinPolicy': 'open'}));
+      return Right(await remote.createClassroom({
+        'name': name,
+        if (tag != null && tag.trim().isNotEmpty) 'tag': tag.trim(),
+        'joinPolicy': 'open',
+      }));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {

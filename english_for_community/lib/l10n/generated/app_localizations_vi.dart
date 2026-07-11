@@ -178,6 +178,13 @@ class AppLocalizationsVi extends AppLocalizations {
       'Thử từ khóa khác hoặc xóa bộ lọc.';
 
   @override
+  String get studentChatHubCaughtUpTitle => 'Bạn đã đọc hết tin nhắn';
+
+  @override
+  String get studentChatHubCaughtUpBody =>
+      'Không có tin mới. Nhắn cho lớp bất cứ lúc nào nhé!';
+
+  @override
   String get loginWelcomeBack => 'Chào mừng trở lại!';
 
   @override
@@ -417,6 +424,57 @@ class AppLocalizationsVi extends AppLocalizations {
   String get adminDashboard => 'Bảng quản trị';
 
   @override
+  String get adminAnalyticsTitle => 'Phân tích';
+
+  @override
+  String get adminAnalyticsTotalUsers => 'Tổng người dùng';
+
+  @override
+  String get adminAnalyticsStudents => 'Học sinh';
+
+  @override
+  String get adminAnalyticsTeachers => 'Giáo viên';
+
+  @override
+  String get adminAnalyticsActiveUsers => 'Đang hoạt động';
+
+  @override
+  String get adminAnalyticsNewUsers => 'Người dùng mới';
+
+  @override
+  String get adminAnalyticsReportsPending => 'Báo cáo chờ';
+
+  @override
+  String get adminAnalyticsUsersByRole => 'Người dùng theo vai trò';
+
+  @override
+  String get adminAnalyticsUsersByRoleSub => 'Tổng tài khoản theo vai trò';
+
+  @override
+  String get adminAnalyticsNewUsersChart => 'Người dùng mới theo thời gian';
+
+  @override
+  String get adminAnalyticsRoleStudent => 'Học sinh';
+
+  @override
+  String get adminAnalyticsRoleTeacher => 'Giáo viên';
+
+  @override
+  String get adminAnalyticsRoleAdmin => 'Quản trị';
+
+  @override
+  String get adminAnalyticsNoData => 'Chưa đủ dữ liệu';
+
+  @override
+  String get adminAnalyticsRangeDay => 'Ngày';
+
+  @override
+  String get adminAnalyticsRangeWeek => 'Tuần';
+
+  @override
+  String get adminAnalyticsRangeMonth => 'Tháng';
+
+  @override
   String get filterEasy => 'dễ';
 
   @override
@@ -563,6 +621,78 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get adminActivityHistoryTitle => 'Lịch sử bài nộp';
+
+  @override
+  String get adminTableUser => 'Người dùng';
+
+  @override
+  String get adminTableLastActive => 'Hoạt động lần cuối';
+
+  @override
+  String get adminTableSkill => 'Kỹ năng';
+
+  @override
+  String get adminTableType => 'Loại';
+
+  @override
+  String get adminTableContent => 'Nội dung';
+
+  @override
+  String get adminTableStatus => 'Trạng thái';
+
+  @override
+  String get adminTableScore => 'Điểm';
+
+  @override
+  String get adminTableDate => 'Ngày';
+
+  @override
+  String get adminTableTitle => 'Tiêu đề';
+
+  @override
+  String get adminTableReporter => 'Người báo';
+
+  @override
+  String get adminTableCreated => 'Tạo lúc';
+
+  @override
+  String get adminTableSubmissions => 'Lượt nộp';
+
+  @override
+  String get adminTableDifficulty => 'Độ khó';
+
+  @override
+  String get adminTableReadingTime => 'Thời gian đọc';
+
+  @override
+  String get adminTableCode => 'Mã';
+
+  @override
+  String get adminTableCues => 'Câu nghe';
+
+  @override
+  String get adminTableDuration => 'Thời lượng';
+
+  @override
+  String get adminTableLevel => 'Cấp độ';
+
+  @override
+  String get adminTableTasks => 'Nhiệm vụ';
+
+  @override
+  String get adminTableSentences => 'Câu';
+
+  @override
+  String get adminTableVersion => 'Phiên bản';
+
+  @override
+  String get adminTablePlatform => 'Nền tảng';
+
+  @override
+  String get adminTableMinimumVersion => 'Phiên bản tối thiểu';
+
+  @override
+  String get adminTableActions => 'Thao tác';
 
   @override
   String get adminSearchUsersHint => 'Tìm theo tên hoặc email…';
@@ -2338,6 +2468,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherClassNameLabel => 'Tên lớp';
 
   @override
+  String get teacherClassTagLabel => 'Nhãn (tuỳ chọn)';
+
+  @override
+  String get teacherClassTagHint => 'vd: Ca sáng · HK2';
+
+  @override
   String get teacherClassCreated => 'Đã tạo lớp';
 
   @override
@@ -3093,6 +3229,24 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherClassRecentAssignments => 'Bài giao gần đây';
 
   @override
+  String get teacherClassColExam => 'Bài kiểm tra';
+
+  @override
+  String get teacherClassColStatus => 'Trạng thái';
+
+  @override
+  String get teacherClassColSchedule => 'Lịch';
+
+  @override
+  String get teacherClassColSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherClassColMember => 'Thành viên';
+
+  @override
+  String get teacherClassColJoined => 'Tham gia';
+
+  @override
   String get teacherClassViewAllAssignments => 'Xem tất cả bài giao';
 
   @override
@@ -3547,6 +3701,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherInboxPublicAssignment => 'Bài giao công khai';
+
+  @override
+  String get teacherInboxColType => 'Loại';
+
+  @override
+  String get teacherInboxColTime => 'Thời gian';
 
   @override
   String teacherInboxItemCount(int count) {
@@ -4631,6 +4791,131 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherAnalyticsModeSelfPaced => 'Tự luyện';
+
+  @override
+  String get teacherAnalyticsCompletion => 'Hoàn thành';
+
+  @override
+  String get teacherAnalyticsInProgress => 'Đang làm dở';
+
+  @override
+  String get teacherAnalyticsGradeNow => 'Chấm ngay';
+
+  @override
+  String teacherAnalyticsSummaryTitle(int days) {
+    return 'Tóm tắt $days ngày';
+  }
+
+  @override
+  String teacherAnalyticsInsightAvg(String score) {
+    return 'Điểm TB lớp $score/10.';
+  }
+
+  @override
+  String teacherAnalyticsInsightWeakSkill(String skill, String score) {
+    return '$skill ($score) là kỹ năng yếu nhất.';
+  }
+
+  @override
+  String teacherAnalyticsInsightNotSubmitting(int count) {
+    return '$count học sinh chưa nộp bài nào.';
+  }
+
+  @override
+  String teacherAnalyticsInsightPending(int count) {
+    return '$count bài đang chờ chấm.';
+  }
+
+  @override
+  String get teacherAnalyticsInsightEmpty => 'Chưa đủ dữ liệu để tóm tắt.';
+
+  @override
+  String get teacherAnalyticsScoreTrend => 'Xu hướng điểm';
+
+  @override
+  String get teacherAnalyticsScoreTrendSub =>
+      'Điểm TB lớp mỗi ngày (0–10) — di chuột vào điểm để xem chi tiết';
+
+  @override
+  String get teacherAnalyticsAvgShort => 'TB';
+
+  @override
+  String teacherAnalyticsGradedCount(int count) {
+    return '$count bài có điểm';
+  }
+
+  @override
+  String teacherAnalyticsPerDayAvg(String value) {
+    return 'TB $value bài/ngày';
+  }
+
+  @override
+  String get teacherAnalyticsAtRiskTitle => 'Học sinh cần chú ý';
+
+  @override
+  String get teacherAnalyticsColStudent => 'Học sinh';
+
+  @override
+  String get teacherAnalyticsColAvg => 'Điểm TB';
+
+  @override
+  String get teacherAnalyticsColSubmitted => 'Đã nộp';
+
+  @override
+  String get teacherAnalyticsColAlert => 'Cảnh báo';
+
+  @override
+  String get teacherAnalyticsRiskNotSubmitting => 'Chưa nộp bài nào';
+
+  @override
+  String get teacherAnalyticsRiskLowScore => 'Điểm thấp';
+
+  @override
+  String get teacherAnalyticsRiskLate => 'Hay nộp trễ';
+
+  @override
+  String teacherAnalyticsViewAll(int count) {
+    return 'Xem tất cả $count';
+  }
+
+  @override
+  String get teacherAnalyticsItemAnalysisTitle =>
+      'Câu hỏi cả lớp làm sai nhiều nhất';
+
+  @override
+  String get teacherAnalyticsItemAnalysisSub => '% số điểm cả lớp đạt được';
+
+  @override
+  String get teacherAnalyticsCorrectLabel => 'đúng';
+
+  @override
+  String teacherAnalyticsAttemptsLabel(int count) {
+    return '$count lượt làm';
+  }
+
+  @override
+  String get teacherAnalyticsIntegrityReasons => 'Nguyên nhân bị cờ';
+
+  @override
+  String get teacherAnalyticsReasonTabSwitch => 'Chuyển tab / rời màn';
+
+  @override
+  String get teacherAnalyticsReasonCopyPaste => 'Dán nội dung';
+
+  @override
+  String get teacherAnalyticsReasonFullscreen => 'Thoát toàn màn hình';
+
+  @override
+  String get teacherAnalyticsOnTimeTitle => 'Nộp bài đúng hạn';
+
+  @override
+  String get teacherAnalyticsOnTime => 'Đúng hạn';
+
+  @override
+  String get teacherAnalyticsLate => 'Trễ hạn';
+
+  @override
+  String get teacherAnalyticsMissing => 'Chưa nộp';
 
   @override
   String get teacherNavAnalytics => 'Phân tích';

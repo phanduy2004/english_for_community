@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/debug/app_dev_log.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/utils/global_keys.dart';
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:flutter/material.dart';
@@ -48,7 +49,7 @@ class AppCornerToast {
     }
 
     final textStyle = const TextStyle(
-      fontSize: 13,
+      fontSize: AppTypography.mobileBody,
       fontWeight: FontWeight.w600,
       color: Colors.white,
       height: 1.25,

@@ -71,7 +71,7 @@
       "count": {"type": "int"}
     }
   },
-  "studentChatHubClassCount": "{count} classes",
+  "studentChatHubClassCount": "{count, plural, =1{1 class} other{{count} classes}}",
   "@studentChatHubClassCount": {
     "placeholders": {
       "count": {"type": "int"}
@@ -81,6 +81,8 @@
   "studentChatHubEmptyBody": "Classrooms you join will appear here.",
   "studentChatHubSearchEmptyTitle": "No results",
   "studentChatHubSearchEmptyBody": "Try another keyword or clear the search.",
+  "studentChatHubCaughtUpTitle": "You're all caught up",
+  "studentChatHubCaughtUpBody": "No new messages. Chat with your class anytime!",
   "loginWelcomeBack": "Welcome Back!",
   "loginSubtitle": "Enter your details to continue.",
   "labelEmail": "Email",
@@ -170,6 +172,23 @@
   "socketKicked": "You were signed out from another device.",
   "adminRetry": "Retry",
   "adminDashboard": "Admin dashboard",
+  "adminAnalyticsTitle": "Analytics",
+  "adminAnalyticsTotalUsers": "Total users",
+  "adminAnalyticsStudents": "Students",
+  "adminAnalyticsTeachers": "Teachers",
+  "adminAnalyticsActiveUsers": "Active users",
+  "adminAnalyticsNewUsers": "New users",
+  "adminAnalyticsReportsPending": "Reports pending",
+  "adminAnalyticsUsersByRole": "Users by role",
+  "adminAnalyticsUsersByRoleSub": "All-time accounts by role",
+  "adminAnalyticsNewUsersChart": "New users over time",
+  "adminAnalyticsRoleStudent": "Students",
+  "adminAnalyticsRoleTeacher": "Teachers",
+  "adminAnalyticsRoleAdmin": "Admins",
+  "adminAnalyticsNoData": "Not enough data yet",
+  "adminAnalyticsRangeDay": "Day",
+  "adminAnalyticsRangeWeek": "Week",
+  "adminAnalyticsRangeMonth": "Month",
   "filterEasy": "easy",
   "filterMedium": "medium",
   "filterHard": "hard",
@@ -219,6 +238,30 @@
   "adminUserManagementTitle": "User management",
   "adminReportManagementTitle": "Report management",
   "adminActivityHistoryTitle": "Submission history",
+  "adminTableUser": "User",
+  "adminTableLastActive": "Last active",
+  "adminTableSkill": "Skill",
+  "adminTableType": "Type",
+  "adminTableContent": "Content",
+  "adminTableStatus": "Status",
+  "adminTableScore": "Score",
+  "adminTableDate": "Date",
+  "adminTableTitle": "Title",
+  "adminTableReporter": "Reporter",
+  "adminTableCreated": "Created",
+  "adminTableSubmissions": "Submissions",
+  "adminTableDifficulty": "Difficulty",
+  "adminTableReadingTime": "Reading time",
+  "adminTableCode": "Code",
+  "adminTableCues": "Cues",
+  "adminTableDuration": "Duration",
+  "adminTableLevel": "Level",
+  "adminTableTasks": "Tasks",
+  "adminTableSentences": "Sentences",
+  "adminTableVersion": "Version",
+  "adminTablePlatform": "Platform",
+  "adminTableMinimumVersion": "Minimum version",
+  "adminTableActions": "Actions",
   "adminSearchUsersHint": "Search by name or email…",
   "adminSearchReportsHint": "Search by title or sender…",
   "adminNoUsersFound": "No users found",
@@ -1056,6 +1099,8 @@
   "teacherClassFab": "New class",
   "teacherClassCreateTitle": "Create classroom",
   "teacherClassNameLabel": "Class name",
+  "teacherClassTagLabel": "Tag (optional)",
+  "teacherClassTagHint": "e.g. Morning · Term 2",
   "teacherClassCreated": "Classroom created",
   "teacherMyClassrooms": "My classrooms",
   "teacherNoClassrooms": "No classrooms yet. Create one with the + button.",
@@ -1365,6 +1410,12 @@
   "teacherClassUpdatedLabel": "Updated",
   "teacherClassInviteCardHint": "Share this code so students can join the class.",
   "teacherClassRecentAssignments": "Recent assignments",
+  "teacherClassColExam": "Exam",
+  "teacherClassColStatus": "Status",
+  "teacherClassColSchedule": "Schedule",
+  "teacherClassColSubmitted": "Submitted",
+  "teacherClassColMember": "Member",
+  "teacherClassColJoined": "Joined",
   "teacherClassViewAllAssignments": "View all assignments",
   "teacherClassSettingsAbout": "About this class",
   "teacherClassSettingsJoin": "Join settings",
@@ -1603,6 +1654,8 @@
     }
   },
   "teacherInboxPublicAssignment": "Public assignment",
+  "teacherInboxColType": "Type",
+  "teacherInboxColTime": "Time",
   "teacherInboxItemCount": "{count, plural, =1{1 item} other{{count} items}}",
   "@teacherInboxItemCount": {
     "placeholders": {
@@ -2077,6 +2130,68 @@
   "teacherAnalyticsModeHomework": "Homework",
   "teacherAnalyticsModeLive": "Live",
   "teacherAnalyticsModeSelfPaced": "Self-paced",
+  "teacherAnalyticsCompletion": "Completion",
+  "teacherAnalyticsInProgress": "In progress",
+  "teacherAnalyticsGradeNow": "Grade now",
+  "teacherAnalyticsSummaryTitle": "{days}-day summary",
+  "@teacherAnalyticsSummaryTitle": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "teacherAnalyticsInsightAvg": "Class average {score}/10.",
+  "@teacherAnalyticsInsightAvg": {
+    "placeholders": { "score": { "type": "String" } }
+  },
+  "teacherAnalyticsInsightWeakSkill": "{skill} ({score}) is the weakest skill.",
+  "@teacherAnalyticsInsightWeakSkill": {
+    "placeholders": { "skill": { "type": "String" }, "score": { "type": "String" } }
+  },
+  "teacherAnalyticsInsightNotSubmitting": "{count} students haven't submitted anything.",
+  "@teacherAnalyticsInsightNotSubmitting": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAnalyticsInsightPending": "{count} submissions awaiting grading.",
+  "@teacherAnalyticsInsightPending": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAnalyticsInsightEmpty": "Not enough data to summarise yet.",
+  "teacherAnalyticsScoreTrend": "Score trend",
+  "teacherAnalyticsScoreTrendSub": "Daily class average (0–10) — hover a point for details",
+  "teacherAnalyticsAvgShort": "avg",
+  "teacherAnalyticsGradedCount": "{count} graded",
+  "@teacherAnalyticsGradedCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAnalyticsPerDayAvg": "{value}/day avg",
+  "@teacherAnalyticsPerDayAvg": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "teacherAnalyticsAtRiskTitle": "Students needing attention",
+  "teacherAnalyticsColStudent": "Student",
+  "teacherAnalyticsColAvg": "Avg %",
+  "teacherAnalyticsColSubmitted": "Submitted",
+  "teacherAnalyticsColAlert": "Alert",
+  "teacherAnalyticsRiskNotSubmitting": "No submissions",
+  "teacherAnalyticsRiskLowScore": "Low score",
+  "teacherAnalyticsRiskLate": "Frequently late",
+  "teacherAnalyticsViewAll": "View all {count}",
+  "@teacherAnalyticsViewAll": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAnalyticsItemAnalysisTitle": "Most-missed questions",
+  "teacherAnalyticsItemAnalysisSub": "% of points earned by the class",
+  "teacherAnalyticsCorrectLabel": "correct",
+  "teacherAnalyticsAttemptsLabel": "{count} attempts",
+  "@teacherAnalyticsAttemptsLabel": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "teacherAnalyticsIntegrityReasons": "Flag reasons",
+  "teacherAnalyticsReasonTabSwitch": "Tab switch / left screen",
+  "teacherAnalyticsReasonCopyPaste": "Content pasted",
+  "teacherAnalyticsReasonFullscreen": "Exited fullscreen",
+  "teacherAnalyticsOnTimeTitle": "On-time submission",
+  "teacherAnalyticsOnTime": "On time",
+  "teacherAnalyticsLate": "Late",
+  "teacherAnalyticsMissing": "Missing",
   "teacherNavAnalytics": "Analytics",
   "teacherClassTabActivity": "Activity",
   "teacherClassActivityEmpty": "No activity recorded yet.",

@@ -264,6 +264,7 @@ class _LessonCard extends StatelessWidget {
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.speaking,
       tapViaChildActionsOnWeb: true,
+      elevated: true,
       onTap: () => _navigateToDetail(context, isRetake: false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -45,14 +45,30 @@ class _TeacherDashboardView extends StatelessWidget {
 
   Future<void> _createClass(BuildContext context) async {
     final nameCtrl = TextEditingController();
+    final tagCtrl = TextEditingController();
     try {
       final ok = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text(context.l10n.teacherClassCreateTitle),
-          content: TextField(
-            controller: nameCtrl,
-            decoration: InputDecoration(labelText: context.l10n.teacherClassNameLabel),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(labelText: context.l10n.teacherClassNameLabel),
+              ),
+              const SizedBox(height: AppSpacing.s4),
+              TextField(
+                controller: tagCtrl,
+                decoration: InputDecoration(
+                  labelText: context.l10n.teacherClassTagLabel,
+                  hintText: context.l10n.teacherClassTagHint,
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel)),
@@ -63,7 +79,8 @@ class _TeacherDashboardView extends StatelessWidget {
       if (ok != true || !context.mounted) return;
       final name = nameCtrl.text.trim();
       if (name.isEmpty) return;
-      final r = await getIt<TeacherExamRepository>().createClassroom(name: name);
+      final r = await getIt<TeacherExamRepository>()
+          .createClassroom(name: name, tag: tagCtrl.text.trim());
       if (!context.mounted) return;
       r.fold(
         (f) => AppCornerToast.show(context, f.message, error: true),
@@ -75,6 +92,7 @@ class _TeacherDashboardView extends StatelessWidget {
     } finally {
       // Dispose ở finally để không rò controller trên nhánh Cancel / tên rỗng.
       nameCtrl.dispose();
+      tagCtrl.dispose();
     }
   }
 

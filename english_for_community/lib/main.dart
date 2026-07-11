@@ -108,15 +108,28 @@ class MyApp extends StatelessWidget {
                   ? FThemes.zinc.dark
                   : FThemes.zinc.light;
 
+              // Màn HẸP (điện thoại — kể cả web mở trên điện thoại) → thu chữ ~10%;
+              // desktop/tablet RỘNG giữ nguyên cỡ chuẩn. Áp 1 lần ở đây nên MỌI text
+              // (token, Material default, dialog…) co đều theo bề ngang màn hình.
+              final mq = MediaQuery.of(context);
+              const double phoneMaxWidth = 600;
+              final double phoneScale = mq.size.width < phoneMaxWidth ? 0.9 : 1.0;
+              final MediaQueryData scaledMq = mq.copyWith(
+                textScaler: TextScaler.linear(mq.textScaler.scale(1) * phoneScale),
+              );
+
               // Bọc App bằng SocketLifecycleManager để nó tồn tại xuyên suốt
               // Nó sẽ tự động connect/disconnect socket dựa trên UserBloc
               // Và lắng nghe sự kiện "Force Logout" toàn cục
-              return AppUpdateGuard(
-                child: SocketLifecycleManager(
-                  child: AppNotificationListener(
-                    child: FAnimatedTheme(
-                      data: fTheme,
-                      child: child ?? const SizedBox.shrink(),
+              return MediaQuery(
+                data: scaledMq,
+                child: AppUpdateGuard(
+                  child: SocketLifecycleManager(
+                    child: AppNotificationListener(
+                      child: FAnimatedTheme(
+                        data: fTheme,
+                        child: child ?? const SizedBox.shrink(),
+                      ),
                     ),
                   ),
                 ),

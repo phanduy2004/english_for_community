@@ -41,6 +41,7 @@ import '../../feature/onboarding_page.dart';
 
 // --- ADMIN PAGES ---
 import '../../feature/admin/layout/admin_shell.dart';
+import '../../feature/admin/analytics/admin_analytics_page.dart';
 import '../../feature/admin/dashboard_home/admin_dashboard.dart';
 import '../../feature/admin/user_management/user_management_page.dart';
 import '../../feature/admin/ops_center/admin_ops_center_page.dart';
@@ -246,6 +247,11 @@ class AppRouter {
             path: '/admin-dashboard',
             name: AdminDashboardPage.routeName,
             builder: (context, state) => const AdminDashboardPage(),
+          ),
+          GoRoute(
+            path: AdminAnalyticsPage.routePath,
+            name: AdminAnalyticsPage.routeName,
+            builder: (context, state) => const AdminAnalyticsPage(),
           ),
           GoRoute(
             path: AdminOpsCenterPage.routePath,

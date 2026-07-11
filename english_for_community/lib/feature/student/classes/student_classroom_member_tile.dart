@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
@@ -57,7 +58,7 @@ class StudentClassroomMemberTile extends StatelessWidget {
                         child: Text(
                           member.fullName,
                           style: StudentMobileUi.cardTitle(context).copyWith(
-                            fontSize: 14,
+                            fontSize: AppTypography.mobileH2,
                             fontWeight: FontWeight.w600,
                           ),
                           maxLines: 1,
@@ -80,7 +81,7 @@ class StudentClassroomMemberTile extends StatelessWidget {
                             style: StudentMobileUi.caption(context).copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
-                              fontSize: 10,
+                              fontSize: AppTypography.mobileCaption,
                             ),
                           ),
                         ),
@@ -111,7 +112,7 @@ class StudentClassroomMemberTile extends StatelessWidget {
                   style: StudentMobileUi.caption(context).copyWith(
                     color: classColors.dark,
                     fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileLabel,
                   ),
                 ),
               ),

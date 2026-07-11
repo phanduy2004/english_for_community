@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -168,20 +169,20 @@ abstract final class ClassroomChatUi {
 
   // Typography
   static TextStyle headerTitle({bool compact = false}) => TextStyle(
-        fontSize: compact ? 13 : 14,
+        fontSize: compact ? AppTypography.mobileH3 : AppTypography.mobileH2,
         fontWeight: FontWeight.w600,
         color: AppColors.textPrimary,
         height: 1.2,
       );
 
   static TextStyle headerSubtitle({bool compact = false}) => const TextStyle(
-        fontSize: 11,
+        fontSize: AppTypography.mobileCaption,
         color: AppColors.textMuted,
         height: 1.2,
       );
 
   static TextStyle messageBody({required bool isMe, bool isTeacher = false}) => TextStyle(
-        fontSize: 13,
+        fontSize: AppTypography.mobileBody,
         height: 1.4,
         color: isTeacher
             ? teacherMessageText
@@ -189,13 +190,13 @@ abstract final class ClassroomChatUi {
       );
 
   static TextStyle senderName({bool isTeacher = false}) => TextStyle(
-        fontSize: 11,
+        fontSize: AppTypography.mobileLabel,
         fontWeight: FontWeight.w600,
         color: isTeacher ? teacherSenderName : AppColors.textSecondary,
       );
 
   static TextStyle timestamp() => const TextStyle(
-        fontSize: 10,
+        fontSize: AppTypography.mobileCaption,
         color: AppColors.textMuted,
       );
 
@@ -249,7 +250,7 @@ abstract final class ClassroomChatUi {
 
   static InputDecoration composerDecoration({required bool compact}) => InputDecoration(
         hintText: 'Nhắn tin…',
-        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileBody),
         filled: true,
         fillColor: AppColors.surfaceSubtle,
         contentPadding: EdgeInsets.symmetric(
@@ -273,7 +274,7 @@ abstract final class ClassroomChatUi {
 
   static InputDecoration searchFieldDecoration({required String hintText}) => InputDecoration(
         hintText: hintText,
-        hintStyle: const TextStyle(fontSize: 13, color: AppColors.textMuted),
+        hintStyle: const TextStyle(fontSize: AppTypography.mobileBody, color: AppColors.textMuted),
         prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.textMuted),
         filled: true,
         fillColor: AppColors.surfaceSubtle,

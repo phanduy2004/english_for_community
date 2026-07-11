@@ -1,14 +1,17 @@
 import 'dart:async';
 
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
+import 'package:english_for_community/core/entity/report_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
+import 'package:english_for_community/feature/admin/content_management/content_widgets.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
-import 'package:english_for_community/feature/admin/report_management/widget/report_card.dart';
+import 'package:english_for_community/feature/admin/report_management/widget/report_action_menu.dart';
+import 'package:english_for_community/feature/admin/report_management/widget/report_detail_dialog.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:flutter/material.dart';
@@ -143,7 +146,7 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
                 final pagination = state.reports?.pagination;
 
                 if (state.status == AdminStatus.loading && reportsList.isEmpty) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
 
                 if (reportsList.isEmpty) {
@@ -166,11 +169,32 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.s4),
-                        itemCount: reportsList.length,
-                        separatorBuilder: (c, i) => const SizedBox(height: AppSpacing.s4),
-                        itemBuilder: (context, index) => ReportCard(report: reportsList[index]),
+                      child: WebDataTable(
+                        columns: [
+                          WebTableColumn(label: l10n.adminTableType, width: 130),
+                          WebTableColumn(label: l10n.adminTableTitle, flex: 4),
+                          WebTableColumn(label: l10n.adminTableReporter, flex: 2),
+                          WebTableColumn(label: l10n.adminTableCreated, width: 150),
+                          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+                          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+                        ],
+                        rowCount: reportsList.length,
+                        decoration: AdminWebUi.panelDecoration(),
+                        headStyle: AdminWebUi.webTableHead(context),
+                        scrollable: true,
+                        onRowTap: (row) => () => _openReport(reportsList[row]),
+                        cellBuilder: (context, row, column) {
+                          final report = reportsList[row];
+                          return switch (column) {
+                            0 => StatusBadge(text: report.type.toUpperCase(), color: _typeColor(report.type)),
+                            1 => _titleCell(report.title, report.description),
+                            2 => _tableText(report.user?.fullName ?? 'Unknown User'),
+                            3 => _tableText(_createdAt(report.createdAt), muted: true),
+                            4 => StatusBadge(text: report.status ?? 'pending', color: _statusColor(report.status)),
+                            5 => ReportActionMenu(report: report),
+                            _ => const SizedBox.shrink(),
+                          };
+                        },
                       ),
                     ),
                     if (pagination != null && pagination.totalPages > 0)
@@ -203,6 +227,53 @@ class _ReportManagementViewState extends State<_ReportManagementView> with Singl
       ),
     );
   }
+
+  void _openReport(ReportEntity report) {
+    showDialog(context: context, builder: (_) => ReportDetailDialog(report: report));
+  }
+
+  Widget _titleCell(String title, String description) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _tableText(title, weight: FontWeight.w600),
+        Text(
+          description,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
+  Widget _tableText(String value, {bool muted = false, FontWeight? weight}) {
+    return Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: 12, fontWeight: weight, color: muted ? AppColors.textSecondary : AppColors.textPrimary),
+    );
+  }
+
+  String _createdAt(DateTime? value) => value == null
+      ? '-'
+      : '${value.toLocal().hour.toString().padLeft(2, '0')}:${value.toLocal().minute.toString().padLeft(2, '0')} '
+          '${value.toLocal().day.toString().padLeft(2, '0')}/${value.toLocal().month.toString().padLeft(2, '0')}';
+
+  Color _typeColor(String type) => switch (type) {
+        'bug' => AppColors.danger,
+        'feature' || 'improvement' => AppColors.info,
+        _ => AppColors.warning,
+      };
+
+  Color _statusColor(String? status) => switch (status) {
+        'resolved' => AppColors.success,
+        'rejected' => AppColors.danger,
+        'reviewed' => AppColors.info,
+        _ => AppColors.warning,
+      };
 }
 
 

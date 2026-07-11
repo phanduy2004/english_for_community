@@ -6,6 +6,7 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/reading_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
@@ -448,7 +449,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
                 ),
                 child: Text(
                   'Q${i + 1}: ${String.fromCharCode(65 + (entries[i].value as num).toInt())}',
-                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: 11),
+                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: AppTypography.mobileLabel),
                 ),
               ),
           ],

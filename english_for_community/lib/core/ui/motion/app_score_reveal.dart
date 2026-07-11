@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_color.dart';
 import '../../theme/app_motion.dart';
-import '../../util/app_haptics.dart';
-import 'app_celebrate_overlay.dart';
+import '../../theme/app_typography.dart';
+import 'confetti_celebration.dart';
 
-/// Reveal điểm số ở màn kết quả: đếm số tăng dần + ăn mừng full-screen khi đạt
-/// ngưỡng tốt. Dùng chung cho mọi runner (writing/speaking/reading/listening).
+/// Reveal điểm số ở màn kết quả: đếm số tăng dần + tung hoa confetti khi widget
+/// xuất hiện. Dùng chung cho mọi runner (writing/speaking/reading/listening).
 ///
 /// - [score] / [maxScore]: điểm và thang điểm (vd. 6.5 / 9, hoặc 8 / 10).
-/// - [celebrateThreshold]: tỉ lệ điểm/thang để bung celebrate (mặc định 0.7).
-/// - Bắn celebrate + haptic **một lần** khi widget xuất hiện (post-frame).
+/// - [celebrateThreshold]: tỉ lệ điểm/thang để bung mức festive (mặc định 0.7);
+///   dưới ngưỡng vẫn có confetti nhẹ (gentle) chúc mừng hoàn thành.
+/// - Bắn confetti + haptic **một lần** khi widget xuất hiện (post-frame).
 ///
 /// Tôn trọng reduce-motion (`10-accessibility` §6): hiện thẳng điểm, không celebrate.
 class AppScoreReveal extends StatefulWidget {
@@ -49,20 +50,20 @@ class _AppScoreRevealState extends State<AppScoreReveal> {
   void _maybeCelebrate() {
     if (_fired || !mounted) return;
     if (MediaQuery.disableAnimationsOf(context)) return;
-    final double max = widget.maxScore;
-    final bool good =
-        max > 0 && (widget.score / max) >= widget.celebrateThreshold;
-    if (!good) return;
     _fired = true;
-    AppHaptics.celebrate(context);
-    AppCelebrateOverlay.show(context);
+    CompletionCelebration.fireForScore(
+      context,
+      score: widget.score,
+      maxScore: widget.maxScore,
+      goodThreshold: widget.celebrateThreshold,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final TextStyle style = widget.textStyle ??
         const TextStyle(
-          fontSize: 44,
+          fontSize: AppTypography.mobileHero,
           fontWeight: FontWeight.w700,
           height: 1,
           color: AppColors.textPrimary,

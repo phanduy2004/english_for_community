@@ -1,9 +1,11 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -114,7 +116,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
             child: BlocBuilder<AdminListeningBloc, AdminListeningState>(
               builder: (context, state) {
                 if (state.status == AdminListeningStatus.loading && state.listenings.isEmpty) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
 
                 if (state.listenings.isEmpty) {
@@ -130,15 +132,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
 
                 return RefreshIndicator(
                   onRefresh: () async => _fetchData(),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: state.listenings.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final item = state.listenings[index];
-                      return _buildListItem(context, item);
-                    },
-                  ),
+                  child: _buildTable(context, state.listenings),
                 );
               },
             ),
@@ -259,7 +253,7 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
                             trailing: OutlinedButton(
                               onPressed: () async {
                                 await _adminRemote.restoreListening(id);
-                                if (!mounted) return;
+                                if (!mounted || !ctx.mounted || !context.mounted) return;
                                 Navigator.pop(ctx);
                                 _fetchData();
                                 AppCornerToast.show(context, 'Listening restored');
@@ -285,7 +279,66 @@ class _AdminListeningListBodyState extends State<_AdminListeningListBody> {
   }
 
   // 2. Sửa widget Item
-  Widget _buildListItem(BuildContext context, ListeningEntity item) {
+  Widget _buildTable(BuildContext context, List<ListeningEntity> items) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: WebDataTable(
+        columns: [
+          WebTableColumn(label: l10n.adminTableContent, flex: 4),
+          WebTableColumn(label: l10n.adminTableCode, width: 120),
+          WebTableColumn(label: l10n.adminTableCues, width: 80, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableSubmissions, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+        ],
+        rowCount: items.length,
+        decoration: AdminWebUi.panelDecoration(),
+        headStyle: AdminWebUi.webTableHead(context),
+        scrollable: true,
+        onRowTap: (row) => () => _openEditor(context, items[row].id),
+        cellBuilder: (context, row, column) {
+          final item = items[row];
+          return switch (column) {
+            0 => Row(children: [
+                const Icon(Icons.graphic_eq, size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: AppSpacing.s2),
+                Expanded(child: _tableText(item.title, weight: FontWeight.w600)),
+              ]),
+            1 => _tableText(item.code ?? '-'),
+            2 => _tableText('${item.totalCues ?? 0}'),
+            3 => _tableText('${item.attemptsCount}'),
+            4 => StatusBadge(text: item.adminStatus, color: item.adminStatus.toLowerCase() == 'published' ? AppColors.success : AppColors.textSecondary),
+            5 => _contentMenu(
+                onEdit: () => _openEditor(context, item.id),
+                onDelete: () => _confirmDelete(context, item.id),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
+      ),
+    );
+  }
+
+  Widget _contentMenu({required VoidCallback onEdit, required VoidCallback onDelete}) => PopupMenuButton<String>(
+        tooltip: 'Content actions',
+        icon: const Icon(Icons.more_horiz, size: 20),
+        onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit')])),
+          PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: AppColors.danger), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.danger))])),
+        ],
+      );
+
+  Widget _tableText(String value, {FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 12, fontWeight: weight, color: AppColors.textPrimary, fontFeatures: const [FontFeature.tabularFigures()]),
+      );
+
+  @Deprecated('The listening list uses WebDataTable.')
+  Widget buildLegacyListItem(BuildContext context, ListeningEntity item) {
     return ShadcnCard(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       onTap: () => _openEditor(context, item.id),

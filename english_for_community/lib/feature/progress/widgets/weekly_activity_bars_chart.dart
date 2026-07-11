@@ -2,6 +2,7 @@ import 'dart:ui' show PathMetric, Tangent;
 
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
@@ -187,7 +188,7 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart>
                                             child: Text(
                                               widget.labels[i],
                                               style: TextStyle(
-                                                fontSize: 11,
+                                                fontSize: AppTypography.mobileCaption,
                                                 fontWeight: isHi ? FontWeight.bold : FontWeight.normal,
                                                 color: isHi ? AppColors.textPrimary : AppColors.textMuted,
                                               ),
@@ -230,9 +231,9 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart>
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text('${chartTopVal.round()}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                            Text('${(chartTopVal / 2).round()}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                            const Text('0', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                            Text('${chartTopVal.round()}', style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted)),
+                            Text('${(chartTopVal / 2).round()}', style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted)),
+                            const Text('0', style: TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted)),
                           ],
                         ),
                       ),

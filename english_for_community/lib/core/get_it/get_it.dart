@@ -7,6 +7,7 @@ import '../../feature/admin/content_management/listening_comp/bloc/admin_listeni
 import '../../feature/admin/content_management/reading/bloc/admin_reading_bloc.dart';
 import '../../feature/admin/content_management/speaking/bloc/admin_speaking_bloc.dart';
 import '../../feature/admin/content_management/writing/bloc/admin_writing_bloc.dart';
+import '../../feature/admin/analytics/bloc/admin_analytics_bloc.dart';
 import '../../feature/admin/dashboard_home/bloc/admin_bloc.dart';
 import '../../feature/admin/release_management/bloc/release_management_bloc.dart';
 import '../../feature/admin/submission_managerment/bloc/history_bloc.dart';
@@ -282,6 +283,7 @@ void registerBloc() {
     () => AiChatBloc(aiChatRepository: getIt()),
   );
   getIt.registerFactory(() => AdminBloc(adminRepository: getIt()));
+  getIt.registerFactory(() => AdminAnalyticsBloc(repository: getIt()));
   getIt.registerFactory(() => AdminReadingBloc(getIt<ReadingRepository>()));
   getIt.registerFactory(() => AdminListeningBloc(getIt<ListeningRepository>()));
   getIt.registerFactory(() => AdminSpeakingBloc(getIt<SpeakingRepository>()));

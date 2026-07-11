@@ -9,16 +9,18 @@ import 'package:go_router/go_router.dart';
 import '../../core/notification/local_notification_service.dart';
 import '../../core/repository/user_repository.dart';
 import '../../core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/ui/animation/animated_status_container.dart';
 import '../../core/ui/motion/celebrate_burst.dart';
+import '../../core/ui/interactive/scale_pressable.dart';
 import '../../core/ui/student_mobile_ui.dart';
-import '../../core/ui/widget/app_card.dart';
 import '../../core/ui/widget/app_navigation_bar.dart';
 import '../../core/ui/widget/app_skeleton.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../core/ui/motion/ambient_motion.dart';
 import '../../core/ui/motion/app_count_up.dart';
 import '../../core/ui/motion/app_entrance.dart';
 import '../../core/ui/motion/streak_flame.dart';
@@ -286,6 +288,10 @@ class _HomeHeaderAiButton extends StatelessWidget {
     return StudentMobileUi.headerIconButton(
       context: context,
       icon: Icons.auto_awesome,
+      iconContent: AmbientMotion.spin(
+        context,
+        const Icon(Icons.auto_awesome, size: 18, color: AppColors.onPrimary),
+      ),
       iconColor: AppColors.onPrimary,
       backgroundColor: AppColors.primary,
       borderColor: AppColors.primary,
@@ -421,7 +427,14 @@ class _HomeContentView extends StatelessWidget {
                 const SizedBox(height: AppSpacing.s4),
                 AppEntrance.item(
                   context,
-                  _buildDailyGoalCard(context, dailyProgress, dailyGoal, t),
+                  _HomeHeroCard(
+                    level: user.level ?? 1,
+                    points: user.totalPoints ?? 0,
+                    streak: streak,
+                    dailyProgress: dailyProgress,
+                    dailyGoal: dailyGoal,
+                    t: t,
+                  ),
                   index: 1,
                 ),
                 if (streakAtRisk) ...[
@@ -432,12 +445,6 @@ class _HomeContentView extends StatelessWidget {
                     index: 2,
                   ),
                 ],
-                const SizedBox(height: AppSpacing.s5),
-                AppEntrance.item(
-                  context,
-                  _buildStatsRow(context, user, t),
-                  index: 3,
-                ),
                 const SizedBox(height: StudentMobileUi.sectionGap),
                 AppEntrance.item(
                   context,
@@ -523,44 +530,6 @@ class _HomeContentView extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyGoalCard(
-    BuildContext context,
-    int progress,
-    int goal,
-    AppLocalizations t,
-  ) {
-    final bool complete = goal > 0 && progress >= goal;
-    return AppCard(
-      variant: AppCardVariant.outline,
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(t.homeDailyGoal,
-                    style: StudentMobileUi.cardTitle(context)),
-                const SizedBox(height: AppSpacing.s1),
-                Text(
-                  t.homeDailyLessonsLine(progress, goal),
-                  style: StudentMobileUi.body(context).copyWith(
-                    color:
-                        complete ? AppColors.success : AppColors.textSecondary,
-                    fontWeight: complete ? FontWeight.w600 : null,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: AppSpacing.s3),
-          _DailyGoalRing(progress: progress, goal: goal),
-        ],
-      ),
-    );
-  }
-
   /// Nudge amber "sắp mất chuỗi" — chỉ hiện khi còn streak nhưng chưa xong goal hôm nay.
   Widget _buildStreakNudge(
     BuildContext context,
@@ -587,66 +556,6 @@ class _HomeContentView extends StatelessWidget {
                 color: AppColors.accentDark,
                 fontWeight: FontWeight.w600,
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatsRow(
-      BuildContext context, dynamic user, AppLocalizations t) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Expanded(
-            child: StudentMobileUi.statCard(
-              context: context,
-              icon: Icons.local_fire_department_rounded,
-              value: '${user.currentStreak ?? 0}',
-              valueContent: AppCountUpText(
-                value: user.currentStreak ?? 0,
-                style: StudentMobileUi.kpi(context),
-              ),
-              iconContent: StreakFlame(streak: user.currentStreak ?? 0, size: 15),
-              label: t.statStreak,
-              iconColor: AppColors.accent,
-              iconBg: AppColors.accentTint,
-              compact: true,
-            ),
-          ),
-          const SizedBox(width: StudentMobileUi.cardGap),
-          Expanded(
-            child: StudentMobileUi.statCard(
-              context: context,
-              icon: Icons.star_rounded,
-              value: '${user.totalPoints ?? 0}',
-              valueContent: AppCountUpText(
-                value: user.totalPoints ?? 0,
-                style: StudentMobileUi.kpi(context),
-              ),
-              label: t.statPoints,
-              iconColor: AppColors.accent,
-              iconBg: AppColors.accentTint,
-              compact: true,
-            ),
-          ),
-          const SizedBox(width: StudentMobileUi.cardGap),
-          Expanded(
-            child: StudentMobileUi.statCard(
-              context: context,
-              icon: Icons.workspace_premium_rounded,
-              value: 'Lv.${user.level ?? 1}',
-              valueContent: AppCountUpText(
-                value: user.level ?? 1,
-                prefix: 'Lv.',
-                style: StudentMobileUi.kpi(context),
-              ),
-              label: t.statLevelLabel,
-              iconColor: AppColors.primary,
-              iconBg: AppColors.primaryTint,
-              compact: true,
             ),
           ),
         ],
@@ -833,52 +742,111 @@ class _LessonCard extends StatelessWidget {
     }
   }
 
+  void _go(BuildContext context) {
+    switch (slot) {
+      case _HomeLessonSlot.listening:
+        showListeningModeDialog(context);
+        break;
+      case _HomeLessonSlot.reading:
+        context.pushNamed(ReadingListPage.routeName);
+        break;
+      case _HomeLessonSlot.vocabulary:
+        context.pushNamed('VocabularyPage');
+        break;
+      case _HomeLessonSlot.speaking:
+        showSpeakingModeDialog(context);
+        break;
+      case _HomeLessonSlot.writing:
+        context.pushNamed(WritingTopicsPage.routeName);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final skill = _skillType;
-    return StudentMobileUi.skillAccentCard(
-      skill: skill,
-      emphasized: false,
-      scaleOnPress: true,
-      onTap: () {
-        switch (slot) {
-          case _HomeLessonSlot.listening:
-            showListeningModeDialog(context);
-            break;
-          case _HomeLessonSlot.reading:
-            context.pushNamed(ReadingListPage.routeName);
-            break;
-          case _HomeLessonSlot.vocabulary:
-            context.pushNamed('VocabularyPage');
-            break;
-          case _HomeLessonSlot.speaking:
-            showSpeakingModeDialog(context);
-            break;
-          case _HomeLessonSlot.writing:
-            context.pushNamed(WritingTopicsPage.routeName);
-            break;
-        }
-      },
-      child: Row(
-        children: [
-          StudentMobileUi.skillIconBox(icon, skill: skill),
-          const SizedBox(width: AppSpacing.s4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: StudentMobileUi.cardTitle(context)),
-                const SizedBox(height: AppSpacing.s2),
-                Text(subtitle, style: StudentMobileUi.body(context)),
-              ],
+    final colors = AppSkillColors.of(skill);
+    final radius = BorderRadius.circular(18);
+
+    return ScalePressable(
+      onTap: () => _go(context),
+      minScale: 0.985,
+      borderRadius: radius,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: radius,
+          border: Border.all(color: AppColors.outlineMuted),
+          boxShadow: const [
+            BoxShadow(
+              color: AppColors.shadowCard,
+              blurRadius: 12,
+              offset: Offset(0, 4),
             ),
+            BoxShadow(
+              color: AppColors.shadowAmbient,
+              blurRadius: 2,
+              offset: Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s4),
+          child: Row(
+            children: [
+              AmbientMotion.shimmer(
+                context,
+                Container(
+                  width: 46,
+                  height: 46,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: colors.tint,
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                        color: colors.color.withValues(alpha: 0.18)),
+                  ),
+                  child: Icon(icon, color: colors.color, size: 23),
+                ),
+                phase: slot.index,
+              ),
+              const SizedBox(width: AppSpacing.s4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: StudentMobileUi.cardTitle(context)
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: StudentMobileUi.caption(context)
+                          .copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.s3),
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.surfaceSubtle,
+                ),
+                child: const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textSecondary,
+                  size: 18,
+                ),
+              ),
+            ],
           ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: AppColors.textMuted,
-            size: 18,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -889,17 +857,27 @@ class _DailyGoalRing extends StatelessWidget {
   const _DailyGoalRing({
     required this.progress,
     required this.goal,
+    this.size = 60,
+    this.trackColor,
+    this.fillColor,
+    this.textColor,
   });
 
   final int progress;
   final int goal;
+  final double size;
+  final Color? trackColor;
+  final Color? fillColor;
+  final Color? textColor;
 
   @override
   Widget build(BuildContext context) {
-    const double size = 60;
     final double fraction = goal > 0 ? (progress / goal).clamp(0.0, 1.0) : 0.0;
     final bool complete = goal > 0 && progress >= goal;
-    final Color color = complete ? AppColors.success : AppColors.accent;
+    final Color color =
+        complete ? AppColors.success : (fillColor ?? AppColors.accent);
+    final Color track = trackColor ?? AppColors.outlineMuted;
+    final Color txt = textColor ?? AppColors.textPrimary;
     final bool reduce = MediaQuery.disableAnimationsOf(context);
 
     return SizedBox(
@@ -919,8 +897,8 @@ class _DailyGoalRing extends StatelessWidget {
                 height: size,
                 child: CircularProgressIndicator(
                   value: value,
-                  strokeWidth: 5,
-                  backgroundColor: AppColors.outlineMuted,
+                  strokeWidth: size >= 68 ? 6 : 5,
+                  backgroundColor: track,
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                   strokeCap: StrokeCap.round,
                 ),
@@ -932,13 +910,193 @@ class _DailyGoalRing extends StatelessWidget {
                   '$progress/$goal',
                   style: StudentMobileUi.caption(context).copyWith(
                     fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
+                    color: txt,
+                    fontSize: size >= 68 ? 15 : 13,
                   ),
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Hero card tối sang trọng — tâm điểm cảm xúc của Home: mục tiêu hôm nay (ring)
+/// + streak lửa + điểm + level, trên nền gradient charcoal có quầng sáng amber.
+class _HomeHeroCard extends StatelessWidget {
+  const _HomeHeroCard({
+    required this.level,
+    required this.points,
+    required this.streak,
+    required this.dailyProgress,
+    required this.dailyGoal,
+    required this.t,
+  });
+
+  final int level;
+  final int points;
+  final int streak;
+  final int dailyProgress;
+  final int dailyGoal;
+  final AppLocalizations t;
+
+  static const TextStyle _pillStyle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+    fontSize: AppTypography.mobileH3,
+    height: 1,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final bool complete = dailyGoal > 0 && dailyProgress >= dailyGoal;
+    final Color onDarkMuted = Colors.white.withValues(alpha: 0.62);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2A2523), Color(0xFF0A0A0A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Quầng sáng amber góc trên phải.
+            Positioned(
+              right: -34,
+              top: -34,
+              child: IgnorePointer(
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.accent.withValues(alpha: 0.28),
+                        AppColors.accent.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.s5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        complete
+                            ? Icons.emoji_events_rounded
+                            : Icons.bolt_rounded,
+                        size: 16,
+                        color: AppColors.accent,
+                      ),
+                      const SizedBox(width: AppSpacing.s2),
+                      Text(
+                        t.homeDailyGoal.toUpperCase(),
+                        style: StudentMobileUi.caption(context).copyWith(
+                          color: onDarkMuted,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.s4),
+                  Row(
+                    children: [
+                      _DailyGoalRing(
+                        progress: dailyProgress,
+                        goal: dailyGoal,
+                        size: 74,
+                        trackColor: Colors.white.withValues(alpha: 0.14),
+                        fillColor: AppColors.accent,
+                        textColor: Colors.white,
+                      ),
+                      const SizedBox(width: AppSpacing.s5),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.homeDailyLessonsLine(dailyProgress, dailyGoal),
+                              style: StudentMobileUi.sectionTitle(context)
+                                  .copyWith(color: Colors.white),
+                            ),
+                            const SizedBox(height: AppSpacing.s3),
+                            Wrap(
+                              spacing: AppSpacing.s2,
+                              runSpacing: AppSpacing.s2,
+                              children: [
+                                _pill(
+                                  leading:
+                                      StreakFlame(streak: streak, size: 16),
+                                  value: AppCountUpText(
+                                      value: streak, style: _pillStyle),
+                                ),
+                                _pill(
+                                  leading: const Icon(Icons.star_rounded,
+                                      size: 15, color: AppColors.accent),
+                                  value: AppCountUpText(
+                                      value: points, style: _pillStyle),
+                                ),
+                                _pill(
+                                  leading: const Icon(
+                                      Icons.workspace_premium_rounded,
+                                      size: 15,
+                                      color: Colors.white),
+                                  value: AppCountUpText(
+                                      value: level,
+                                      prefix: 'Lv.',
+                                      style: _pillStyle),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill({required Widget leading, required Widget value}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          leading,
+          const SizedBox(width: 5),
+          value,
+        ],
       ),
     );
   }

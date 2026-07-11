@@ -16,8 +16,10 @@ import '../../../../core/ui/feedback/app_feedback.dart';
 import '../../../../core/entity/listening_comp_entity.dart';
 import '../../../../core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import '../../../../core/ui/widget/app_card.dart';
 import '../../core/get_it/get_it.dart';
 import '../listening/widget/listening_common_widgets.dart';
@@ -306,6 +308,11 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           }
 
           if (!state.isInitialLoadReview) {
+            CompletionCelebration.fireForScore(
+              context,
+              score: result.correctCount.toDouble(),
+              maxScore: result.totalQuestions.toDouble(),
+            );
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -323,7 +330,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                     result.totalQuestions,
                     result.score.round(),
                   ),
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: AppTypography.mobileH1),
                 ),
                 actions: [
                   TextButton(
@@ -555,7 +562,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 '${_formatDuration(remainingSeconds)} / ${_formatDuration(_totalSeconds)}',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                  fontSize: AppTypography.mobileKpi,
                   color: isTimeRunningOut ? Colors.red : AppColors.textPrimary,
                   fontFeatures: const [FontFeature.tabularFigures()],
                 ),
@@ -589,7 +596,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppColors.success,
-                    fontSize: 14),
+                    fontSize: AppTypography.mobileH2),
               ),
             ],
           ),
@@ -607,7 +614,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 ),
               Text(
                 t.listeningCompTranslateToggle,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
+                style: TextStyle(fontSize: AppTypography.mobileBody, fontWeight: FontWeight.w600, color: primaryColor),
               ),
               const SizedBox(width: 4),
               Switch.adaptive(
@@ -634,6 +641,8 @@ class _ListeningCompViewState extends State<_ListeningCompView>
     return StudentMobileUi.bottomActionBar(
       context: context,
       progressLabel: '$answered/$total',
+      progress: total > 0 ? answered / total : 0,
+      skill: SkillType.listening,
       ctaLabel: t.readingSubmitAnswers,
       onCta: () => _submitQuiz(context),
       loading: isSubmitting,
@@ -726,7 +735,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                           Text(
                             t.readingFeedbackExplanation,
                             style: TextStyle(
-                                fontSize: 13, fontWeight: FontWeight.w600, color: primaryColor),
+                                fontSize: AppTypography.mobileBody, fontWeight: FontWeight.w600, color: primaryColor),
                           ),
                           const Spacer(),
                           Icon(
@@ -740,14 +749,14 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                         const SizedBox(height: 8),
                         Text(
                           q.feedback!.reasoning,
-                          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+                          style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.5),
                         ),
                         if (_showTranslation && _translatedFeedback.containsKey(q.id)) ...[
                           const SizedBox(height: 4),
                           Text(
                             _translatedFeedback[q.id]!,
                             style: const TextStyle(
-                                fontSize: 14, color: AppColors.successDark, height: 1.5),
+                                fontSize: AppTypography.mobileH2, color: AppColors.successDark, height: 1.5),
                           ),
                         ],
                         if (q.feedback!.hintTimestampSeconds != null) ...[
@@ -839,7 +848,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 t.listeningCompTranscriptLocked,
                 style: const TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 16,
+                    fontSize: AppTypography.mobileH1,
                     color: AppColors.textPrimary),
               ),
               const SizedBox(height: 8),
@@ -847,7 +856,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
                 t.listeningCompTranscriptLockedHint,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: AppColors.textSecondary, fontSize: 14, height: 1.4),
+                    color: AppColors.textSecondary, fontSize: AppTypography.mobileH2, height: 1.4),
               ),
             ],
           ),
@@ -864,7 +873,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           Text(
             t.listeningCompTranscriptOriginal,
             style: const TextStyle(
-              fontSize: 14,
+              fontSize: AppTypography.mobileH2,
               fontWeight: FontWeight.w700,
               color: AppColors.textSecondary,
             ),
@@ -873,7 +882,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
           SelectableText(
             entity.transcript,
             style: const TextStyle(
-              fontSize: 16,
+              fontSize: AppTypography.mobileH1,
               height: 1.6,
               color: AppColors.textPrimary,
               fontFamily: 'Serif',
@@ -889,7 +898,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
             Text(
               t.listeningCompTranscriptTranslation,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: AppTypography.mobileH2,
                 fontWeight: FontWeight.w700,
                 color: AppColors.textSecondary,
               ),
@@ -901,7 +910,7 @@ class _ListeningCompViewState extends State<_ListeningCompView>
               SelectableText(
                 _translatedTranscript!,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: AppTypography.mobileH1,
                   height: 1.6,
                   color: AppColors.successDark, // Màu xanh phân biệt
                   fontFamily: 'Serif',

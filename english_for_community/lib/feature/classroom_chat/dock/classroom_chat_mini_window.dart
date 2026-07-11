@@ -2,6 +2,7 @@ import 'package:english_for_community/core/get_it/get_it.dart' as di;
 import 'package:english_for_community/core/repository/classroom_chat_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_bloc.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_event.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_state.dart';
@@ -224,7 +225,7 @@ class ClassroomChatMinimizedBar extends StatelessWidget {
                   style: const TextStyle(
                     color: AppColors.textInverse,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: AppTypography.mobileH3,
                   ),
                 ),
               ),

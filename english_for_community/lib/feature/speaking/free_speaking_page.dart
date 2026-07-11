@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -485,7 +486,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 child: Text(st.freeSpeakingSelectVoiceTitle,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
+                        fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.bold)),
               ),
               const Divider(height: 1, color: app_color.AppColors.outline),
               const SizedBox(height: 8),
@@ -516,7 +517,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                                   : app_color.AppColors.textPrimary)),
                       subtitle: Text("${voice.gender} • ${voice.accent}",
                           style: const TextStyle(
-                              color: Colors.grey, fontSize: 12)),
+                              color: Colors.grey, fontSize: AppTypography.mobileCaption)),
                       trailing: isSelected
                           ? const Icon(Icons.check_circle,
                               color: app_color.AppColors.primary)
@@ -657,7 +658,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                             : t.freeSpeakingStatusOnline)
                         : t.freeSpeakingStatusOffline),
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: AppTypography.mobileBody,
                   fontWeight: FontWeight.w600,
                   color: isConnected
                       ? app_color.AppColors.success
@@ -726,7 +727,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.w600),
+                            fontSize: AppTypography.mobileCaption, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ],
@@ -790,7 +791,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                           t.speakingFbEndAndEvaluate,
                           style: TextStyle(
                             color: Colors.red.shade600,
-                            fontSize: 13,
+                            fontSize: AppTypography.mobileBody,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -812,7 +813,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                           controller: _textController,
                           enabled: isConnected, // Chỉ nhập được khi đã kết nối
                           style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: AppTypography.mobileBodyLg,
                               color: app_color.AppColors.textPrimary),
                           decoration: InputDecoration(
                             hintText: isConnecting
@@ -822,7 +823,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
                                     : t.freeSpeakingHintTapMic),
                             hintStyle: const TextStyle(
                                 color: app_color.AppColors.textMuted,
-                                fontSize: 14),
+                                fontSize: AppTypography.mobileH2),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
@@ -1092,7 +1093,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                           child: Text(
                             _displayText.isEmpty ? '…' : _displayText,
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: AppTypography.mobileBodyLg,
                               height: 1.5,
                               color: isUser
                                   ? Colors.white
@@ -1110,7 +1111,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                               child: Text(
                                 '…',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: AppTypography.mobileDisplay,
                                   color: isUser
                                       ? Colors.white70
                                       : scheme.onSurfaceVariant,
@@ -1144,7 +1145,7 @@ class _ConversationTurnBubbleState extends State<_ConversationTurnBubble> {
                         Text(
                           _translatedText ?? "",
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: AppTypography.mobileH2,
                             fontStyle: FontStyle.italic,
                             height: 1.45,
                             color: isUser

@@ -1,5 +1,4 @@
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,27 +7,29 @@ import 'app_fonts.dart';
 
 /// Typography — **Inter**. Compact density v3 (`docs/ui-ux-system/00-compact-density-v3.md`).
 ///
-/// - Body: **13** web (& mobile web); app mobile native ~11.7 (scale 0.9, xem [_mobileScale]).
+/// - Body: **13**. Màn HẸP (điện thoại, kể cả web) co ~10% qua responsive
+///   `textScaler` ở `main.dart` — KHÔNG bake vào hằng, để mọi text (token +
+///   Material default + dialog) co đều theo bề ngang màn hình.
 /// - Web page title: **16** semibold (không 18–22).
 /// - KPI / số: **15** semibold + tabular figures.
 abstract final class AppTypography {
   static const String _f = AppFonts.fontFamily;
 
   // ─── Mobile sizes (dp ≈ px) ───────────────────────────────────────────
-  /// App mobile **native** thu nhỏ chữ thêm ~10% cho gọn (`kIsWeb == false`).
-  /// Mọi bản **web** — học sinh mở web lẫn teacher/admin — giữ nguyên cỡ chuẩn
-  /// (`kIsWeb == true` → 1.0), nên web hoàn toàn không đổi. Chỉnh 1 số này để tinh chỉnh.
-  static const double _mobileScale = kIsWeb ? 1.0 : 0.9;
+  // Cỡ chuẩn (màn rộng). Thu nhỏ trên màn hẹp áp ở tầng app qua responsive
+  // `textScaler` (xem `main.dart`), KHÔNG bake vào từng hằng.
+  static const double mobileBody = 13;
+  static const double mobileBodyLg = 15;
+  static const double mobileH3 = 13;
+  static const double mobileH2 = 14;
+  static const double mobileH1 = 16;
+  static const double mobileDisplay = 18;
+  static const double mobileKpi = 15;
+  static const double mobileCaption = 11;
+  static const double mobileLabel = 11;
 
-  static const double mobileBody = 13 * _mobileScale;
-  static const double mobileBodyLg = 15 * _mobileScale;
-  static const double mobileH3 = 13 * _mobileScale;
-  static const double mobileH2 = 14 * _mobileScale;
-  static const double mobileH1 = 16 * _mobileScale;
-  static const double mobileDisplay = 18 * _mobileScale;
-  static const double mobileKpi = 15 * _mobileScale;
-  static const double mobileCaption = 11 * _mobileScale;
-  static const double mobileLabel = 11 * _mobileScale;
+  /// Hero số điểm (score reveal / band lớn) — KHÔNG dùng cho body text.
+  static const double mobileHero = 40;
 
   // ─── Web sizes ────────────────────────────────────────────────────────
   static const double webBody = 13;
@@ -42,6 +43,7 @@ abstract final class AppTypography {
   static const double webCaption = 11;
   static const double webLabel = 11;
   static const double webTable = 13;
+  static const double webHero = 40;
 
   /// `true` chỉ trong [WorkspaceLayoutScope] (teacher/admin). Học sinh luôn mobile scale.
   static bool useWebScale(BuildContext context) {
@@ -334,6 +336,17 @@ abstract final class AppTypography {
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         color: AppColors.textPrimary,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+
+  /// Số điểm hero (score reveal / band). Truyền [size] khi cần cỡ riêng.
+  static TextStyle heroNumber({Color? color, bool web = false, double? size}) => TextStyle(
+        fontFamily: _f,
+        fontSize: size ?? (web ? webHero : mobileHero),
+        height: 1.0,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.5,
+        color: color ?? AppColors.textPrimary,
         fontFeatures: const [FontFeature.tabularFigures()],
       );
 }

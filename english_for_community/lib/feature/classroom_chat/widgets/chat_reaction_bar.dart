@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -56,7 +57,7 @@ class ChatReactionBar extends StatelessWidget {
                 Text(
                   '${r.count}',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileCaption,
                     fontWeight: FontWeight.w600,
                     color: reacted ? AppColors.primary : AppColors.textMuted,
                   ),

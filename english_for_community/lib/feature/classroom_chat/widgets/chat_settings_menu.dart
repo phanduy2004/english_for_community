@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:english_for_community/core/datasource/classroom_chat_remote_datasource.dart';
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_bloc.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_event.dart';
 import 'package:english_for_community/feature/classroom_chat/bloc/classroom_chat_state.dart';
@@ -207,7 +208,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                   label: 'Thành viên',
                   trailing: Text(
                     '${widget.members.length}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileBody),
                   ),
                   onTap: _showMembersDialog,
                 ),
@@ -234,7 +235,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                   label: 'Thành viên',
                   trailing: Text(
                     '${widget.members.length}',
-                    style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    style: const TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileBody),
                   ),
                   onTap: _showMembersDialog,
                 ),
@@ -314,13 +315,13 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                   SizedBox(height: 12),
                   Text(
                     'Chưa có tin nhắn ghim',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileH2),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'Nhấn giữ tin nhắn và chọn "Ghim tin nhắn".',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+                    style: TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileCaption, height: 1.4),
                   ),
                 ],
               )
@@ -329,12 +330,12 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
                 children: [
                   Text(
                     pinned.sender?.fullName ?? 'Thành viên',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileH2),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     classroomChatMessagePreview(pinned, maxLen: 200),
-                    style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.4),
+                    style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.4),
                   ),
                 ],
               ),
@@ -377,7 +378,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
         icon: Icons.person_add_outlined,
         body: const Text(
           'Chia sẻ mã lớp hoặc link mời trong trang quản lý lớp học để thêm học sinh vào nhóm chat.',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+          style: TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.5),
         ),
         footer: Align(
           alignment: Alignment.centerRight,
@@ -397,7 +398,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
         icon: Icons.notifications_off_outlined,
         body: const Text(
           'Bạn sẽ không nhận thông báo đẩy từ nhóm chat này. Bạn vẫn có thể xem tin nhắn khi mở chat.',
-          style: TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+          style: TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.5),
         ),
         footer: Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -429,7 +430,7 @@ class _ChatSettingsPanelContentState extends State<ChatSettingsPanelContent> {
         body: Text(
           'Bạn có chắc muốn rời nhóm chat "${widget.classroomName}"? '
           'Bạn sẽ không nhận tin nhắn mới từ lớp này.',
-          style: const TextStyle(fontSize: 14, color: AppColors.textSecondary, height: 1.5),
+          style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textSecondary, height: 1.5),
         ),
         footer: Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -512,12 +513,12 @@ class _GroupProfileHeader extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            style: const TextStyle(fontSize: AppTypography.mobileBodyLg, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 4),
           Text(
             'Chạm ảnh để đổi ảnh nhóm',
-            style: TextStyle(fontSize: 11, color: AppColors.textMuted.withValues(alpha: 0.9)),
+            style: TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted.withValues(alpha: 0.9)),
           ),
         ],
       ),
@@ -582,7 +583,7 @@ class _ChatCenterDialogShell extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         title,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                        style: const TextStyle(fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
@@ -683,7 +684,7 @@ class _MenuItem extends StatelessWidget {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: AppTypography.mobileH2,
                     fontWeight: FontWeight.w500,
                     color: labelColor ?? AppColors.textPrimary,
                   ),
@@ -713,7 +714,7 @@ class _SectionLabel extends StatelessWidget {
         child: Text(
           text,
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: AppTypography.mobileLabel,
             fontWeight: FontWeight.w700,
             color: AppColors.textMuted,
             letterSpacing: 0.4,
@@ -744,7 +745,7 @@ class _MemberRow extends StatelessWidget {
           Flexible(
             child: Text(
               member.fullName,
-              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: AppTypography.mobileH2),
             ),
           ),
           if (isMe) ...[
@@ -757,7 +758,7 @@ class _MemberRow extends StatelessWidget {
               ),
               child: const Text(
                 'Bạn',
-                style: TextStyle(fontSize: 10, color: AppColors.primary, fontWeight: FontWeight.w600),
+                style: TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.primary, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -765,13 +766,13 @@ class _MemberRow extends StatelessWidget {
       ),
       subtitle: Text(
         '@${member.username}',
-        style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+        style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted),
       ),
       trailing: member.isTeacher
           ? Text(
               member.role == 'teacher' ? 'GV' : 'GV phụ',
               style: const TextStyle(
-                fontSize: 11,
+                fontSize: AppTypography.mobileLabel,
                 color: AppColors.primary,
                 fontWeight: FontWeight.w600,
               ),
@@ -832,14 +833,14 @@ class ChatSettingsSheet {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: AppTypography.mobileH1,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           Text(
                             '${members.length} thành viên',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textMuted),
                           ),
                         ],
                       ),

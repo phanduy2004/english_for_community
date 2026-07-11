@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
@@ -67,7 +68,7 @@ class StudentClassroomHubTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: StudentMobileUi.cardTitle(context).copyWith(
-                        fontSize: 14,
+                        fontSize: AppTypography.mobileH2,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -99,7 +100,7 @@ class StudentClassroomHubTile extends StatelessWidget {
                           style: StudentMobileUi.caption(context).copyWith(
                             color: AppColors.info,
                             fontWeight: FontWeight.w600,
-                            fontSize: 10,
+                            fontSize: AppTypography.mobileCaption,
                           ),
                         ),
                       ),

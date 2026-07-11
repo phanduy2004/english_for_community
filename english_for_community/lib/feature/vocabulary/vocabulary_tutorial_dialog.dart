@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 
 import '../../core/locale/l10n_context.dart';
@@ -37,7 +38,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
     const amber700 = AppColors.warning;
     const reviewRed = AppColors.danger;
 
-    final bodyStyle = const TextStyle(fontSize: 15, color: textMuted, height: 1.6);
+    final bodyStyle = const TextStyle(fontSize: AppTypography.mobileBodyLg, color: textMuted, height: 1.6);
 
     return [
       _TutorialStep(
@@ -209,7 +210,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                           step.title,
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            fontSize: 22,
+                            fontSize: AppTypography.mobileDisplay,
                             fontWeight: FontWeight.w800,
                             color: textMain,
                             height: 1.2,
@@ -220,7 +221,7 @@ class _VocabularyTutorialDialogState extends State<VocabularyTutorialDialog> {
                           textAlign: TextAlign.center,
                           text: TextSpan(
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: AppTypography.mobileBodyLg,
                               color: textMuted,
                               height: 1.6,
                             ),

@@ -81,6 +81,7 @@ class TeacherClassroomBloc extends Bloc<TeacherClassroomEvent, TeacherClassroomS
     emit(state.copyWith(settingsSaving: true));
     final r = await repository.patchClassroom(classroomId, {
       'name': event.name,
+      'tag': event.tag,
       'description': event.description,
     });
     r.fold(

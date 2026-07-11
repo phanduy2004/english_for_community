@@ -644,6 +644,8 @@ abstract final class StudentMobileUi {
     bool emphasized = false,
     /// Thêm micro scale khi nhấn (dùng cho các card hành động chính, vd. Home).
     bool scaleOnPress = false,
+    /// Nâng nhẹ bằng bóng mềm trung tính (list card kỹ năng) — cảm giác premium.
+    bool elevated = false,
   }) {
     final colors = AppSkillColors.of(skill);
     final radius = BorderRadius.circular(AppRadius.card + 2);
@@ -672,7 +674,22 @@ abstract final class StudentMobileUi {
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: radius,
-        border: Border.all(color: AppColors.outline),
+        border: Border.all(
+            color: elevated ? AppColors.outlineMuted : AppColors.outline),
+        boxShadow: elevated
+            ? const [
+                BoxShadow(
+                  color: AppColors.shadowCard,
+                  blurRadius: 14,
+                  offset: Offset(0, 5),
+                ),
+                BoxShadow(
+                  color: AppColors.shadowAmbient,
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ]
+            : null,
       ),
       foregroundDecoration: emphasized
           ? BoxDecoration(
@@ -858,6 +875,7 @@ abstract final class StudentMobileUi {
     SkillColorSet? colors,
   }) {
     final set = colors ?? (skill != null ? AppSkillColors.of(skill) : null);
+    final Color accent = set?.color ?? AppColors.primary;
     return Container(
       width: size,
       height: size,
@@ -865,8 +883,9 @@ abstract final class StudentMobileUi {
       decoration: BoxDecoration(
         color: set?.tint ?? AppColors.primaryTint,
         borderRadius: BorderRadius.circular(AppRadius.input),
+        border: Border.all(color: accent.withValues(alpha: 0.16)),
       ),
-      child: Icon(icon, color: set?.color ?? AppColors.primary, size: size * 0.5),
+      child: Icon(icon, color: accent, size: size * 0.5),
     );
   }
 
@@ -900,6 +919,8 @@ abstract final class StudentMobileUi {
     Color? backgroundColor,
     Color? iconColor,
     Color? borderColor,
+    /// Thay glyph tĩnh bằng widget tuỳ biến (vd. sparkle lấp lánh liên tục).
+    Widget? iconContent,
   }) {
     const visualSize = 36.0;
     const tapSize = 48.0;
@@ -927,7 +948,8 @@ abstract final class StudentMobileUi {
                 color: backgroundColor ?? AppColors.surfaceCard,
                 border: Border.all(color: borderColor ?? AppColors.outline, width: 1),
               ),
-              child: Icon(icon, size: iconSize, color: iconColor ?? AppColors.primary),
+              child: iconContent ??
+                  Icon(icon, size: iconSize, color: iconColor ?? AppColors.primary),
             ),
           ),
           if (badge != null)
@@ -1024,23 +1046,15 @@ abstract final class StudentMobileUi {
     required VoidCallback onCta,
     bool ctaEnabled = true,
     bool loading = false,
+    /// 0..1 — hiện thanh tiến độ điền dần (số câu đã trả lời) phía trên.
+    double? progress,
+    SkillType? skill,
   }) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.s4,
-        AppSpacing.s3,
-        AppSpacing.s4,
-        AppSpacing.s3 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceCard,
-        border: Border(top: BorderSide(color: AppColors.outlineMuted)),
-      ),
-      child: Row(
-        children: [
-          Text(progressLabel, style: cardTitle(context)),
-          const Spacer(),
-          FilledButton(
+    final Widget row = Row(
+      children: [
+        Text(progressLabel, style: cardTitle(context)),
+        const Spacer(),
+        FilledButton(
             onPressed: ctaEnabled && !loading ? onCta : null,
             style: FilledButton.styleFrom(
               minimumSize: const Size(80, 36),
@@ -1058,6 +1072,33 @@ abstract final class StudentMobileUi {
                   )
                 : Text(ctaLabel),
           ),
+        ],
+    );
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.s4,
+        AppSpacing.s3,
+        AppSpacing.s4,
+        AppSpacing.s3 + MediaQuery.paddingOf(context).bottom,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceCard,
+        border: Border(top: BorderSide(color: AppColors.outlineMuted)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (progress != null) ...[
+            skillProgressBar(
+              context: context,
+              value: progress,
+              skill: skill,
+              height: 5,
+            ),
+            const SizedBox(height: AppSpacing.s3),
+          ],
+          row,
         ],
       ),
     );

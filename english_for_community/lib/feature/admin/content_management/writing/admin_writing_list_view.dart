@@ -1,9 +1,11 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -47,7 +49,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
       pathParameters: {'type': 'writing'},
       extra: id,
     );
-    if (mounted) {
+    if (context.mounted) {
       context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
     }
   }
@@ -134,7 +136,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                             trailing: OutlinedButton(
                               onPressed: () async {
                                 await _adminRemote.restoreWritingTopic(id);
-                                if (!mounted) return;
+                                if (!mounted || !ctx.mounted || !context.mounted) return;
                                 Navigator.pop(ctx);
                                 context.read<AdminWritingBloc>().add(const GetAdminWritingListEvent());
                                 AppCornerToast.show(context, 'Topic restored');
@@ -267,7 +269,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
             child: BlocBuilder<AdminWritingBloc, AdminWritingState>(
               builder: (context, state) {
                 if (state.status == AdminWritingStatus.loading) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
 
                 if (state.topics.isEmpty) {
@@ -286,15 +288,7 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
                     .take(_rowsPerPage)
                     .toList();
 
-                return ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: pageItems.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final topic = pageItems[index];
-                    return _buildTopicItem(context, topic, kTextMain, kTextMuted, kBorder);
-                  },
-                );
+                return _buildTopicsTable(context, pageItems);
               },
             ),
           ),
@@ -325,7 +319,75 @@ class _AdminWritingListBodyState extends State<_AdminWritingListBody> {
     );
   }
 
-  Widget _buildTopicItem(BuildContext context, WritingTopicEntity topic, Color kTextMain, Color kTextMuted, Color kBorder) {
+  Widget _buildTopicsTable(BuildContext context, List<WritingTopicEntity> topics) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: WebDataTable(
+        columns: [
+          WebTableColumn(label: l10n.adminTableContent, flex: 4),
+          WebTableColumn(label: l10n.adminTableLevel, width: 110),
+          WebTableColumn(label: l10n.adminTableTasks, width: 80, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableSubmissions, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+        ],
+        rowCount: topics.length,
+        decoration: AdminWebUi.panelDecoration(),
+        headStyle: AdminWebUi.webTableHead(context),
+        scrollable: true,
+        onRowTap: (row) => () => _openEditor(context, topics[row].id),
+        cellBuilder: (context, row, column) {
+          final topic = topics[row];
+          final taskCount = topic.aiConfig?.taskTypes?.length ?? 0;
+          return switch (column) {
+            0 => Row(children: [
+                const Icon(Icons.edit_note_outlined, size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: AppSpacing.s2),
+                Expanded(child: _tableText(topic.name, weight: FontWeight.w600)),
+              ]),
+            1 => _tableText(topic.aiConfig?.level ?? 'Unknown'),
+            2 => _tableText('$taskCount'),
+            3 => _tableText('${topic.stats?.submissionsCount ?? 0}'),
+            4 => StatusBadge(text: topic.approvalStatus, color: _approvalColor(topic.approvalStatus)),
+            5 => _topicMenu(
+                onEdit: () => _openEditor(context, topic.id),
+                onApprove: () => _showApprovalAction(topic),
+                onDelete: () => _confirmDelete(context, topic.id),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
+      ),
+    );
+  }
+
+  Widget _topicMenu({required VoidCallback onEdit, required VoidCallback onApprove, required VoidCallback onDelete}) => PopupMenuButton<String>(
+        tooltip: 'Content actions',
+        icon: const Icon(Icons.more_horiz, size: 20),
+        onSelected: (value) => switch (value) { 'edit' => onEdit(), 'approve' => onApprove(), _ => onDelete() },
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit')])),
+          PopupMenuItem(value: 'approve', child: Row(children: [Icon(Icons.verified_outlined, size: 18), SizedBox(width: 8), Text('Approval')])),
+          PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: AppColors.danger), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.danger))])),
+        ],
+      );
+
+  Color _approvalColor(String status) => switch (status.toLowerCase()) {
+        'approved' || 'published' => AppColors.success,
+        'rejected' => AppColors.danger,
+        _ => AppColors.warning,
+      };
+
+  Widget _tableText(String value, {FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 12, fontWeight: weight, color: AppColors.textPrimary, fontFeatures: const [FontFeature.tabularFigures()]),
+      );
+
+  @Deprecated('The writing list uses WebDataTable.')
+  Widget buildLegacyTopicItem(BuildContext context, WritingTopicEntity topic, Color kTextMain, Color kTextMuted, Color kBorder) {
     // FIX: Xử lý null safety cho aiConfig
     final level = topic.aiConfig?.level ?? 'Unknown';
     final taskCount = topic.aiConfig?.taskTypes?.length ?? 0;

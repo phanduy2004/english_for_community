@@ -269,6 +269,7 @@ class _ListeningCard extends StatelessWidget {
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.listening,
       tapViaChildActionsOnWeb: true,
+      elevated: true,
       onTap: () => _handlePress(context, isRetake: false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

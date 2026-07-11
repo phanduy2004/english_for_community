@@ -100,30 +100,24 @@ const _getDateRangeConfig = (range, timezone) => {
   return { startDate: userTodayStart, chartLabels, queryDateKeys };
 };
 
-// --- Service Methods ---
+// --- Pure aggregation (không đụng DB → test bằng node:test) ---
 
-const getSummaryData = async (userId, range) => {
-  const user = await User.findById(userId).select('dailyMinutes timezone').lean();
-  const userTimezone = user?.timezone || 'Asia/Ho_Chi_Minh';
-  const dailyGoal = user?.dailyMinutes || 0;
-
-  const { startDate: userTodayStart, chartLabels, queryDateKeys } = _getDateRangeConfig(range, userTimezone);
-
-  const todayString = userTodayStart.toLocaleDateString('en-CA', { timeZone: userTimezone });
-  // Stats 'day' = chỉ hôm nay; 'week'/'month' = từ đầu range. Dùng queryDateKeys[0]
-  // (đã tz-correct từ _getDateRangeConfig) để stats KHỚP với chart, tránh lệch 1 ngày
-  // trên host UTC do getDay()/getDate() thô đọc theo TZ server.
-  const startDateString = range === 'day' ? todayString : queryDateKeys[0];
-
-  let minQueryDate = queryDateKeys[0];
-
-  const records = await UserDailyProgress.find({
-    userId: userId,
-    date: { $gte: minQueryDate }
-  }).lean();
-
-  const recordsMap = new Map(records.map(r => [r.date, r]));
-
+/**
+ * Cộng dồn các bản ghi UserDailyProgress trong range thành statsGrid cho 6 card.
+ *
+ * Nghiệp vụ then chốt:
+ * - Mỗi stat lưu dạng { total, count } (total = TỔNG điểm cộng dồn qua $inc, count =
+ *   số lần). Gộp nhiều ngày rồi total/count ⇒ trung bình CÓ TRỌNG SỐ theo số lần
+ *   (không phải "trung bình của trung bình").
+ * - Đơn vị: reading/dictation/speaking* lưu 0..1 → *100 ra %. writing lưu band 0..9
+ *   → giữ nguyên, làm tròn 1 chữ số. count = 0 ⇒ 0 (không NaN).
+ * - Chỉ tính bản ghi có rec.date >= startDateString (chuỗi 'YYYY-MM-DD' so lexicographic).
+ *   todayMinutes lấy riêng theo todayString.
+ *
+ * @param {Array<object>} records - UserDailyProgress.lean()
+ * @param {{startDateString: string, todayString: string}} bounds
+ */
+export const aggregateProgressRecords = (records, { startDateString, todayString }) => {
   let totalSecondsInRange = 0;
   let todayMinutes = 0;
   let vocabSum = 0;
@@ -163,30 +157,90 @@ const getSummaryData = async (userId, range) => {
     }
   });
 
-  const chartMinutes = queryDateKeys.map(dateKey => {
-    const rec = recordsMap.get(dateKey);
-    return rec ? Math.round(rec.studySeconds / 60) : 0;
-  });
-
   const calcAvg = (agg) => agg.count > 0 ? (agg.total / agg.count) : 0;
+
+  // F1: card "Speaking" gộp CẢ speaking-set (speakingScore = 1-WER) LẪN free-speaking
+  // (speakingFluency = overall/9) — cùng thang 0..1 — để mọi hoạt động nói tính vào %,
+  // tránh hiện "0%" khi học sinh chỉ luyện free-speaking.
+  const speakingCombined = {
+    total: aggs.speakingScore.total + aggs.speakingFluency.total,
+    count: aggs.speakingScore.count + aggs.speakingFluency.count,
+  };
 
   const statsGrid = {
     vocabLearned: vocabSum,
     lessonsCompleted: lessonsSum,
     readingAccuracy: Math.round(calcAvg(aggs.readingAcc) * 100),
     dictationAccuracy: Math.round(calcAvg(aggs.dictationAcc) * 100),
-    speakingAccuracy: Math.round(calcAvg(aggs.speakingScore) * 100),
+    speakingAccuracy: Math.round(calcAvg(speakingCombined) * 100),
     speakingFluency: Math.round(calcAvg(aggs.speakingFluency) * 100),
     avgWritingScore: parseFloat(calcAvg(aggs.writingScore).toFixed(1)),
     readingWpm: Math.round(calcAvg(aggs.readingWpm))
   };
 
+  return { totalSecondsInRange, todayMinutes, statsGrid };
+};
+
+// --- Service Methods ---
+
+const getSummaryData = async (userId, range) => {
+  const user = await User.findById(userId).select('dailyMinutes timezone').lean();
+  const userTimezone = user?.timezone || 'Asia/Ho_Chi_Minh';
+  const dailyGoal = user?.dailyMinutes || 0;
+
+  const { startDate: userTodayStart, chartLabels, queryDateKeys } = _getDateRangeConfig(range, userTimezone);
+
+  const todayString = userTodayStart.toLocaleDateString('en-CA', { timeZone: userTimezone });
+  // Stats 'day' = chỉ hôm nay; 'week'/'month' = từ đầu range. Dùng queryDateKeys[0]
+  // (đã tz-correct từ _getDateRangeConfig) để stats KHỚP với chart, tránh lệch 1 ngày
+  // trên host UTC do getDay()/getDate() thô đọc theo TZ server.
+  const startDateString = range === 'day' ? todayString : queryDateKeys[0];
+
+  let minQueryDate = queryDateKeys[0];
+
+  const records = await UserDailyProgress.find({
+    userId: userId,
+    date: { $gte: minQueryDate }
+  }).lean();
+
+  const recordsMap = new Map(records.map(r => [r.date, r]));
+
+  const { totalSecondsInRange, todayMinutes, statsGrid } =
+    aggregateProgressRecords(records, { startDateString, todayString });
+
+  // F2: "Từ vựng" = SỐ TỪ DISTINCT đã ôn trong range (không phải số lượt good/easy →
+  // tránh đếm trùng khi ôn lại cùng 1 từ). LƯU Ý: field là `user` (KHÔNG phải userId).
+  // 'day' override start = userTodayStart vì _calculateDateRange('day') = 7 ngày, còn
+  // các card khác ở 'day' chỉ tính hôm nay → giữ đồng bộ.
+  const { startDate: vocabRangeStart, endDate: vocabRangeEnd } =
+    _calculateDateRange(range, userTimezone);
+  statsGrid.vocabLearned = await Word.countDocuments({
+    user: userId,
+    status: 'learning',
+    lastReviewedDate: {
+      $gte: range === 'day' ? userTodayStart : vocabRangeStart,
+      $lte: vocabRangeEnd,
+    },
+  });
+
+  const chartMinutes = queryDateKeys.map(dateKey => {
+    const rec = recordsMap.get(dateKey);
+    return rec ? Math.round(rec.studySeconds / 60) : 0;
+  });
+
+  const totalMinutesInRange = Math.round(totalSecondsInRange / 60);
+  // F5: progressPercent theo RANGE (không chỉ hôm nay) — goal = dailyGoal × số ngày đã
+  // trôi trong kỳ ('day' = 1; week/month = số ngày từ đầu kỳ tới hôm nay). Khớp cách
+  // frontend tự tính % ở màn Progress.
+  const rangeDays = range === 'day' ? 1 : queryDateKeys.length;
+  const rangeGoalMinutes = dailyGoal * rangeDays;
+
   return {
     studyTime: {
       todayMinutes: todayMinutes,
-      totalMinutesInRange: Math.round(totalSecondsInRange / 60),
+      totalMinutesInRange: totalMinutesInRange,
       goalMinutes: dailyGoal,
-      progressPercent: dailyGoal > 0 ? Math.min(1, todayMinutes / dailyGoal) : 0,
+      progressPercent: rangeGoalMinutes > 0 ? Math.min(1, totalMinutesInRange / rangeGoalMinutes) : 0,
     },
     statsGrid,
     weeklyChart: {
@@ -285,7 +339,10 @@ const getStatDetailData = async (userId, statKey, range) => {
         throw err;
     }
 
-    const baseFilter = { userId, [dateFilterField]: { $gte: startDate, $lte: endDate } };
+    // Word (vocab) dùng field `user`; các model khác dùng `userId`. Trước đây vocab
+    // query nhầm `userId` → detail list vocab luôn rỗng.
+    const userField = statKey === 'vocab' ? 'user' : 'userId';
+    const baseFilter = { [userField]: userId, [dateFilterField]: { $gte: startDate, $lte: endDate } };
     if (statKey === 'reading') {
       baseFilter.status = 'completed';
     }
@@ -294,6 +351,9 @@ const getStatDetailData = async (userId, statKey, range) => {
     }
     if (statKey === 'writing') {
       baseFilter.status = { $in: ['submitted', 'reviewed'] };
+    }
+    if (statKey === 'vocab') {
+      baseFilter.status = 'learning'; // khớp card F2 (từ đang học đã ôn trong range)
     }
 
     let q = model.find(baseFilter);

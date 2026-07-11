@@ -1,9 +1,12 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
+import 'package:english_for_community/core/entity/listening_comp_entity.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,6 +36,69 @@ class _AdminListeningCompListPageState extends State<AdminListeningCompListPage>
     );
   }
 }
+
+Widget _buildListeningCompTable(
+  BuildContext context,
+  List<ListeningCompEntity> items, {
+  required void Function(String id) onOpen,
+  required void Function(String id) onDelete,
+}) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: WebDataTable(
+        columns: [
+          WebTableColumn(label: l10n.adminTableContent, flex: 4),
+          WebTableColumn(label: l10n.adminTableDifficulty, width: 120),
+          WebTableColumn(label: l10n.adminTableDuration, width: 90, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableSubmissions, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+        ],
+        rowCount: items.length,
+        decoration: AdminWebUi.panelDecoration(),
+        headStyle: AdminWebUi.webTableHead(context),
+        scrollable: true,
+        onRowTap: (row) => () => onOpen(items[row].id),
+        cellBuilder: (context, row, column) {
+          final item = items[row];
+          return switch (column) {
+            0 => Row(children: [
+                const Icon(Icons.quiz_outlined, size: 18, color: AppColors.textSecondary),
+                const SizedBox(width: AppSpacing.s2),
+                Expanded(child: _tableText(item.title, weight: FontWeight.w600)),
+              ]),
+            1 => _tableText(item.difficulty.toUpperCase()),
+            2 => _tableText('${item.minutesToComplete} min'),
+            3 => _tableText('${item.attemptsCount}'),
+            4 => StatusBadge(text: item.adminStatus, color: item.adminStatus.toLowerCase() == 'published' ? AppColors.success : AppColors.textSecondary),
+            5 => _contentMenu(
+                onEdit: () => onOpen(item.id),
+                onDelete: () => onDelete(item.id),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
+      ),
+    );
+}
+
+Widget _contentMenu({required VoidCallback onEdit, required VoidCallback onDelete}) => PopupMenuButton<String>(
+        tooltip: 'Content actions',
+        icon: const Icon(Icons.more_horiz, size: 20),
+        onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+        itemBuilder: (_) => const [
+          PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit')])),
+          PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: AppColors.danger), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.danger))])),
+        ],
+      );
+
+Widget _tableText(String value, {FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 12, fontWeight: weight, color: AppColors.textPrimary, fontFeatures: const [FontFeature.tabularFigures()]),
+      );
 
 class _AdminListeningCompListBody extends StatefulWidget {
   const _AdminListeningCompListBody();
@@ -146,7 +212,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
                             trailing: OutlinedButton(
                               onPressed: () async {
                                 await _adminRemote.restoreListeningComprehension(id);
-                                if (!mounted) return;
+                                if (!mounted || !ctx.mounted || !context.mounted) return;
                                 Navigator.pop(ctx);
                                 _fetchData();
                                 AppCornerToast.show(context, 'Listening quiz restored');
@@ -220,7 +286,7 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
                 },
                 builder: (context, state) {
                   if (state.status == AdminListeningCompStatus.loading && state.listenings.isEmpty) {
-                    return AdminSkeleton.page(AdminSkeleton.cardList());
+                    return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                   }
 
                   if (state.listenings.isEmpty) {
@@ -236,55 +302,11 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
 
                   return RefreshIndicator(
                     onRefresh: () async => _fetchData(),
-                    child: ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: state.listenings.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final item = state.listenings[index];
-                        return ShadcnCard(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          onTap: () => _openEditor(context, item.id),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  color: AppColors.infoBg,
-                                  borderRadius: BorderRadius.circular(AppRadius.input),
-                                  border: Border.all(color: AppColors.outline),
-                                ),
-                                child: const Icon(Icons.quiz, color: AppColors.info),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.title,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kTextMain),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${item.difficulty.toUpperCase()} • ${item.minutesToComplete} Min',
-                                      style: const TextStyle(fontSize: 12, color: kTextMuted),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () => _confirmDelete(context, item.id),
-                              ),
-                              const Icon(Icons.chevron_right, color: kTextMuted, size: 18),
-                            ],
-                          ),
-                        );
-                      },
+                    child: _buildListeningCompTable(
+                      context,
+                      state.listenings,
+                      onOpen: (id) => _openEditor(context, id),
+                      onDelete: (id) => _confirmDelete(context, id),
                     ),
                   );
                 },
@@ -326,8 +348,10 @@ class _AdminListeningCompListBodyState extends State<_AdminListeningCompListBody
   }
 }
 
-class _MetaBadge extends StatelessWidget {
-  const _MetaBadge({
+@Deprecated('The listening comprehension list uses WebDataTable.')
+class ListeningCompLegacyMetaBadge extends StatelessWidget {
+  const ListeningCompLegacyMetaBadge({
+    super.key,
     required this.text,
     required this.color,
     required this.textColor,

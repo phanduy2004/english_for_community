@@ -19,6 +19,14 @@ class AdminRemoteDatasource {
     return AdminStatsEntity.fromJson(response.data);
   }
 
+  Future<Map<String, dynamic>> getUserAnalytics({String range = 'week'}) async {
+    final response = await dio.get(
+      'admin/analytics',
+      queryParameters: {'range': range},
+    );
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
   Future<PaginatedResponse<UserEntity>> getAllUsers({
     int page = 1,
     int limit = 20,

@@ -15,6 +15,17 @@ const getDashboardStats = async (req, res) => {
   }
 };
 
+const getUserAnalytics = async (req, res) => {
+  try {
+    const { range = 'week' } = req.query;
+    const result = await adminService.getUserAnalytics(range);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("User Analytics Error:", error);
+    return res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 const getAllUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -374,6 +385,7 @@ const getActivityDetail = async (req, res) => {
 
 export default {
   getDashboardStats,
+  getUserAnalytics,
   getAllUsers,
   getReports,
   updateReportStatus,

@@ -5,6 +5,8 @@ const classroomSchema = new mongoose.Schema(
   {
     teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     name: { type: String, required: true, trim: true },
+    /** Nhãn ngắn hiển thị nổi bật cạnh tên (vd. "Ca sáng · HK2"). */
+    tag: { type: String, default: '', trim: true },
     description: { type: String, default: '' },
     coverImageUrl: { type: String, default: '' },
     inviteCode: { type: String, required: true, unique: true, index: true },

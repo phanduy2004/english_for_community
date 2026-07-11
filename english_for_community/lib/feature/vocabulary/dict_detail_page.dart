@@ -98,7 +98,7 @@ class _DictDetailPageState extends State<DictDetailPage> {
                 children: [
                   Text(
                     widget.entry.headword,
-                    style: StudentMobileUi.greeting(context).copyWith(fontSize: 24),
+                    style: StudentMobileUi.greeting(context).copyWith(fontSize: AppTypography.mobileDisplay),
                   ),
                   const SizedBox(height: AppSpacing.s4),
                   Row(

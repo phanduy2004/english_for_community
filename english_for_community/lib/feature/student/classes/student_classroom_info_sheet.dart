@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
@@ -329,7 +330,7 @@ class _StudentClassroomInfoBodyState extends State<_StudentClassroomInfoBody> {
           Text(
             text,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: AppTypography.mobileCaption,
               fontWeight: FontWeight.w600,
               color: color.withValues(alpha: 0.9),
             ),

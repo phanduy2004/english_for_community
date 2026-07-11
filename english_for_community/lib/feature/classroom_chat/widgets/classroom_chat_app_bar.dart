@@ -1,5 +1,6 @@
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/chat_group_cover_avatar.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
@@ -222,7 +223,7 @@ class ChatSettingsPanelHeader extends StatelessWidget {
               child: Text(
                 'Thông tin nhóm',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: AppTypography.mobileH2,
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
                 ),

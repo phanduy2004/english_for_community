@@ -160,7 +160,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String studentChatHubClassCount(int count) {
-    return '$count classes';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count classes',
+      one: '1 class',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -175,6 +181,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get studentChatHubSearchEmptyBody =>
       'Try another keyword or clear the search.';
+
+  @override
+  String get studentChatHubCaughtUpTitle => 'You\'re all caught up';
+
+  @override
+  String get studentChatHubCaughtUpBody =>
+      'No new messages. Chat with your class anytime!';
 
   @override
   String get loginWelcomeBack => 'Welcome Back!';
@@ -416,6 +429,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get adminDashboard => 'Admin dashboard';
 
   @override
+  String get adminAnalyticsTitle => 'Analytics';
+
+  @override
+  String get adminAnalyticsTotalUsers => 'Total users';
+
+  @override
+  String get adminAnalyticsStudents => 'Students';
+
+  @override
+  String get adminAnalyticsTeachers => 'Teachers';
+
+  @override
+  String get adminAnalyticsActiveUsers => 'Active users';
+
+  @override
+  String get adminAnalyticsNewUsers => 'New users';
+
+  @override
+  String get adminAnalyticsReportsPending => 'Reports pending';
+
+  @override
+  String get adminAnalyticsUsersByRole => 'Users by role';
+
+  @override
+  String get adminAnalyticsUsersByRoleSub => 'All-time accounts by role';
+
+  @override
+  String get adminAnalyticsNewUsersChart => 'New users over time';
+
+  @override
+  String get adminAnalyticsRoleStudent => 'Students';
+
+  @override
+  String get adminAnalyticsRoleTeacher => 'Teachers';
+
+  @override
+  String get adminAnalyticsRoleAdmin => 'Admins';
+
+  @override
+  String get adminAnalyticsNoData => 'Not enough data yet';
+
+  @override
+  String get adminAnalyticsRangeDay => 'Day';
+
+  @override
+  String get adminAnalyticsRangeWeek => 'Week';
+
+  @override
+  String get adminAnalyticsRangeMonth => 'Month';
+
+  @override
   String get filterEasy => 'easy';
 
   @override
@@ -562,6 +626,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adminActivityHistoryTitle => 'Submission history';
+
+  @override
+  String get adminTableUser => 'User';
+
+  @override
+  String get adminTableLastActive => 'Last active';
+
+  @override
+  String get adminTableSkill => 'Skill';
+
+  @override
+  String get adminTableType => 'Type';
+
+  @override
+  String get adminTableContent => 'Content';
+
+  @override
+  String get adminTableStatus => 'Status';
+
+  @override
+  String get adminTableScore => 'Score';
+
+  @override
+  String get adminTableDate => 'Date';
+
+  @override
+  String get adminTableTitle => 'Title';
+
+  @override
+  String get adminTableReporter => 'Reporter';
+
+  @override
+  String get adminTableCreated => 'Created';
+
+  @override
+  String get adminTableSubmissions => 'Submissions';
+
+  @override
+  String get adminTableDifficulty => 'Difficulty';
+
+  @override
+  String get adminTableReadingTime => 'Reading time';
+
+  @override
+  String get adminTableCode => 'Code';
+
+  @override
+  String get adminTableCues => 'Cues';
+
+  @override
+  String get adminTableDuration => 'Duration';
+
+  @override
+  String get adminTableLevel => 'Level';
+
+  @override
+  String get adminTableTasks => 'Tasks';
+
+  @override
+  String get adminTableSentences => 'Sentences';
+
+  @override
+  String get adminTableVersion => 'Version';
+
+  @override
+  String get adminTablePlatform => 'Platform';
+
+  @override
+  String get adminTableMinimumVersion => 'Minimum version';
+
+  @override
+  String get adminTableActions => 'Actions';
 
   @override
   String get adminSearchUsersHint => 'Search by name or email…';
@@ -2345,6 +2481,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherClassNameLabel => 'Class name';
 
   @override
+  String get teacherClassTagLabel => 'Tag (optional)';
+
+  @override
+  String get teacherClassTagHint => 'e.g. Morning · Term 2';
+
+  @override
   String get teacherClassCreated => 'Classroom created';
 
   @override
@@ -3106,6 +3248,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get teacherClassRecentAssignments => 'Recent assignments';
 
   @override
+  String get teacherClassColExam => 'Exam';
+
+  @override
+  String get teacherClassColStatus => 'Status';
+
+  @override
+  String get teacherClassColSchedule => 'Schedule';
+
+  @override
+  String get teacherClassColSubmitted => 'Submitted';
+
+  @override
+  String get teacherClassColMember => 'Member';
+
+  @override
+  String get teacherClassColJoined => 'Joined';
+
+  @override
   String get teacherClassViewAllAssignments => 'View all assignments';
 
   @override
@@ -3560,6 +3720,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherInboxPublicAssignment => 'Public assignment';
+
+  @override
+  String get teacherInboxColType => 'Type';
+
+  @override
+  String get teacherInboxColTime => 'Time';
 
   @override
   String teacherInboxItemCount(int count) {
@@ -4646,6 +4812,132 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherAnalyticsModeSelfPaced => 'Self-paced';
+
+  @override
+  String get teacherAnalyticsCompletion => 'Completion';
+
+  @override
+  String get teacherAnalyticsInProgress => 'In progress';
+
+  @override
+  String get teacherAnalyticsGradeNow => 'Grade now';
+
+  @override
+  String teacherAnalyticsSummaryTitle(int days) {
+    return '$days-day summary';
+  }
+
+  @override
+  String teacherAnalyticsInsightAvg(String score) {
+    return 'Class average $score/10.';
+  }
+
+  @override
+  String teacherAnalyticsInsightWeakSkill(String skill, String score) {
+    return '$skill ($score) is the weakest skill.';
+  }
+
+  @override
+  String teacherAnalyticsInsightNotSubmitting(int count) {
+    return '$count students haven\'t submitted anything.';
+  }
+
+  @override
+  String teacherAnalyticsInsightPending(int count) {
+    return '$count submissions awaiting grading.';
+  }
+
+  @override
+  String get teacherAnalyticsInsightEmpty =>
+      'Not enough data to summarise yet.';
+
+  @override
+  String get teacherAnalyticsScoreTrend => 'Score trend';
+
+  @override
+  String get teacherAnalyticsScoreTrendSub =>
+      'Daily class average (0–10) — hover a point for details';
+
+  @override
+  String get teacherAnalyticsAvgShort => 'avg';
+
+  @override
+  String teacherAnalyticsGradedCount(int count) {
+    return '$count graded';
+  }
+
+  @override
+  String teacherAnalyticsPerDayAvg(String value) {
+    return '$value/day avg';
+  }
+
+  @override
+  String get teacherAnalyticsAtRiskTitle => 'Students needing attention';
+
+  @override
+  String get teacherAnalyticsColStudent => 'Student';
+
+  @override
+  String get teacherAnalyticsColAvg => 'Avg %';
+
+  @override
+  String get teacherAnalyticsColSubmitted => 'Submitted';
+
+  @override
+  String get teacherAnalyticsColAlert => 'Alert';
+
+  @override
+  String get teacherAnalyticsRiskNotSubmitting => 'No submissions';
+
+  @override
+  String get teacherAnalyticsRiskLowScore => 'Low score';
+
+  @override
+  String get teacherAnalyticsRiskLate => 'Frequently late';
+
+  @override
+  String teacherAnalyticsViewAll(int count) {
+    return 'View all $count';
+  }
+
+  @override
+  String get teacherAnalyticsItemAnalysisTitle => 'Most-missed questions';
+
+  @override
+  String get teacherAnalyticsItemAnalysisSub =>
+      '% of points earned by the class';
+
+  @override
+  String get teacherAnalyticsCorrectLabel => 'correct';
+
+  @override
+  String teacherAnalyticsAttemptsLabel(int count) {
+    return '$count attempts';
+  }
+
+  @override
+  String get teacherAnalyticsIntegrityReasons => 'Flag reasons';
+
+  @override
+  String get teacherAnalyticsReasonTabSwitch => 'Tab switch / left screen';
+
+  @override
+  String get teacherAnalyticsReasonCopyPaste => 'Content pasted';
+
+  @override
+  String get teacherAnalyticsReasonFullscreen => 'Exited fullscreen';
+
+  @override
+  String get teacherAnalyticsOnTimeTitle => 'On-time submission';
+
+  @override
+  String get teacherAnalyticsOnTime => 'On time';
+
+  @override
+  String get teacherAnalyticsLate => 'Late';
+
+  @override
+  String get teacherAnalyticsMissing => 'Missing';
 
   @override
   String get teacherNavAnalytics => 'Analytics';

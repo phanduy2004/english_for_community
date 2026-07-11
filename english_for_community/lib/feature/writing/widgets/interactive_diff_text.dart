@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:pretty_diff_text/pretty_diff_text.dart';
 
 import '../../../core/locale/l10n_context.dart';
@@ -30,7 +31,7 @@ class InteractiveDiffText extends StatelessWidget {
         spans.add(TextSpan(
           text: text.substring(lastMatchEnd, match.start),
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: AppTypography.mobileBodyLg,
             height: 1.6,
             color: AppColors.textPrimary,
           ),
@@ -44,7 +45,7 @@ class InteractiveDiffText extends StatelessWidget {
         spans.add(TextSpan(
           text: newText,
           style: const TextStyle(
-            fontSize: 15,
+            fontSize: AppTypography.mobileBodyLg,
             height: 1.6,
             color: AppColors.textPrimary,
           ),
@@ -69,7 +70,7 @@ class InteractiveDiffText extends StatelessWidget {
       spans.add(TextSpan(
         text: text.substring(lastMatchEnd),
         style: const TextStyle(
-          fontSize: 15,
+          fontSize: AppTypography.mobileBodyLg,
           height: 1.6,
           color: AppColors.textPrimary,
         ),
@@ -84,7 +85,7 @@ class InteractiveDiffText extends StatelessWidget {
           oldText: oldText,
           newText: newText,
           defaultTextStyle: const TextStyle(
-            fontSize: 15,
+            fontSize: AppTypography.mobileBodyLg,
             height: 1.6,
             color: AppColors.textPrimary,
           ),
@@ -103,7 +104,7 @@ class InteractiveDiffText extends StatelessWidget {
       return Text(
         newText,
         style: const TextStyle(
-          fontSize: 15,
+          fontSize: AppTypography.mobileBodyLg,
           height: 1.6,
           color: AppColors.textPrimary,
         ),
@@ -169,7 +170,7 @@ class _ErrorToken extends StatelessWidget {
                     oldText,
                     softWrap: true,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: AppTypography.mobileH2,
                       color: AppColors.danger,
                       decoration: TextDecoration.lineThrough,
                       decorationColor: AppColors.danger,
@@ -185,7 +186,7 @@ class _ErrorToken extends StatelessWidget {
                   newText,
                   softWrap: true,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: AppTypography.mobileH2,
                     color: AppColors.success,
                     fontWeight: FontWeight.bold,
                   ),
@@ -230,7 +231,7 @@ class _DiffPair extends StatelessWidget {
           style: const TextStyle(
             color: Colors.green,
             fontWeight: FontWeight.bold,
-            fontSize: 16,
+            fontSize: AppTypography.mobileH1,
           ),
         ),
       ],
@@ -282,7 +283,7 @@ class _CuteReasonPopup extends StatelessWidget {
               Text(
                 t.writingAiSuggestionTitle,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: AppTypography.mobileDisplay,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -304,7 +305,7 @@ class _CuteReasonPopup extends StatelessWidget {
             child: Text(
               t.writingWhyCorrection,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: AppTypography.mobileBody,
                 color: Colors.grey,
                 fontWeight: FontWeight.w500,
               ),
@@ -314,7 +315,7 @@ class _CuteReasonPopup extends StatelessWidget {
           Text(
             reason,
             style: const TextStyle(
-              fontSize: 15,
+              fontSize: AppTypography.mobileBodyLg,
               color: AppColors.textPrimary,
               height: 1.5,
             ),

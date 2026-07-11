@@ -3,6 +3,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/entity/listening_entity.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:flutter/material.dart';
@@ -167,7 +168,7 @@ class _CuePill extends StatelessWidget {
           ),
           child: Text(
             '$number',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
+            style: TextStyle(fontSize: AppTypography.mobileCaption, fontWeight: FontWeight.w700, color: fg),
           ),
         ),
       ),

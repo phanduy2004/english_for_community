@@ -3,6 +3,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/entity/speaking/speaking_set_entity.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:flutter/material.dart';
@@ -161,7 +162,7 @@ class _SentencePill extends StatelessWidget {
           ),
           child: Text(
             '$number',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: fg),
+            style: TextStyle(fontSize: AppTypography.mobileCaption, fontWeight: FontWeight.w700, color: fg),
           ),
         ),
       ),
@@ -208,7 +209,7 @@ class _ReviewBlock extends StatelessWidget {
               text,
               style: ExamSystemUi.captionSecondary.copyWith(
                 height: 1.45,
-                fontSize: 15,
+                fontSize: AppTypography.mobileBodyLg,
                 color: muted ? AppColors.textMuted : AppColors.textPrimary,
                 fontStyle: muted ? FontStyle.italic : FontStyle.normal,
               ),

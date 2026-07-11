@@ -14,10 +14,12 @@ import '../../core/entity/reading/reading_progress_entity.dart';
 import '../../core/get_it/get_it.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/ui/feedback/app_feedback.dart';
+import '../../core/ui/motion/confetti_celebration.dart';
 import '../../core/repository/reading_repository.dart';
 import '../../core/theme/app_color.dart';
 import '../../core/theme/app_skill_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/util/app_haptics.dart';
 import '../../core/ui/exam_system_ui.dart';
 import '../../core/ui/student_mobile_ui.dart';
@@ -262,6 +264,11 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
               ),
             );
           } else {
+            CompletionCelebration.fireForScore(
+              context,
+              score: (result?.correctCount ?? 0).toDouble(),
+              maxScore: (result?.totalQuestions ?? 0).toDouble(),
+            );
             showDialog(
               context: context,
               barrierDismissible: false,
@@ -277,7 +284,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
                       result?.totalQuestions ?? 0,
                       (result?.score ?? 0).round(),
                     ),
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: AppTypography.mobileH1),
                   ),
                   actions: [
                     TextButton(
@@ -443,7 +450,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             '${_formatDuration(_remainingSeconds)} / ${_formatDuration(_totalSeconds)}',
             style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 15,
+              fontSize: AppTypography.mobileKpi,
               color: isTimeRunningOut ? Colors.red : AppColors.textPrimary,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
@@ -482,7 +489,7 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
           const SizedBox(width: 8),
           Text(
             textToShow,
-            style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: 14),
+            style: TextStyle(fontWeight: FontWeight.w600, color: color, fontSize: AppTypography.mobileH2),
           ),
         ],
       ),
@@ -496,6 +503,8 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
     return StudentMobileUi.bottomActionBar(
       context: context,
       progressLabel: '$answered/$total',
+      progress: total > 0 ? answered / total : 0,
+      skill: SkillType.reading,
       ctaLabel: t.readingSubmitAnswers,
       onCta: () => _submitQuiz(context),
       loading: isSubmitting,
@@ -532,12 +541,12 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             widget.reading.content,
             style: ExamEmbeddedSkillScope.compactOf(context)
                 ? ExamSystemUi.embeddedBodyStyle.copyWith(
-                    fontSize: 14,
+                    fontSize: AppTypography.mobileH2,
                     height: 1.55,
                     color: AppColors.textSecondary,
                   )
                 : const TextStyle(
-                    fontSize: 17,
+                    fontSize: AppTypography.mobileBodyLg,
                     height: 1.6,
                     color: AppColors.textPrimary,
                     fontFamily: 'Serif',
@@ -551,13 +560,13 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             ),
             Text(
               translation.title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+              style: const TextStyle(fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
             ),
             const SizedBox(height: 12),
             SelectableText(
               translation.content,
               style: const TextStyle(
-                fontSize: 16,
+                fontSize: AppTypography.mobileH1,
                 height: 1.6,
                 color: AppColors.textSecondary,
                 fontStyle: FontStyle.italic,
@@ -634,11 +643,21 @@ class _ReadingDetailViewState extends State<_ReadingDetailView>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Question ${questionIndex + 1}',
-                  style: compact
-                      ? ExamSystemUi.embeddedCaptionStyle.copyWith(fontWeight: FontWeight.w500)
-                      : StudentMobileUi.caption(context),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.s3, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppSkillColors.reading.tint,
+                    borderRadius: BorderRadius.circular(AppRadius.chip),
+                    border: Border.all(
+                        color: AppSkillColors.reading.color
+                            .withValues(alpha: 0.22)),
+                  ),
+                  child: Text(
+                    'Question ${questionIndex + 1}',
+                    style:
+                        AppTypography.label(color: AppSkillColors.reading.dark),
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.s2),
                 Text(

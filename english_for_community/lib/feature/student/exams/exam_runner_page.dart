@@ -8,6 +8,7 @@ import 'package:english_for_community/core/theme/app_motion.dart' as theme_motio
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/util/app_haptics.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
@@ -353,8 +354,29 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
         });
         _liveGuard.unbind();
         AppFeedback.success(context, context.l10n.studentExamSubmitted);
+        _celebrateSubmit();
       },
     );
+  }
+
+  /// Tung hoa sau khi nộp: festive nếu có điểm tổng đạt ngưỡng, còn lại reward
+  /// nhẹ chúc mừng đã hoàn thành bài thi.
+  void _celebrateSubmit() {
+    if (!mounted) return;
+    final s = _attempt?['scores'];
+    if (s is Map) {
+      final earned = num.tryParse('${s['totalAwarded'] ?? ''}');
+      final max = num.tryParse('${s['totalMax'] ?? ''}');
+      if (earned != null && max != null && max > 0) {
+        CompletionCelebration.fireForScore(
+          context,
+          score: earned.toDouble(),
+          maxScore: max.toDouble(),
+        );
+        return;
+      }
+    }
+    CompletionCelebration.fire(context, level: CelebrationLevel.gentle);
   }
 
   Map<String, dynamic> _answerMapForItem(String itemId) {

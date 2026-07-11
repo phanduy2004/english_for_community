@@ -5,6 +5,7 @@ import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
@@ -379,7 +380,7 @@ class _StudentClassroomDetailPageState extends State<StudentClassroomDetailPage>
                                   indicatorWeight: 2.5,
                                   labelStyle: const TextStyle(
                                     fontWeight: FontWeight.w600,
-                                    fontSize: 13,
+                                    fontSize: AppTypography.mobileH3,
                                   ),
                                   tabs: [
                                     Tab(text: l10n.studentClassTabOverview),

@@ -37,6 +37,7 @@ class TeacherAnalyticsBloc extends Bloc<TeacherAnalyticsEvent, TeacherAnalyticsS
           charts: charts,
           submissionRows: derived.submissionRows,
           scoreDistRows: derived.scoreDistRows,
+          scoreTrendRows: derived.scoreTrendRows,
           submissionMaxY: derived.submissionMaxY,
           scoreDistMaxY: derived.scoreDistMaxY,
         ));

@@ -458,6 +458,8 @@ class _ListeningCompCard extends StatelessWidget {
 
       tapViaChildActionsOnWeb: true,
 
+      elevated: true,
+
       onTap: () => _handleRetakeOrStart(context),
 
       child: Column(

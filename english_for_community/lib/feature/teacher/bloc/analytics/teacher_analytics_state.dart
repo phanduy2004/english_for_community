@@ -1,4 +1,3 @@
-import 'package:english_for_community/feature/teacher/bloc/analytics/teacher_analytics_derived.dart';
 import 'package:equatable/equatable.dart';
 
 enum TeacherAnalyticsStatus { initial, loading, success, error }
@@ -12,6 +11,7 @@ class TeacherAnalyticsState extends Equatable {
     this.period = 14,
     this.submissionRows = const [],
     this.scoreDistRows = const [],
+    this.scoreTrendRows = const [],
     this.submissionMaxY = 1,
     this.scoreDistMaxY = 1,
   });
@@ -25,6 +25,7 @@ class TeacherAnalyticsState extends Equatable {
   /// Pre-parsed chart series (P0-F3 — no `.map().toList()` in widget build).
   final List<Map<String, dynamic>> submissionRows;
   final List<Map<String, dynamic>> scoreDistRows;
+  final List<Map<String, dynamic>> scoreTrendRows;
   final double submissionMaxY;
   final double scoreDistMaxY;
 
@@ -39,6 +40,7 @@ class TeacherAnalyticsState extends Equatable {
     int? period,
     List<Map<String, dynamic>>? submissionRows,
     List<Map<String, dynamic>>? scoreDistRows,
+    List<Map<String, dynamic>>? scoreTrendRows,
     double? submissionMaxY,
     double? scoreDistMaxY,
     bool clearError = false,
@@ -51,6 +53,7 @@ class TeacherAnalyticsState extends Equatable {
       period: period ?? this.period,
       submissionRows: submissionRows ?? this.submissionRows,
       scoreDistRows: scoreDistRows ?? this.scoreDistRows,
+      scoreTrendRows: scoreTrendRows ?? this.scoreTrendRows,
       submissionMaxY: submissionMaxY ?? this.submissionMaxY,
       scoreDistMaxY: scoreDistMaxY ?? this.scoreDistMaxY,
     );
@@ -65,6 +68,7 @@ class TeacherAnalyticsState extends Equatable {
         period,
         submissionRows,
         scoreDistRows,
+        scoreTrendRows,
         submissionMaxY,
         scoreDistMaxY,
       ];

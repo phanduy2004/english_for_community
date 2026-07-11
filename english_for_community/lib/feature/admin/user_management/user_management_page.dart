@@ -3,16 +3,21 @@ import 'dart:async';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
+import 'package:english_for_community/core/entity/user_entity.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
-import 'package:english_for_community/feature/admin/user_management/widgets/user_card..dart';
+import 'package:english_for_community/feature/admin/user_management/widgets/admin_user_details_dialog.dart';
+import 'package:english_for_community/feature/admin/user_management/widgets/user_action_menu.dart';
+import 'package:english_for_community/feature/admin/user_management/widgets/user_role_badge.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/datasource/admin_remote_datasource.dart';
 import '../../../core/get_it/get_it.dart';
@@ -216,8 +221,8 @@ class _UserManagementViewState extends State<_UserManagementView>
                               trailing: OutlinedButton(
                                 onPressed: () async {
                                   await datasource.restoreUser(u.id);
-                                  if (!mounted) return;
-                                  AppCornerToast.show(context,
+                                  if (!ctx.mounted || !mounted) return;
+                                  AppCornerToast.show(ctx,
                                       l10n.adminUserRestored(u.fullName));
                                   Navigator.pop(ctx);
                                   _fetchUsers();
@@ -246,6 +251,85 @@ class _UserManagementViewState extends State<_UserManagementView>
           ),
         );
       },
+    );
+  }
+
+  Future<void> _openUserDetails(UserEntity user) async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AdminUserDetailsDialog(userId: user.id),
+    );
+    if (changed == true) _fetchUsers();
+  }
+
+  Widget _userIdentityCell(BuildContext context, UserEntity user) {
+    final displayName = user.fullName.isNotEmpty ? user.fullName : 'Unknown User';
+    return Row(
+      children: [
+        AdminWebUi.userAvatarCircle(
+          avatarUrl: user.avatarUrl,
+          displayName: displayName,
+          radius: 14,
+        ),
+        const SizedBox(width: AppSpacing.s3),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                displayName,
+                style: AdminWebUi.webBody(context).copyWith(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: user.isBanned ? AppColors.danger : AppColors.textPrimary,
+                  decoration: user.isBanned ? TextDecoration.lineThrough : null,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                user.email.isNotEmpty ? user.email : 'No email',
+                style: AdminWebUi.metaMuted,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _userStatusCell(BuildContext context, UserEntity user) {
+    final l10n = context.l10n;
+    if (user.isBanned) {
+      return const _UserTableStatusChip(
+        label: 'BANNED',
+        color: AppColors.danger,
+        icon: Icons.block,
+      );
+    }
+    return _UserTableStatusChip(
+      label: user.isOnline ? l10n.adminUserStatusOnline : l10n.adminUserStatusOffline,
+      color: user.isOnline ? AppColors.success : AppColors.textMuted,
+      isDot: true,
+    );
+  }
+
+  Widget _userLastActiveCell(BuildContext context, UserEntity user) {
+    final l10n = context.l10n;
+    final label = user.isOnline
+        ? l10n.adminUserActiveNow
+        : (user.lastActivityDate != null
+            ? l10n.adminUserLastActive(DateFormat('HH:mm dd/MM').format(user.lastActivityDate!.toLocal()))
+            : l10n.adminUserNeverActive);
+    return Text(
+      label,
+      style: AdminWebUi.webCaption(context).copyWith(color: AppColors.textSecondary),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -358,7 +442,7 @@ class _UserManagementViewState extends State<_UserManagementView>
               builder: (context, state) {
                 if (state.status == AdminStatus.loading &&
                     state.users == null) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
 
                 final users = state.users?.data ?? [];
@@ -387,15 +471,29 @@ class _UserManagementViewState extends State<_UserManagementView>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      child: ListView.separated(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.s4),
-                        itemCount: users.length,
-                        separatorBuilder: (c, i) =>
-                            const SizedBox(height: AppSpacing.s4),
-                        itemBuilder: (context, index) => UserCard(
-                          user: users[index],
-                          onChanged: _fetchUsers,
-                        ),
+                      child: WebDataTable(
+                        columns: [
+                          WebTableColumn(label: l10n.adminTableUser, flex: 4),
+                          WebTableColumn(label: l10n.teacherClassColStatus, width: 120),
+                          WebTableColumn(label: l10n.labelRole, width: 110),
+                          WebTableColumn(label: l10n.adminTableLastActive, width: 150),
+                          const WebTableColumn(label: '', width: 56, align: Alignment.center),
+                        ],
+                        rowCount: users.length,
+                        decoration: AdminWebUi.panelDecoration(),
+                        headStyle: AdminWebUi.webTableHead(context),
+                        scrollable: true,
+                        onRowTap: (row) => () => _openUserDetails(users[row]),
+                        cellBuilder: (context, row, col) {
+                          final user = users[row];
+                          return switch (col) {
+                            0 => _userIdentityCell(context, user),
+                            1 => _userStatusCell(context, user),
+                            2 => UserRoleBadge(role: user.role),
+                            3 => _userLastActiveCell(context, user),
+                            _ => UserActionMenu(user: user, onChanged: _fetchUsers),
+                          };
+                        },
                       ),
                     ),
                     if (pagination != null && pagination.totalPages > 0)
@@ -426,6 +524,53 @@ class _UserManagementViewState extends State<_UserManagementView>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _UserTableStatusChip extends StatelessWidget {
+  const _UserTableStatusChip({
+    required this.label,
+    required this.color,
+    this.isDot = false,
+    this.icon,
+  });
+
+  final String label;
+  final Color color;
+  final bool isDot;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: label,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isDot)
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              )
+            else if (icon != null)
+              Icon(icon, size: 10, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: color),
+            ),
+          ],
+        ),
       ),
     );
   }

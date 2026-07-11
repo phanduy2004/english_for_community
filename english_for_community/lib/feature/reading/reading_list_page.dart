@@ -291,6 +291,7 @@ class _ReadingCard extends StatelessWidget {
     return StudentMobileUi.skillAccentCard(
       skill: SkillType.reading,
       tapViaChildActionsOnWeb: true,
+      elevated: true,
       onTap: () => onAction(false),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

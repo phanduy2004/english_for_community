@@ -44,6 +44,19 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
+  Future<Either<Failure, Map<String, dynamic>>> getUserAnalytics(
+      {String range = 'week'}) async {
+    try {
+      final result = await adminRemoteDatasource.getUserAnalytics(range: range);
+      return Right(result);
+    } on DioException catch (e) {
+      return Left(UserFailure(message: _handleDioError(e)));
+    } catch (e) {
+      return Left(UserFailure(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers(
       {int page = 1,
       int limit = 20,

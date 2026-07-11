@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
@@ -288,7 +289,7 @@ class IntegratedGradingScorePanel extends StatelessWidget {
           if (showFormulaHint) ...[
             Text(
               l10n.integratedGradingAvgFormulaHint,
-              style: ExamSystemUi.captionMuted.copyWith(fontSize: 12, height: 1.35),
+              style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption, height: 1.35),
             ),
             const SizedBox(height: 12),
           ],
@@ -300,7 +301,7 @@ class IntegratedGradingScorePanel extends StatelessWidget {
                   l10n.integratedGradingColumnSkill,
                   style: ExamSystemUi.captionMuted.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileLabel,
                   ),
                 ),
               ),
@@ -311,7 +312,7 @@ class IntegratedGradingScorePanel extends StatelessWidget {
                   textAlign: TextAlign.end,
                   style: ExamSystemUi.captionMuted.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileLabel,
                   ),
                 ),
               ),
@@ -337,13 +338,13 @@ class IntegratedGradingScorePanel extends StatelessWidget {
                         isPartial ? l10n.integratedSkillFinalPartial : l10n.integratedSkillFinalAvg,
                         style: ExamSystemUi.listTitle(context).copyWith(
                           fontWeight: FontWeight.w700,
-                          fontSize: 14,
+                          fontSize: AppTypography.mobileH2,
                         ),
                       ),
                       if (isPartial)
                         Text(
                           l10n.integratedSkillScorePending,
-                          style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                          style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption),
                         ),
                     ],
                   ),
@@ -353,7 +354,7 @@ class IntegratedGradingScorePanel extends StatelessWidget {
                       ? l10n.integratedSkillScoreLabel(formatIntegratedScore(finalScore))
                       : '—',
                   style: ExamSystemUi.listTitle(context).copyWith(
-                    fontSize: 20,
+                    fontSize: AppTypography.mobileDisplay,
                     fontWeight: FontWeight.w800,
                     color: isPartial ? AppColors.warning : AppColors.primary,
                   ),
@@ -407,14 +408,14 @@ class _GradingScoreRow extends StatelessWidget {
                               .map(
                                 (part) => Text(
                                   part.trim(),
-                                  style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                                  style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption),
                                 ),
                               )
                               .toList(),
                         )
                       : Text(
                           row.detail!,
-                          style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+                          style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption),
                         ),
               ],
             ),
@@ -428,7 +429,7 @@ class _GradingScoreRow extends StatelessWidget {
                           l10n.integratedSkillScorePending,
                           style: ExamSystemUi.captionMuted.copyWith(
                             color: AppColors.warning,
-                            fontSize: 12,
+                            fontSize: AppTypography.mobileCaption,
                             fontWeight: FontWeight.w600,
                           ),
                         )
@@ -438,7 +439,7 @@ class _GradingScoreRow extends StatelessWidget {
                           ),
                           style: ExamSystemUi.captionSecondary.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                            fontSize: AppTypography.mobileH2,
                             color: AppColors.success,
                           ),
                         ),
@@ -520,7 +521,7 @@ class IntegratedScoreSummaryCard extends StatelessWidget {
                   l10n.integratedSkillScorePending,
                   style: ExamSystemUi.captionMuted.copyWith(
                     color: AppColors.warning,
-                    fontSize: 11,
+                    fontSize: AppTypography.mobileCaption,
                     fontWeight: FontWeight.w600,
                   ),
                 )
@@ -576,7 +577,7 @@ class IntegratedScoreSummaryCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               l10n.integratedSkillScorePending,
-              style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
+              style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption),
             ),
           ],
         ],

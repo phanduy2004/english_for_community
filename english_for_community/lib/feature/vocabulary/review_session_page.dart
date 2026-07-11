@@ -1,8 +1,9 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:english_for_community/core/util/app_haptics.dart';
-import 'package:english_for_community/core/ui/motion/celebrate_burst.dart';
+import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import 'package:english_for_community/core/theme/app_motion.dart' as theme_motion;
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
@@ -321,24 +322,39 @@ class _ReviewFlashcard extends StatelessWidget {
                       horizontal: AppSpacing.s6,
                       vertical: AppSpacing.s7,
                     ),
-                    child: AnimatedSwitcher(
+                    // Lật thẻ 3D thật (rotateY + perspective) thay cross-fade.
+                    child: TweenAnimationBuilder<double>(
+                      tween:
+                          Tween<double>(begin: 0, end: isFlipped ? 1.0 : 0.0),
                       duration: theme_motion.AppMotion.effective(
                         context,
-                        theme_motion.AppMotion.page,
+                        const Duration(milliseconds: 460),
                       ),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      child: isFlipped
-                          ? _BackFace(
-                              key: const ValueKey('back'),
-                              ipa: ipa,
-                              definition: definition,
-                            )
-                          : _FrontFace(
-                              key: const ValueKey('front'),
-                              word: word,
-                              tapHint: tapHint,
-                            ),
+                      curve: Curves.easeInOut,
+                      builder: (context, value, _) {
+                        final double angle = value * math.pi;
+                        final bool showBack = angle > math.pi / 2;
+                        return Transform(
+                          alignment: Alignment.center,
+                          transform: Matrix4.identity()
+                            ..setEntry(3, 2, 0.001)
+                            ..rotateY(angle),
+                          child: showBack
+                              ? Transform(
+                                  alignment: Alignment.center,
+                                  transform: Matrix4.identity()
+                                    ..rotateY(math.pi),
+                                  child: _BackFace(
+                                    ipa: ipa,
+                                    definition: definition,
+                                  ),
+                                )
+                              : _FrontFace(
+                                  word: word,
+                                  tapHint: tapHint,
+                                ),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -353,7 +369,6 @@ class _ReviewFlashcard extends StatelessWidget {
 
 class _FrontFace extends StatelessWidget {
   const _FrontFace({
-    super.key,
     required this.word,
     required this.tapHint,
   });
@@ -413,7 +428,6 @@ class _FrontFace extends StatelessWidget {
 
 class _BackFace extends StatelessWidget {
   const _BackFace({
-    super.key,
     required this.ipa,
     required this.definition,
   });
@@ -501,30 +515,28 @@ class _CompleteView extends StatefulWidget {
 }
 
 class _CompleteViewState extends State<_CompleteView> {
-  bool _celebrate = false;
-
   @override
   void initState() {
     super.initState();
+    // Hoàn thành trọn một phiên ôn từ vựng là một thành quả → tung hoa festive.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _celebrate = true);
+      if (mounted) {
+        CompletionCelebration.fire(context, level: CelebrationLevel.festive);
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.l10n;
-    return CelebrateBurst(
-      trigger: _celebrate,
-      child: StudentMobileUi.emptyState(
-        context,
-        icon: Icons.check_circle_outline_rounded,
-        title: t.vocabSessionCompleteTitle,
-        body: t.vocabSessionCompleteBody,
-        ctaLabel: t.backToHome,
-        onCta: () => Navigator.of(context).pop(),
-        skill: SkillType.vocabulary,
-      ),
+    return StudentMobileUi.emptyState(
+      context,
+      icon: Icons.check_circle_outline_rounded,
+      title: t.vocabSessionCompleteTitle,
+      body: t.vocabSessionCompleteBody,
+      ctaLabel: t.backToHome,
+      onCta: () => Navigator.of(context).pop(),
+      skill: SkillType.vocabulary,
     );
   }
 }

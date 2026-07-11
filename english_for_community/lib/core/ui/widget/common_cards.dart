@@ -123,7 +123,6 @@ class SectionCard extends StatelessWidget {
                 description!,
                 style: txt.bodyMedium?.copyWith(
                   color: cs.onSurfaceVariant,
-                  fontSize: 14,
                 ),
               ),
             ],

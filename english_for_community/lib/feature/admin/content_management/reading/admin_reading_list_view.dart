@@ -1,9 +1,11 @@
+import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -75,7 +77,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
       extra: id,
     );
 
-    if (mounted) {
+    if (context.mounted) {
       context.read<AdminReadingBloc>().add(
         GetAdminReadingListEvent(limit: _rowsPerPage, page: _page),
       );
@@ -129,7 +131,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
               builder: (context, state) {
                 if (state.status == AdminReadingStatus.loading &&
                     state.readings.isEmpty) {
-                  return AdminSkeleton.page(AdminSkeleton.cardList());
+                  return AdminSkeleton.page(AdminSkeleton.table(rows: 6));
                 }
 
                 if (state.status == AdminReadingStatus.failure &&
@@ -153,7 +155,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                   onRefresh: () async {
                     _fetchData();
                   },
-                  child: _buildListItems(context, state.readings),
+                  child: _buildTableItems(context, state.readings),
                 );
               },
             ),
@@ -274,7 +276,7 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
                             trailing: OutlinedButton(
                               onPressed: () async {
                                 await _adminRemote.restoreReading(id);
-                                if (!mounted) return;
+                                if (!mounted || !ctx.mounted || !context.mounted) return;
                                 Navigator.pop(ctx);
                                 _fetchData();
                                 AppCornerToast.show(context, 'Reading restored');
@@ -299,7 +301,85 @@ class _AdminReadingListBodyState extends State<_AdminReadingListBody> {
     );
   }
 
-  Widget _buildListItems(BuildContext context, List<ReadingEntity> readings) {
+  Widget _buildTableItems(BuildContext context, List<ReadingEntity> readings) {
+    final l10n = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: WebDataTable(
+        columns: [
+          WebTableColumn(label: l10n.adminTableContent, flex: 4),
+          WebTableColumn(label: l10n.adminTableDifficulty, width: 120),
+          WebTableColumn(label: l10n.adminTableReadingTime, width: 90, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableSubmissions, width: 110, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+          WebTableColumn(label: l10n.adminTableStatus, width: 120),
+          WebTableColumn(label: '', width: 56, align: Alignment.center, headAlign: Alignment.center),
+        ],
+        rowCount: readings.length,
+        decoration: AdminWebUi.panelDecoration(),
+        headStyle: AdminWebUi.webTableHead(context),
+        scrollable: true,
+        onRowTap: (row) => () => _openEditor(context, readings[row].id),
+        cellBuilder: (context, row, column) {
+          final reading = readings[row];
+          return switch (column) {
+            0 => _readingCell(reading),
+            1 => _tableText(reading.difficulty?.name.toUpperCase() ?? 'UNKNOWN'),
+            2 => _tableText('${reading.minutesToRead} min'),
+            3 => _tableText('${reading.attemptsCount}'),
+            4 => StatusBadge(text: reading.adminStatus, color: _statusColor(reading.adminStatus)),
+            5 => _contentMenu(
+                onEdit: () => _openEditor(context, reading.id),
+                onDelete: () => _confirmDelete(context, reading.id),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
+      ),
+    );
+  }
+
+  Widget _readingCell(ReadingEntity reading) {
+    final hasImage = reading.imageUrl?.startsWith('http') ?? false;
+    return Row(children: [
+      Container(
+        width: 32,
+        height: 32,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSubtle,
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          image: hasImage ? DecorationImage(image: NetworkImage(reading.imageUrl!), fit: BoxFit.cover) : null,
+        ),
+        child: hasImage ? null : Text(reading.title.isEmpty ? '?' : reading.title[0], style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+      ),
+      const SizedBox(width: AppSpacing.s2),
+      Expanded(child: _tableText(reading.title, weight: FontWeight.w600)),
+    ]);
+  }
+
+  Widget _contentMenu({required VoidCallback onEdit, required VoidCallback onDelete}) {
+    return PopupMenuButton<String>(
+      tooltip: 'Content actions',
+      icon: const Icon(Icons.more_horiz, size: 20),
+      onSelected: (value) => value == 'edit' ? onEdit() : onDelete(),
+      itemBuilder: (_) => const [
+        PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit_outlined, size: 18), SizedBox(width: 8), Text('Edit')])),
+        PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete_outline, size: 18, color: AppColors.danger), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.danger))])),
+      ],
+    );
+  }
+
+  Color _statusColor(String status) => status.toLowerCase() == 'published' ? AppColors.success : AppColors.textSecondary;
+
+  Widget _tableText(String value, {FontWeight? weight}) => Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 12, fontWeight: weight, color: AppColors.textPrimary, fontFeatures: const [FontFeature.tabularFigures()]),
+      );
+
+  @Deprecated('The reading list uses WebDataTable.')
+  Widget buildLegacyListItems(BuildContext context, List<ReadingEntity> readings) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
       itemCount: readings.length,

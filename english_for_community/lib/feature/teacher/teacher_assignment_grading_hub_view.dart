@@ -1,10 +1,10 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/feature/teacher/layout/teacher_skeleton.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/widget/app_corner_toast.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
-import 'package:english_for_community/core/theme/app_spacing.dart' show AppRadius, AppSpacing;
+import 'package:english_for_community/core/theme/app_spacing.dart' show AppSpacing;
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_bloc.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_event.dart';
 import 'package:english_for_community/feature/teacher/bloc/grading_hub/teacher_grading_hub_filter.dart';
@@ -147,6 +147,185 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
     );
   }
 
+  void _openAttempt(BuildContext context, Map<String, dynamic> attempt) {
+    final id = _attemptIdOf(attempt);
+    if (id.isEmpty) return;
+    context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
+  }
+
+  void _runAi(BuildContext context, Map<String, dynamic> attempt) {
+    final id = _attemptIdOf(attempt);
+    if (id.isEmpty) return;
+    context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
+    AppCornerToast.show(context, context.l10n.teacherExamRunAi);
+  }
+
+  Future<void> _releaseAttempt(BuildContext context, Map<String, dynamic> attempt) async {
+    final id = _attemptIdOf(attempt);
+    if (id.isEmpty) return;
+    final cfg = state.assignment?['config'];
+    final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;
+    final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
+    final detail = await TeacherReleaseResultsDialog.show(
+      context,
+      initialDetailLevel: initial,
+    );
+    if (detail == null || !context.mounted) return;
+    context.read<TeacherGradingHubBloc>().add(
+          TeacherGradingHubReleaseRequested(id, resultsDetailLevel: detail),
+        );
+    AppCornerToast.show(context, context.l10n.teacherExamReleaseResults);
+  }
+
+  Widget _studentCell(BuildContext context, Map<String, dynamic> attempt) {
+    final label = _studentLabel(attempt);
+    final email = _studentEmail(attempt);
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 15,
+          backgroundColor: AppColors.primaryTint,
+          child: Text(
+            TeacherGradingHubLabels.studentInitials(label),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primaryDark),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.s3),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: TeacherWebUi.webBody(context).copyWith(fontSize: 12, fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (email != null && email.isNotEmpty)
+                Text(email, style: TeacherWebUi.metaMuted, maxLines: 1, overflow: TextOverflow.ellipsis),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _attemptStatusCell(BuildContext context, Map<String, dynamic> attempt) {
+    final l10n = context.l10n;
+    final status = attempt['status'] as String? ?? '';
+    return TeacherGradingPill(
+      label: TeacherGradingHubLabels.attemptStatus(l10n, status),
+      color: _statusColor(status),
+    );
+  }
+
+  Widget _gradingStateCell(BuildContext context, Map<String, dynamic> attempt) {
+    final l10n = context.l10n;
+    final gs = attempt['gradingState'] as String? ?? '';
+    final released = attempt['resultsReleased'] == true;
+    return TeacherGradingPill(
+      label: TeacherGradingHubLabels.gradingState(l10n, gs),
+      color: _gradingColor(gs, released),
+    );
+  }
+
+  Widget _scoreCell(BuildContext context, Map<String, dynamic> attempt) {
+    final score = _scoreOf(attempt);
+    return Text(
+      score?.label ?? '—',
+      style: TeacherWebUi.webBody(context).copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        color: score?.partial == true ? AppColors.warning : AppColors.textPrimary,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _submittedCell(BuildContext context, Map<String, dynamic> attempt) {
+    final label = _formatDate(context, attempt['submittedAt']) ?? _formatDate(context, attempt['startedAt']) ?? '—';
+    return Text(
+      label,
+      style: TeacherWebUi.webCaption(context).copyWith(color: AppColors.textSecondary),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  Widget _attemptActionMenu(BuildContext context, Map<String, dynamic> attempt) {
+    final l10n = context.l10n;
+    final status = attempt['status'] as String? ?? '';
+    final gs = attempt['gradingState'] as String? ?? '';
+    final released = attempt['resultsReleased'] == true;
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_horiz, size: 18, color: AppColors.textSecondary),
+      padding: EdgeInsets.zero,
+      tooltip: '',
+      position: PopupMenuPosition.under,
+      onSelected: (value) {
+        if (value == 'open') _openAttempt(context, attempt);
+        if (value == 'ai') _runAi(context, attempt);
+        if (value == 'release') _releaseAttempt(context, attempt);
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(value: 'open', child: _gradingMenuAction(Icons.fact_check_outlined, l10n.teacherGradingHubOpenGrade)),
+        if (status == 'submitted')
+          PopupMenuItem(value: 'ai', child: _gradingMenuAction(Icons.smart_toy_outlined, l10n.teacherExamRunAi)),
+        if (status == 'submitted' && gs == 'finalized' && !released)
+          PopupMenuItem(value: 'release', child: _gradingMenuAction(Icons.send_outlined, l10n.teacherExamReleaseResults)),
+      ],
+    );
+  }
+
+  _AttemptScoreData? _scoreOf(Map<String, dynamic> attempt) {
+    final scores = attempt['scores'];
+    if (scores is! Map) return null;
+
+    num? awarded;
+    num? max;
+    var partial = false;
+    final examFmt = '${scores['examFormat'] ?? ''}';
+    final isIntegrated = examFmt == 'integrated_four_skills' || examFmt == 'skills_exam';
+    if (isIntegrated) {
+      awarded = scores['finalScore'] as num?;
+      max = 10;
+      partial = '${scores['finalStatus'] ?? ''}' == 'partial';
+    } else {
+      awarded = scores['totalAwarded'] as num?;
+      max = scores['totalMax'] as num?;
+    }
+    if (awarded == null || max == null) return null;
+    return _AttemptScoreData(
+      '${_formatScoreNumber(awarded)}/${_formatScoreNumber(max)}',
+      partial: partial,
+    );
+  }
+
+  String _formatScoreNumber(num value) => value.toStringAsFixed(value % 1 == 0 ? 0 : 1);
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'submitted':
+        return AppColors.success;
+      case 'in_progress':
+        return AppColors.primary;
+      case 'expired':
+        return AppColors.textMuted;
+      default:
+        return AppColors.warning;
+    }
+  }
+
+  Color _gradingColor(String gs, bool released) {
+    if (released) return AppColors.success;
+    if (gs == 'pending_manual' || gs == 'pending_ai') return AppColors.warning;
+    return AppColors.primary;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -253,53 +432,35 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
           else
             SliverPadding(
               padding: pad,
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final m = visibleAttempts[index];
-                    // RepaintBoundary isolates each card's paint layer so scrolling
-                    // past one card does not repaint the rest of the list.
-                    return RepaintBoundary(
-                      child: TeacherGradingAttemptCard(
-                        key: ValueKey(_attemptIdOf(m).isNotEmpty ? _attemptIdOf(m) : index),
-                        attempt: m,
-                        studentLabel: _studentLabel(m),
-                        studentEmail: _studentEmail(m),
-                        submittedLabel: _formatDate(context, m['submittedAt']),
-                        startedLabel: _formatDate(context, m['startedAt']),
-                        onOpen: () {
-                          final id = _attemptIdOf(m);
-                          if (id.isEmpty) return;
-                          context.push(TeacherExamAttemptGradePage.location(assignmentId, id));
-                        },
-                        onAi: () {
-                          final id = _attemptIdOf(m);
-                          if (id.isNotEmpty) {
-                            context.read<TeacherGradingHubBloc>().add(TeacherGradingHubRunAiRequested(id));
-                            AppCornerToast.show(context, l10n.teacherExamRunAi);
-                          }
-                        },
-                        onRelease: () async {
-                          final id = _attemptIdOf(m);
-                          if (id.isEmpty) return;
-                          final cfg = state.assignment?['config'];
-                          final cfgLevel = cfg is Map ? cfg['resultsDetailLevel'] as String? : null;
-                          final initial = cfgLevel == 'score_only' ? 'score_only' : 'full_detail';
-                          final detail = await TeacherReleaseResultsDialog.show(
-                            context,
-                            initialDetailLevel: initial,
-                          );
-                          if (detail == null || !context.mounted) return;
-                          context.read<TeacherGradingHubBloc>().add(
-                                TeacherGradingHubReleaseRequested(id, resultsDetailLevel: detail),
-                              );
-                          AppCornerToast.show(context, l10n.teacherExamReleaseResults);
-                        },
-                      ),
-                    );
+              sliver: SliverToBoxAdapter(
+                child: WebDataTable(
+                  columns: [
+                    WebTableColumn(label: l10n.teacherGradebookStudent, flex: 4),
+                    WebTableColumn(label: l10n.teacherClassColStatus, width: 140),
+                    WebTableColumn(label: l10n.teacherExamGradingTitle, width: 140),
+                    WebTableColumn(
+                      label: l10n.studentExamScore,
+                      width: 90,
+                      align: Alignment.centerRight,
+                    ),
+                    WebTableColumn(label: l10n.teacherClassColSubmitted, width: 160),
+                    const WebTableColumn(label: '', width: 56, align: Alignment.center),
+                  ],
+                  rowCount: visibleAttempts.length,
+                  decoration: TeacherWebUi.panelDecoration(),
+                  headStyle: TeacherWebUi.webTableHead(context),
+                  onRowTap: (row) => () => _openAttempt(context, visibleAttempts[row]),
+                  cellBuilder: (context, row, col) {
+                    final m = visibleAttempts[row];
+                    return switch (col) {
+                      0 => _studentCell(context, m),
+                      1 => _attemptStatusCell(context, m),
+                      2 => _gradingStateCell(context, m),
+                      3 => _scoreCell(context, m),
+                      4 => _submittedCell(context, m),
+                      _ => _attemptActionMenu(context, m),
+                    };
                   },
-                  childCount: visibleAttempts.length,
-                  addRepaintBoundaries: false,
                 ),
               ),
             ),
@@ -309,210 +470,21 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
   }
 }
 
-/// Student attempt row for teacher grading lists.
-class TeacherGradingAttemptCard extends StatelessWidget {
-  const TeacherGradingAttemptCard({
-    super.key,
-    required this.attempt,
-    required this.studentLabel,
-    this.studentEmail,
-    this.submittedLabel,
-    this.startedLabel,
-    required this.onOpen,
-    required this.onAi,
-    required this.onRelease,
-  });
+class _AttemptScoreData {
+  const _AttemptScoreData(this.label, {required this.partial});
 
-  final Map<String, dynamic> attempt;
-  final String studentLabel;
-  final String? studentEmail;
-  final String? submittedLabel;
-  final String? startedLabel;
-  final VoidCallback onOpen;
-  final VoidCallback onAi;
-  final VoidCallback onRelease;
+  final String label;
+  final bool partial;
+}
 
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    final status = attempt['status'] as String? ?? '';
-    final gs = attempt['gradingState'] as String? ?? '';
-    final released = attempt['resultsReleased'] == true;
-    final meta = attempt['meta'];
-    final completeness = meta is Map ? meta['submitCompleteness'] as String? : null;
-    final scores = attempt['scores'];
-    num? awarded;
-    num? max;
-    bool isIntegrated = false;
-    bool isPartialScore = false;
-    if (scores is Map) {
-      final examFmt = '${scores['examFormat'] ?? ''}';
-      isIntegrated = examFmt == 'integrated_four_skills' || examFmt == 'skills_exam';
-      if (isIntegrated) {
-        awarded = scores['finalScore'] as num?;
-        max = 10;
-        isPartialScore = '${scores['finalStatus'] ?? ''}' == 'partial';
-      } else {
-        awarded = scores['totalAwarded'] as num?;
-        max = scores['totalMax'] as num?;
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.s4),
-      child: AppCard(
-        variant: AppCardVariant.outline,
-        child: InkWell(
-          onTap: onOpen,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.s5),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: AppColors.primaryTint,
-                      child: Text(
-                        TeacherGradingHubLabels.studentInitials(studentLabel),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.primaryDark,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            studentLabel,
-                            style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
-                          ),
-                          if (studentEmail != null && studentEmail!.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              studentEmail!,
-                              style: TeacherWebUi.webCaption(context),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: [
-                              _statusPill(
-                                TeacherGradingHubLabels.attemptStatus(l10n, status),
-                                _statusColor(status),
-                              ),
-                              _statusPill(
-                                TeacherGradingHubLabels.gradingState(l10n, gs),
-                                _gradingColor(gs, released),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (awarded != null && max != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            awarded.toStringAsFixed(awarded % 1 == 0 ? 0 : 1),
-                            style: TeacherWebUi.webKpiValue(context).copyWith(
-                              color: isPartialScore ? AppColors.warning : AppColors.textPrimary,
-                            ),
-                          ),
-                          Text(
-                            '/ ${max.toStringAsFixed(max % 1 == 0 ? 0 : 1)}',
-                            style: TeacherWebUi.webCaption(context),
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-                if (startedLabel != null || submittedLabel != null) ...[
-                  const SizedBox(height: AppSpacing.s4),
-                  if (startedLabel != null)
-                    TeacherGradingMetaRow(icon: Icons.play_circle_outline, text: l10n.teacherGradingStartedAt(startedLabel!)),
-                  if (submittedLabel != null)
-                    TeacherGradingMetaRow(icon: Icons.check_circle_outline, text: l10n.teacherGradingHubSubmittedAt(submittedLabel!)),
-                ],
-                if (completeness == 'partial' || completeness == 'force_end' || (gs == 'finalized' && !released)) ...[
-                  const SizedBox(height: AppSpacing.s3),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      if (completeness == 'partial') _badge(l10n.teacherGradingHubPartialBadge, AppColors.warning),
-                      if (completeness == 'force_end') _badge(l10n.teacherGradingHubForceEndBadge, AppColors.textMuted),
-                      if (gs == 'finalized' && !released) _badge(l10n.teacherGradingHubNotReleased, AppColors.info),
-                    ],
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.s4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    FilledButton(
-                      onPressed: onOpen,
-                      style: TeacherWebUi.compactFilledStyle(context),
-                      child: Text(l10n.teacherGradingHubOpenGrade),
-                    ),
-                    if (status == 'submitted') ...[
-                      const SizedBox(width: 4),
-                      IconButton(
-                        tooltip: l10n.teacherExamRunAi,
-                        onPressed: onAi,
-                        style: TeacherWebUi.compactHeaderIconStyle(),
-                        icon: const Icon(Icons.smart_toy_outlined, size: 18),
-                      ),
-                      if (gs == 'finalized' && !released)
-                        IconButton(
-                          tooltip: l10n.teacherExamReleaseResults,
-                          onPressed: onRelease,
-                          style: TeacherWebUi.compactHeaderIconStyle(),
-                          icon: const Icon(Icons.send_outlined, size: 18, color: AppColors.primary),
-                        ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _statusColor(String status) {
-    switch (status) {
-      case 'submitted':
-        return AppColors.success;
-      case 'in_progress':
-        return AppColors.primary;
-      case 'expired':
-        return AppColors.textMuted;
-      default:
-        return AppColors.warning;
-    }
-  }
-
-  Color _gradingColor(String gs, bool released) {
-    if (released) return AppColors.success;
-    if (gs == 'pending_manual' || gs == 'pending_ai') return AppColors.warning;
-    return AppColors.primary;
-  }
-
-  Widget _statusPill(String label, Color color) => TeacherGradingPill(label: label, color: color);
-  Widget _badge(String label, Color color) => TeacherGradingPill(label: label, color: color, alpha: 0.12);
+Widget _gradingMenuAction(IconData icon, String label, {bool danger = false}) {
+  final color = danger ? AppColors.danger : AppColors.textPrimary;
+  return Row(
+    children: [
+      Icon(icon, size: 16, color: danger ? AppColors.danger : AppColors.textSecondary),
+      const SizedBox(width: AppSpacing.s3),
+      Text(label, style: TextStyle(color: color)),
+    ],
+  );
 }
 

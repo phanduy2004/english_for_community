@@ -2,11 +2,11 @@ import 'package:english_for_community/core/theme/admin_status_palette.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
+import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -295,11 +295,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                                     return DataColumn(
                                         label: Text(
                                           hint.isEmpty ? h : '$h\n$hint',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: hint.isEmpty ? 12 : 11,
-                                            color: AppColors.textPrimary,
-                                          ),
+                                          style: AdminWebUi.webTableHead(context),
                                         ),
                                       );
                                   })
@@ -323,11 +319,12 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                     // --- FOOTER ---
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                      child: _PaginationBar(
+                      child: AdminPaginationBar(
                         page: page,
                         totalPages: totalPages,
                         totalRows: dataRows.length,
                         rowsPerPage: _csvRowsPerPage,
+                        rowsPerPageOptions: const [5, 8, 10, 15, 20, 50],
                         onRowsPerPageChanged: (value) {
                           setState(() {
                             _csvRowsPerPage = value;
@@ -707,12 +704,12 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                               dataRowMinHeight: 36,
                               dataRowMaxHeight: 46,
                               headingRowColor: WidgetStateProperty.all(AppColors.surface),
-                              columns: const [
-                                DataColumn(label: Text('Title', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                                DataColumn(label: Text('Type', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                                DataColumn(label: Text('Priority', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                                DataColumn(label: Text('Age (h)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
-                                DataColumn(label: Text('SLA', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600))),
+                              columns: [
+                                DataColumn(label: Text('Title', style: AdminWebUi.webTableHead(context))),
+                                DataColumn(label: Text('Type', style: AdminWebUi.webTableHead(context))),
+                                DataColumn(label: Text('Priority', style: AdminWebUi.webTableHead(context))),
+                                DataColumn(label: Text('Age (h)', style: AdminWebUi.webTableHead(context))),
+                                DataColumn(label: Text('SLA', style: AdminWebUi.webTableHead(context))),
                               ],
                               rows: queuePageRows.map((item) {
                                 final triage = Map<String, dynamic>.from(item['triage'] as Map? ?? const {});
@@ -753,11 +750,12 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
                           const Divider(height: 1, thickness: 1),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: _PaginationBar(
+                            child: AdminPaginationBar(
                               page: queuePage,
                               totalPages: queueTotalPages,
                               totalRows: filteredQueue.length,
                               rowsPerPage: _queueRowsPerPage,
+                              rowsPerPageOptions: const [5, 8, 10, 15, 20, 50],
                               onRowsPerPageChanged: (v) => setState(() {
                                 _queueRowsPerPage = v;
                                 _queuePage = 1;
@@ -1090,71 +1088,6 @@ class _SectionCard extends StatelessWidget {
           child,
         ],
       ),
-    );
-  }
-}
-
-class _PaginationBar extends StatelessWidget {
-  const _PaginationBar({
-    required this.page,
-    required this.totalPages,
-    required this.totalRows,
-    required this.rowsPerPage,
-    required this.onRowsPerPageChanged,
-    required this.onPageChanged,
-  });
-
-  final int page;
-  final int totalPages;
-  final int totalRows;
-  final int rowsPerPage;
-  final ValueChanged<int> onRowsPerPageChanged;
-  final ValueChanged<int> onPageChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text('Total: $totalRows rows', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Rows per page:', style: TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(width: 8),
-            SizedBox(
-              height: 28,
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<int>(
-                  value: rowsPerPage,
-                  style: const TextStyle(fontSize: 12, color: Colors.black87),
-                  icon: const Icon(Icons.arrow_drop_down, size: 16),
-                  items: const [5, 8, 10, 15, 20, 50].map((e) => DropdownMenuItem<int>(value: e, child: Text('$e'))).toList(),
-                  onChanged: (v) { if (v != null) onRowsPerPageChanged(v); },
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            IconButton(
-              splashRadius: 16,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: Icon(Icons.chevron_left, color: page > 1 ? Colors.black87 : Colors.grey),
-              onPressed: page > 1 ? () => onPageChanged(page - 1) : null,
-            ),
-            const SizedBox(width: 12),
-            Text('Page $page of $totalPages', style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 12),
-            IconButton(
-              splashRadius: 16,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: Icon(Icons.chevron_right, color: page < totalPages ? Colors.black87 : Colors.grey),
-              onPressed: page < totalPages ? () => onPageChanged(page + 1) : null,
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

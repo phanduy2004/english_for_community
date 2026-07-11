@@ -8,6 +8,8 @@ import '../model/failure.dart';
 abstract class AdminRepository {
   Future<Either<Failure, AdminStatsEntity>> getDashboardStats({String range});
 
+  Future<Either<Failure, Map<String, dynamic>>> getUserAnalytics({String range});
+
   Future<Either<Failure, PaginatedResponse<UserEntity>>> getAllUsers(
       {int page = 1,
       int limit = 20,

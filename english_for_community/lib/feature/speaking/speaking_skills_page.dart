@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:english_for_community/core/entity/speaking/sentence_entity.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_motion.dart'
     as theme_motion;
 import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
@@ -17,6 +18,7 @@ import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/speaking/widget/word_details_dialog.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/foundation.dart';
@@ -685,7 +687,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
                       textStyle: examCompact || compact
                           ? ExamSystemUi.embeddedButtonLabelStyle
                           : const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 16),
+                              fontWeight: FontWeight.w600, fontSize: AppTypography.mobileH1),
                     ),
                     onPressed: (_isRecording || _isSubmitting)
                         ? null
@@ -745,11 +747,12 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
   }) {
     final compact = widget.embedded;
     final examCompact = _examCompact;
-    final primaryColor = AppColors.primary;
     final textMain = AppColors.textPrimary;
     final textMuted = AppColors.textMuted;
-    final recordRed = AppColors.chartTrend;
-    final micSize = examCompact ? 48.0 : (compact ? 60.0 : 72.0);
+    final recordRed = AppColors.danger;
+    // Idle = màu kỹ năng Speaking (emerald); đang ghi = danger. KHÔNG glow.
+    final micColor = isRecording ? recordRed : AppSkillColors.speaking.color;
+    final micSize = examCompact ? 48.0 : (compact ? 56.0 : 64.0);
     final playSize = examCompact ? 40.0 : 52.0;
 
     final micCore = AnimatedContainer(
@@ -758,15 +761,14 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
       width: micSize,
       height: micSize,
       decoration: BoxDecoration(
-        color: isRecording ? recordRed : primaryColor,
+        color: micColor,
         shape: BoxShape.circle,
-        boxShadow: [
+        // Nút ghi âm nổi (floating) — bóng nhẹ trung tính, KHÔNG glow màu.
+        boxShadow: const [
           BoxShadow(
-            color: (isRecording ? recordRed : primaryColor)
-                .withValues(alpha: 0.35),
-            blurRadius: isRecording ? 20 : 14,
-            spreadRadius: isRecording ? 1 : 0,
-            offset: const Offset(0, 6),
+            color: AppColors.shadowCard,
+            blurRadius: 8,
+            offset: Offset(0, 3),
           ),
         ],
       ),
@@ -778,7 +780,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
           : Icon(
               isRecording ? Icons.stop_rounded : Icons.mic_rounded,
               color: Colors.white,
-              size: examCompact ? 26 : 34,
+              size: examCompact ? 22 : 28,
             ),
     );
 
@@ -818,7 +820,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
                   sentence.phoneticScript,
                   style: TextStyle(
                       color: textMuted,
-                      fontSize: 11,
+                      fontSize: AppTypography.mobileCaption,
                       fontFamily: 'NotoSans',
                       height: 1.25),
                   textAlign: TextAlign.center,
@@ -870,7 +872,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
                         const SizedBox(height: 4),
                         Text(t.sampleListen,
                             style: TextStyle(
-                                fontSize: 10,
+                                fontSize: AppTypography.mobileCaption,
                                 fontWeight: FontWeight.w600,
                                 color: textMuted)),
                       ],
@@ -884,7 +886,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
                         Text(
                           t.yourTurn,
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: AppTypography.mobileCaption,
                             fontWeight: FontWeight.w600,
                             color: isRecording ? recordRed : textMuted,
                           ),
@@ -903,7 +905,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
                         : t.tapMicToRecord,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 11,
+                  fontSize: AppTypography.mobileCaption,
                   height: 1.3,
                   color: isRecording ? recordRed : textMuted,
                   fontWeight: FontWeight.w500,
@@ -921,7 +923,7 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
               Text(
                 transcript.isEmpty ? t.transcriptPlaceholder : transcript,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: AppTypography.mobileBody,
                   color: transcript.isEmpty ? textMuted : textMain,
                   height: 1.35,
                   fontWeight: FontWeight.w400,
@@ -934,204 +936,169 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
     }
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(compact ? 12 : 20),
+      padding: EdgeInsets.all(compact ? AppSpacing.s3 : AppSpacing.s5),
       child: Column(
         children: [
-          _ShadcnCard(
+          // 1) Câu cần đọc to
+          AppCard(
+            variant: AppCardVariant.outline,
             child: Column(
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    const Icon(Icons.person_outline_rounded,
+                        size: 16, color: AppColors.textMuted),
+                    const SizedBox(width: AppSpacing.s2),
+                    Expanded(
+                      child: Text(sentence.speaker,
+                          style: StudentMobileUi.caption(context)),
+                    ),
+                    _LevelPill(
+                      label: _localizedLevelLabel(t, _set?.level ?? 'Beginner'),
+                      color: AppSkillColors.speaking.color,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.s5),
+                _buildTappableScript(context, sentence.script),
+                if (sentence.phoneticScript.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.s3),
+                  Text(
+                    sentence.phoneticScript,
+                    style: StudentMobileUi.body(context).copyWith(
+                        color: AppColors.textMuted, fontFamily: 'NotoSans'),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.s4),
+
+          // 2) Điều khiển luyện tập — nghe mẫu + ghi âm (§12 audio)
+          AppCard(
+            variant: AppCardVariant.outline,
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.person_outline, size: 16, color: textMuted),
-                        const SizedBox(width: 4),
+                        Material(
+                          color: AppColors.surfaceCard,
+                          shape: const CircleBorder(),
+                          child: InkWell(
+                            onTap: (isRecording || isSubmitting)
+                                ? null
+                                : _togglePlay,
+                            customBorder: const CircleBorder(),
+                            child: Container(
+                              width: playSize,
+                              height: playSize,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.outline),
+                              ),
+                              child: Icon(
+                                _isPlaying
+                                    ? Icons.stop_rounded
+                                    : Icons.volume_up_rounded,
+                                color: AppColors.textPrimary,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s2),
+                        Text(t.sampleListen,
+                            style: StudentMobileUi.caption(context)
+                                .copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        micButton,
+                        const SizedBox(height: AppSpacing.s2),
                         Text(
-                          sentence.speaker,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: textMuted,
-                              fontWeight: FontWeight.w500),
+                          t.yourTurn,
+                          style: StudentMobileUi.caption(context).copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isRecording
+                                ? recordRed
+                                : AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
-                    _LevelPill(
-                        label:
-                            _localizedLevelLabel(t, _set?.level ?? 'Beginner'),
-                        color: primaryColor),
                   ],
                 ),
-                const SizedBox(height: 20),
-                _buildTappableScript(context, sentence.script),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSpacing.s4),
                 Text(
-                  sentence.phoneticScript,
-                  style: TextStyle(
-                      color: textMuted, fontSize: 14, fontFamily: 'NotoSans'),
+                  isRecording
+                      ? t.listeningForSpeech
+                      : isSubmitting
+                          ? t.submittingAnalysis
+                          : t.tapMicToRecord,
                   textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(12, 20, 12, 16),
-                  decoration: BoxDecoration(
-                    color: AppColors.outlineMuted,
-                    borderRadius: BorderRadius.circular(AppRadius.sheet),
-                    border: Border.all(color: AppColors.outline),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            children: [
-                              Material(
-                                color: AppColors.surfaceCard,
-                                shape: const CircleBorder(),
-                                child: InkWell(
-                                  onTap: (isRecording || isSubmitting)
-                                      ? null
-                                      : _togglePlay,
-                                  customBorder: const CircleBorder(),
-                                  child: Container(
-                                    width: playSize,
-                                    height: playSize,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border:
-                                          Border.all(color: AppColors.outline),
-                                    ),
-                                    child: Icon(
-                                      _isPlaying
-                                          ? Icons.stop_rounded
-                                          : Icons.volume_up_rounded,
-                                      color: textMain,
-                                      size: 24,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                t.sampleListen,
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: textMuted),
-                              ),
-                              Text(
-                                t.sampleListenSub,
-                                style: TextStyle(
-                                    fontSize: 11,
-                                    color: textMuted.withValues(alpha: 0.85)),
-                              ),
-                            ],
-                          ),
-                          Column(
-                            children: [
-                              micButton,
-                              const SizedBox(height: 8),
-                              Text(
-                                t.yourTurn,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: isRecording ? recordRed : textMuted,
-                                ),
-                              ),
-                              Text(
-                                t.yourTurnSub,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: (isRecording ? recordRed : textMuted)
-                                      .withValues(alpha: 0.85),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        isRecording
-                            ? t.listeningForSpeech
-                            : isSubmitting
-                                ? t.submittingAnalysis
-                                : t.tapMicToRecord,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: isRecording ? recordRed : textMuted,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  style: StudentMobileUi.body(context).copyWith(
+                    color: isRecording ? recordRed : AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          _ShadcnCard(
-            child: SizedBox(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    t.yourSpeechSection,
-                    style: compact
-                        ? ExamSystemUi.embeddedCaptionStyle.copyWith(
-                            fontWeight: FontWeight.w500, letterSpacing: 0.4)
-                        : TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: textMuted,
-                            letterSpacing: 0.6),
+          const SizedBox(height: AppSpacing.s4),
+          // 3) Bài nói của bạn + điểm
+          AppCard(
+            variant: AppCardVariant.outline,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  t.yourSpeechSection,
+                  style: StudentMobileUi.caption(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.6,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    transcript.isEmpty ? t.transcriptPlaceholder : transcript,
-                    style: TextStyle(
-                      fontSize: compact ? 14 : 17,
-                      color: transcript.isEmpty ? textMuted : textMain,
-                      height: 1.45,
-                      fontWeight: FontWeight.w400,
-                    ),
+                ),
+                const SizedBox(height: AppSpacing.s2),
+                Text(
+                  transcript.isEmpty ? t.transcriptPlaceholder : transcript,
+                  style: StudentMobileUi.bodyLg(context).copyWith(
+                    color: transcript.isEmpty
+                        ? AppColors.textMuted
+                        : AppColors.textPrimary,
+                    height: 1.45,
                   ),
-                  if (score != null) ...[
-                    const SizedBox(height: 16),
-                    Divider(height: 1, color: AppColors.outlineMuted),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          t.accuracyLabel,
-                          style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: textMain),
-                        ),
-                        _ScorePill(
-                          scoreText: '$score%',
-                          bg: (score) >= 80
-                              ? AppColors.successBg
-                              : AppColors.warningBg,
-                          fg: (score) >= 80
-                              ? AppColors.success
-                              : AppColors.warning,
-                        )
-                      ],
-                    )
-                  ]
+                ),
+                if (score != null) ...[
+                  const SizedBox(height: AppSpacing.s4),
+                  const Divider(height: 1, color: AppColors.outlineMuted),
+                  const SizedBox(height: AppSpacing.s4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(t.accuracyLabel,
+                          style: StudentMobileUi.cardTitle(context)),
+                      _ScorePill(
+                        scoreText: '$score%',
+                        bg: score >= 80
+                            ? AppColors.successBg
+                            : AppColors.warningBg,
+                        fg: score >= 80
+                            ? AppColors.success
+                            : AppColors.warning,
+                      ),
+                    ],
+                  ),
                 ],
-              ),
+              ],
             ),
           ),
         ],
@@ -1145,12 +1112,12 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
     final words = script.split(' ');
     final List<Widget> wordWidgets = [];
     final textStyle = TextStyle(
-      fontSize: examCompact ? 15 : (compact ? 17 : 22),
-      height: 1.35,
+      fontSize: examCompact
+          ? AppTypography.mobileBodyLg
+          : (compact ? AppTypography.mobileH1 : AppTypography.mobileDisplay),
+      height: 1.4,
       fontWeight: FontWeight.w500,
-      color: compact
-          ? AppColors.textPrimary
-          : Theme.of(context).colorScheme.onSurface,
+      color: AppColors.textPrimary,
     );
 
     for (final word in words) {
@@ -1182,22 +1149,15 @@ class _ShadcnCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final double radius;
-  const _ShadcnCard({required this.child, this.padding, this.radius = 16});
+  const _ShadcnCard({required this.child, this.padding, this.radius = 12});
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: padding ?? const EdgeInsets.all(24),
+      padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(radius),
         border: Border.all(color: AppColors.outline),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: child,
     );
@@ -1219,7 +1179,7 @@ class _LevelPill extends StatelessWidget {
       ),
       child: Text(label,
           style: TextStyle(
-              fontSize: 10, color: color, fontWeight: FontWeight.w700)),
+              fontSize: AppTypography.mobileCaption, color: color, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -1238,7 +1198,7 @@ class _ScorePill extends StatelessWidget {
           color: bg, borderRadius: BorderRadius.circular(AppRadius.input)),
       child: Text(scoreText,
           style:
-              TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 13)),
+              TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: AppTypography.mobileBody)),
     );
   }
 }

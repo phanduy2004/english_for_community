@@ -569,8 +569,67 @@ const getActivityDetail = async (id, type, subType) => {
   return await historyService.getActivityDetail(id, type, subType);
 };
 
+// Platform user analytics — KPIs + role breakdown + new-user growth over the range.
+const getUserAnalytics = async (range) => {
+  const { startDate, endDate, previousStartDate, previousEndDate, dateFormat } =
+    getVnDateRange(range);
+  const currentQuery = { $gte: startDate, $lte: endDate };
+  const prevQuery = { $gte: previousStartDate, $lte: previousEndDate };
+
+  const [
+    totalUsers,
+    students,
+    teachers,
+    admins,
+    activeUsers,
+    newUsers,
+    prevNewUsers,
+    reportsPending,
+    newUsersAgg,
+  ] = await Promise.all([
+    User.countDocuments({}),
+    User.countDocuments({ role: 'user' }),
+    User.countDocuments({ role: 'teacher' }),
+    User.countDocuments({ role: 'admin' }),
+    User.countDocuments({ lastActivityDate: currentQuery }),
+    User.countDocuments({ createdAt: currentQuery }),
+    User.countDocuments({ createdAt: prevQuery }),
+    Report.countDocuments({ status: 'pending' }),
+    User.aggregate([
+      { $match: { createdAt: currentQuery } },
+      {
+        $group: {
+          _id: { $dateToString: { format: dateFormat, date: '$createdAt', timezone: '+07:00' } },
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+  ]);
+
+  const labels = generateChartLabels(range, startDate, endDate);
+  const byLabel = Object.fromEntries(newUsersAgg.map((r) => [r._id, r.count]));
+  const newUsersByDay = labels.map((label) => ({ date: label, count: byLabel[label] ?? 0 }));
+
+  return {
+    range,
+    kpis: {
+      totalUsers,
+      students,
+      teachers,
+      admins,
+      activeUsers,
+      newUsers,
+      reportsPending,
+    },
+    trend: { newUsers: calculateTrend(newUsers, prevNewUsers) },
+    usersByRole: { student: students, teacher: teachers, admin: admins },
+    newUsersByDay,
+  };
+};
+
 export const adminService = {
   getDashboardStats,
+  getUserAnalytics,
   getAllUsers,
   getReports,
   updateReportStatus,

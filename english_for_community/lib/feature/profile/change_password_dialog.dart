@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import '../../feature/auth/bloc/user_bloc.dart';
 import '../../feature/auth/bloc/user_event.dart';
 import '../../feature/auth/bloc/user_state.dart';
@@ -108,7 +109,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                   Text(
                     t.changePasswordTitle,
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: AppTypography.mobileDisplay,
                       fontWeight: FontWeight.w700,
                       color: textMain,
                       letterSpacing: -0.5,
@@ -119,7 +120,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
               const SizedBox(height: 8),
               Text(
                 t.changePasswordSubtitle,
-                style: const TextStyle(fontSize: 13, color: textMuted),
+                style: const TextStyle(fontSize: AppTypography.mobileBody, color: textMuted),
               ),
               const SizedBox(height: 24),
 
@@ -213,7 +214,7 @@ class _Label extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(text,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textPrimary));
+        style: const TextStyle(fontSize: AppTypography.mobileBody, fontWeight: FontWeight.w500, color: AppColors.textPrimary));
   }
 }
 
@@ -245,10 +246,10 @@ class _ShadcnInput extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
-        style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        style: const TextStyle(fontSize: AppTypography.mobileH2, color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: AppTypography.mobileBody),
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           border: OutlineInputBorder(

@@ -179,6 +179,7 @@ abstract final class AppMotion {
 | 2026-06-26 | Messages hub đồng bộ chrome với Progress/Profile — header → `StudentMobileUi.appBar(showBack:false)` (căn giữa, h2/14px); grouped card phẳng (1 hairline, radius 10); palette avatar trung tính-tươi (`messages-hub`, `23` §3.3) | _(pending commit)_ |
 | 2026-06-28 | Student classroom detail P1–3 — unread badge, pinned/live banner, graded segment, member search, cover, leave API, screen brief (`student-classroom-detail.md`) | _(pending commit)_ |
 | 2026-07-06 | Student Home weekly activity card — bỏ viền trái amber, giữ card outline trung tính theo `home` brief | _(pending commit)_ |
+| 2026-07-11 | Web list-to-table P0–P3 — shared `WebDataTable`; teacher T1–T3; admin A1–A9; Ops Center shared pagination | _(pending commit)_ |
 
 ## 5.1 Teacher dialogs (`14-teacher-dialogs.md`)
 

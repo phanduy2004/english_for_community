@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -39,7 +40,7 @@ class ExamSessionStatusBanner extends StatelessWidget {
               style: ExamSystemUi.captionSecondary.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: AppTypography.mobileH3,
               ),
             ),
           ),

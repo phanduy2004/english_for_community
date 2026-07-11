@@ -5,6 +5,7 @@ import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
@@ -389,7 +390,7 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                                         backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                                         child: Text(
                                           letter,
-                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
+                                          style: const TextStyle(fontSize: AppTypography.mobileH3, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
                                         ),
                                       ),
                                       const SizedBox(width: 10),

@@ -4,6 +4,7 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
@@ -88,7 +89,7 @@ class _GrammarMcqOption extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: accent,
-                      fontSize: 13,
+                      fontSize: AppTypography.mobileH3,
                       height: 1,
                     ),
                   ),
@@ -176,7 +177,7 @@ class _GrammarBlankField extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: accent,
-                  fontSize: 12,
+                  fontSize: AppTypography.mobileCaption,
                   height: 1,
                 ),
               ),
@@ -233,7 +234,7 @@ Widget _grammarAccentAnswerChip({
           ),
           child: Text(
             label,
-            style: TextStyle(fontWeight: FontWeight.w700, color: accent, fontSize: 12, height: 1),
+            style: TextStyle(fontWeight: FontWeight.w700, color: accent, fontSize: AppTypography.mobileCaption, height: 1),
           ),
         ),
         Padding(
@@ -684,7 +685,7 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('Blank $blankId', style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+        Text('Blank $blankId', style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileCaption)),
         const SizedBox(height: 4),
         _labeledAnswerBlock(
           context,
@@ -725,7 +726,7 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (label.isNotEmpty)
-            Text(label, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+            Text(label, style: ExamSystemUi.captionMuted.copyWith(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileCaption)),
           if (label.isNotEmpty) const SizedBox(height: 4),
           Text(
             text,
@@ -753,7 +754,7 @@ class GrammarObjectiveGradingReview extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$number.', style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: 13)),
+          Text('$number.', style: TextStyle(fontWeight: FontWeight.w700, color: color, fontSize: AppTypography.mobileH3)),
           const SizedBox(width: 8),
           Expanded(child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.4))),
           if (!showAsCorrect)
@@ -948,7 +949,7 @@ class IntegratedExamGrammarQuestionCard extends StatelessWidget {
             children: [
                   Text(
                     '$idx.',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                    style: const TextStyle(fontSize: AppTypography.mobileH3, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -959,7 +960,7 @@ class IntegratedExamGrammarQuestionCard extends StatelessWidget {
                         if (prompt.isNotEmpty) const SizedBox(height: 4),
                         Text(
                           grammarItemKindLabel(context, kind),
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          style: const TextStyle(fontSize: AppTypography.mobileCaption, color: AppColors.textSecondary),
                         ),
                   ],
                 ),
@@ -1456,7 +1457,7 @@ class _MatchingBodyState extends State<_MatchingBody> {
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
                 l10n.integratedExamMatchHint,
-                style: ExamSystemUi.captionMuted.copyWith(fontSize: 12),
+                style: ExamSystemUi.captionMuted.copyWith(fontSize: AppTypography.mobileCaption),
               ),
             ),
           Stack(
@@ -1842,7 +1843,7 @@ class _GrammarReorderTile extends StatelessWidget {
             ),
             child: Text(
               '${displayIndex + 1}',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: accent, height: 1),
+              style: TextStyle(fontSize: AppTypography.mobileCaption, fontWeight: FontWeight.w700, color: accent, height: 1),
             ),
           );
 

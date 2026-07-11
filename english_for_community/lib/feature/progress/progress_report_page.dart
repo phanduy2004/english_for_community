@@ -1,9 +1,12 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/repository/user_repository.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/motion/celebrate_burst.dart';
+import 'package:english_for_community/core/ui/motion/streak_flame.dart';
+import 'package:english_for_community/core/ui/motion/app_count_up.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/auth/bloc/user_state.dart';
@@ -94,22 +97,17 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     }
   }
 
-  int _daysInMonth(DateTime date) {
-    final nextMonth = DateTime(date.year, date.month + 1, 1);
-    final lastDay = nextMonth.subtract(const Duration(days: 1));
-    return lastDay.day;
-  }
-
   int _calculateTotalGoalMinutes(_Range range, int dailyGoal) {
+    // Mẫu số = mục tiêu ngày × SỐ NGÀY ĐÃ TRÔI trong kỳ (khớp phút tích luỹ tới hôm nay),
+    // tránh % hoàn thành bị hiểu thấp đầu tuần/tháng. Tuần bắt đầu Thứ 2 (khớp backend).
+    final now = DateTime.now();
     switch (range) {
       case _Range.day:
         return dailyGoal;
       case _Range.week:
-        return dailyGoal * 7;
+        return dailyGoal * now.weekday; // Mon=1 … Sun=7
       case _Range.month:
-        final today = DateTime.now();
-        final days = _daysInMonth(today);
-        return dailyGoal * days;
+        return dailyGoal * now.day;
     }
   }
 
@@ -317,6 +315,15 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (user != null) ...[
+              _ProgressHero(
+                level: user.level ?? 1,
+                points: user.totalPoints ?? 0,
+                streak: user.currentStreak ?? 0,
+                t: t,
+              ),
+              const SizedBox(height: AppSpacing.s4),
+            ],
             StudentMobileUi.filterRow(
               labels: rangeLabels,
               selectedIndex: _range.index,
@@ -469,7 +476,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                   icon: Icons.record_voice_over_rounded,
                   value: '${stats.speakingAccuracy}%',
                   label: t.progressStatSpeaking,
-                  subtitle: t.progressStatFluencyInline(stats.speakingFluency),
                   skill: SkillType.speaking,
                   onTap: () => _showStatDetailDialog(progressBloc, 'speaking', _range),
                 ),
@@ -570,7 +576,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
             child: const Center(
               child: Text(
                 '...',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textMuted),
+                style: TextStyle(fontSize: AppTypography.mobileDisplay, fontWeight: FontWeight.bold, color: AppColors.textMuted),
               ),
             ),
           );
@@ -675,11 +681,164 @@ class _LeaderRow extends StatelessWidget {
   }
 }
 
+/// Hero tôn vinh thành tích — mở đầu màn Progress: huy hiệu Level + XP + streak lửa.
+class _ProgressHero extends StatelessWidget {
+  const _ProgressHero({
+    required this.level,
+    required this.points,
+    required this.streak,
+    required this.t,
+  });
+
+  final int level;
+  final int points;
+  final int streak;
+  final AppLocalizations t;
+
+  static const TextStyle _pillStyle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+    height: 1,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2A2523), Color(0xFF0A0A0A)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.20),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -34,
+              top: -34,
+              child: IgnorePointer(
+                child: Container(
+                  width: 160,
+                  height: 160,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppColors.accent.withValues(alpha: 0.28),
+                        AppColors.accent.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.s5),
+              child: Row(
+                children: [
+                  Container(
+                    width: 66,
+                    height: 66,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.accent.withValues(alpha: 0.16),
+                      border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.workspace_premium_rounded,
+                            color: AppColors.accent, size: 17),
+                        AppCountUpText(
+                          value: level,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 20,
+                            height: 1.05,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.s5),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t.statLevelLabel.toUpperCase(),
+                          style: StudentMobileUi.caption(context).copyWith(
+                            color: Colors.white.withValues(alpha: 0.62),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.s3),
+                        Wrap(
+                          spacing: AppSpacing.s2,
+                          runSpacing: AppSpacing.s2,
+                          children: [
+                            _pill(
+                              leading: const Icon(Icons.star_rounded,
+                                  size: 15, color: AppColors.accent),
+                              value: AppCountUpText(
+                                  value: points, style: _pillStyle),
+                            ),
+                            _pill(
+                              leading: StreakFlame(streak: streak, size: 16),
+                              value: AppCountUpText(
+                                  value: streak, style: _pillStyle),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pill({required Widget leading, required Widget value}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [leading, const SizedBox(width: 5), value],
+      ),
+    );
+  }
+}
+
 class _StatBox extends StatelessWidget {
   final IconData icon;
   final String value;
   final String label;
-  final String? subtitle;
   final VoidCallback? onTap;
   final SkillType? skill;
 
@@ -687,7 +846,6 @@ class _StatBox extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
-    this.subtitle,
     this.onTap,
     this.skill,
   });
@@ -712,17 +870,6 @@ class _StatBox extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subtitle!,
-              style: StudentMobileUi.caption(context)
-                  .copyWith(color: AppColors.textMuted, fontSize: 10),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
         ],
       ),
     );

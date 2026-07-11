@@ -1,6 +1,7 @@
 import 'package:english_for_community/core/entity/classroom_chat_entity.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/feature/classroom_chat/widgets/classroom_chat_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -199,7 +200,7 @@ class _QuoteContent extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: AppTypography.mobileCaption,
             fontWeight: FontWeight.w700,
             color: nameColor,
           ),
@@ -210,7 +211,7 @@ class _QuoteContent extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: AppTypography.mobileCaption,
             height: 1.35,
             fontWeight: FontWeight.w500,
             color: textColor,

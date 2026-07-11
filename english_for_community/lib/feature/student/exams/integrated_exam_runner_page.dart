@@ -8,10 +8,12 @@ import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
+import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_skill_colors.dart';
 import 'package:english_for_community/core/ui/e4c_scroll_behavior.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
+import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_panel.dart';
@@ -881,7 +883,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
                 const SizedBox(width: 8),
                 Text(
                   l10n.integratedExamProgress(doneCount, total),
-                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: 11),
+                  style: ExamSystemUi.captionSecondary.copyWith(fontSize: AppTypography.mobileCaption),
                 ),
               ],
             ),
@@ -1475,9 +1477,29 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
       (f) => AppFeedback.error(context, f.message, blocking: true),
       (_) {
         AppFeedback.success(context, context.l10n.studentExamSubmitted);
-        _load();
+        _load().then((_) => _celebrateSubmit());
       },
     );
+  }
+
+  /// Tung hoa sau khi nộp bài: festive khi đã xem được điểm tổng đạt ngưỡng,
+  /// còn lại (chưa chấm / chưa mở điểm) chỉ reward nhẹ chúc mừng đã hoàn thành.
+  void _celebrateSubmit() {
+    if (!mounted) return;
+    if (_canViewScores() && _attempt?['scores'] is Map) {
+      final scores = _attempt!['scores'] as Map;
+      final finalScore = num.tryParse('${scores['finalScore'] ?? ''}');
+      final isPartial = '${scores['finalStatus'] ?? ''}' == 'partial';
+      if (finalScore != null && !isPartial) {
+        CompletionCelebration.fireForScore(
+          context,
+          score: finalScore.toDouble(),
+          maxScore: 10,
+        );
+        return;
+      }
+    }
+    CompletionCelebration.fire(context, level: CelebrationLevel.gentle);
   }
 
   bool _blocksExitConfirm() {
@@ -1973,7 +1995,7 @@ class _SubmittedMergedListeningTileState extends State<_SubmittedMergedListening
       children: [
         Icon(icon, size: 14, color: AppColors.textSecondary),
         const SizedBox(width: 6),
-        Text(label, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600, fontSize: 11)),
+        Text(label, style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600, fontSize: AppTypography.mobileCaption)),
       ],
     );
   }
