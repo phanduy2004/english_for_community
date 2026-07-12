@@ -93,13 +93,15 @@ class LocalNotificationService {
 
     const AndroidNotificationDetails androidPlatformChannelSpecifics =
     AndroidNotificationDetails(
-      'social_channel',
-      'Social Interactions',
-      channelDescription: 'Notifications for replies, exams, and classroom updates',
+      // Dùng CHUNG channel với push nền (e4c_reminders) — tạo sẵn ở init().
+      'e4c_reminders',
+      'Nhắc học tập & thông báo',
+      channelDescription:
+          'Nhắc học hằng ngày, ôn từ, kết quả bài thi & thông báo lớp học',
       importance: Importance.max,
       priority: Priority.high,
-      color: Color(0xFF2E7D32),
-      icon: '@mipmap/ic_launcher',
+      color: Color(0xFF213D65), // brand navy — khớp @color/notification_accent
+      icon: '@drawable/ic_stat_e4c', // small icon đơn sắc (không dùng launcher)
     );
 
     const DarwinNotificationDetails iosPlatformChannelSpecifics =

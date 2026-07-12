@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#213D65</color>
+    <!-- Màu tô icon nhỏ + tên app trên thông báo (brand navy E4C) -->
+    <color name="notification_accent">#213D65</color>
 </resources>
