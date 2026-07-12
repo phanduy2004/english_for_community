@@ -51,6 +51,9 @@ class SpeakingSkillsPage extends StatelessWidget {
   final VoidCallback? onPartComplete;
   final void Function(int sentenceIndex, int totalSentences, int savedCount)?
       onExamSpeakingProgress;
+  /// Resume trong bài thi: bản ghi speaking đã làm (backend gửi qua attempt.speakingHistory)
+  /// để dựng lại lịch sử — chỉ áp dụng khi examPracticeMode.
+  final List<Map<String, dynamic>>? initialExamHistory;
 
   const SpeakingSkillsPage({
     super.key,
@@ -61,6 +64,7 @@ class SpeakingSkillsPage extends StatelessWidget {
     this.readOnlyReview = false,
     this.onPartComplete,
     this.onExamSpeakingProgress,
+    this.initialExamHistory,
   });
 
   static const routeName = 'SpeakingSkillsPage';
@@ -78,6 +82,7 @@ class SpeakingSkillsPage extends StatelessWidget {
         readOnlyReview: readOnlyReview,
         onPartComplete: onPartComplete,
         onExamSpeakingProgress: onExamSpeakingProgress,
+        initialExamHistory: initialExamHistory,
       ),
     );
   }
@@ -90,6 +95,7 @@ class _SpeakingSkillsView extends StatefulWidget {
     this.readOnlyReview = false,
     this.onPartComplete,
     this.onExamSpeakingProgress,
+    this.initialExamHistory,
   });
 
   final bool embedded;
@@ -98,6 +104,7 @@ class _SpeakingSkillsView extends StatefulWidget {
   final VoidCallback? onPartComplete;
   final void Function(int sentenceIndex, int totalSentences, int savedCount)?
       onExamSpeakingProgress;
+  final List<Map<String, dynamic>>? initialExamHistory;
 
   @override
   State<_SpeakingSkillsView> createState() => _SpeakingSkillsViewState();
@@ -412,6 +419,27 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
     return _historyMap.values.where((attempts) => attempts.isNotEmpty).length;
   }
 
+  /// Resume: dựng lại lịch sử speaking đã làm TRONG bài thi (server gửi qua initialExamHistory),
+  /// gom theo sentenceId, mới nhất trước. Chỉ dùng ở exam mode.
+  Map<String, List<SpeakingAttemptEntity>> _groupExamHistoryBySentence() {
+    final raw = widget.initialExamHistory;
+    if (raw == null || raw.isEmpty) return const {};
+    final out = <String, List<SpeakingAttemptEntity>>{};
+    for (final j in raw) {
+      try {
+        final att = SpeakingAttemptEntity.fromJson(j);
+        (out[att.sentenceId] ??= <SpeakingAttemptEntity>[]).add(att);
+      } catch (_) {
+        // bỏ qua bản ghi lỗi shape, không chặn resume
+      }
+    }
+    for (final list in out.values) {
+      list.sort((a, b) => (b.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0))
+          .compareTo(a.submittedAt ?? DateTime.fromMillisecondsSinceEpoch(0)));
+    }
+    return out;
+  }
+
   void _notifyExamSpeakingProgress() {
     if (_set == null || widget.onExamSpeakingProgress == null) return;
     widget.onExamSpeakingProgress!(
@@ -485,9 +513,11 @@ class _SpeakingSkillsViewState extends State<_SpeakingSkillsView>
             _set = state.set;
             _currentSentence = state.set!.sentences.firstOrNull;
             _historyMap.clear();
+            final examHist = _groupExamHistoryBySentence();
             for (var s in _set!.sentences) {
-              _historyMap[s.id] =
-                  widget.examPracticeMode ? [] : List.from(s.history);
+              _historyMap[s.id] = widget.examPracticeMode
+                  ? (examHist[s.id] ?? <SpeakingAttemptEntity>[])
+                  : List.from(s.history);
             }
           });
           _notifyExamSpeakingProgress();

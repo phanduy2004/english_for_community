@@ -65,14 +65,32 @@ class _ConversationTurn {
   final List<ChatMessage> parts;
 
   String get combinedText {
-    final buf = StringBuffer();
+    var out = '';
     for (final p in parts) {
       final t = p.text.trim();
       if (t.isEmpty) continue;
-      if (buf.isNotEmpty) buf.write(' ');
-      buf.write(t);
+      out = out.isEmpty ? t : _mergeOverlap(out, t);
     }
-    return buf.toString();
+    return out;
+  }
+
+  /// Nối 2 đoạn transcript, bỏ phần ĐẦU của [next] trùng với ĐUÔI của [prev]
+  /// (Vapi finalize câu giữa chừng rồi gửi lại từ đầu câu → tránh lặp
+  /// "…Would you like to Would you like to…"). So khớp theo TỪ, tối thiểu 2 từ
+  /// trùng để không cắt nhầm.
+  static String _mergeOverlap(String prev, String next) {
+    final pw = prev.split(RegExp(r'\s+'));
+    final nw = next.split(RegExp(r'\s+'));
+    final maxK = pw.length < nw.length ? pw.length : nw.length;
+    for (var k = maxK; k >= 2; k--) {
+      final tail = pw.sublist(pw.length - k).join(' ').toLowerCase();
+      final head = nw.sublist(0, k).join(' ').toLowerCase();
+      if (tail == head) {
+        final rest = nw.sublist(k).join(' ');
+        return rest.isEmpty ? prev : '$prev $rest';
+      }
+    }
+    return '$prev $next';
   }
 
   bool get allFinal => parts.isNotEmpty && parts.every((p) => p.isFinal);
@@ -322,7 +340,11 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       });
       await _vapiService!.start(
         voiceId: _selectedVoice.id,
-        assistantOverrides: widget.scenario?.toVapiOverrides(),
+        // Free-chat (scenario null) vẫn cần nâng maxTokens để AI không cụt câu.
+        assistantOverrides: widget.scenario?.toVapiOverrides() ??
+            const {
+              'model': {'maxTokens': kVapiReplyMaxTokens},
+            },
       );
       return;
     }

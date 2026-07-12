@@ -701,6 +701,17 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     });
   }
 
+  /// Resume: lịch sử speaking đã làm trong bài thi (backend dựng lại từ SpeakingAttempt
+  /// theo cửa sổ thời gian, đính vào `attempt.speakingHistory[sectionId]`).
+  List<Map<String, dynamic>>? _speakingInitialHistory(String sectionId) {
+    final hist = _attempt?['speakingHistory'];
+    if (hist is! Map) return null;
+    final secHist = hist[sectionId];
+    if (secHist is! List) return null;
+    final out = secHist.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    return out.isEmpty ? null : out;
+  }
+
   void _onSpeakingProgress(
     String sectionId,
     int sentenceIndex,
@@ -1246,6 +1257,8 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
             onSpeakingProgress: skill == 'speaking'
                 ? (index, total, saved) => _onSpeakingProgress(sectionId, index, total, saved)
                 : null,
+            initialSpeakingHistory:
+                skill == 'speaking' ? _speakingInitialHistory(sectionId) : null,
             onPartComplete:
                 skill == 'speaking' ? _speakingFinishedCallback(sectionId) : null,
             examPracticeMode: true,

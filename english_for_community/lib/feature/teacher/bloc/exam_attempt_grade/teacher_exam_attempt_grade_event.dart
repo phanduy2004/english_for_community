@@ -15,6 +15,12 @@ class TeacherExamAttemptGradeRunAiRequested extends TeacherExamAttemptGradeEvent
   const TeacherExamAttemptGradeRunAiRequested();
 }
 
+/// Nạp lại attempt tại chỗ SAU mutation (AI/save/skill/release) — KHÔNG bật status=loading
+/// nên không rơi vào skeleton toàn màn; chỉ cập nhật dữ liệu ở các phần cần thiết.
+class TeacherExamAttemptGradeRefreshRequested extends TeacherExamAttemptGradeEvent {
+  const TeacherExamAttemptGradeRefreshRequested();
+}
+
 class TeacherExamAttemptGradeSectionExpandedToggled extends TeacherExamAttemptGradeEvent {
   const TeacherExamAttemptGradeSectionExpandedToggled(this.sectionId);
 

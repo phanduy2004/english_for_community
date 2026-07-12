@@ -9,6 +9,7 @@ class TeacherExamAttemptGradeBloc extends Bloc<TeacherExamAttemptGradeEvent, Tea
     required this.attemptId,
   }) : super(TeacherExamAttemptGradeState.initial()) {
     on<TeacherExamAttemptGradeLoadRequested>(_onLoad);
+    on<TeacherExamAttemptGradeRefreshRequested>(_onRefresh);
     on<TeacherExamAttemptGradeRunAiRequested>(_onRunAi);
     on<TeacherExamAttemptGradeSectionExpandedToggled>(_onSectionToggled);
     on<TeacherExamAttemptGradeSaveRequested>(_onSave);
@@ -51,6 +52,27 @@ class TeacherExamAttemptGradeBloc extends Bloc<TeacherExamAttemptGradeEvent, Tea
     );
   }
 
+  /// Silent refresh: nạp lại attempt KHÔNG bật status=loading → không rơi vào skeleton
+  /// toàn màn, chỉ cập nhật dữ liệu tại chỗ. Giữ nguyên expandedSkillSections (UI state của GV).
+  /// Lỗi refresh: giữ dữ liệu hiện tại + báo toast (không blank màn bằng status=error).
+  Future<void> _onRefresh(
+    TeacherExamAttemptGradeRefreshRequested event,
+    Emitter<TeacherExamAttemptGradeState> emit,
+  ) async {
+    final r = await repository.getGradingAttempt(attemptId);
+    r.fold(
+      (f) => emit(state.copyWith(errorMessage: f.message)),
+      (d) {
+        final m = Map<String, dynamic>.from(d as Map);
+        emit(state.copyWith(
+          status: TeacherExamAttemptGradeStatus.success,
+          attempt: m,
+          clearSuccess: true, // toast của mutation đã hiện ở emit trước; tránh double-toast
+        ));
+      },
+    );
+  }
+
   Future<void> _onRunAi(
     TeacherExamAttemptGradeRunAiRequested event,
     Emitter<TeacherExamAttemptGradeState> emit,
@@ -62,7 +84,7 @@ class TeacherExamAttemptGradeBloc extends Bloc<TeacherExamAttemptGradeEvent, Tea
       (f) => emit(state.copyWith(errorMessage: f.message)),
       (_) {
         emit(state.copyWith(successMessage: 'ai_done'));
-        add(const TeacherExamAttemptGradeLoadRequested());
+        add(const TeacherExamAttemptGradeRefreshRequested());
       },
     );
   }
@@ -91,7 +113,7 @@ class TeacherExamAttemptGradeBloc extends Bloc<TeacherExamAttemptGradeEvent, Tea
       (f) => emit(state.copyWith(errorMessage: f.message)),
       (_) {
         emit(state.copyWith(successMessage: event.finalize ? 'finalized' : 'saved'));
-        add(const TeacherExamAttemptGradeLoadRequested());
+        add(const TeacherExamAttemptGradeRefreshRequested());
       },
     );
   }
@@ -110,7 +132,7 @@ class TeacherExamAttemptGradeBloc extends Bloc<TeacherExamAttemptGradeEvent, Tea
       (f) => emit(state.copyWith(errorMessage: f.message)),
       (_) {
         emit(state.copyWith(successMessage: 'skill_saved'));
-        add(const TeacherExamAttemptGradeLoadRequested());
+        add(const TeacherExamAttemptGradeRefreshRequested());
       },
     );
   }

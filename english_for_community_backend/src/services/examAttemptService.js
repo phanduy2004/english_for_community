@@ -1430,6 +1430,56 @@ async function attachSkillWorkForGrading(attemptDoc) {
   return plain;
 }
 
+/**
+ * Speaking answers sống ở collection SpeakingAttempt (KHÔNG nằm trong attempt.answers như
+ * grammar/reading/writing/listening), nên khi học sinh resume sau crash sẽ thấy phần speaking
+ * trắng. Dựng lại các bản ghi speaking TRONG cửa sổ bài thi để client repopulate lịch sử.
+ * Chỉ chạy cho attempt đang in_progress; chỉ query speaking (lean) — không đụng các skill khác.
+ */
+async function attachSpeakingResumeHistory(attemptDoc, plain) {
+  if (!plain || plain.status !== 'in_progress') return;
+  const userId = resolveMongoUserId(attemptDoc.userId);
+  const startedAt = plain.startedAt ? new Date(plain.startedAt) : null;
+  if (!userId || !startedAt || Number.isNaN(startedAt.getTime())) return;
+
+  const sections = skillSectionsFromExam(plain.examSnapshot || {}).filter(
+    (s) => s.skill === 'speaking'
+  );
+  if (sections.length === 0) return;
+
+  const speakingIds = [];
+  for (const sec of sections) {
+    for (const res of resourcesFromSkillSection(sec)) {
+      const id = String(res.id || '').trim();
+      if (id) speakingIds.push(id);
+    }
+  }
+  if (speakingIds.length === 0) return;
+
+  // Best-effort: lỗi dựng lại speaking KHÔNG được chặn resume (học sinh vẫn vào bài được).
+  try {
+    const bounds = examTimeBounds(startedAt, new Date());
+    const speakingMap = await batchFetchSpeakingRecordsMap(userId, speakingIds, bounds, {
+      examOnly: true,
+    });
+
+    const speakingHistory = {};
+    for (const sec of sections) {
+      const sid = String(sec.sectionId || '').trim();
+      if (!sid) continue;
+      const records = [];
+      for (const res of resourcesFromSkillSection(sec)) {
+        const cached = speakingMap.get(String(res.id || '').trim());
+        if (cached && Array.isArray(cached.records)) records.push(...cached.records);
+      }
+      if (records.length > 0) speakingHistory[sid] = records;
+    }
+    if (Object.keys(speakingHistory).length > 0) plain.speakingHistory = speakingHistory;
+  } catch (_) {
+    // nuốt lỗi: speakingHistory là dữ liệu phụ trợ, không có cũng không sao
+  }
+}
+
 export {
   computeAttemptDeadline,
   examTimeBounds,
@@ -1742,7 +1792,9 @@ export const examAttemptService = {
     const attempt = await ExamAttempt.findById(attemptId);
     if (!attempt) throw httpError(404, 'Attempt not found');
     if (attempt.userId.toString() !== userId.toString()) throw httpError(403, 'Forbidden');
-    return attachRuntimeContextToAttempt(attempt);
+    const plain = await attachRuntimeContextToAttempt(attempt);
+    await attachSpeakingResumeHistory(attempt, plain);
+    return plain;
   },
 
   async buildStudentAttemptJson(attemptDoc) {

@@ -95,7 +95,7 @@ class _TeacherExamGradingScaffold extends StatelessWidget {
                     );
                     if (updated == true && ctx.mounted) {
                       ctx.read<TeacherGradingHubBloc>().add(
-                            const TeacherGradingHubLoadRequested(),
+                            const TeacherGradingHubRefreshRequested(),
                           );
                     }
                   },

@@ -1,5 +1,9 @@
 import 'package:equatable/equatable.dart';
 
+/// Ngân sách token cho MỖI lượt trả lời của trợ lý thoại Vapi. Áp cho cả scenario
+/// lẫn free-chat để AI nói trọn câu (Vapi mặc định/dashboard có thể cắt giữa chừng).
+const int kVapiReplyMaxTokens = 500;
+
 DateTime? _date(dynamic value) {
   if (value == null) return null;
   if (value is DateTime) return value;
@@ -62,11 +66,19 @@ class SpeakingScenarioEntity extends Equatable {
       );
 
   Map<String, dynamic> toVapiOverrides() {
-    if (id.isEmpty) return const {};
+    // maxTokens: Vapi mặc định/dashboard có thể cắt reply GIỮA câu (nhất là model
+    // reasoning ăn hết token) → nâng budget để AI nói TRỌN câu hỏi. Deep-merge với
+    // dashboard nên chỉ set maxTokens (+messages), giữ provider/model gốc.
+    if (id.isEmpty) {
+      return const {
+        'model': {'maxTokens': kVapiReplyMaxTokens},
+      };
+    }
     final goalText = goals.map((goal) => '- $goal').join('\n');
     return {
       if (firstMessage.isNotEmpty) 'firstMessage': firstMessage,
       'model': {
+        'maxTokens': kVapiReplyMaxTokens,
         'messages': [
           {
             'role': 'system',

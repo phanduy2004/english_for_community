@@ -469,7 +469,7 @@ class _TeacherExamAttemptGradeViewState extends State<_TeacherExamAttemptGradeVi
       (f) => AppCornerToast.show(context, f.message, error: true),
       (_) {
         AppCornerToast.show(context, context.l10n.teacherExamReleaseResults);
-        _bloc.add(const TeacherExamAttemptGradeLoadRequested());
+        _bloc.add(const TeacherExamAttemptGradeRefreshRequested());
       },
     );
   }

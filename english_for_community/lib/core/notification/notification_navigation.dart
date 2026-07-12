@@ -1,4 +1,5 @@
 import 'package:english_for_community/core/entity/notification_entity.dart';
+import 'package:english_for_community/feature/classroom_chat/classroom_chat_page.dart';
 import 'package:english_for_community/feature/student/classes/my_classes_hub_page.dart';
 import 'package:english_for_community/feature/student/classes/student_classroom_detail_page.dart';
 import 'package:english_for_community/feature/student/exams/exam_runner_page.dart';
@@ -81,6 +82,21 @@ bool navigateFromNotification(GoRouter router, {NotificationEntity? item, Map<St
           router.pushNamed(
             ExamSessionLobbyPage.routeName,
             pathParameters: {'sessionId': sessionId},
+          );
+          return true;
+        }
+        break;
+
+      case 'CLASSROOM_CHAT_MESSAGE':
+        final chatClassroomId = payload['classroomId']?.toString();
+        if (chatClassroomId != null && chatClassroomId.isNotEmpty) {
+          router.pushNamed(
+            ClassroomChatPage.studentRouteName,
+            pathParameters: {'classroomId': chatClassroomId},
+            extra: {
+              'classroomName':
+                  payload['classroomName']?.toString() ?? 'Nhóm lớp học',
+            },
           );
           return true;
         }

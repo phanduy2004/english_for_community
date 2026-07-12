@@ -11,6 +11,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
   }) : super(TeacherGradingHubState.initial()) {
     on<TeacherGradingHubFilterChanged>(_onFilter);
     on<TeacherGradingHubLoadRequested>(_onLoad);
+    on<TeacherGradingHubRefreshRequested>(_onRefresh);
     on<TeacherGradingHubRunAiRequested>(_onRunAi);
     on<TeacherGradingHubReleaseRequested>(_onRelease);
     on<TeacherGradingHubBatchAiRequested>(_onBatchAi);
@@ -70,6 +71,37 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     );
   }
 
+  /// Silent refresh: nạp lại danh sách bài SAU mutation KHÔNG bật status=loading
+  /// → không rơi vào skeleton toàn màn hub; chỉ cập nhật row/thống kê tại chỗ.
+  /// Giữ filter hiện tại + integritySummary (grading không đổi integrity); lỗi giữ data + toast.
+  Future<void> _onRefresh(
+    TeacherGradingHubRefreshRequested event,
+    Emitter<TeacherGradingHubState> emit,
+  ) async {
+    final r = await repository.getAssignmentGradingHub(assignmentId);
+    r.fold(
+      (f) => emit(state.copyWith(errorMessage: f.message)),
+      (hub) {
+        final m = Map<String, dynamic>.from(hub as Map);
+        final attempts = (m['attempts'] as List? ?? [])
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        emit(state.copyWith(
+          status: TeacherGradingHubStatus.success,
+          clearError: true,
+          assignment: m['assignment'] is Map
+              ? Map<String, dynamic>.from(m['assignment'] as Map)
+              : null,
+          stats: m['stats'] is Map
+              ? Map<String, dynamic>.from(m['stats'] as Map)
+              : {},
+          attempts: attempts,
+          visibleAttempts: teacherGradingHubVisibleAttempts(attempts, state.filter),
+        ));
+      },
+    );
+  }
+
   Future<void> _onRunAi(
     TeacherGradingHubRunAiRequested event,
     Emitter<TeacherGradingHubState> emit,
@@ -80,7 +112,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
       (f) => emit(state.copyWith(errorMessage: f.message, clearAttemptMutation: true)),
       (_) {
         emit(state.copyWith(clearAttemptMutation: true));
-        add(const TeacherGradingHubLoadRequested());
+        add(const TeacherGradingHubRefreshRequested());
       },
     );
   }
@@ -98,7 +130,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
       (f) => emit(state.copyWith(errorMessage: f.message, clearAttemptMutation: true)),
       (_) {
         emit(state.copyWith(clearAttemptMutation: true));
-        add(const TeacherGradingHubLoadRequested());
+        add(const TeacherGradingHubRefreshRequested());
       },
     );
   }
@@ -112,7 +144,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     emit(state.copyWith(batchAiRunning: false));
     r.fold(
       (f) => emit(state.copyWith(errorMessage: f.message)),
-      (_) => add(const TeacherGradingHubLoadRequested()),
+      (_) => add(const TeacherGradingHubRefreshRequested()),
     );
   }
 
@@ -125,7 +157,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     emit(state.copyWith(batchOpsRunning: false));
     r.fold(
       (f) => emit(state.copyWith(errorMessage: f.message)),
-      (_) => add(const TeacherGradingHubLoadRequested()),
+      (_) => add(const TeacherGradingHubRefreshRequested()),
     );
   }
 
@@ -138,7 +170,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     emit(state.copyWith(batchOpsRunning: false));
     r.fold(
       (f) => emit(state.copyWith(errorMessage: f.message)),
-      (_) => add(const TeacherGradingHubLoadRequested()),
+      (_) => add(const TeacherGradingHubRefreshRequested()),
     );
   }
 }

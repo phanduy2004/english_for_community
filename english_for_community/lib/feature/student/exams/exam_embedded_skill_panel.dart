@@ -53,6 +53,7 @@ class ExamEmbeddedSkillPanel extends StatefulWidget {
     this.onListeningCompProgress,
     this.initialListeningCompAnswers,
     this.onSpeakingProgress,
+    this.initialSpeakingHistory,
     this.reviewMode = false,
     this.reviewFeedback,
     this.reviewScore,
@@ -78,6 +79,8 @@ class ExamEmbeddedSkillPanel extends StatefulWidget {
   final void Function(Map<String, int> answers, int savedCount, int totalCount)? onListeningCompProgress;
   final Map<String, int>? initialListeningCompAnswers;
   final void Function(int sentenceIndex, int totalSentences, int savedCount)? onSpeakingProgress;
+  /// Resume: bản ghi speaking đã làm trong bài thi (để dựng lại lịch sử sau crash).
+  final List<Map<String, dynamic>>? initialSpeakingHistory;
   /// Post-submit graded review — show answers with correct/incorrect feedback (read-only).
   final bool reviewMode;
   final String? reviewFeedback;
@@ -400,6 +403,7 @@ class _ExamEmbeddedSkillPanelState extends State<ExamEmbeddedSkillPanel> {
           embedded: true,
           examPracticeMode: widget.examPracticeMode,
           readOnlyReview: readOnly,
+          initialExamHistory: widget.initialSpeakingHistory,
           onPartComplete: _onExerciseFinished,
           onExamSpeakingProgress: widget.onSpeakingProgress,
         );

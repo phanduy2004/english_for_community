@@ -140,6 +140,79 @@ const createNotification = async ({
   }
 };
 
+/**
+ * Gửi FCM push tới NHIỀU user mà KHÔNG tạo bản ghi Notification (không vào chuông).
+ * Dùng cho thông báo "đẩy thuần" như tin nhắn chat lớp: user nhận được cả khi app
+ * đã đóng, nhưng KHÔNG hiển thị trong hộp thư chuông (chat vẫn thuộc chat-inbox).
+ * Gộp 1 lần multicast cho toàn bộ token + tự dọn token lỗi theo từng user.
+ */
+export const sendPushToUsers = async ({ userIds, title, body, data = {}, excludeUserId = null }) => {
+  try {
+    if (!messaging) return { ok: false, reason: 'FCM_NOT_CONFIGURED' };
+
+    const exclude = excludeUserId != null ? String(excludeUserId) : null;
+    const ids = [...new Set((userIds || []).map(String).filter(Boolean))]
+      .filter((id) => id !== exclude);
+    if (!ids.length) return { ok: false, reason: 'NO_RECIPIENTS' };
+
+    const users = await User.find({ _id: { $in: ids } }).select('_id fcmTokens').lean();
+    const tokenOwner = new Map(); // token -> userId (để dọn token lỗi)
+    const tokens = [];
+    for (const u of users) {
+      for (const t of u.fcmTokens || []) {
+        if (t && !tokenOwner.has(t)) {
+          tokenOwner.set(t, String(u._id));
+          tokens.push(t);
+        }
+      }
+    }
+    if (!tokens.length) return { ok: false, reason: 'NO_TOKEN' };
+
+    const messagePayload = {
+      notification: { title, body },
+      data: {
+        ...Object.keys(data || {}).reduce((acc, key) => {
+          acc[key] = String(data[key]);
+          return acc;
+        }, {}),
+        click_action: 'FLUTTER_NOTIFICATION_CLICK',
+      },
+      ...fcmDeliveryOptions, // high-priority + channel + apns (đánh thức máy khi app đã kill)
+      tokens,
+    };
+
+    const response = await messaging.sendEachForMulticast(messagePayload);
+
+    // Dọn token lỗi theo từng user
+    if (response.failureCount > 0) {
+      const failedByUser = new Map();
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const owner = tokenOwner.get(tokens[idx]);
+          if (owner) {
+            if (!failedByUser.has(owner)) failedByUser.set(owner, []);
+            failedByUser.get(owner).push(tokens[idx]);
+          }
+        }
+      });
+      await Promise.all(
+        [...failedByUser.entries()].map(([uid, toks]) =>
+          User.findByIdAndUpdate(uid, { $pull: { fcmTokens: { $in: toks } } })
+        )
+      );
+    }
+
+    return {
+      ok: response.successCount > 0,
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+    };
+  } catch (error) {
+    console.error('❌ sendPushToUsers error:', error.message);
+    return { ok: false, reason: 'ERROR', message: error.message };
+  }
+};
+
 /** API user: danh sách + phân trang (không emit socket) */
 const listForUser = async (userId, page = 1, limit = 20) => {
   const notifications = await Notification.find({ recipientId: userId })
@@ -179,6 +252,7 @@ export { createNotification };
 
 export const notificationService = {
   createNotification,
+  sendPushToUsers,
   listForUser,
   markOneAsReadForUser,
   markAllAsReadForUser,

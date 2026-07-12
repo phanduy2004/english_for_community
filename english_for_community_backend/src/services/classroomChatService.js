@@ -17,6 +17,7 @@ import User from '../models/User.js';
 import { uploadMulterFileToCloudinary } from '../config/cloudinary.js';
 import mongoose from 'mongoose';
 import { getIO } from '../socket/socketManager.js';
+import { sendPushToUsers } from './notificationService.js';
 
 const PAGE_SIZE = 30;
 const MAX_CONTENT_LENGTH = 4000;
@@ -208,7 +209,7 @@ async function emitReactionInboxUpdate(classroomId, ownerId, reactorId, emoji) {
 // ─── Send message ────────────────────────────────────────────────────────────
 
 export async function sendMessage(classroomId, senderId, body) {
-  await assertMember(classroomId, senderId);
+  const { room } = await assertMember(classroomId, senderId);
 
   const { type = 'text', content = '', media, replyToId, mentions = [], clientId } = body;
 
@@ -268,6 +269,27 @@ export async function sendMessage(classroomId, senderId, body) {
   const view = messagePublicView(populated);
   emitToRoom(classroomId, 'classroom_message_new', view);
   await emitInboxUpdates(classroomId, view, senderId);
+
+  // FCM push (đẩy cả khi app đã đóng) — KHÔNG tạo Notification chuông; chat vẫn
+  // thuộc chat-inbox. Fire-and-forget để không làm chậm phản hồi gửi tin.
+  getClassroomMemberUserIds(classroomId)
+    .then((memberIds) => {
+      const senderName = senderDisplayName(view.senderId);
+      const className = room?.name || 'lớp học';
+      return sendPushToUsers({
+        userIds: memberIds,
+        excludeUserId: senderId,
+        title: `${senderName} · ${className}`,
+        body: buildMessagePreview(view),
+        data: {
+          type: 'CLASSROOM_CHAT_MESSAGE',
+          classroomId: String(classroomId),
+          classroomName: className,
+          messageId: String(view.id ?? view._id ?? ''),
+        },
+      });
+    })
+    .catch(() => {});
 
   return view;
 }

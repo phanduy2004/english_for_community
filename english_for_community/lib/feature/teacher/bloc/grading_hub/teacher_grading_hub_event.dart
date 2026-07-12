@@ -12,6 +12,12 @@ class TeacherGradingHubLoadRequested extends TeacherGradingHubEvent {
   const TeacherGradingHubLoadRequested();
 }
 
+/// Nạp lại danh sách bài SAU mutation (AI/release/batch) — KHÔNG bật status=loading
+/// nên không rơi vào skeleton toàn màn hub; chỉ cập nhật row/thống kê tại chỗ.
+class TeacherGradingHubRefreshRequested extends TeacherGradingHubEvent {
+  const TeacherGradingHubRefreshRequested();
+}
+
 class TeacherGradingHubRunAiRequested extends TeacherGradingHubEvent {
   const TeacherGradingHubRunAiRequested(this.attemptId);
 
