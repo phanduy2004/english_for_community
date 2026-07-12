@@ -20,6 +20,7 @@ class WeeklyActivityBarsChart extends StatefulWidget {
     this.barColor,
     this.highlightIndex,
     this.highlightColor,
+    this.showTrendLine = true,
   });
 
   final List<int> values;
@@ -27,6 +28,10 @@ class WeeklyActivityBarsChart extends StatefulWidget {
   final Color? barColor;
   final int? highlightIndex;
   final Color? highlightColor;
+
+  /// Đường xu hướng nét đứt phủ lên cột. Tắt (false) cho biểu đồ cần đọc
+  /// đơn nghĩa (vd Teacher Analytics "Submissions per day").
+  final bool showTrendLine;
 
   @override
   State<WeeklyActivityBarsChart> createState() => _WeeklyActivityBarsChartState();
@@ -200,19 +205,20 @@ class _WeeklyActivityBarsChartState extends State<WeeklyActivityBarsChart>
                                   );
                                 }),
                               ),
-                              IgnorePointer(
-                                child: CustomPaint(
-                                  size: Size(totalContentWidth, barAreaHeight),
-                                  painter: _WeeklyActivityTrendPainter(
-                                    values: widget.values,
-                                    itemWidth: itemSlotWidth,
-                                    maxValue: chartTopVal,
-                                    lineColor: AppColors.chartTrend,
-                                    lineWidth: 1.5,
-                                    progress: lineT,
+                              if (widget.showTrendLine)
+                                IgnorePointer(
+                                  child: CustomPaint(
+                                    size: Size(totalContentWidth, barAreaHeight),
+                                    painter: _WeeklyActivityTrendPainter(
+                                      values: widget.values,
+                                      itemWidth: itemSlotWidth,
+                                      maxValue: chartTopVal,
+                                      lineColor: AppColors.chartTrend,
+                                      lineWidth: 1.5,
+                                      progress: lineT,
+                                    ),
                                   ),
                                 ),
-                              ),
                             ],
                           ),
                         ),

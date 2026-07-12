@@ -4,7 +4,6 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_theme.dart';
 import 'package:english_for_community/core/ui/workspace_layout_scope.dart';
 import 'package:english_for_community/feature/admin/content_management/content_dashboard_page.dart';
-import 'package:english_for_community/feature/admin/analytics/admin_analytics_page.dart';
 import 'package:english_for_community/feature/admin/dashboard_home/admin_dashboard.dart';
 import 'package:english_for_community/feature/admin/layout/admin_account_menu.dart';
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
@@ -163,12 +162,6 @@ class _AdminSidebar extends StatelessWidget {
               selectedIcon: Icons.dashboard,
               label: l10n.adminDashboard,
               path: AdminDashboardPage.routePath,
-            ),
-            _NavItem(
-              icon: Icons.insights_outlined,
-              selectedIcon: Icons.insights,
-              label: l10n.adminAnalyticsTitle,
-              path: AdminAnalyticsPage.routePath,
             ),
           ],
         ),
@@ -495,7 +488,6 @@ class _RouteContextLabel extends StatelessWidget {
 
   String _labelForPath(AppLocalizations l10n, String path) {
     if (path == AdminDashboardPage.routePath) return l10n.adminDashboard;
-    if (path.startsWith(AdminAnalyticsPage.routePath)) return l10n.adminAnalyticsTitle;
     if (path.startsWith(UserManagementPage.routePath)) return l10n.usersMenuTitle;
     if (path.startsWith(ActivityHistoryPage.routePath)) return l10n.adminNavSubmissions;
     if (path.startsWith(ReportManagementPage.routePath)) return l10n.reportsMenuTitle;

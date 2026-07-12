@@ -340,11 +340,7 @@ class _FreeSpeakingPageState extends State<FreeSpeakingPage> {
       });
       await _vapiService!.start(
         voiceId: _selectedVoice.id,
-        // Free-chat (scenario null) vẫn cần nâng maxTokens để AI không cụt câu.
-        assistantOverrides: widget.scenario?.toVapiOverrides() ??
-            const {
-              'model': {'maxTokens': kVapiReplyMaxTokens},
-            },
+        assistantOverrides: widget.scenario?.toVapiOverrides(),
       );
       return;
     }

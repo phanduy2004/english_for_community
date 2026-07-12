@@ -115,9 +115,11 @@ export const getTeacherDashboardActionItems = async (req, res) => {
 
 export const getTeacherAnalyticsSummary = async (req, res) => {
   try {
-    const summary = await teacherDashboardService.getAnalyticsSummary(req.user._id);
+    const classroomId = req.query.classroomId || null;
+    const summary = await teacherDashboardService.getAnalyticsSummary(req.user._id, { classroomId });
     const charts = await teacherAnalyticsChartsService.getCharts(req.user._id, {
       days: req.query.days,
+      classroomId,
     });
     return res.status(200).json({ summary, charts });
   } catch (error) {

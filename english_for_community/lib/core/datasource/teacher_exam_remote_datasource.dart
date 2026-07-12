@@ -437,8 +437,11 @@ class TeacherExamRemoteDatasource {
     return r.data;
   }
 
-  Future<Map<String, dynamic>> getTeacherAnalyticsFull({int days = 14}) async {
-    final r = await dio.get('teacher/dashboard/analytics', queryParameters: {'days': days});
+  Future<Map<String, dynamic>> getTeacherAnalyticsFull({int days = 14, String? classroomId}) async {
+    final r = await dio.get('teacher/dashboard/analytics', queryParameters: {
+      'days': days,
+      if (classroomId != null && classroomId.isNotEmpty) 'classroomId': classroomId,
+    });
     return Map<String, dynamic>.from(r.data as Map);
   }
 

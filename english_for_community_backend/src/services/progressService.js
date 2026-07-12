@@ -3,6 +3,7 @@ import UserDailyProgress from '../models/UserDailyProgress.js';
 import ReadingProgress from '../models/ReadingProgress.js';
 import WritingSubmission from '../models/WritingSubmission.js';
 import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
+import SpeakingConversation from '../models/SpeakingConversation.js';
 import Enrollment from '../models/Enrollment.js';
 import Word from '../models/Word.js';
 // 🔥 IMPORT THÊM MODEL MỚI CHO LISTENING COMPREHENSION
@@ -107,13 +108,17 @@ const _getDateRangeConfig = (range, timezone) => {
 const _fetchCompletedLessons = async (userId, startDate, endDate) => {
   const dateRange = { $gte: startDate, $lte: endDate };
 
-  const [readings, writings, speakings, dictations, comprehensions] = await Promise.all([
+  const [readings, writings, speakings, freeSpeakings, dictations, comprehensions] = await Promise.all([
     ReadingProgress.find({ userId, status: 'completed', lastAttemptedAt: dateRange })
       .populate('readingId', 'title').select('lastAttemptedAt readingId highScore').lean(),
     WritingSubmission.find({ userId, status: 'reviewed', submittedAt: dateRange })
       .select('generatedPrompt.title submittedAt score').lean(),
     SpeakingEnrollment.find({ userId, isCompleted: true, lastAccessedAt: dateRange })
       .populate('speakingSetId', 'title').select('lastAccessedAt speakingSetId averageWer').lean(),
+    // Free/voice speaking (SpeakingConversation) cũng là 1 bài ĐÃ hoàn thành → phải tính
+    // vào "bài học hoàn thành" (nếu không: card Lessons + detail thiếu, giống bug Speaking).
+    SpeakingConversation.find({ userId, status: 'reviewed', createdAt: dateRange })
+      .select('createdAt score feedback.scenarioTitle scenario').lean(),
     Enrollment.find({ userId, isCompleted: true, lastAccessedAt: dateRange })
       .populate('listeningId', 'title').select('lastAccessedAt listeningId progress').lean(),
     ListeningCompAttempt.find({ userId, createdAt: dateRange })
@@ -124,6 +129,7 @@ const _fetchCompletedLessons = async (userId, startDate, endDate) => {
   readings.forEach(r => items.push({ original: r, type: 'Reading', date: r.lastAttemptedAt, title: r.readingId?.title, score: r.highScore || 0 }));
   writings.forEach(w => items.push({ original: w, type: 'Writing', date: w.submittedAt, title: w.generatedPrompt?.title, score: w.score || 0 }));
   speakings.forEach(s => items.push({ original: s, type: 'Speaking', date: s.lastAccessedAt, title: s.speakingSetId?.title, score: Math.round((1 - (s.averageWer || 0)) * 100) }));
+  freeSpeakings.forEach(c => items.push({ original: c, type: 'Speaking', date: c.createdAt, title: c.feedback?.scenarioTitle || c.scenario || 'Free speaking', score: Math.round(((c.score || 0) / 9) * 100) }));
   dictations.forEach(l => items.push({ original: l, type: 'Dictation', date: l.lastAccessedAt, title: l.listeningId?.title, score: Math.round((l.progress || 0) * 100) }));
   comprehensions.forEach(c => items.push({ original: c, type: 'Comprehension', date: c.createdAt, title: c.listeningId?.title, score: Math.round(c.score || 0) }));
 
@@ -323,6 +329,29 @@ const getStatDetailData = async (userId, statKey, range) => {
       return new Date(dateB) - new Date(dateA);
     });
 
+  } else if (statKey === 'speaking') {
+    // Card "Speaking" gộp CẢ speaking-set (SpeakingEnrollment) LẪN free/voice
+    // (SpeakingConversation, metric fluency). Detail phải gộp Y HỆT → card == list,
+    // tránh bug "card 44% mà detail rỗng" khi học sinh chỉ luyện free-speaking.
+    const [sets, convos] = await Promise.all([
+      SpeakingEnrollment.find({
+        userId, isCompleted: true, lastAccessedAt: { $gte: startDate, $lte: endDate },
+      }).populate('speakingSetId', 'title').select('averageWer speakingSetId isCompleted lastAccessedAt').lean(),
+      SpeakingConversation.find({
+        userId, status: 'reviewed', createdAt: { $gte: startDate, $lte: endDate },
+      }).select('score feedback.scenarioTitle scenario createdAt').lean(),
+    ]);
+
+    queryResult = [
+      ...sets.map(s => ({ ...s, _type: 'set' })),
+      ...convos.map(c => ({ ...c, _type: 'free' })),
+    ];
+    queryResult.sort((a, b) => {
+      const dateA = a._type === 'set' ? a.lastAccessedAt : a.createdAt;
+      const dateB = b._type === 'set' ? b.lastAccessedAt : b.createdAt;
+      return new Date(dateB) - new Date(dateA);
+    });
+
   } else {
     // 3. CÁC MÔN CÒN LẠI (GIỮ NGUYÊN)
     let model, sortField = 'createdAt', dateFilterField = 'createdAt';
@@ -336,8 +365,6 @@ const getStatDetailData = async (userId, statKey, range) => {
         populateOpts = { path: 'readingId', select: 'title' };
         selectOpts = 'highScore attemptsCount lastAttemptedAt readingId status';
         break;
-      case 'speaking':
-        model = SpeakingEnrollment; dateFilterField = 'lastAccessedAt'; sortField = 'lastAccessedAt'; populateOpts = { path: 'speakingSetId', select: 'title' }; selectOpts = 'averageWer speakingSetId isCompleted lastAccessedAt progress'; break;
       case 'writing':
         model = WritingSubmission; dateFilterField = 'submittedAt'; sortField = 'submittedAt'; selectOpts = 'generatedPrompt.title score submittedAt durationInSeconds'; break;
       case 'vocab':
@@ -354,9 +381,6 @@ const getStatDetailData = async (userId, statKey, range) => {
     const baseFilter = { [userField]: userId, [dateFilterField]: { $gte: startDate, $lte: endDate } };
     if (statKey === 'reading') {
       baseFilter.status = 'completed';
-    }
-    if (statKey === 'speaking') {
-      baseFilter.isCompleted = true;
     }
     if (statKey === 'writing') {
       baseFilter.status = { $in: ['submitted', 'reviewed'] };
@@ -381,7 +405,23 @@ const getStatDetailData = async (userId, statKey, range) => {
 
     if (isLessonMode) return { ...base, title: item.title || 'Bài học', type: item.type, score: item.score };
     if (statKey === 'reading') return { ...base, title: doc.readingId?.title || 'Bài đọc', score: doc.highScore || 0, attempts: doc.attemptsCount || 0, wpm: 0 };
-    if (statKey === 'speaking') return { ...base, title: doc.speakingSetId?.title || 'Bài nói', score: Math.round((1 - (doc.averageWer || 0)) * 100), isCompleted: doc.isCompleted || false };
+    if (statKey === 'speaking') {
+      const isSet = doc._type === 'set';
+      const actualDate = isSet ? doc.lastAccessedAt : doc.createdAt;
+      return {
+        ...base,
+        date: actualDate ? new Date(actualDate).toISOString() : base.date,
+        title: isSet
+          ? (doc.speakingSetId?.title || 'Bài nói')
+          : (doc.feedback?.scenarioTitle || doc.scenario || 'Free speaking'),
+        // set: 1-WER; free: overall(0..9)/9 — cùng thang % với card.
+        score: isSet
+          ? Math.round((1 - (doc.averageWer || 0)) * 100)
+          : Math.round(((doc.score || 0) / 9) * 100),
+        isCompleted: true,
+        type: 'Speaking',
+      };
+    }
     if (statKey === 'writing') return { ...base, title: doc.generatedPrompt?.title || 'Bài viết', score: doc.score || 0, duration: Math.round((doc.durationInSeconds || 0) / 60) };
 
     // 🔥 4. FORMAT CHO DICTATION HOẶC COMPREHENSION KHI LỌC 'listening'

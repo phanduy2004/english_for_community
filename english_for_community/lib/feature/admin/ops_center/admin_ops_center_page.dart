@@ -7,6 +7,7 @@ import 'package:english_for_community/feature/admin/layout/admin_page_scaffold.d
 import 'package:english_for_community/feature/admin/layout/admin_web_ui.dart';
 import 'package:english_for_community/feature/admin/layout/admin_skeleton.dart';
 import 'package:english_for_community/feature/admin/layout/admin_widgets.dart';
+import 'package:english_for_community/core/ui/widget/web_data_table.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -174,151 +175,151 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final rows = _filteredCsvRows;
-            if (rows.isEmpty) {
-              return AlertDialog(
-                title: Text('CSV Preview: $_csvTitle', style: const TextStyle(fontSize: 16)),
-                content: const Text('No data found.', style: TextStyle(fontSize: 14)),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
-                ],
-              );
-            }
-
-            final rawHeaders = rows.first;
+            final rawHeaders = rows.isEmpty ? const <String>[] : rows.first;
             final displayHeaders = rawHeaders.map(_prettyCsvHeader).toList();
-            final dataRows = rows.skip(1).toList();
+            final dataRows = rows.isEmpty ? const <List<String>>[] : rows.skip(1).toList();
             final totalPages = (dataRows.length / _csvRowsPerPage).ceil().clamp(1, 9999);
             final page = _csvPage.clamp(1, totalPages);
             final start = (page - 1) * _csvRowsPerPage;
             final end = (start + _csvRowsPerPage).clamp(0, dataRows.length);
-            final pagedRows = dataRows.sublist(start, end);
+            final pagedRows = dataRows.isEmpty ? const <List<String>>[] : dataRows.sublist(start, end);
             final totalCells = dataRows.fold<int>(0, (sum, row) => sum + row.length);
-            final emptyCells = dataRows.fold<int>(
-              0,
-              (sum, row) => sum + row.where((c) => c.trim().isEmpty).length,
-            );
-            final dataCompletion = totalCells == 0 ? 100 : (((totalCells - emptyCells) / totalCells) * 100).round();
+            final emptyCells = dataRows.fold<int>(0, (sum, row) => sum + row.where((c) => c.trim().isEmpty).length);
+            final filled = totalCells == 0 ? 100 : (((totalCells - emptyCells) / totalCells) * 100).round();
 
             return Dialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.surfaceCard,
+              clipBehavior: Clip.antiAlias,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1000, maxHeight: 700),
+                constraints: const BoxConstraints(maxWidth: 1040, maxHeight: 720),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // --- HEADER ---
+                    // Header — dataset title + a one-line stats summary.
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s4, AppSpacing.s3, AppSpacing.s4),
                       child: Row(
                         children: [
-                          Icon(Icons.table_chart_outlined, color: Colors.blueGrey[700], size: 20),
-                          const SizedBox(width: 10),
+                          Container(
+                            width: 34,
+                            height: 34,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceSubtle,
+                              borderRadius: BorderRadius.circular(AppRadius.input),
+                              border: Border.all(color: AppColors.outlineMuted),
+                            ),
+                            child: const Icon(Icons.table_chart_outlined, size: 17, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(width: AppSpacing.s3),
                           Expanded(
-                            child: Text(
-                              _csvDialogTitle(_csvTitle),
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_csvDialogTitle(_csvTitle), style: AdminWebUi.webH2(context)),
+                                const SizedBox(height: 1),
+                                Text(
+                                  '${rawHeaders.length} columns · ${dataRows.length} rows · $filled% filled',
+                                  style: AdminWebUi.metaMuted,
+                                ),
+                              ],
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.close, size: 20),
-                            splashRadius: 20,
+                            tooltip: 'Close',
+                            icon: const Icon(Icons.close, size: 20, color: AppColors.textSecondary),
                             onPressed: () => Navigator.pop(context),
                           ),
                         ],
                       ),
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    const Divider(height: 1, color: AppColors.outlineMuted),
 
-                    // --- TOOLBAR ---
+                    // Toolbar
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      child: Column(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s3, AppSpacing.s5, AppSpacing.s3),
+                      child: Row(
                         children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _csvSearchCtrl,
-                                  style: const TextStyle(fontSize: 13),
-                                  decoration: _inputDecoration('Search by value, email, status...'),
-                                  onChanged: (_) {
-                                    setState(() => _csvPage = 1);
-                                    setDialogState(() {});
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Text(
-                                dataRows.isEmpty
-                                    ? '0 rows'
-                                    : 'Rows ${start + 1}–$end of ${dataRows.length}',
-                                style: const TextStyle(fontSize: 13, color: AppColors.textMuted),
-                              ),
-                            ],
+                          AdminSearchField(
+                            controller: _csvSearchCtrl,
+                            hint: 'Search by value, email, status',
+                            width: 300,
+                            onChanged: (_) {
+                              setState(() => _csvPage = 1);
+                              setDialogState(() {});
+                            },
                           ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              _DialogMetricPill(label: 'Columns', value: rawHeaders.length.toString(), icon: Icons.view_week_outlined),
-                              const SizedBox(width: 8),
-                              _DialogMetricPill(label: 'Rows', value: dataRows.length.toString(), icon: Icons.table_rows_outlined),
-                              const SizedBox(width: 8),
-                              _DialogMetricPill(label: 'Data quality', value: '$dataCompletion%', icon: Icons.verified_outlined),
-                            ],
+                          const Spacer(),
+                          Text(
+                            dataRows.isEmpty ? '0 rows' : 'Showing ${start + 1}–$end of ${dataRows.length}',
+                            style: AdminWebUi.metaMuted,
                           ),
                         ],
                       ),
                     ),
 
-                    // --- TABLE ---
+                    // Body — data grid (horizontal + vertical scroll) or empty state.
                     Expanded(
-                      child: Container(
-                        color: AppColors.surface,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.vertical,
-                          child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columnSpacing: 20,
-                              headingRowHeight: 44,
-                              dataRowMinHeight: 40,
-                              dataRowMaxHeight: 56,
-                              headingRowColor: WidgetStateProperty.all(AppColors.surfaceSubtle),
-                              columns: displayHeaders
-                                  .asMap()
-                                  .entries
-                                  .map((entry) {
-                                    final h = entry.value;
-                                    final idx = entry.key;
-                                    final hint = _csvColumnHint(rawHeaders[idx]);
-                                    return DataColumn(
-                                        label: Text(
-                                          hint.isEmpty ? h : '$h\n$hint',
-                                          style: AdminWebUi.webTableHead(context),
+                      child: dataRows.isEmpty
+                          ? Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(AppSpacing.s6),
+                                child: AdminEmptyCard(
+                                  message: _csvSearchCtrl.text.trim().isEmpty
+                                      ? 'This dataset has no rows.'
+                                      : 'No rows match your search.',
+                                  icon: Icons.search_off_outlined,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              color: AppColors.surface,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.vertical,
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: DataTable(
+                                    columnSpacing: AppSpacing.s6,
+                                    headingRowHeight: 42,
+                                    dataRowMinHeight: 40,
+                                    dataRowMaxHeight: 54,
+                                    dividerThickness: 1,
+                                    headingRowColor: WidgetStateProperty.all(AppColors.surfaceSubtle),
+                                    columns: [
+                                      for (var i = 0; i < displayHeaders.length; i++)
+                                        DataColumn(
+                                          numeric: _csvColumnHint(rawHeaders[i]) == 'numeric',
+                                          label: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(displayHeaders[i], style: AdminWebUi.webTableHead(context)),
+                                              if (_csvColumnHint(rawHeaders[i]).isNotEmpty)
+                                                Text(_csvColumnHint(rawHeaders[i]), style: AdminWebUi.metaMuted),
+                                            ],
+                                          ),
                                         ),
-                                      );
-                                  })
-                                  .toList(),
-                              rows: pagedRows
-                                  .map((row) => DataRow(
-                                        cells: rawHeaders.asMap().entries.map((entry) {
-                                          final rawHeader = entry.value;
-                                          final text = entry.key < row.length ? row[entry.key] : '';
-                                          return DataCell(_buildCsvDataCell(rawHeader, text));
-                                        }).toList(),
-                                      ))
-                                  .toList(),
+                                    ],
+                                    rows: [
+                                      for (final row in pagedRows)
+                                        DataRow(
+                                          cells: [
+                                            for (var i = 0; i < rawHeaders.length; i++)
+                                              DataCell(_buildCsvDataCell(rawHeaders[i], i < row.length ? row[i] : '')),
+                                          ],
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
                     ),
-                    const Divider(height: 1, thickness: 1),
+                    const Divider(height: 1, color: AppColors.outlineMuted),
 
-                    // --- FOOTER ---
+                    // Footer
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s3),
                       child: AdminPaginationBar(
                         page: page,
                         totalPages: totalPages,
@@ -526,24 +527,134 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
   }
 
 
-  // --- REUSABLE STYLES ---
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(fontSize: 13, color: Colors.black45),
-      prefixIcon: const Icon(Icons.search, size: 18, color: Colors.black45),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.chip),
-        borderSide: const BorderSide(color: AppColors.outline),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.chip),
-        borderSide: const BorderSide(color: AppColors.outline),
-      ),
-      filled: true,
-      fillColor: Colors.white,
-      isDense: true,
+  Widget _buildQueueBody(
+    List<Map<String, dynamic>> filteredQueue,
+    List<Map<String, dynamic>> pageRows,
+    int page,
+    int totalPages,
+  ) {
+    void clear() => setState(() {
+          _queueSearchCtrl.clear();
+          _queuePriorityFilter = 'all';
+          _queueSlaFilter = 'all';
+          _queuePage = 1;
+        });
+    final hasFilter = _queuePriorityFilter != 'all' ||
+        _queueSlaFilter != 'all' ||
+        _queueSearchCtrl.text.trim().isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.s4),
+          child: Wrap(
+            spacing: AppSpacing.s3,
+            runSpacing: AppSpacing.s3,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              AdminSearchField(controller: _queueSearchCtrl, hint: 'Search by title or type', width: 260),
+              SizedBox(
+                width: 150,
+                child: _CompactDropdown(
+                  value: _queuePriorityFilter,
+                  items: const {'all': 'All priorities', 'high': 'High', 'medium': 'Medium', 'low': 'Low'},
+                  onChanged: (v) => setState(() {
+                    _queuePriorityFilter = v!;
+                    _queuePage = 1;
+                  }),
+                ),
+              ),
+              SizedBox(
+                width: 150,
+                child: _CompactDropdown(
+                  value: _queueSlaFilter,
+                  items: const {'all': 'All SLA', 'breached': 'Breached', 'ontime': 'On track'},
+                  onChanged: (v) => setState(() {
+                    _queueSlaFilter = v!;
+                    _queuePage = 1;
+                  }),
+                ),
+              ),
+              if (hasFilter)
+                TextButton(
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  onPressed: clear,
+                  child: Text('Clear filters', style: AdminWebUi.webCaption(context)),
+                ),
+            ],
+          ),
+        ),
+        const Divider(height: 1, color: AppColors.outlineMuted),
+        if (_queue.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(AppSpacing.s5),
+            child: AdminEmptyCard(message: 'No items in the moderation queue.'),
+          )
+        else if (filteredQueue.isEmpty)
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.s5),
+            child: AdminEmptyCard(
+              message: 'No items match the current filters.',
+              icon: Icons.filter_alt_off_outlined,
+              actionLabel: 'Clear filters',
+              onAction: clear,
+            ),
+          )
+        else ...[
+          WebDataTable(
+            columns: const [
+              WebTableColumn(label: 'Title', flex: 4),
+              WebTableColumn(label: 'Type', width: 130),
+              WebTableColumn(label: 'Priority', width: 110),
+              WebTableColumn(label: 'Age (h)', width: 90, align: Alignment.centerRight, headAlign: Alignment.centerRight),
+              WebTableColumn(label: 'SLA', width: 120),
+            ],
+            rowCount: pageRows.length,
+            decoration: const BoxDecoration(),
+            headStyle: AdminWebUi.webTableHead(context),
+            cellBuilder: (context, row, col) {
+              final item = pageRows[row];
+              final triage = Map<String, dynamic>.from(item['triage'] as Map? ?? const {});
+              final priority = (triage['priority'] ?? 'low').toString();
+              final ageRaw = triage['ageHours'];
+              final age = ageRaw is num
+                  ? ageRaw.toStringAsFixed(ageRaw % 1 == 0 ? 0 : 1)
+                  : (ageRaw ?? '0').toString();
+              final isBreached = triage['isSlaBreached'] == true;
+              final rawTitle = (item['title'] ?? '').toString().trim();
+              return switch (col) {
+                0 => rawTitle.isEmpty
+                    ? Text('Untitled', style: AdminWebUi.webBody(context).copyWith(color: AppColors.textMuted))
+                    : Text(rawTitle, style: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                1 => Text(_prettyModerationType((item['type'] ?? 'other').toString()), style: AdminWebUi.webBody(context).copyWith(color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                2 => _StatusPill.priority(priority),
+                3 => Text(age, style: AdminWebUi.webBody(context).copyWith(fontFeatures: const [FontFeature.tabularFigures()])),
+                4 => isBreached
+                    ? const _StatusPill(text: 'Breached', bg: AppColors.dangerBg, fg: AppColors.danger)
+                    : const _StatusPill(text: 'On track', bg: AppColors.successBg, fg: AppColors.success),
+                _ => const SizedBox.shrink(),
+              };
+            },
+          ),
+          const Divider(height: 1, color: AppColors.outlineMuted),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s5, vertical: AppSpacing.s3),
+            child: AdminPaginationBar(
+              page: page,
+              totalPages: totalPages,
+              totalRows: filteredQueue.length,
+              rowsPerPage: _queueRowsPerPage,
+              rowsPerPageOptions: const [5, 8, 10, 15, 20, 50],
+              onRowsPerPageChanged: (v) => setState(() {
+                _queueRowsPerPage = v;
+                _queuePage = 1;
+              }),
+              onPageChanged: (next) => setState(() => _queuePage = next),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -572,296 +683,98 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
       body: RefreshIndicator(
         onRefresh: _loadAll,
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s6, vertical: AppSpacing.s5),
           children: [
-            // --- HEADER OVERVIEW ---
-            Row(
+            // KPI health strip — replaces the duplicate in-body page title.
+            AdminKpiGrid(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Overview', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
-                      Text('Monitor moderation, roles, and export system data.',
-                          style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
-                    ],
-                  ),
-                ),
-                Wrap(
-                  spacing: 12,
-                  children: [
-                    _MetricChip(label: 'Pending', value: _queue.length.toString(), color: AdminStatusPalette.scheduledBg, textColor: AdminStatusPalette.scheduledFg),
-                    _MetricChip(label: 'High Priority', value: _highPriorityCount.toString(), color: AdminStatusPalette.highBg, textColor: AdminStatusPalette.highFg),
-                    _MetricChip(label: 'SLA Breached', value: _breachedCount.toString(), color: AppColors.warningBg, textColor: AppColors.warning),
-                  ],
-                ),
+                AdminKpiCard(icon: Icons.inbox_outlined, value: _queue.length.toString(), label: 'Pending review', meta: 'In the moderation queue', accent: AppColors.info),
+                AdminKpiCard(icon: Icons.priority_high_rounded, value: _highPriorityCount.toString(), label: 'High priority', meta: 'Need attention first', accent: AppColors.warning),
+                AdminKpiCard(icon: Icons.timer_off_outlined, value: _breachedCount.toString(), label: 'SLA breached', meta: 'Past the response window', accent: AppColors.danger),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.s7),
             if (_error != null) ...[
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(AppRadius.input)),
-                child: Text(_error!, style: TextStyle(color: Colors.red.shade800, fontSize: 13)),
-              ),
-              const SizedBox(height: 16),
+              AdminEmptyCard(message: _error!, icon: Icons.error_outline, actionLabel: 'Retry', onAction: _loadAll),
+              const SizedBox(height: AppSpacing.s5),
             ],
 
-            // --- QUEUE SECTION ---
-            _SectionCard(
-              title: 'Moderation Queue',
+            // Moderation queue
+            _OpsPanel(
+              title: 'Moderation queue',
+              subtitle: 'Reports and flagged items awaiting a decision',
               onRefresh: _loadQueue,
               child: _loadingQueue
-                  ? AdminSkeleton.page(AdminSkeleton.cardList())
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextField(
-                                  controller: _queueSearchCtrl,
-                                  style: const TextStyle(fontSize: 13),
-                                  decoration: _inputDecoration('Search by title or type...'),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 1,
-                                child: _CompactDropdown(
-                                  key: ValueKey<String>('qp_$_queuePriorityFilter'),
-                                  value: _queuePriorityFilter,
-                                  items: const {'all': 'All Priorities', 'high': 'High', 'medium': 'Medium', 'low': 'Low'},
-                                  onChanged: (v) => setState(() {
-                                    _queuePriorityFilter = v!;
-                                    _queuePage = 1;
-                                  }),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 1,
-                                child: _CompactDropdown(
-                                  key: ValueKey<String>('qs_$_queueSlaFilter'),
-                                  value: _queueSlaFilter,
-                                  items: const {'all': 'All SLAs', 'breached': 'Breached', 'ontime': 'On Track'},
-                                  onChanged: (v) => setState(() {
-                                    _queueSlaFilter = v!;
-                                    _queuePage = 1;
-                                  }),
-                                ),
-                              ),
-                              if (_queuePriorityFilter != 'all' || _queueSlaFilter != 'all' || _queueSearchCtrl.text.trim().isNotEmpty) ...[
-                                const SizedBox(width: 8),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2),
-                                  child: TextButton(
-                                    onPressed: () => setState(() {
-                                      _queueSearchCtrl.clear();
-                                      _queuePriorityFilter = 'all';
-                                      _queueSlaFilter = 'all';
-                                      _queuePage = 1;
-                                    }),
-                                    child: const Text('Clear filters', style: TextStyle(fontSize: 12)),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (_queue.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            child: Text('No pending items from the server.', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
-                          )
-                        else if (filteredQueue.isEmpty)
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.filter_alt_off_outlined, size: 18, color: AppColors.textMuted),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    'No rows match the current filters. Adjust search or filters, or clear them.',
-                                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        else ...[
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: DataTable(
-                              columnSpacing: 32,
-                              headingRowHeight: 40,
-                              dataRowMinHeight: 36,
-                              dataRowMaxHeight: 46,
-                              headingRowColor: WidgetStateProperty.all(AppColors.surface),
-                              columns: [
-                                DataColumn(label: Text('Title', style: AdminWebUi.webTableHead(context))),
-                                DataColumn(label: Text('Type', style: AdminWebUi.webTableHead(context))),
-                                DataColumn(label: Text('Priority', style: AdminWebUi.webTableHead(context))),
-                                DataColumn(label: Text('Age (h)', style: AdminWebUi.webTableHead(context))),
-                                DataColumn(label: Text('SLA', style: AdminWebUi.webTableHead(context))),
-                              ],
-                              rows: queuePageRows.map((item) {
-                                final triage = Map<String, dynamic>.from(item['triage'] as Map? ?? const {});
-                                final priority = (triage['priority'] ?? 'low').toString();
-                                final ageRaw = triage['ageHours'];
-                                final age = ageRaw is num ? ageRaw.toStringAsFixed(ageRaw % 1 == 0 ? 0 : 1) : (ageRaw ?? '0').toString();
-                                final isBreached = triage['isSlaBreached'] == true;
-                                final title = (item['title'] ?? '').toString().trim().isEmpty ? '(No title)' : (item['title'] ?? '').toString();
-                                final typeLabel = _prettyModerationType((item['type'] ?? 'other').toString());
-
-                                return DataRow(cells: [
-                                  DataCell(
-                                    Tooltip(
-                                      message: title.length > 48 ? title : '',
-                                      child: SizedBox(
-                                        width: 280,
-                                        child: Text(title, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(Text(typeLabel, style: const TextStyle(fontSize: 13))),
-                                  DataCell(_PriorityChip(priority: priority)),
-                                  DataCell(Text(age, style: const TextStyle(fontSize: 13))),
-                                  DataCell(
-                                    Text(
-                                      isBreached ? 'Breached' : 'On track',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: isBreached ? Colors.red[700] : Colors.green[700],
-                                      ),
-                                    ),
-                                  ),
-                                ]);
-                              }).toList(),
-                            ),
-                          ),
-                          const Divider(height: 1, thickness: 1),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            child: AdminPaginationBar(
-                              page: queuePage,
-                              totalPages: queueTotalPages,
-                              totalRows: filteredQueue.length,
-                              rowsPerPage: _queueRowsPerPage,
-                              rowsPerPageOptions: const [5, 8, 10, 15, 20, 50],
-                              onRowsPerPageChanged: (v) => setState(() {
-                                _queueRowsPerPage = v;
-                                _queuePage = 1;
-                              }),
-                              onPageChanged: (next) => setState(() => _queuePage = next),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                  ? Padding(padding: const EdgeInsets.all(AppSpacing.s5), child: AdminSkeleton.table(rows: 6))
+                  : _buildQueueBody(filteredQueue, queuePageRows, queuePage, queueTotalPages),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.s7),
 
-            // --- EXPORT SECTION ---
-            _SectionCard(
-              title: 'Data Export (CSV)',
+            // Data export
+            _OpsPanel(
+              title: 'Data export (CSV)',
+              subtitle: 'Preview cleans and explains every column before download',
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.s5),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Choose a dataset below. Preview will clean and explain columns for easier reading.',
-                      style: TextStyle(fontSize: 12, color: Colors.blueGrey[600]),
+                      'Pick a dataset. The preview renames raw fields to plain labels so the file is easy to read.',
+                      style: AdminWebUi.webCaption(context),
                     ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 14,
-                      runSpacing: 14,
+                    const SizedBox(height: AppSpacing.s4),
+                    AdminCardGrid(
                       children: [
-                        _ExportDatasetCard(
-                          title: 'Active Users',
-                          subtitle: 'Current user accounts',
-                          icon: Icons.group_outlined,
-                          highlight: AppColors.infoBg,
-                          keyPoints: const ['Profile info', 'Learning status', 'Account flags'],
-                          onTap: () => _previewCsv('users'),
-                        ),
-                        _ExportDatasetCard(
-                          title: 'Deleted Users',
-                          subtitle: 'Soft-deleted accounts',
-                          icon: Icons.restore_from_trash_outlined,
-                          highlight: AppColors.warningBg,
-                          keyPoints: const ['Deletion time', 'Basic profile', 'Recovery check'],
-                          onTap: () => _previewCsv('users', onlyDeleted: true),
-                        ),
-                        _ExportDatasetCard(
-                          title: 'Issue Reports',
-                          subtitle: 'User report tickets',
-                          icon: Icons.bug_report_outlined,
-                          highlight: AppColors.dangerBg,
-                          keyPoints: const ['Report type', 'Current status', 'Admin response'],
-                          onTap: () => _previewCsv('reports'),
-                        ),
-                        _ExportDatasetCard(
-                          title: 'Audit Logs',
-                          subtitle: 'Admin action history',
-                          icon: Icons.fact_check_outlined,
-                          highlight: AppColors.infoBg,
-                          keyPoints: const ['Action', 'Actor', 'Target + time'],
-                          onTap: () => _previewCsv('audit_logs'),
-                        ),
+                        _ExportCard(icon: Icons.group_outlined, title: 'Active users', subtitle: 'Current, non-deleted accounts', points: const ['Profile & contact info', 'Learning progress', 'Account flags & status'], onPreview: () => _previewCsv('users')),
+                        _ExportCard(icon: Icons.restore_from_trash_outlined, title: 'Deleted users', subtitle: 'Soft-deleted accounts', points: const ['When it was deleted', 'Basic profile', 'Recovery eligibility'], onPreview: () => _previewCsv('users', onlyDeleted: true)),
+                        _ExportCard(icon: Icons.flag_outlined, title: 'Issue reports', subtitle: 'User report tickets', points: const ['Report type & reason', 'Current status', 'Admin response'], onPreview: () => _previewCsv('reports')),
+                        _ExportCard(icon: Icons.fact_check_outlined, title: 'Audit logs', subtitle: 'Admin action history', points: const ['Action performed', 'Who did it', 'Target & timestamp'], onPreview: () => _previewCsv('audit_logs')),
                       ],
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.s7),
 
-            // --- ROLE & PERMISSION OVERVIEW ---
-            _SectionCard(
-              title: 'Roles & Permissions',
+            // Roles & permissions
+            _OpsPanel(
+              title: 'Roles & permissions',
+              subtitle: 'What each role can do',
               onRefresh: _loadPermissions,
               child: _loadingPerms
-                  ? AdminSkeleton.page(AdminSkeleton.cardList())
+                  ? Padding(padding: const EdgeInsets.all(AppSpacing.s5), child: AdminSkeleton.table(rows: 2))
                   : permissionRows.isEmpty
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Text('No permission data.', style: TextStyle(color: AppColors.textMuted, fontSize: 14)),
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                              child: Text(
-                                'Only 2 roles: Admin (full access) and User (no admin access). '
-                                'To promote/demote users, go to User Management → user details.',
-                                style: TextStyle(fontSize: 12, color: Colors.blueGrey[600]),
+                      ? const Padding(padding: EdgeInsets.all(AppSpacing.s5), child: AdminEmptyCard(message: 'No permission data yet.'))
+                      : Padding(
+                          padding: const EdgeInsets.all(AppSpacing.s5),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s3),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceSubtle,
+                                  borderRadius: BorderRadius.circular(AppRadius.input),
+                                  border: Border.all(color: AppColors.outlineMuted),
+                                ),
+                                child: Text(
+                                  'There are two roles: Admin (full access) and User (no admin access). To promote or demote someone, open Users → user details.',
+                                  style: AdminWebUi.webCaption(context),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            ...permissionRows.map((row) {
-                              final role = row['role'].toString();
-                              final perms = (row['permissions'] as List).cast<String>();
-                              final isWildcard = perms.contains('*');
-                              return _RolePermissionTile(
-                                role: role,
-                                permissions: perms,
-                                isWildcard: isWildcard,
-                                allPermissions: allPerms,
-                              );
-                            }),
-                            const SizedBox(height: 8),
-                          ],
+                              const SizedBox(height: AppSpacing.s4),
+                              for (final row in permissionRows) ...[
+                                _RoleCard(
+                                  role: row['role'].toString(),
+                                  permissions: (row['permissions'] as List).cast<String>(),
+                                  allPermissions: allPerms,
+                                ),
+                                const SizedBox(height: AppSpacing.s3),
+                              ],
+                            ],
+                          ),
                         ),
             ),
           ],
@@ -874,7 +787,7 @@ class _AdminOpsCenterPageState extends State<AdminOpsCenterPage> {
 // --- WIDGET COMPONENTS THU GỌN ---
 
 class _CompactDropdown extends StatelessWidget {
-  const _CompactDropdown({super.key, required this.value, required this.items, required this.onChanged});
+  const _CompactDropdown({required this.value, required this.items, required this.onChanged});
   final String value;
   final Map<String, String> items;
   final ValueChanged<String?> onChanged;
@@ -885,14 +798,14 @@ class _CompactDropdown extends StatelessWidget {
       key: ValueKey(value),
       initialValue: value,
       isExpanded: true,
-      style: const TextStyle(fontSize: 13, color: Colors.black87),
+      style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
       icon: const Icon(Icons.arrow_drop_down, size: 20),
       decoration: InputDecoration(
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.chip), borderSide: const BorderSide(color: AppColors.outline)),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.chip), borderSide: const BorderSide(color: AppColors.outline)),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.surfaceCard,
         isDense: true,
       ),
       items: items.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
@@ -901,112 +814,132 @@ class _CompactDropdown extends StatelessWidget {
   }
 }
 
-class _MetricChip extends StatelessWidget {
-  const _MetricChip({required this.label, required this.value, required this.color, required this.textColor});
-  final String label;
-  final String value;
-  final Color color;
-  final Color textColor;
+/// Semantic status pill (priority / SLA) — tinted, never row-tint.
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.text, required this.bg, required this.fg});
+  final String text;
+  final Color bg;
+  final Color fg;
+
+  factory _StatusPill.priority(String p) {
+    final (Color b, Color f, String label) = switch (p) {
+      'high' => (AdminStatusPalette.highBg, AdminStatusPalette.highFg, 'High'),
+      'medium' => (AdminStatusPalette.medBg, AdminStatusPalette.medFg, 'Medium'),
+      'low' => (AdminStatusPalette.lowBg, AdminStatusPalette.lowFg, 'Low'),
+      _ => (AppColors.surfaceSubtle, AppColors.textSecondary, p.isEmpty ? '—' : p),
+    };
+    return _StatusPill(text: label, bg: b, fg: f);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(AppRadius.chip)),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(fontSize: 12, color: textColor.withValues(alpha: 0.8), fontWeight: FontWeight.w500)),
-        ],
+    return Semantics(
+      label: 'Status: $text',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 2),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.pill)),
+        child: Text(
+          text,
+          style: AdminWebUi.webCaption(context).copyWith(color: fg, fontWeight: FontWeight.w500),
+        ),
       ),
     );
   }
 }
 
-class _ExportDatasetCard extends StatelessWidget {
-  const _ExportDatasetCard({
+/// Export dataset card — neutral (Editorial Black: no decorative color).
+/// The whole card is the single tap target; the Preview chip is its affordance.
+class _ExportCard extends StatelessWidget {
+  const _ExportCard({
+    required this.icon,
     required this.title,
     required this.subtitle,
-    required this.icon,
-    required this.highlight,
-    required this.keyPoints,
-    required this.onTap,
+    required this.points,
+    required this.onPreview,
   });
+  final IconData icon;
   final String title;
   final String subtitle;
-  final IconData icon;
-  final Color highlight;
-  final List<String> keyPoints;
-  final VoidCallback onTap;
+  final List<String> points;
+  final VoidCallback onPreview;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 250,
-      child: Material(
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          side: const BorderSide(color: AppColors.outline),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(color: highlight, borderRadius: BorderRadius.circular(AppRadius.input)),
-                      child: Icon(icon, size: 20, color: AppColors.textSecondary),
+    return Semantics(
+      button: true,
+      label: 'Preview $title export',
+      child: AdminWebUi.focusableTile(
+        onTap: onPreview,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Ink(
+          decoration: AdminWebUi.panelDecoration(),
+          padding: const EdgeInsets.all(AppSpacing.s4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSubtle,
+                      borderRadius: BorderRadius.circular(AppRadius.input),
+                      border: Border.all(color: AppColors.outlineMuted),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 2),
-                          Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        ],
-                      ),
+                    child: Icon(icon, size: 17, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(width: AppSpacing.s3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 1),
+                        Text(subtitle, style: AdminWebUi.metaMuted, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                ...keyPoints.map((point) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.check_circle_outline, size: 13, color: AppColors.textMuted),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              point,
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                const SizedBox(height: 2),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(Icons.visibility_outlined, size: 14),
-                    label: const Text('Preview', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                    style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s3),
+              for (final point in points)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check, size: 13, color: AppColors.textMuted),
+                      const SizedBox(width: AppSpacing.s2),
+                      Expanded(child: Text(point, style: AdminWebUi.webCaption(context))),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              const SizedBox(height: AppSpacing.s2),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceSubtle,
+                    borderRadius: BorderRadius.circular(AppRadius.input),
+                    border: Border.all(color: AppColors.outlineMuted),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.visibility_outlined, size: 14, color: AppColors.textPrimary),
+                      const SizedBox(width: AppSpacing.s2),
+                      Text(
+                        'Preview',
+                        style: AdminWebUi.webCaption(context).copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1014,77 +947,49 @@ class _ExportDatasetCard extends StatelessWidget {
   }
 }
 
-class _DialogMetricPill extends StatelessWidget {
-  const _DialogMetricPill({required this.label, required this.value, required this.icon});
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceSubtle,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: AppColors.outline),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: AppColors.textMuted),
-          const SizedBox(width: 6),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-          const SizedBox(width: 4),
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-        ],
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child, this.onRefresh});
+/// Titled section — flat panel (border only), token header + optional refresh.
+class _OpsPanel extends StatelessWidget {
+  const _OpsPanel({required this.title, required this.child, this.subtitle, this.onRefresh});
   final String title;
   final Widget child;
+  final String? subtitle;
   final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.outline),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
+      decoration: AdminWebUi.panelDecoration(),
+      clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+            padding: const EdgeInsets.fromLTRB(AppSpacing.s5, AppSpacing.s4, AppSpacing.s4, AppSpacing.s4),
             child: Row(
               children: [
-                Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: AdminWebUi.webH2(context)),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 1),
+                        Text(subtitle!, style: AdminWebUi.metaMuted),
+                      ],
+                    ],
+                  ),
+                ),
                 if (onRefresh != null)
-                  SizedBox(
-                    height: 28,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        side: const BorderSide(color: AppColors.outline),
-                      ),
-                      onPressed: onRefresh,
-                      icon: const Icon(Icons.refresh, size: 14, color: Colors.black87),
-                      label: const Text('Refresh', style: TextStyle(fontSize: 12, color: Colors.black87)),
-                    ),
+                  OutlinedButton.icon(
+                    style: AdminWebUi.compactOutlinedStyle(context),
+                    onPressed: onRefresh,
+                    icon: const Icon(Icons.refresh, size: 15),
+                    label: const Text('Refresh'),
                   ),
               ],
             ),
           ),
-          const Divider(height: 1, thickness: 1),
+          const Divider(height: 1, color: AppColors.outlineMuted),
           child,
         ],
       ),
@@ -1092,51 +997,54 @@ class _SectionCard extends StatelessWidget {
   }
 }
 
-class _PriorityChip extends StatelessWidget {
-  const _PriorityChip({required this.priority});
-  final String priority;
+/// Role access badge — Admin = authority (navy tint), User = neutral. Never danger red.
+class _RoleBadge extends StatelessWidget {
+  const _RoleBadge({required this.admin});
+  final bool admin;
 
   @override
   Widget build(BuildContext context) {
-    final Color bg;
-    final Color fg;
-    switch (priority) {
-      case 'high':
-        bg = AppColors.dangerBg; fg = AppColors.danger; break;
-      case 'medium':
-        bg = AppColors.warningBg; fg = AppColors.warning; break;
-      default:
-        bg = AppColors.successBg; fg = AppColors.success;
-    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.xs)),
-      child: Text(priority.toUpperCase(), style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 10)),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 2),
+      decoration: BoxDecoration(
+        color: admin ? AppColors.primaryTint : AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        admin ? 'Full access' : 'No admin access',
+        style: AdminWebUi.webCaption(context).copyWith(
+          color: admin ? AppColors.primaryDark : AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }
 
-class _RolePermissionTile extends StatelessWidget {
-  const _RolePermissionTile({
+/// Role row — neutral icon tile + authority badge + a granted/denied permission matrix.
+class _RoleCard extends StatelessWidget {
+  const _RoleCard({
     required this.role,
     required this.permissions,
-    required this.isWildcard,
     required this.allPermissions,
   });
   final String role;
   final List<String> permissions;
-  final bool isWildcard;
   final List<String> allPermissions;
 
   @override
   Widget build(BuildContext context) {
-    final displayRole = '${role[0].toUpperCase()}${role.substring(1)}';
+    final isWildcard = permissions.contains('*');
+    final isAdmin = role == 'admin' || isWildcard;
+    final displayRole = role.isEmpty ? role : '${role[0].toUpperCase()}${role.substring(1)}';
+    final perms = allPermissions.isNotEmpty ? allPermissions : permissions.where((p) => p != '*').toList();
+    bool granted(String p) => isWildcard || permissions.contains(p);
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.s4),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.input),
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(AppRadius.card),
         border: Border.all(color: AppColors.outline),
       ),
       child: Column(
@@ -1144,64 +1052,29 @@ class _RolePermissionTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                role == 'admin' ? Icons.admin_panel_settings : Icons.person_outline,
-                size: 18,
-                color: role == 'admin' ? AppColors.danger : AppColors.textMuted,
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSubtle,
+                  borderRadius: BorderRadius.circular(AppRadius.input),
+                  border: Border.all(color: AppColors.outlineMuted),
+                ),
+                child: Icon(isAdmin ? Icons.shield_outlined : Icons.person_outline, size: 17, color: AppColors.textPrimary),
               ),
-              const SizedBox(width: 8),
-              Text(
-                displayRole,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: role == 'admin' ? AppColors.danger : AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (isWildcard)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.dangerBg,
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                  ),
-                  child: const Text(
-                    'FULL ACCESS',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.danger),
-                  ),
-                ),
-              if (!isWildcard && permissions.isEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceSubtle,
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                  ),
-                  child: const Text(
-                    'NO ADMIN ACCESS',
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.textMuted),
-                  ),
-                ),
+              const SizedBox(width: AppSpacing.s3),
+              Text(displayRole, style: AdminWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600)),
+              const SizedBox(width: AppSpacing.s3),
+              _RoleBadge(admin: isAdmin),
             ],
           ),
-          if (isWildcard) ...[
-            const SizedBox(height: 8),
+          if (perms.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s3),
             Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: allPermissions.map((p) {
-                return _PermissionTag(label: p, granted: true);
-              }).toList(),
-            ),
-          ] else if (permissions.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 4,
-              children: permissions.map((p) {
-                return _PermissionTag(label: p, granted: true);
-              }).toList(),
+              spacing: AppSpacing.s2,
+              runSpacing: AppSpacing.s2,
+              children: [for (final p in perms) _PermChip(label: p, granted: granted(p))],
             ),
           ],
         ],
@@ -1210,29 +1083,33 @@ class _RolePermissionTile extends StatelessWidget {
   }
 }
 
-class _PermissionTag extends StatelessWidget {
-  const _PermissionTag({required this.label, required this.granted});
+/// Permission chip — granted (check/success) vs denied (dash/muted).
+class _PermChip extends StatelessWidget {
+  const _PermChip({required this.label, required this.granted});
   final String label;
   final bool granted;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 3),
       decoration: BoxDecoration(
         color: granted ? AppColors.successBg : AppColors.surfaceSubtle,
         borderRadius: BorderRadius.circular(AppRadius.xs),
-        border: Border.all(
-          color: granted ? AppColors.success : AppColors.outline,
-        ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w500,
-          color: granted ? AppColors.success : AppColors.textMuted,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(granted ? Icons.check : Icons.remove, size: 12, color: granted ? AppColors.success : AppColors.textMuted),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: AdminWebUi.webCaption(context).copyWith(
+              color: granted ? AppColors.success : AppColors.textMuted,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }

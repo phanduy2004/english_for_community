@@ -383,23 +383,49 @@ class _ListeningSkillsPageState extends State<ListeningSkillsPage> with SingleTi
                   const SizedBox(height: 24),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: AppColors.surfaceCard,
                       borderRadius: BorderRadius.circular(AppRadius.sheet),
                       border: Border.all(color: AppColors.outline),
                     ),
                     child: Column(
                       children: [
+                        // Compact segmented tabs (icon + chữ trên 1 hàng, ~44dp).
+                        // Trước dùng Tab(icon:,text:) xếp dọc nên cao ~72dp → quá to.
                         TabBar(
                           controller: _tabController,
-                          labelColor: Theme.of(context).primaryColor,
-                          unselectedLabelColor: Colors.grey,
+                          labelColor: AppColors.textPrimary,
+                          unselectedLabelColor: AppColors.textMuted,
+                          labelStyle: StudentMobileUi.cardTitle(context),
+                          unselectedLabelStyle: StudentMobileUi.body(context),
                           indicatorSize: TabBarIndicatorSize.tab,
+                          indicatorColor: AppSkillColors.listening.color,
+                          indicatorWeight: 2,
+                          dividerColor: AppColors.outline,
                           tabs: [
-                            Tab(icon: const Icon(Icons.edit_note), text: t.listeningSkillsTabPractice),
-                            Tab(icon: const Icon(Icons.forum_outlined), text: t.listeningSkillsTabDiscuss),
+                            Tab(
+                              height: 46,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.edit_note_rounded, size: 18),
+                                  const SizedBox(width: AppSpacing.s2),
+                                  Text(t.listeningSkillsTabPractice),
+                                ],
+                              ),
+                            ),
+                            Tab(
+                              height: 46,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.forum_outlined, size: 18),
+                                  const SizedBox(width: AppSpacing.s2),
+                                  Text(t.listeningSkillsTabDiscuss),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        const Divider(height: 1, color: AppColors.outline),
                         SizedBox(
                           height: 450,
                           child: TabBarView(

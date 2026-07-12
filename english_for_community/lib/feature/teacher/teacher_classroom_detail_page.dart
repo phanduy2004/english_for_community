@@ -226,6 +226,10 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
     return l10n.studentClassJoinPolicyOpen;
   }
 
+  // Số bài giao MỚI NHẤT hiển thị trong bảng preview "Recent assignments" ở tab
+  // Overview (danh sách đầy đủ vẫn ở "View all assignments" → tab Assignments).
+  static const int _kOverviewRecentLimit = 6;
+
   List<Map<String, dynamic>> _activeAssignmentsFrom(List<dynamic> assignments) => assignments
       .map((raw) => Map<String, dynamic>.from(raw as Map))
       .where(TeacherAssignmentListUtils.isActiveListItem)
@@ -485,7 +489,8 @@ class _TeacherClassroomDetailPageState extends State<TeacherClassroomDetailPage>
                               historyCount: _historyAssignmentsFrom(assignments).length,
                               pendingMembers: _memberCount(data, 'memberCountPending'),
                               activeMembers: activeMembers,
-                              recentAssignments: _activeAssignmentsFrom(assignments).take(3).toList(),
+                              recentAssignments:
+                                  _activeAssignmentsFrom(assignments).take(_kOverviewRecentLimit).toList(),
                               description: (data?['description'] as String?)?.trim() ?? '',
                               inviteCode: (data?['inviteCode'] as String?) ?? '',
                               createdAt: _formatDate(context, data?['createdAt']),

@@ -99,7 +99,7 @@ abstract class TeacherExamRepository {
   Future<Either<Failure, Map<String, dynamic>>> getIntegrationsStatus();
   Future<Either<Failure, dynamic>> linkGoogleClassroom(String classroomId, Map<String, dynamic> body);
   Future<Either<Failure, dynamic>> unlinkGoogleClassroom(String classroomId);
-  Future<Either<Failure, Map<String, dynamic>>> getTeacherAnalyticsFull({int days = 14});
+  Future<Either<Failure, Map<String, dynamic>>> getTeacherAnalyticsFull({int days = 14, String? classroomId});
   Future<Either<Failure, Map<String, dynamic>>> getAssignmentIntegritySummary(String assignmentId);
 
   /// Generates AI writing prompt options for a topic (teacher picks one for exam).

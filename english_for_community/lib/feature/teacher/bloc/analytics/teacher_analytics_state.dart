@@ -9,6 +9,8 @@ class TeacherAnalyticsState extends Equatable {
     this.summary,
     this.charts,
     this.period = 14,
+    this.classroomId,
+    this.classes = const [],
     this.submissionRows = const [],
     this.scoreDistRows = const [],
     this.scoreTrendRows = const [],
@@ -21,6 +23,10 @@ class TeacherAnalyticsState extends Equatable {
   final Map<String, dynamic>? summary;
   final Map<String, dynamic>? charts;
   final int period;
+
+  /// Lớp đang xem (analytics theo TỪNG lớp) + danh sách lớp của giáo viên.
+  final String? classroomId;
+  final List<Map<String, dynamic>> classes;
 
   /// Pre-parsed chart series (P0-F3 — no `.map().toList()` in widget build).
   final List<Map<String, dynamic>> submissionRows;
@@ -38,6 +44,8 @@ class TeacherAnalyticsState extends Equatable {
     Map<String, dynamic>? summary,
     Map<String, dynamic>? charts,
     int? period,
+    String? classroomId,
+    List<Map<String, dynamic>>? classes,
     List<Map<String, dynamic>>? submissionRows,
     List<Map<String, dynamic>>? scoreDistRows,
     List<Map<String, dynamic>>? scoreTrendRows,
@@ -51,6 +59,8 @@ class TeacherAnalyticsState extends Equatable {
       summary: summary ?? this.summary,
       charts: charts ?? this.charts,
       period: period ?? this.period,
+      classroomId: classroomId ?? this.classroomId,
+      classes: classes ?? this.classes,
       submissionRows: submissionRows ?? this.submissionRows,
       scoreDistRows: scoreDistRows ?? this.scoreDistRows,
       scoreTrendRows: scoreTrendRows ?? this.scoreTrendRows,
@@ -66,6 +76,8 @@ class TeacherAnalyticsState extends Equatable {
         summary,
         charts,
         period,
+        classroomId,
+        classes,
         submissionRows,
         scoreDistRows,
         scoreTrendRows,

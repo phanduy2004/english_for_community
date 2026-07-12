@@ -937,9 +937,9 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
   }
 
   @override
-  Future<Either<Failure, Map<String, dynamic>>> getTeacherAnalyticsFull({int days = 14}) async {
+  Future<Either<Failure, Map<String, dynamic>>> getTeacherAnalyticsFull({int days = 14, String? classroomId}) async {
     try {
-      return Right(await remote.getTeacherAnalyticsFull(days: days));
+      return Right(await remote.getTeacherAnalyticsFull(days: days, classroomId: classroomId));
     } on DioException catch (e) {
       return Left(ServerFailure(message: _dioMsg(e)));
     } catch (e) {

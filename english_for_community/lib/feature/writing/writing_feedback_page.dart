@@ -507,18 +507,18 @@ class _RewriteParagraphCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: hasToken ? AppColors.successBg : AppColors.infoBg,
+                  color: hasToken ? AppColors.successBg : AppColors.surfaceSubtle,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                   border: Border.all(
-                    color: hasToken ? AppColors.success : AppColors.info,
+                    color: hasToken ? AppColors.success : AppColors.outline,
                   ),
                 ),
                 child: Text(
-                  hasToken ? 'Smart Tokens' : 'Auto Diff',
+                  hasToken ? 'Smart Tokens' : 'No changes',
                   style: TextStyle(
                     fontSize: AppTypography.mobileCaption,
                     fontWeight: FontWeight.w700,
-                    color: hasToken ? AppColors.success : AppColors.info,
+                    color: hasToken ? AppColors.success : AppColors.textMuted,
                   ),
                 ),
               ),
@@ -540,10 +540,22 @@ class _RewriteParagraphCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(color: AppColors.outline),
             ),
-            child: InteractiveDiffText(
-              text: rewrite,
-              originalText: matchedOriginal,
-            ),
+            child: hasToken
+                ? InteractiveDiffText(
+                    text: rewrite,
+                    originalText: matchedOriginal,
+                  )
+                // No {{tags}} = AI reported no real error → show the student's ORIGINAL
+                // text verbatim (no auto-diff), so any un-tagged stylistic rephrasing by
+                // the AI is IGNORED here. Nicer/upgraded versions live in the Samples tab.
+                : Text(
+                    matchedOriginal,
+                    style: const TextStyle(
+                      fontSize: AppTypography.mobileBody,
+                      height: 1.5,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
           ),
         ],
       ),

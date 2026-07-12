@@ -7,6 +7,7 @@ import Word from '../models/Word.js';
 import ReadingProgress from '../models/ReadingProgress.js';
 import WritingSubmission from '../models/WritingSubmission.js';
 import SpeakingEnrollment from '../models/SpeakingEnrollment.js';
+import SpeakingConversation from '../models/SpeakingConversation.js';
 import Enrollment from '../models/Enrollment.js';
 import ListeningCompAttempt from '../models/ListeningCompAttempt.js';
 
@@ -22,10 +23,11 @@ const leanChain = (rows) => {
 };
 
 // Mock 5 model nguồn "bài học" (_fetchCompletedLessons). Mặc định rỗng.
-const mockLessons = (t, { readings = [], writings = [], speakings = [], dictations = [], comps = [] } = {}) => {
+const mockLessons = (t, { readings = [], writings = [], speakings = [], freeSpeakings = [], dictations = [], comps = [] } = {}) => {
   t.mock.method(ReadingProgress, 'find', () => leanChain(readings));
   t.mock.method(WritingSubmission, 'find', () => leanChain(writings));
   t.mock.method(SpeakingEnrollment, 'find', () => leanChain(speakings));
+  t.mock.method(SpeakingConversation, 'find', () => leanChain(freeSpeakings));
   t.mock.method(Enrollment, 'find', () => leanChain(dictations));
   t.mock.method(ListeningCompAttempt, 'find', () => leanChain(comps));
 };

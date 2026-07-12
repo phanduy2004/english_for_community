@@ -213,9 +213,9 @@ export const teacherDashboardService = {
     };
   },
 
-  async getAnalyticsSummary(teacherId) {
-    // Finding #8: scope GỒM cả lớp dạy-cùng — đồng bộ với teacherAnalyticsChartsService.
-    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(teacherId, '_id status');
+  async getAnalyticsSummary(teacherId, { classroomId = null } = {}) {
+    // Scope đồng bộ với teacherAnalyticsChartsService (gộp, hoặc 1 lớp nếu có classroomId).
+    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(teacherId, '_id status', { classroomId });
     const activeAssignments = assignments.filter((a) => a.status === 'active').length;
 
     const attemptAgg = assignmentIds.length

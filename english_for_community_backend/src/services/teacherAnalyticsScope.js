@@ -40,18 +40,33 @@ export async function classroomIdsForTeacher(teacherId) {
  */
 export async function teacherAnalyticsScope(
   teacherId,
-  projection = '_id examId mode status classroomId config audience'
+  projection = '_id examId mode status classroomId config audience',
+  { classroomId = null } = {}
 ) {
-  const classIds = await classroomIdsForTeacher(teacherId);
-  const assignments = await ExamAssignment.find({
-    $or: [
-      { teacherId },
-      { teacherId: new mongoose.Types.ObjectId(String(teacherId)) },
-      { classroomId: { $in: classIds } },
-    ],
-  })
-    .select(projection)
-    .lean();
+  let classIds = await classroomIdsForTeacher(teacherId);
+
+  let filter;
+  if (classroomId) {
+    // Lọc theo 1 lớp: chỉ khi GV có quyền lớp đó (owner / co-teacher active), và chỉ
+    // lấy assignment THUỘC lớp đó. Không có quyền → phạm vi rỗng (không rò rỉ lớp khác).
+    const cid = String(classroomId);
+    if (!classIds.some((id) => id.toString() === cid)) {
+      return { classIds: [], assignments: [], assignmentIds: [] };
+    }
+    const cidObj = new mongoose.Types.ObjectId(cid);
+    classIds = [cidObj];
+    filter = { classroomId: cidObj };
+  } else {
+    filter = {
+      $or: [
+        { teacherId },
+        { teacherId: new mongoose.Types.ObjectId(String(teacherId)) },
+        { classroomId: { $in: classIds } },
+      ],
+    };
+  }
+
+  const assignments = await ExamAssignment.find(filter).select(projection).lean();
   return { classIds, assignments, assignmentIds: assignments.map((a) => a._id) };
 }
 

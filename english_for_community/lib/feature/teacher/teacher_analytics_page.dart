@@ -51,6 +51,11 @@ class _TeacherAnalyticsView extends StatelessWidget {
             TeacherBreadcrumb(label: l10n.teacherAnalyticsTitle),
           ],
           actions: [
+            // Analytics xem theo TỪNG lớp — bộ chọn lớp (mặc định lớp đầu tiên).
+            if (state.classes.isNotEmpty) ...[
+              _ClassSelector(classes: state.classes, selectedId: state.classroomId),
+              const SizedBox(width: AppSpacing.s3),
+            ],
             _PeriodChips(period: state.period),
             const SizedBox(width: AppSpacing.s3),
             IconButton(
@@ -77,9 +82,79 @@ class _TeacherAnalyticsView extends StatelessWidget {
                         ],
                       ),
                     )
-                  : _AnalyticsContent(state: state),
+                  : (state.status == TeacherAnalyticsStatus.success && state.classes.isEmpty)
+                      ? Padding(
+                          padding: const EdgeInsets.all(AppSpacing.s5),
+                          child: _EmptyNote(
+                            icon: Icons.school_outlined,
+                            text: l10n.teacherAnalyticsNoData,
+                          ),
+                        )
+                      : _AnalyticsContent(state: state),
         );
       },
+    );
+  }
+}
+
+// ── Class selector (analytics theo từng lớp) ─────────────────────────────────────
+
+class _ClassSelector extends StatelessWidget {
+  const _ClassSelector({required this.classes, required this.selectedId});
+
+  final List<Map<String, dynamic>> classes;
+  final String? selectedId;
+
+  static String _cid(Map c) => (c['id'] ?? c['_id'])?.toString() ?? '';
+  static String _name(Map c) {
+    final n = (c['name'] as String?)?.trim();
+    return (n != null && n.isNotEmpty) ? n : _cid(c);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = classes.firstWhere(
+      (c) => _cid(c) == selectedId,
+      orElse: () => classes.first,
+    );
+    return PopupMenuButton<String>(
+      tooltip: '',
+      onSelected: (id) =>
+          context.read<TeacherAnalyticsBloc>().add(TeacherAnalyticsClassChanged(id)),
+      itemBuilder: (_) => [
+        for (final c in classes)
+          PopupMenuItem<String>(
+            value: _cid(c),
+            child: Text(_name(c), style: TeacherWebUi.webBody(context)),
+          ),
+      ],
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.s3, vertical: AppSpacing.s2),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceCard,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.outline),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.class_outlined, size: 16, color: AppColors.textSecondary),
+            const SizedBox(width: AppSpacing.s2),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Text(
+                _name(selected),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(width: 2),
+            const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textMuted),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -460,8 +535,7 @@ class _KpiRow extends StatelessWidget {
           trendIsPercent: false,
         ),
         _KpiCard(
-          icon: Icons.donut_large_outlined,
-          ringPercent: completion?.toDouble(),
+          icon: Icons.pie_chart_outline_rounded,
           accent: AppColors.success,
           value: completion != null ? '$completion' : '—',
           suffix: completion != null ? '%' : null,
@@ -486,7 +560,6 @@ class _KpiRow extends StatelessWidget {
           accent: AppColors.warning,
           value: '$pendingGrading',
           label: l10n.teacherAnalyticsPendingGrading,
-          ctaLabel: l10n.teacherAnalyticsGradeNow,
           onTap: () => context.go(TeacherDashboardPage.routePath),
         ),
       ],
@@ -533,8 +606,6 @@ class _KpiCard extends StatelessWidget {
     this.suffix,
     this.trend,
     this.trendIsPercent = true,
-    this.ctaLabel,
-    this.ringPercent,
     this.onTap,
   });
 
@@ -545,8 +616,6 @@ class _KpiCard extends StatelessWidget {
   final String? suffix;
   final double? trend;
   final bool trendIsPercent;
-  final String? ctaLabel;
-  final double? ringPercent; // 0..100 → progress ring instead of an icon box
   final VoidCallback? onTap;
 
   @override
@@ -554,88 +623,62 @@ class _KpiCard extends StatelessWidget {
     final showTrend =
         trend != null && (trendIsPercent ? trend!.abs() >= 5 : trend!.abs() >= 0.1);
 
-    final leading = ringPercent != null
-        ? SizedBox(
-            width: 30,
-            height: 30,
-            child: CircularProgressIndicator(
-              value: (ringPercent! / 100).clamp(0, 1),
-              strokeWidth: 3,
-              backgroundColor: AppColors.surfaceSubtle,
-              valueColor: AlwaysStoppedAnimation<Color>(accent),
-            ),
-          )
-        : Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.input),
-            ),
-            child: Icon(icon, size: 16, color: accent),
-          );
+    final leading = Container(
+      width: 32,
+      height: 32,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.input),
+      ),
+      child: Icon(icon, size: 17, color: accent),
+    );
 
+    // Góc trên-phải: badge trend, hoặc mũi tên khi ô bấm được (thay CTA bị cắt chữ).
+    Widget? trailing;
+    if (showTrend) {
+      trailing = _TrendBadge(value: trend!, isPercent: trendIsPercent);
+    } else if (onTap != null) {
+      trailing = const Icon(Icons.arrow_forward, size: 15, color: AppColors.textMuted);
+    }
+
+    // Tile DỌC: hàng trên (icon · trend/mũi tên) → SỐ lớn 1 dòng riêng → nhãn dưới.
     final body = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s4, vertical: AppSpacing.s4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      padding: const EdgeInsets.all(AppSpacing.s4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          leading,
-          const SizedBox(width: AppSpacing.s4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: Text(value,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TeacherWebUi.webKpiValue(context)),
-                    ),
-                    if (suffix != null) ...[
-                      const SizedBox(width: 2),
-                      Text(suffix!,
-                          style: TeacherWebUi.webCaption(context)
-                              .copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
-                    ],
-                    if (showTrend) ...[
-                      const SizedBox(width: AppSpacing.s2),
-                      _TrendBadge(value: trend!, isPercent: trendIsPercent),
-                    ] else if (ctaLabel != null) ...[
-                      const SizedBox(width: AppSpacing.s2),
-                      Expanded(
-                        child: Row(
-                          children: [
-                            Flexible(
-                              child: Text(ctaLabel!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 11.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.warning)),
-                            ),
-                            const SizedBox(width: 2),
-                            const Icon(Icons.arrow_forward, size: 12, color: AppColors.warning),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 1),
-                Text(label,
+          Row(
+            children: [
+              leading,
+              const Spacer(),
+              if (trailing != null) trailing,
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s3),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TeacherWebUi.webCaption(context)),
+                    style: TeacherWebUi.webKpiValue(context)),
+              ),
+              if (suffix != null) ...[
+                const SizedBox(width: 3),
+                Text(suffix!,
+                    style: TeacherWebUi.webCaption(context)
+                        .copyWith(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
               ],
-            ),
+            ],
           ),
+          const SizedBox(height: 2),
+          Text(label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TeacherWebUi.webCaption(context)),
         ],
       ),
     );
@@ -824,6 +867,7 @@ class _SubmissionsChart extends StatelessWidget {
       barColor: AppColors.chartBar,
       highlightIndex: highlightIndex,
       highlightColor: AppColors.chartHighlight,
+      showTrendLine: false, // đọc đơn nghĩa: chỉ cột, bỏ đường gạch đỏ phủ lên
     );
   }
 }
@@ -835,8 +879,6 @@ class _ScoreDistBars extends StatelessWidget {
 
   final List<Map<String, dynamic>> rows;
   final double? avgScore; // 0..10 → vị trí vạch điểm trung bình
-
-  static const List<Color> _ramp = AppScoreScale.ramp;
 
   @override
   Widget build(BuildContext context) {
@@ -867,7 +909,7 @@ class _ScoreDistBars extends StatelessWidget {
                             count: counts[i],
                             total: total,
                             barHeight: maxCount > 0 ? maxBarH * counts[i] / maxCount : 0,
-                            color: _ramp[i % _ramp.length],
+                            color: AppColors.chartBar,
                           ),
                         ),
                     ],
@@ -1281,9 +1323,12 @@ class _AtRiskTable extends StatelessWidget {
           child: Row(
             children: [
               Expanded(child: _hdr(context, l10n.teacherAnalyticsColStudent)),
-              SizedBox(width: 56, child: _hdr(context, l10n.teacherAnalyticsColAvg, right: true)),
-              SizedBox(width: 68, child: _hdr(context, l10n.teacherAnalyticsColSubmitted, right: true)),
-              SizedBox(width: 132, child: _hdr(context, l10n.teacherAnalyticsColAlert)),
+              const SizedBox(width: AppSpacing.s4),
+              SizedBox(width: 52, child: _hdr(context, l10n.teacherAnalyticsColAvg, right: true)),
+              const SizedBox(width: AppSpacing.s4),
+              SizedBox(width: 88, child: _hdr(context, l10n.teacherAnalyticsColSubmitted, right: true)),
+              const SizedBox(width: AppSpacing.s4),
+              SizedBox(width: 118, child: _hdr(context, l10n.teacherAnalyticsColAlert)),
             ],
           ),
         ),
@@ -1294,6 +1339,9 @@ class _AtRiskTable extends StatelessWidget {
 
   Widget _hdr(BuildContext context, String text, {bool right = false}) => Text(
         text.toUpperCase(),
+        maxLines: 1,
+        softWrap: false,
+        overflow: TextOverflow.ellipsis,
         textAlign: right ? TextAlign.right : TextAlign.left,
         style: TeacherWebUi.webTableHead(context),
       );
@@ -1346,23 +1394,26 @@ class _AtRiskTable extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: AppSpacing.s4),
           SizedBox(
-            width: 56,
+            width: 52,
             child: Align(
               alignment: Alignment.centerRight,
               child: _avgPill(avgPercent),
             ),
           ),
+          const SizedBox(width: AppSpacing.s4),
           SizedBox(
-            width: 68,
+            width: 88,
             child: Text(
               '$submitted / $assigned',
               textAlign: TextAlign.right,
               style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontFeatures: [FontFeature.tabularFigures()]),
             ),
           ),
+          const SizedBox(width: AppSpacing.s4),
           SizedBox(
-            width: 132,
+            width: 118,
             child: Align(
               alignment: Alignment.centerLeft,
               child: Container(

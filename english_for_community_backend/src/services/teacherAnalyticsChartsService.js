@@ -352,14 +352,18 @@ async function computeHardestItems(assignmentIds, since) {
 }
 
 export const teacherAnalyticsChartsService = {
-  async getCharts(teacherId, { days = 14 } = {}) {
+  async getCharts(teacherId, { days = 14, classroomId = null } = {}) {
     const nDays = Math.min(30, Math.max(7, Number(days) || 14));
     const now = Date.now();
     // Finding #1/#2: cửa sổ N ngày theo LỊCH VN, GỒM hôm nay.
     const { since, prevSince } = resolveWindow(now, nDays);
 
-    // Finding #8: scope GỒM cả lớp dạy-cùng (owner ∪ co-taught).
-    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(teacherId);
+    // Scope: 1 lớp cụ thể nếu có classroomId, ngược lại gộp owner ∪ co-taught.
+    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(
+      teacherId,
+      undefined,
+      { classroomId }
+    );
 
     const modeBreakdown = assignments.reduce((acc, a) => {
       acc[a.mode] = (acc[a.mode] || 0) + 1;
