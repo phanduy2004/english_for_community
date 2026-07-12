@@ -388,11 +388,13 @@ class TeacherExamRemoteDatasource {
     int? tabSwitchDelta,
     int? focusLossDelta,
     int? copyPasteDelta,
+    bool? fullscreenExited,
   }) async {
     final r = await dio.post('exams/attempts/$attemptId/integrity', data: {
       if (tabSwitchDelta != null) 'tabSwitchDelta': tabSwitchDelta,
       if (focusLossDelta != null) 'focusLossDelta': focusLossDelta,
       if (copyPasteDelta != null) 'copyPasteDelta': copyPasteDelta,
+      if (fullscreenExited != null) 'fullscreenExited': fullscreenExited,
     });
     return r.data;
   }

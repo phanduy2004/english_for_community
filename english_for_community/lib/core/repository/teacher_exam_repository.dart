@@ -90,6 +90,7 @@ abstract class TeacherExamRepository {
     int? tabSwitchDelta,
     int? focusLossDelta,
     int? copyPasteDelta,
+    bool? fullscreenExited,
   });
   Future<Either<Failure, List<dynamic>>> listClassroomActivity(String classroomId);
   Future<Either<Failure, dynamic>> addCoTeacher(String classroomId, String username);

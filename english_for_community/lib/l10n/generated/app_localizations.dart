@@ -6074,6 +6074,12 @@ abstract class AppLocalizations {
   /// **'Lobby open — waiting to go live'**
   String get examCardStatusLobby;
 
+  /// No description provided for @teacherClassStatusLobby.
+  ///
+  /// In en, this message translates to:
+  /// **'Lobby open'**
+  String get teacherClassStatusLobby;
+
   /// No description provided for @examCardStatusLive.
   ///
   /// In en, this message translates to:
@@ -7246,6 +7252,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not ready'**
   String get examSessionStudentNotReady;
+
+  /// No description provided for @examSessionYouTag.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get examSessionYouTag;
+
+  /// No description provided for @teacherExamWarnStudentAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reminder'**
+  String get teacherExamWarnStudentAction;
+
+  /// No description provided for @teacherExamWarnStudentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a reminder'**
+  String get teacherExamWarnStudentTitle;
+
+  /// No description provided for @teacherExamWarnStudentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pops up on the student\'s exam screen right now.'**
+  String get teacherExamWarnStudentSubtitle;
+
+  /// No description provided for @teacherExamWarnStudentMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get teacherExamWarnStudentMessageLabel;
+
+  /// No description provided for @teacherExamWarnStudentSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reminder'**
+  String get teacherExamWarnStudentSend;
+
+  /// No description provided for @teacherExamWarnStudentSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder sent'**
+  String get teacherExamWarnStudentSent;
+
+  /// No description provided for @teacherExamWarnChipTabSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'Tab switching'**
+  String get teacherExamWarnChipTabSwitch;
+
+  /// No description provided for @teacherExamWarnChipCopyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy / paste'**
+  String get teacherExamWarnChipCopyPaste;
+
+  /// No description provided for @teacherExamWarnChipFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Stay focused'**
+  String get teacherExamWarnChipFocus;
+
+  /// No description provided for @teacherExamWarnPresetTabSwitch.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re switching tabs too often. Please stay on the exam and focus.'**
+  String get teacherExamWarnPresetTabSwitch;
+
+  /// No description provided for @teacherExamWarnPresetCopyPaste.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy/paste isn\'t allowed during the exam. Please stop.'**
+  String get teacherExamWarnPresetCopyPaste;
+
+  /// No description provided for @teacherExamWarnPresetFocus.
+  ///
+  /// In en, this message translates to:
+  /// **'Please keep the exam on your screen and focus on your work.'**
+  String get teacherExamWarnPresetFocus;
+
+  /// No description provided for @studentExamWarningTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder from your teacher'**
+  String get studentExamWarningTitle;
+
+  /// No description provided for @studentExamWarningDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get studentExamWarningDismiss;
 
   /// No description provided for @examSessionMarkReady.
   ///
@@ -8705,6 +8801,36 @@ abstract class AppLocalizations {
   /// **'Not enough data to summarise yet.'**
   String get teacherAnalyticsInsightEmpty;
 
+  /// No description provided for @teacherAnalyticsSectionOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get teacherAnalyticsSectionOverview;
+
+  /// No description provided for @teacherAnalyticsSectionActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity & scores'**
+  String get teacherAnalyticsSectionActivity;
+
+  /// No description provided for @teacherAnalyticsSectionStudents.
+  ///
+  /// In en, this message translates to:
+  /// **'Students & questions'**
+  String get teacherAnalyticsSectionStudents;
+
+  /// No description provided for @teacherAnalyticsSectionIntegrity.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrity & submissions'**
+  String get teacherAnalyticsSectionIntegrity;
+
+  /// No description provided for @teacherAnalyticsSectionStudentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No students need attention yet — insights appear as more work is submitted and graded.'**
+  String get teacherAnalyticsSectionStudentsEmpty;
+
   /// No description provided for @teacherAnalyticsScoreTrend.
   ///
   /// In en, this message translates to:
@@ -9076,6 +9202,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Student submissions'**
   String get teacherGradingStudentAttemptsTitle;
+
+  /// No description provided for @teacherGradingIntegritySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Integrity flags'**
+  String get teacherGradingIntegritySummaryTitle;
+
+  /// No description provided for @teacherGradingIntegrityTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get teacherGradingIntegrityTotal;
 
   /// No description provided for @teacherGradingStatusInProgress.
   ///
@@ -10138,6 +10276,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time up'**
   String get integratedExamTimeUpShort;
+
+  /// No description provided for @studentExamTimeUpAutoSubmitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Your time is up. The exam has been submitted automatically.'**
+  String get studentExamTimeUpAutoSubmitted;
+
+  /// No description provided for @studentExamTimeUpExit.
+  ///
+  /// In en, this message translates to:
+  /// **'Exit'**
+  String get studentExamTimeUpExit;
 
   /// No description provided for @integratedExamGrammarPrevious.
   ///

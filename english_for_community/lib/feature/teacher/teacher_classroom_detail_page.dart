@@ -696,7 +696,7 @@ Color _asgModeColor(String mode) {
   if (mode == 'realtime') {
     final st = _asgMap(m['activeSession'])?['status'] as String?;
     if (st == 'live') return (label: l10n.examCardStatusLive, color: AppColors.success);
-    if (st == 'lobby') return (label: l10n.examCardStatusLobby, color: AppColors.primary);
+    if (st == 'lobby') return (label: l10n.teacherClassStatusLobby, color: AppColors.primary);
   }
   return (label: TeacherGradingHubLabels.modeLabel(l10n, mode), color: _asgModeColor(mode));
 }
@@ -1076,7 +1076,7 @@ class _AssignmentTable extends StatelessWidget {
 
   Widget _assignmentScheduleCell(BuildContext context, Map<String, dynamic> m) {
     return Text(
-      _asgSchedule(context, m) ?? 'â€”',
+      _asgSchedule(context, m) ?? '—',
       style: TeacherWebUi.webCaption(context).copyWith(color: AppColors.textSecondary),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -1688,7 +1688,7 @@ class _MemberTable extends StatelessWidget {
 
   Widget _memberJoinedCell(BuildContext context, Map<String, dynamic> member) {
     return Text(
-      memberJoinDate(member) ?? 'â€”',
+      memberJoinDate(member) ?? '—',
       style: TeacherWebUi.webCaption(context).copyWith(color: AppColors.textSecondary),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
@@ -1837,14 +1837,17 @@ class _ActivityTabState extends State<_ActivityTab> {
             separatorBuilder: (_, __) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final m = Map<String, dynamic>.from(state.activityRows[i] as Map);
-              final msg = (m['message'] as String?) ?? (m['type'] as String?) ?? '';
+              final type = m['type'] as String?;
+              final isIntegrity = type == 'integrity_flag'; // C4: nhấn mạnh cờ gian lận
+              final msg = (m['message'] as String?) ?? (type) ?? '';
               final at = DateTime.tryParse(m['createdAt'] as String? ?? '');
               return ListTile(
                 tileColor: AppColors.surfaceCard,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.card),
-                  side: const BorderSide(color: AppColors.outline),
+                  side: BorderSide(color: isIntegrity ? AppColors.danger : AppColors.outline),
                 ),
+                leading: isIntegrity ? Icon(Icons.flag, color: AppColors.danger) : null,
                 title: Text(msg, style: TeacherWebUi.listTitle(context)),
                 subtitle: at != null
                     ? Text(DateFormat.yMMMd().add_jm().format(at.toLocal()), style: TeacherWebUi.metaMuted)

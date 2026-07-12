@@ -333,6 +333,7 @@ class _StudentMonitorTile extends StatelessWidget {
                 style: ExamSystemUi.captionMuted.copyWith(fontSize: 11),
               ),
             ],
+            _integrityDetailLine(student),
             if (strips.isNotEmpty) ...[
               const SizedBox(height: 6),
               TeacherExamSkillStripsPanel(
@@ -343,6 +344,26 @@ class _StudentMonitorTile extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  /// C1: dòng chi tiết integrity per-student (rời tab / mất focus / paste). Ẩn khi không có tín hiệu.
+  Widget _integrityDetailLine(Map<String, dynamic> student) {
+    final tabs = (student['tabSwitchCount'] as num?)?.toInt() ?? 0;
+    final focus = (student['focusLossSeconds'] as num?)?.toInt() ?? 0;
+    final paste = (student['copyPasteAttempts'] as num?)?.toInt() ?? 0;
+    if (tabs == 0 && focus == 0 && paste == 0) return const SizedBox.shrink();
+    final parts = <String>[
+      if (tabs > 0) '${l10n.teacherLiveMonitorTabSwitches}: $tabs',
+      if (focus > 0) '${l10n.teacherLiveMonitorFocusLoss}: ${focus}s',
+      if (paste > 0) '${l10n.teacherLiveMonitorCopyPaste}: $paste',
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Text(
+        parts.join('  ·  '),
+        style: ExamSystemUi.captionMuted.copyWith(fontSize: 11, color: AppColors.warning),
       ),
     );
   }

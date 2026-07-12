@@ -11,6 +11,7 @@ import 'package:english_for_community/feature/writing/writing_task_bloc/writing_
 import 'package:english_for_community/feature/writing/writing_task_bloc/writing_task_state.dart';
 import 'package:english_for_community/feature/writing/writing_feedback_page.dart';
 import 'package:english_for_community/feature/writing/writing_task_instruction_dialog.dart';
+import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import '../../core/locale/l10n_context.dart';
 import '../../core/ui/feedback/app_feedback.dart';
 import '../../core/theme/app_color.dart';
@@ -719,6 +720,7 @@ class _Editor extends StatelessWidget {
 
     final Widget field = TextField(
       controller: controller,
+      contextMenuBuilder: examContextMenuBuilder,
       focusNode: focusNode,
       readOnly: readOnly,
       maxLines: null,

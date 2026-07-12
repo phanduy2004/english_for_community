@@ -12,6 +12,63 @@ const onlineSocketIdsByUser = new Map();
 const OFFLINE_GRACE_MS = 20000;
 const pendingOffline = new Map();
 
+/**
+ * Per-(session,user) live exam sockets. Presence in the lobby roster
+ * (`ExamSession.joinedUserIds`) is only cleared once a user has NO socket left in
+ * the room, after a short grace so a reload / brief reconnect doesn't flicker them out.
+ */
+const examSessionSocketsByUser = new Map(); // `${sessionId}::${userId}` -> Set<socketId>
+const LOBBY_PRESENCE_GRACE_MS = 10000;
+const pendingLobbyRemoval = new Map(); // `${sessionId}::${userId}` -> timeout
+
+/** Schedule a presence-only lobby cleanup; cancelled if the user rejoins within the grace window. */
+function scheduleLobbyPresenceCleanup(sessionId, userId) {
+  const key = `${sessionId}::${userId}`;
+  if (pendingLobbyRemoval.has(key)) return;
+  const t = setTimeout(async () => {
+    pendingLobbyRemoval.delete(key);
+    // Rejoined during grace (reload / reconnect / another tab)? Keep them.
+    if (examSessionSocketsByUser.has(key)) return;
+    try {
+      const { examSessionService } = await import('../services/examSessionService.js');
+      const removed = await examSessionService.removeLobbyParticipant(sessionId, userId);
+      if (removed) await examSessionService.emitSessionStateBroadcast(sessionId);
+    } catch (e) {
+      console.error('[examLobbyCleanup]', e);
+    }
+  }, LOBBY_PRESENCE_GRACE_MS);
+  pendingLobbyRemoval.set(key, t);
+}
+
+function addExamSessionSocket(sessionId, userId, socketId) {
+  const key = `${sessionId}::${userId}`;
+  const pending = pendingLobbyRemoval.get(key);
+  if (pending) {
+    clearTimeout(pending);
+    pendingLobbyRemoval.delete(key);
+  }
+  if (!examSessionSocketsByUser.has(key)) {
+    examSessionSocketsByUser.set(key, new Set());
+  }
+  examSessionSocketsByUser.get(key).add(socketId);
+}
+
+/**
+ * Drop a socket from a user's session set. When it's the LAST socket and [schedule]
+ * is true (socket dropped), schedule the graced lobby cleanup. Explicit `leave_exam_session`
+ * passes schedule:false because it already removed presence via `cleanupExamLeave`.
+ */
+function removeExamSessionSocket(sessionId, userId, socketId, { schedule = true } = {}) {
+  const key = `${sessionId}::${userId}`;
+  const set = examSessionSocketsByUser.get(key);
+  if (set) {
+    set.delete(socketId);
+    if (set.size > 0) return; // another tab/socket still holds this user in the room
+    examSessionSocketsByUser.delete(key);
+  }
+  if (schedule) scheduleLobbyPresenceCleanup(sessionId, userId);
+}
+
 const updateUserStatus = async (userId, isOnline) => {
   try {
     await User.findByIdAndUpdate(userId, {
@@ -160,6 +217,10 @@ export const initSocket = (httpServer) => {
           );
         }
         socket.join(`examSession_${sessionId}`);
+        const sid = String(sessionId);
+        if (!socket.examSessionIds) socket.examSessionIds = new Set();
+        socket.examSessionIds.add(sid);
+        addExamSessionSocket(sid, String(socket.examUserId), socket.id);
         socket.emit('exam_session_joined', { sessionId });
         const { examSessionService } = await import('../services/examSessionService.js');
         await examSessionService.emitSessionStateBroadcast(sessionId);
@@ -193,6 +254,42 @@ export const initSocket = (httpServer) => {
         await examSessionService.setParticipantReady(socket.examUserId, sessionId, ready === true);
       } catch (e) {
         socket.emit('exam_session_error', { message: e.message || 'Ready update failed' });
+      }
+    });
+
+    // Teacher (session leader) sends a live reminder/warning that pops up on one
+    // student's exam screen. Delivered to the student's personal room (user_login).
+    socket.on('teacher_exam_warn_student', async ({ sessionId, studentUserId, message } = {}) => {
+      try {
+        if (!socket.examUserId) {
+          socket.emit('exam_session_error', { message: 'Register exam token first (exam_register)' });
+          return;
+        }
+        if (!sessionId || !studentUserId) {
+          socket.emit('exam_session_error', { message: 'sessionId and studentUserId required' });
+          return;
+        }
+        const text = typeof message === 'string' ? message.trim().slice(0, 500) : '';
+        if (!text) {
+          socket.emit('exam_session_error', { message: 'message required' });
+          return;
+        }
+        const session = await ExamSession.findById(sessionId);
+        if (!session) {
+          socket.emit('exam_session_error', { message: 'Session not found' });
+          return;
+        }
+        if (session.leaderTeacherId.toString() !== String(socket.examUserId)) {
+          socket.emit('exam_session_error', { message: 'Only the session teacher can warn students' });
+          return;
+        }
+        io.to(String(studentUserId)).emit('exam_session_warning', {
+          sessionId: String(sessionId),
+          studentUserId: String(studentUserId),
+          message: text,
+        });
+      } catch (e) {
+        socket.emit('exam_session_error', { message: e.message || 'Warn failed' });
       }
     });
 
@@ -244,7 +341,10 @@ export const initSocket = (httpServer) => {
       if (!sessionId) return;
       const sid = sessionId.toString();
       socket.leave(`examSession_${sid}`);
+      socket.examSessionIds?.delete(sid);
       if (!socket.examUserId) return;
+      // Explicit leave already removes presence below — just untrack, don't re-schedule.
+      removeExamSessionSocket(sid, String(socket.examUserId), socket.id, { schedule: false });
       await cleanupExamLeave(sid, socket.examUserId);
     });
 
@@ -282,13 +382,12 @@ export const initSocket = (httpServer) => {
         await removeUserSocket(socket.userId, socket.id);
       }
 
-      if (socket.examUserId) {
-        const rooms = [...socket.rooms].filter((r) => String(r).startsWith('examSession_'));
-        const sessionIds = rooms.map((r) => String(r).replace('examSession_', ''));
-        if (sessionIds.length > 0) {
-          for (const sid of sessionIds) {
-            await cleanupExamLeave(sid, socket.examUserId);
-          }
+      // NOTE: read tracked session ids, NOT `socket.rooms` — by the time `disconnect`
+      // fires, socket.io has already emptied `socket.rooms`, so the old room-derived
+      // cleanup never ran and left ghost participants in the lobby (reload / kill app).
+      if (socket.examUserId && socket.examSessionIds && socket.examSessionIds.size > 0) {
+        for (const sid of socket.examSessionIds) {
+          removeExamSessionSocket(sid, String(socket.examUserId), socket.id);
         }
       }
     });

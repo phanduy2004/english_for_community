@@ -127,7 +127,6 @@ class _AnalyticsContent extends StatelessWidget {
         ? _Panel(
             title: l10n.teacherAnalyticsScoreTrend,
             subtitle: l10n.teacherAnalyticsScoreTrendSub,
-            isNew: true,
             child: SizedBox(height: 176, child: _ScoreTrendChart(rows: state.scoreTrendRows)),
           )
         : null;
@@ -141,10 +140,17 @@ class _AnalyticsContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ── A · Overview ──────────────────────────────────────────────────
+        _SectionHeader(l10n.teacherAnalyticsSectionOverview),
+        const SizedBox(height: AppSpacing.s4),
         _KpiRow(summary: summary, charts: charts),
-        const SizedBox(height: AppSpacing.s6),
+        const SizedBox(height: AppSpacing.s5),
         _SmartSummary(summary: summary, charts: charts, atRisk: atRisk, period: state.period),
+
+        // ── B · Activity & scores ─────────────────────────────────────────
         const SizedBox(height: AppSpacing.s6),
+        _SectionHeader(l10n.teacherAnalyticsSectionActivity),
+        const SizedBox(height: AppSpacing.s4),
         _TwoCol(
           _Panel(
             title: l10n.teacherAnalyticsSubmissionsChart,
@@ -164,26 +170,38 @@ class _AnalyticsContent extends StatelessWidget {
           const SizedBox(height: AppSpacing.s5),
           _TwoCol(scoreTrendPanel ?? skillPanel!, scoreTrendPanel != null ? skillPanel : null),
         ],
-        if (atRisk.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.s5),
-          _Panel(
-            title: l10n.teacherAnalyticsAtRiskTitle,
-            leading: const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
-            isNew: true,
-            child: _AtRiskTable(rows: atRisk),
-          ),
+
+        // ── C · Students & questions ──────────────────────────────────────
+        const SizedBox(height: AppSpacing.s6),
+        _SectionHeader(l10n.teacherAnalyticsSectionStudents),
+        const SizedBox(height: AppSpacing.s4),
+        if (atRisk.isEmpty && hardestItems.isEmpty)
+          _EmptyNote(
+            icon: Icons.groups_outlined,
+            text: l10n.teacherAnalyticsSectionStudentsEmpty,
+          )
+        else ...[
+          if (atRisk.isNotEmpty)
+            _Panel(
+              title: l10n.teacherAnalyticsAtRiskTitle,
+              leading: const Icon(Icons.warning_amber_rounded, size: 16, color: AppColors.warning),
+              child: _AtRiskTable(rows: atRisk),
+            ),
+          if (atRisk.isNotEmpty && hardestItems.isNotEmpty)
+            const SizedBox(height: AppSpacing.s5),
+          if (hardestItems.isNotEmpty)
+            _Panel(
+              title: l10n.teacherAnalyticsItemAnalysisTitle,
+              subtitle: l10n.teacherAnalyticsItemAnalysisSub,
+              leading: const Icon(Icons.help_outline, size: 16, color: AppColors.textSecondary),
+              child: _ItemAnalysisList(rows: hardestItems),
+            ),
         ],
-        if (hardestItems.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.s5),
-          _Panel(
-            title: l10n.teacherAnalyticsItemAnalysisTitle,
-            subtitle: l10n.teacherAnalyticsItemAnalysisSub,
-            leading: const Icon(Icons.help_outline, size: 16, color: AppColors.textSecondary),
-            isNew: true,
-            child: _ItemAnalysisList(rows: hardestItems),
-          ),
-        ],
-        const SizedBox(height: AppSpacing.s5),
+
+        // ── D · Integrity & submissions ───────────────────────────────────
+        const SizedBox(height: AppSpacing.s6),
+        _SectionHeader(l10n.teacherAnalyticsSectionIntegrity),
+        const SizedBox(height: AppSpacing.s4),
         _TwoCol(
           _Panel(
             title: l10n.teacherAnalyticsIntegrityChart,
@@ -199,8 +217,10 @@ class _AnalyticsContent extends StatelessWidget {
     );
   }
 
-  static List<Map<String, dynamic>> _asMapList(dynamic raw) =>
-      (raw as List? ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  static List<Map<String, dynamic>> _asMapList(dynamic raw) {
+    if (raw is! List) return const [];
+    return raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+  }
 }
 
 /// Test-only entry point to render the analytics body (all panels) without the
@@ -247,14 +267,12 @@ class _Panel extends StatelessWidget {
     required this.child,
     this.subtitle,
     this.leading,
-    this.isNew = false,
   });
 
   final String title;
   final Widget child;
   final String? subtitle;
   final Widget? leading;
-  final bool isNew;
 
   @override
   Widget build(BuildContext context) {
@@ -272,7 +290,6 @@ class _Panel extends StatelessWidget {
                 child: Text(title,
                     maxLines: 1, overflow: TextOverflow.ellipsis, style: TeacherWebUi.sectionTitle(context)),
               ),
-              if (isNew) ...[const SizedBox(width: AppSpacing.s3), const _NewPill()],
               const SizedBox(width: AppSpacing.s4),
               if (subtitle != null)
                 Flexible(
@@ -292,25 +309,51 @@ class _Panel extends StatelessWidget {
   }
 }
 
-class _NewPill extends StatelessWidget {
-  const _NewPill();
+/// Labeled group heading — titles one of the four analytics sections.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.title);
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TeacherWebUi.webH2(context),
+    );
+  }
+}
+
+/// Compact inline empty-state note (surfaceSubtle card) — keeps a section
+/// visible with an explanation instead of collapsing it when there is no data.
+class _EmptyNote extends StatelessWidget {
+  const _EmptyNote({required this.icon, required this.text});
+
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.all(AppSpacing.s5),
       decoration: BoxDecoration(
-        color: AppColors.accentTint,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.outline),
       ),
-      child: Text(
-        'NEW',
-        style: TextStyle(
-          fontSize: 8.5,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.6,
-          color: AppColors.accentDark,
-        ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppColors.textMuted),
+          const SizedBox(width: AppSpacing.s3),
+          Expanded(
+            child: Text(
+              text,
+              style: TeacherWebUi.webBody(context).copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -413,7 +456,6 @@ class _KpiRow extends StatelessWidget {
           value: avgScore != null ? avgScore.toStringAsFixed(1) : '—',
           suffix: avgScore != null ? '/10' : null,
           label: l10n.teacherAnalyticsAvgScore,
-          isNew: true,
           trend: avgScoreTrend,
           trendIsPercent: false,
         ),
@@ -424,7 +466,6 @@ class _KpiRow extends StatelessWidget {
           value: completion != null ? '$completion' : '—',
           suffix: completion != null ? '%' : null,
           label: l10n.teacherAnalyticsCompletion,
-          isNew: true,
         ),
         _KpiCard(
           icon: Icons.check_circle_outline,
@@ -439,7 +480,6 @@ class _KpiRow extends StatelessWidget {
           accent: AppColors.textSecondary,
           value: '$inProgress',
           label: l10n.teacherAnalyticsInProgress,
-          isNew: true,
         ),
         _KpiCard(
           icon: Icons.fact_check_outlined,
@@ -491,7 +531,6 @@ class _KpiCard extends StatelessWidget {
     required this.accent,
     this.icon,
     this.suffix,
-    this.isNew = false,
     this.trend,
     this.trendIsPercent = true,
     this.ctaLabel,
@@ -504,7 +543,6 @@ class _KpiCard extends StatelessWidget {
   final Color accent;
   final IconData? icon;
   final String? suffix;
-  final bool isNew;
   final double? trend;
   final bool trendIsPercent;
   final String? ctaLabel;
@@ -602,19 +640,14 @@ class _KpiCard extends StatelessWidget {
       ),
     );
 
-    return Stack(
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            hoverColor: AppColors.hoverOverlay,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            child: Ink(decoration: TeacherWebUi.panelDecoration(), child: body),
-          ),
-        ),
-        if (isNew) const Positioned(top: 8, right: 8, child: _NewPill()),
-      ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        hoverColor: AppColors.hoverOverlay,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Ink(decoration: TeacherWebUi.panelDecoration(), child: body),
+      ),
     );
   }
 }
@@ -739,18 +772,10 @@ class _SmartSummary extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(l10n.teacherAnalyticsSummaryTitle(period),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TeacherWebUi.sectionTitle(context)),
-                              ),
-                              const SizedBox(width: AppSpacing.s3),
-                              const _NewPill(),
-                            ],
-                          ),
+                          Text(l10n.teacherAnalyticsSummaryTitle(period),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TeacherWebUi.sectionTitle(context)),
                           const SizedBox(height: AppSpacing.s2),
                           Text(
                             text,
@@ -1270,12 +1295,7 @@ class _AtRiskTable extends StatelessWidget {
   Widget _hdr(BuildContext context, String text, {bool right = false}) => Text(
         text.toUpperCase(),
         textAlign: right ? TextAlign.right : TextAlign.left,
-        style: TextStyle(
-          fontSize: 10,
-          letterSpacing: 0.4,
-          fontWeight: FontWeight.w700,
-          color: AppColors.textMuted,
-        ),
+        style: TeacherWebUi.webTableHead(context),
       );
 
   Widget _row(BuildContext context, Map<String, dynamic> r, {required bool last}) {
@@ -1535,15 +1555,9 @@ class _IntegritySection extends StatelessWidget {
           ),
         if (hasReasons) ...[
           const SizedBox(height: AppSpacing.s4),
-          Row(
-            children: [
-              Text(l10n.teacherAnalyticsIntegrityReasons.toUpperCase(),
-                  style: TextStyle(
-                      fontSize: 10, letterSpacing: 0.4, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
-              const SizedBox(width: AppSpacing.s3),
-              const _NewPill(),
-            ],
-          ),
+          Text(l10n.teacherAnalyticsIntegrityReasons.toUpperCase(),
+              style: TextStyle(
+                  fontSize: 10, letterSpacing: 0.4, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           const SizedBox(height: AppSpacing.s2),
           if (tabSwitch > 0)
             _reasonRow(Icons.tab_outlined, l10n.teacherAnalyticsReasonTabSwitch, tabSwitch),
@@ -1651,15 +1665,9 @@ class _ModeSection extends StatelessWidget {
           Wrap(spacing: AppSpacing.s3, runSpacing: AppSpacing.s3, children: chips),
         if (totalOt > 0) ...[
           const SizedBox(height: AppSpacing.s5),
-          Row(
-            children: [
-              Text(l10n.teacherAnalyticsOnTimeTitle.toUpperCase(),
-                  style: TextStyle(
-                      fontSize: 10, letterSpacing: 0.4, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
-              const SizedBox(width: AppSpacing.s3),
-              const _NewPill(),
-            ],
-          ),
+          Text(l10n.teacherAnalyticsOnTimeTitle.toUpperCase(),
+              style: TextStyle(
+                  fontSize: 10, letterSpacing: 0.4, fontWeight: FontWeight.w700, color: AppColors.textMuted)),
           const SizedBox(height: AppSpacing.s3),
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.pill),

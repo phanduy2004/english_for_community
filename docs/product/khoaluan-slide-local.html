@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+<body>
+<title>E4C — Slide bảo vệ khóa luận</title>
+<style>
+  :root{
+    --navy:#213D65; --navy-deep:#16283F; --navy-ink:#1B2A44;
+    --gold:#C59D48; --gold-soft:#E7D6A8;
+    --paper:#F5F7FA; --paper-2:#FFFFFF; --line:#DDE3EC;
+    --muted:#5B6B84; --muted-2:#7C8AA3;
+    --good:#2E7D5B; --stage:#0E1826;
+    --sh: 0 10px 40px rgba(8,16,30,.45);
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--font); background:var(--stage); color:var(--navy-ink);
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh; overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Deck frame (fixed 16:9) ---------- */
+  .stage{ width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+  .deck{
+    position:relative; aspect-ratio:16/9;
+    width:min(97vw, calc(97vh * 16 / 9));
+    height:auto; max-height:97vh;
+    container-type:size;
+    background:var(--paper-2); border-radius:14px; overflow:hidden;
+    box-shadow:var(--sh);
+  }
+
+  /* ---------- Slide base ---------- */
+  .slide{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    padding:7.2cqw 7.6cqw 5.6cqw;
+    background:var(--paper-2); color:var(--navy-ink);
+    opacity:0; visibility:hidden; transform:translateY(8px);
+    transition:opacity .32s ease, transform .32s ease;
+  }
+  .slide.active{ opacity:1; visibility:visible; transform:none; }
+
+  /* chrome */
+  .rail{ position:absolute; left:0; top:0; bottom:0; width:.7cqw; background:linear-gradient(var(--gold),var(--gold-soft)); }
+  .mono{
+    position:absolute; top:3.4cqw; left:3.6cqw; z-index:3;
+    font-weight:800; letter-spacing:.06em; font-size:1.7cqw; color:#fff;
+    background:var(--navy); border:.16cqw solid var(--gold);
+    padding:.5cqw .9cqw; border-radius:.7cqw;
+  }
+  .num{ position:absolute; right:3.8cqw; bottom:3.4cqw; font-size:1.55cqw; color:var(--muted-2); font-variant-numeric:tabular-nums; }
+  .brandfoot{ position:absolute; left:3.8cqw; bottom:3.4cqw; font-size:1.4cqw; color:var(--muted-2); letter-spacing:.02em; }
+
+  .eyebrow{ color:var(--gold); font-weight:700; font-size:1.65cqw; letter-spacing:.22em; text-transform:uppercase; margin-bottom:1.6cqw; }
+  .stitle{ color:var(--navy); font-size:4.3cqw; font-weight:800; line-height:1.06; text-wrap:balance; letter-spacing:-.01em; }
+  .stitle .u{ box-shadow: inset 0 -.35cqw 0 var(--gold-soft); }
+  .lead{ color:var(--muted); font-size:2.1cqw; line-height:1.4; margin-top:1.3cqw; max-width:82%; }
+
+  .content{ flex:1; display:flex; flex-direction:column; min-height:0; margin-top:2.4cqw; }
+
+  /* generic bits */
+  ul.clean{ list-style:none; display:flex; flex-direction:column; gap:1.15cqw; }
+  ul.clean li{ position:relative; padding-left:2.9cqw; font-size:2.02cqw; line-height:1.34; color:var(--navy-ink); }
+  ul.clean li::before{ content:""; position:absolute; left:0; top:.66cqw; width:1.15cqw; height:1.15cqw; border-radius:.28cqw; background:var(--gold); }
+  ul.clean li b{ color:var(--navy); }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:4.2cqw; align-items:start; }
+  .col-h{ font-size:2.15cqw; font-weight:800; color:var(--navy); display:flex; align-items:center; gap:1cqw; margin-bottom:1.5cqw; }
+  .col-h .dot{ width:1.5cqw; height:1.5cqw; border-radius:50%; background:var(--gold); flex:none; }
+  .col-h.alt .dot{ background:var(--navy); }
+
+  .card{ background:var(--paper); border:1px solid var(--line); border-radius:1.1cqw; padding:2.1cqw 2.2cqw; }
+
+  /* cover / dark slides */
+  .slide.dark{ background:radial-gradient(120% 130% at 82% 12%, #274a7a 0%, var(--navy) 42%, var(--navy-deep) 100%); color:#EAF0F8; }
+  .slide.dark .stitle{ color:#fff; }
+  .slide.dark .brandfoot, .slide.dark .num{ color:#9DB2D2; }
+  .slide.dark .lead{ color:#C6D3E8; }
+
+  /* cover */
+  .cover-mono{ width:12cqw; height:12cqw; border-radius:2cqw; background:rgba(255,255,255,.06); border:.22cqw solid var(--gold);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:4.2cqw; letter-spacing:.04em; box-shadow:0 0 0 1cqw rgba(197,157,72,.08); }
+  .cover-title{ font-size:7cqw; font-weight:800; color:#fff; letter-spacing:-.015em; line-height:1; margin-top:2.6cqw; }
+  .cover-sub{ font-size:2.35cqw; color:var(--gold-soft); margin-top:1.6cqw; font-weight:600; }
+  .cover-tags{ display:flex; gap:1cqw; flex-wrap:wrap; margin-top:2.4cqw; }
+  .cover-tags span{ font-size:1.6cqw; color:#DCE6F5; border:1px solid rgba(255,255,255,.25); border-radius:5cqw; padding:.7cqw 1.5cqw; }
+  .cover-meta{ margin-top:auto; display:grid; grid-template-columns:repeat(4,auto); gap:.5cqw 3.4cqw; font-size:1.7cqw; }
+  .cover-meta .k{ color:#8FA6C8; }
+  .cover-meta .v{ color:#fff; font-weight:600; }
+
+  /* comparison table */
+  table.cmp{ width:100%; border-collapse:collapse; font-size:1.75cqw; }
+  table.cmp th, table.cmp td{ padding:1.35cqw 1.2cqw; text-align:center; border-bottom:1px solid var(--line); }
+  table.cmp th:first-child, table.cmp td:first-child{ text-align:left; font-weight:600; color:var(--navy); width:34%; }
+  table.cmp thead th{ color:var(--muted); font-weight:700; font-size:1.65cqw; }
+  table.cmp .e4c{ background:rgba(197,157,72,.12); color:var(--navy); font-weight:800; border-left:1px solid var(--gold); border-right:1px solid var(--gold); }
+  table.cmp thead .e4c{ color:var(--navy); border-top:1px solid var(--gold); border-top-left-radius:.8cqw; border-top-right-radius:.8cqw; }
+  table.cmp tbody tr:last-child .e4c{ border-bottom:1px solid var(--gold); }
+  .yes{ color:var(--good); font-weight:800; }
+  .no{ color:#C0546A; }
+  .partial{ color:var(--gold); font-weight:700; }
+
+  /* flow diagram */
+  .flow{ display:flex; align-items:center; justify-content:center; gap:1.4cqw; flex-wrap:wrap; }
+  .node{ background:var(--paper); border:1.5px solid var(--line); border-radius:1cqw; padding:1.5cqw 1.7cqw; text-align:center; min-width:14cqw; }
+  .node .nt{ font-size:1.95cqw; font-weight:800; color:var(--navy); }
+  .node .ns{ font-size:1.45cqw; color:var(--muted); margin-top:.4cqw; }
+  .node.solid{ background:var(--navy); border-color:var(--navy); }
+  .node.solid .nt{ color:#fff; } .node.solid .ns{ color:var(--gold-soft); }
+  .node.gold{ background:rgba(197,157,72,.14); border-color:var(--gold); }
+  .chev{ width:2.6cqw; height:2.6cqw; flex:none; color:var(--gold); }
+  .decision{ width:9cqw; height:9cqw; transform:rotate(45deg); background:var(--gold); border-radius:1cqw; display:flex; align-items:center; justify-content:center; flex:none; }
+  .decision span{ transform:rotate(-45deg); font-weight:800; color:var(--navy); font-size:1.7cqw; text-align:center; }
+
+  /* architecture tiers */
+  .tiers{ display:flex; flex-direction:column; align-items:center; gap:1.1cqw; }
+  .tier{ width:78%; border-radius:1.1cqw; padding:1.7cqw 2cqw; text-align:center; color:#fff; }
+  .tier .th{ font-size:2.25cqw; font-weight:800; } .tier .ts{ font-size:1.55cqw; opacity:.9; margin-top:.3cqw; }
+  .tier.client{ background:linear-gradient(90deg,#2b5288,#213D65); }
+  .tier.server{ background:linear-gradient(90deg,#213D65,#16283F); }
+  .conn{ font-size:1.5cqw; color:var(--muted); display:flex; align-items:center; gap:.9cqw; }
+  .conn .chev{ width:1.9cqw; height:1.9cqw; transform:rotate(90deg); }
+  .svc{ display:flex; gap:1.6cqw; width:78%; }
+  .svc .card{ flex:1; text-align:center; padding:1.5cqw; }
+  .svc .card .st{ font-size:1.9cqw; font-weight:800; color:var(--navy); } .svc .card .ss{ font-size:1.4cqw; color:var(--muted); margin-top:.3cqw; }
+
+  /* tech chips */
+  .techgrid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:2.4cqw; }
+  .techgrid .grp .col-h{ margin-bottom:1.3cqw; }
+  .chips{ display:flex; flex-wrap:wrap; gap:.85cqw; }
+  .chip{ font-size:1.62cqw; background:var(--paper); border:1px solid var(--line); color:var(--navy-ink); border-radius:5cqw; padding:.7cqw 1.3cqw; font-weight:600; }
+  .chip.ai{ background:var(--navy); color:#fff; border-color:var(--navy); }
+
+  /* skills grid */
+  .skills{ display:grid; grid-template-columns:1fr 1fr; gap:1.5cqw; }
+  .skill{ display:flex; gap:1.4cqw; align-items:flex-start; background:var(--paper); border:1px solid var(--line); border-left:.5cqw solid var(--gold); border-radius:.9cqw; padding:1.4cqw 1.6cqw; }
+  .skill .ic{ font-size:2.6cqw; line-height:1; }
+  .skill .sh{ font-size:1.95cqw; font-weight:800; color:var(--navy); display:flex; align-items:center; gap:.8cqw; flex-wrap:wrap; }
+  .skill .sd{ font-size:1.5cqw; color:var(--muted); margin-top:.35cqw; line-height:1.3; }
+  .aiflag{ font-size:1.1cqw; background:var(--navy); color:#fff; border-radius:4cqw; padding:.25cqw .8cqw; font-weight:700; letter-spacing:.04em; }
+
+  /* screenshot frames */
+  .shot{ border:.28cqw dashed var(--gold); border-radius:1.1cqw; background:repeating-linear-gradient(135deg,rgba(197,157,72,.05) 0 1.4cqw,transparent 1.4cqw 2.8cqw);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:var(--muted); padding:1.6cqw; }
+  .shot .si{ font-size:3.4cqw; } .shot .sc{ font-size:1.45cqw; margin-top:.7cqw; line-height:1.3; } .shot .sc b{ color:var(--navy); }
+  .phone{ aspect-ratio:9/17.5; height:100%; margin:0 auto; }
+  .frame-lbl{ font-size:1.2cqw; color:var(--gold); font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+
+  /* highlight cards */
+  .hl{ display:grid; grid-template-columns:repeat(3,1fr); gap:1.6cqw; }
+  .hl .card{ display:flex; flex-direction:column; gap:.6cqw; }
+  .hl .hi{ font-size:2.4cqw; } .hl .hh{ font-size:1.9cqw; font-weight:800; color:var(--navy); }
+  .hl .hd{ font-size:1.5cqw; color:var(--muted); line-height:1.32; }
+
+  /* state machine */
+  .states{ display:flex; align-items:center; justify-content:center; gap:1.2cqw; flex-wrap:wrap; }
+  .state{ border:1.5px solid var(--navy); border-radius:5cqw; padding:1.2cqw 1.8cqw; font-size:1.75cqw; font-weight:700; color:var(--navy); background:#fff; }
+  .state.on{ background:var(--gold); border-color:var(--gold); }
+  .state.end{ background:var(--navy); color:#fff; }
+
+  /* demo */
+  .demo-big{ font-size:11cqw; font-weight:800; letter-spacing:.03em; color:#fff; line-height:1; }
+  .demo-big .dot{ color:var(--gold); }
+  .steps{ display:flex; gap:1.6cqw; margin-top:3cqw; }
+  .step{ flex:1; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:1cqw; padding:1.6cqw; }
+  .step .sn{ width:3cqw; height:3cqw; border-radius:50%; background:var(--gold); color:var(--navy); font-weight:800; font-size:1.7cqw; display:flex; align-items:center; justify-content:center; margin-bottom:1cqw; }
+  .step .stt{ font-size:1.7cqw; font-weight:700; color:#fff; } .step .std{ font-size:1.4cqw; color:#C6D3E8; margin-top:.4cqw; line-height:1.3; }
+  .warn{ margin-top:2.4cqw; font-size:1.6cqw; color:var(--gold-soft); }
+
+  /* stats / KPI */
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:1.5cqw; }
+  .kpi{ background:var(--paper); border:1px solid var(--line); border-radius:1cqw; padding:1.5cqw 1.6cqw; }
+  .kpi .kn{ font-size:3.4cqw; font-weight:800; color:var(--navy); font-variant-numeric:tabular-nums; line-height:1; }
+  .kpi .kn small{ font-size:1.7cqw; color:var(--gold); font-weight:800; }
+  .kpi .kl{ font-size:1.4cqw; color:var(--muted); margin-top:.55cqw; }
+  .barcard{ margin-top:1.7cqw; }
+  .barcard .bt{ font-size:1.7cqw; font-weight:800; color:var(--navy); margin-bottom:1.2cqw; }
+  .bar-row{ display:flex; align-items:center; gap:1.2cqw; margin-bottom:1cqw; }
+  .bar-row .bl{ width:16cqw; font-size:1.55cqw; color:var(--navy-ink); font-weight:600; }
+  .bar-track{ flex:1; height:2.6cqw; background:#EDF1F7; border-radius:.6cqw; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:.6cqw; display:flex; align-items:center; justify-content:flex-end; padding-right:1cqw; color:#fff; font-size:1.45cqw; font-weight:800; font-variant-numeric:tabular-nums; }
+
+  /* conclusion */
+  .conc{ display:flex; flex-direction:column; gap:1.2cqw; }
+  .thanks{ margin-top:auto; font-size:3.2cqw; font-weight:800; color:#fff; }
+  .thanks small{ display:block; font-size:1.8cqw; color:var(--gold-soft); font-weight:600; margin-top:.6cqw; }
+
+  /* ---------- Presenter notes ---------- */
+  .notes{ display:none; }
+  #notesPanel{
+    position:fixed; left:0; right:0; bottom:0; z-index:40;
+    background:rgba(12,20,32,.97); color:#E7EEF8; border-top:2px solid var(--gold);
+    max-height:34vh; overflow:auto; padding:16px 22px 18px; transform:translateY(101%); transition:transform .28s ease;
+    font-size:14px; line-height:1.5;
+  }
+  body.presenter #notesPanel{ transform:none; }
+  #notesPanel h4{ color:var(--gold); font-size:12px; letter-spacing:.16em; text-transform:uppercase; margin-bottom:8px; }
+  #notesPanel .nrow{ display:grid; grid-template-columns:1fr; gap:6px; }
+  #notesPanel b{ color:#fff; }
+  #notesPanel .time{ color:var(--gold-soft); font-weight:700; }
+  #notesPanel ul{ margin:4px 0 0 18px; }
+  #notesPanel li{ margin:2px 0; }
+
+  /* ---------- Controls ---------- */
+  #bar{ position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:50;
+    display:flex; align-items:center; gap:6px; background:rgba(12,20,32,.72); backdrop-filter:blur(6px);
+    border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:6px 8px; opacity:.25; transition:opacity .2s; }
+  #bar:hover{ opacity:1; }
+  #bar button{ background:transparent; border:0; color:#DCE6F5; font-size:14px; cursor:pointer; padding:5px 9px; border-radius:999px; font-family:var(--font); }
+  #bar button:hover{ background:rgba(255,255,255,.12); color:#fff; }
+  #bar .count{ color:#9DB2D2; font-size:13px; font-variant-numeric:tabular-nums; padding:0 6px; min-width:52px; text-align:center; }
+  #bar button:focus-visible, #bar button:hover{ outline:2px solid var(--gold); outline-offset:1px; }
+  #progress{ position:fixed; top:0; left:0; height:3px; background:var(--gold); z-index:60; transition:width .3s ease; }
+
+  #hint{ position:fixed; top:14px; right:16px; z-index:50; background:rgba(12,20,32,.8); color:#C6D3E8; font-size:12px;
+    border:1px solid rgba(255,255,255,.14); border-radius:8px; padding:8px 12px; transition:opacity .5s; }
+  #hint b{ color:var(--gold); }
+
+  @media (prefers-reduced-motion: reduce){ .slide,#notesPanel,#progress{ transition:none; } }
+
+  /* ---------- Print → PDF (one slide per page) ---------- */
+  @media print{
+    @page{ size:1280px 720px; margin:0; }
+    body{ display:block; background:#fff; overflow:visible; }
+    .stage{ width:auto; height:auto; display:block; }
+    .deck{ width:1280px; height:720px; box-shadow:none; border-radius:0; container-type:size; page-break-after:always; }
+    .slide{ position:relative; inset:auto; opacity:1 !important; visibility:visible !important; transform:none !important; width:1280px; height:720px; }
+    #bar,#hint,#progress,#notesPanel{ display:none !important; }
+  }
+</style>
+
+<div id="progress"></div>
+<div id="hint">Điều hướng: <b>← →</b> hoặc <b>Space</b> · Ghi chú thuyết trình: <b>N</b> · Toàn màn hình: <b>F</b></div>
+
+<div class="stage">
+  <div class="deck" id="deck">
+
+    <!-- 1 · COVER -->
+    <section class="slide dark active">
+      <span class="rail"></span>
+      <div class="content" style="justify-content:center">
+        <div class="cover-mono">E4C</div>
+        <div class="eyebrow" style="margin-top:2.4cqw">Khóa luận tốt nghiệp</div>
+        <div class="cover-title">English for Community</div>
+        <div class="cover-sub">Nền tảng học tiếng Anh cộng đồng tích hợp AI — Web &amp; Mobile đa vai trò</div>
+        <div class="cover-tags"><span>4 kỹ năng + Từ vựng</span><span>AI chấm bài &amp; phát âm</span><span>Giáo viên · Lớp · Thi realtime</span></div>
+        <div class="cover-meta">
+          <span class="k">SVTH</span><span class="k">GVHD</span><span class="k">Đơn vị</span><span class="k">Thời gian</span>
+          <span class="v">Phan Duy</span><span class="v">[Thầy/Cô …]</span><span class="v">Khoa CNTT — [Trường]</span><span class="v">…/2026</span>
+        </div>
+      </div>
+      <div class="brandfoot">english4community.online</div>
+      <div class="notes">
+        <b>Mục tiêu slide:</b> Chào hội đồng &amp; nêu đúng tên đề tài (~30s).<br>
+        <b>Nói:</b> "Kính chào quý thầy cô trong hội đồng. Em là Phan Duy, hôm nay em xin trình bày khóa luận: <i>English for Community — nền tảng học tiếng Anh cộng đồng tích hợp AI</i>, gồm ứng dụng mobile cho học sinh và web cho giáo viên/admin."<br>
+        <b>Lưu ý:</b> Điền tên GVHD, trường, tháng bảo vệ. Đứng thẳng, chưa vội bấm sang slide.
+      </div>
+    </section>
+
+    <!-- 2 · PROBLEM & GOALS -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 1 — Đặt vấn đề</div>
+      <h2 class="stitle">Vấn đề &amp; <span class="u">Mục tiêu</span> đề tài</h2>
+      <div class="content">
+        <div class="two-col">
+          <div>
+            <div class="col-h"><span class="dot"></span>Vấn đề đặt ra</div>
+            <ul class="clean">
+              <li>Người học VN cần luyện đủ <b>4 kỹ năng</b> nhưng công cụ rời rạc, ít cá nhân hóa.</li>
+              <li>App phổ biến mạnh 1–2 kỹ năng, <b>ít gắn với lớp học – giáo viên – chấm bài thật</b>.</li>
+              <li>AI chưa được đưa sâu vào <b>quy trình đánh giá</b> (chấm viết, đánh giá phát âm).</li>
+            </ul>
+          </div>
+          <div>
+            <div class="col-h alt"><span class="dot"></span>Mục tiêu &amp; phạm vi</div>
+            <ul class="clean">
+              <li>Nền tảng <b>full-stack</b>: 4 kỹ năng + từ vựng, tích hợp AI, gamification.</li>
+              <li>Ba vai trò: <b>Học sinh</b> (mobile) · <b>Giáo viên</b> (web/tablet) · <b>Admin</b>.</li>
+              <li>Công nghệ: <b>Flutter + Node.js + MongoDB</b>; đã <b>triển khai thật</b> (Render + domain).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>Thời lượng ~1 phút.</b> Đây là slide "bán" lý do đề tài — nói tự tin.<br>
+        <b>Nói:</b> Nêu 3 vấn đề bên trái → chốt "vì vậy em xây dựng E4C" → đọc lướt 3 mục tiêu bên phải, nhấn mạnh <i>"đã triển khai thật, không chỉ chạy máy ảo"</i>.<br>
+        <b>Bẫy Q&amp;A:</b> Nếu hỏi "khác Duolingo chỗ nào" → để dành, sẽ trả lời ở slide sau (Khảo sát).
+      </div>
+    </section>
+
+    <!-- 3 · SURVEY / DIFFERENTIATION -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 1 — Khảo sát hiện trạng</div>
+      <h2 class="stitle">Giải pháp hiện có &amp; <span class="u">điểm khác biệt</span></h2>
+      <div class="content" style="justify-content:center">
+        <table class="cmp">
+          <thead><tr><th>Tiêu chí</th><th>Duolingo</th><th>ELSA Speak</th><th>Google Classroom</th><th class="e4c">E4C</th></tr></thead>
+          <tbody>
+            <tr><td>Luyện đủ 4 kỹ năng</td><td class="partial">Một phần</td><td class="no">Chỉ Nói</td><td class="no">✕</td><td class="e4c yes">✓</td></tr>
+            <tr><td>AI chấm bài viết / phát âm</td><td class="no">✕</td><td class="yes" style="color:inherit">Phát âm</td><td class="no">✕</td><td class="e4c yes">✓</td></tr>
+            <tr><td>Lớp học – giáo viên</td><td class="no">✕</td><td class="no">✕</td><td class="yes" style="color:inherit">✓</td><td class="e4c yes">✓</td></tr>
+            <tr><td>Soạn đề · thi · chấm realtime</td><td class="no">✕</td><td class="no">✕</td><td class="partial">Cơ bản</td><td class="e4c yes">✓</td></tr>
+            <tr><td>Đa vai trò trong 1 ứng dụng</td><td class="no">✕</td><td class="no">✕</td><td class="no">✕</td><td class="e4c yes">✓</td></tr>
+          </tbody>
+        </table>
+        <p class="lead" style="max-width:100%; text-align:center; margin-top:2.4cqw">E4C <b style="color:var(--navy)">gộp tự học có AI</b> và <b style="color:var(--navy)">hệ thống lớp – thi – chấm realtime</b> trong <b style="color:var(--navy)">một app đa vai trò</b>.</p>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút.</b> Đây là câu trả lời cho "khác gì app có sẵn".<br>
+        <b>Nói:</b> "Mỗi công cụ mạnh một mảng: Duolingo tự học, ELSA phát âm, Google Classroom quản lớp. E4C kết hợp cả ba mảng đó với AI, trong cùng một ứng dụng đa vai trò."<br>
+        <b>Trung thực:</b> Đừng nói E4C 'hơn' về nội dung/khối lượng bài — điểm mạnh là <i>tính tích hợp</i>, nói đúng như vậy.
+      </div>
+    </section>
+
+    <!-- 4 · RBAC -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 2 — Phân tích yêu cầu</div>
+      <h2 class="stitle">Ba vai trò &amp; <span class="u">phân quyền (RBAC)</span></h2>
+      <div class="content" style="justify-content:center; gap:2.6cqw">
+        <div class="flow">
+          <div class="node solid"><div class="nt">1 App Flutter</div><div class="ns">Đăng nhập · JWT</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="decision"><span>role?</span></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div style="display:flex; flex-direction:column; gap:1.1cqw">
+            <div class="node gold"><div class="nt">Học sinh · user</div><div class="ns">Home — học 4 kỹ năng + AI</div></div>
+            <div class="node gold"><div class="nt">Giáo viên · teacher</div><div class="ns">Dashboard — lớp &amp; thi</div></div>
+            <div class="node gold"><div class="nt">Admin</div><div class="ns">Console — CMS &amp; vận hành</div></div>
+          </div>
+        </div>
+        <div class="card" style="text-align:center; align-self:center; max-width:80%">
+          <span style="font-size:1.9cqw; color:var(--navy); font-weight:800">Bảo mật 2 lớp:</span>
+          <span style="font-size:1.85cqw; color:var(--navy-ink)"> JWT + RBAC middleware (server, quyết định) · GoRouter redirect (client, chặn sai route)</span>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút.</b> Slide thể hiện phân tích actor + bảo mật.<br>
+        <b>Nói:</b> "Toàn hệ thống dùng <i>một</i> app Flutter. Sau đăng nhập, GoRouter đọc trường <code>role</code> và điều hướng đến workspace tương ứng." → chỉ vào 3 card.<br>
+        Nhấn: "Bảo mật <b>2 lớp</b> — server quyết định (JWT + RBAC), client chỉ chặn phụ; không tin client."<br>
+        <b>Q&amp;A hay gặp:</b> "Chặn ở client có an toàn không?" → Không, mọi API đều kiểm JWT + permission ở server; GoRouter chỉ là lớp UX thứ hai.
+      </div>
+    </section>
+
+    <!-- 5 · ARCHITECTURE -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 3 — Thiết kế hệ thống</div>
+      <h2 class="stitle">Kiến trúc <span class="u">tổng thể</span></h2>
+      <div class="content" style="justify-content:center">
+        <div class="tiers">
+          <div class="tier client"><div class="th">Flutter Client — Mobile &amp; Web</div><div class="ts">Clean Architecture: UI → BLoC → Repository → Datasource · GoRouter · GetIt DI</div></div>
+          <div class="conn"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg> HTTPS · JWT · WebSocket <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg></div>
+          <div class="tier server"><div class="th">Node.js Backend — Express</div><div class="ts">MVC + Service Layer · REST API + Socket.IO · Middleware Auth/RBAC · Jobs (node-cron)</div></div>
+          <div class="conn"><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg></div>
+          <div class="svc">
+            <div class="card"><div class="st">MongoDB Atlas</div><div class="ss">CSDL chính · Mongoose</div></div>
+            <div class="card"><div class="st">Cloudinary</div><div class="ss">Ảnh · audio</div></div>
+            <div class="card"><div class="st">Firebase</div><div class="ss">Auth · FCM · Analytics</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút.</b> Đọc từ trên xuống theo tầng.<br>
+        <b>Nói:</b> "Client Flutter theo Clean Architecture, tách UI–logic–data. Giao tiếp backend qua HTTPS có JWT và WebSocket cho realtime. Backend Express theo MVC + Service, nối tới MongoDB Atlas, Cloudinary lưu media, và Firebase cho auth/push."<br>
+        <b>Q&amp;A:</b> "Vì sao MongoDB không SQL?" → dữ liệu bài học/đề thi dạng document lồng nhau (skills, cues, options) linh hoạt, schema tiến hóa nhanh; có Mongoose ràng buộc.
+      </div>
+    </section>
+
+    <!-- 6 · TECH STACK -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 3 — Công nghệ</div>
+      <h2 class="stitle">Công nghệ <span class="u">sử dụng</span></h2>
+      <div class="content" style="justify-content:center">
+        <div class="techgrid">
+          <div class="grp">
+            <div class="col-h"><span class="dot"></span>Frontend</div>
+            <div class="chips">
+              <span class="chip">Flutter · Dart</span><span class="chip">flutter_bloc</span><span class="chip">go_router</span>
+              <span class="chip">Dio + JWT</span><span class="chip">get_it (DI)</span><span class="chip">socket_io_client</span>
+              <span class="chip">Firebase</span><span class="chip">sqflite</span><span class="chip">fl_chart</span>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="col-h"><span class="dot"></span>Backend</div>
+            <div class="chips">
+              <span class="chip">Node · Express</span><span class="chip">Mongoose</span><span class="chip">Socket.IO</span>
+              <span class="chip">JWT · bcrypt</span><span class="chip">Zod</span><span class="chip">node-cron</span>
+              <span class="chip">Cloudinary</span><span class="chip">Nodemailer</span><span class="chip">firebase-admin</span>
+            </div>
+          </div>
+          <div class="grp">
+            <div class="col-h alt"><span class="dot"></span>Trí tuệ nhân tạo</div>
+            <div class="chips">
+              <span class="chip ai">Gemini</span><span class="chip ai">OpenAI</span><span class="chip ai">Groq</span><span class="chip ai">VAPI · voice</span>
+            </div>
+            <p style="font-size:1.5cqw; color:var(--muted); margin-top:1.4cqw; line-height:1.35">Đa nhà cung cấp AI: chấm viết, đánh giá phát âm, trợ lý chat, hội thoại giọng nói.</p>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~45s. Đừng đọc hết chip.</b> Lướt theo 3 nhóm, dừng ở AI.<br>
+        <b>Nói:</b> "Frontend Flutter với BLoC + GoRouter; backend Node/Express + MongoDB; realtime dùng Socket.IO hai đầu. Đáng chú ý là tầng AI — em dùng đa nhà cung cấp Gemini/OpenAI/Groq và VAPI cho voice."<br>
+        <b>Q&amp;A:</b> "Vì sao nhiều AI provider?" → dự phòng khi 1 provider lỗi/hết quota + tối ưu chi phí/tốc độ theo tác vụ.
+      </div>
+    </section>
+
+    <!-- 7 · DATABASE -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 3 — Cơ sở dữ liệu</div>
+      <h2 class="stitle">Thiết kế CSDL <span class="u">(rút gọn)</span></h2>
+      <div class="content" style="justify-content:center; gap:2.6cqw">
+        <div class="flow">
+          <div class="node"><div class="nt">User</div><div class="ns">role · gamification · OTP</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Classroom</div><div class="ns">owner · mã mời</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Exam</div><div class="ns">skills + grammar</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">ExamAttempt</div><div class="ns">bài làm · điểm</div></div>
+        </div>
+        <div class="flow" style="gap:2cqw">
+          <div class="node gold"><div class="nt">Nội dung kỹ năng</div><div class="ns">Listening · Reading · Writing · Speaking</div></div>
+          <div class="node gold"><div class="nt">Word</div><div class="ns">từ vựng · SRS</div></div>
+          <div class="node gold"><div class="nt">Notification</div><div class="ns">FCM · socket</div></div>
+          <div class="node gold"><div class="nt">TeacherApplication</div><div class="ns">đơn xin làm GV</div></div>
+        </div>
+        <p class="lead" style="max-width:100%; text-align:center; margin-top:.6cqw"><b style="color:var(--navy); font-size:2.3cqw">32</b> Mongoose models tổ chức quanh 5 nhóm: tài khoản · lớp/thi · nội dung 5 kỹ năng · tiến độ · vận hành.</p>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~45s.</b> Đây là ERD rút gọn — đừng liệt kê 32 model.<br>
+        <b>Nói:</b> "CSDL gồm 32 model. Luồng chính: User tham gia Classroom, giáo viên tạo Exam, học sinh sinh ra ExamAttempt. Hàng dưới là các nhóm phụ trợ: nội dung 5 kỹ năng, từ vựng, thông báo, đơn giáo viên."<br>
+        <b>Nếu hỏi chi tiết:</b> mở phụ lục / báo cáo giấy có bảng đầy đủ 32 model.
+      </div>
+    </section>
+
+    <!-- 8 · STUDENT FEATURES -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 4 — Chức năng · Học sinh</div>
+      <h2 class="stitle">Học sinh: <span class="u">4 kỹ năng + AI</span></h2>
+      <div class="content">
+        <div style="display:grid; grid-template-columns:1.15fr 1.85fr; gap:3cqw; flex:1; min-height:0">
+          <div class="shot phone">
+            <div class="frame-lbl">Ảnh mobile</div>
+            <div class="si">📱</div>
+            <div class="sc"><b>Chèn ảnh thật:</b> màn Home học sinh (4 kỹ năng + streak/điểm) hoặc màn Viết có AI feedback (diff text).</div>
+          </div>
+          <div class="skills">
+            <div class="skill"><div class="ic">🎧</div><div><div class="sh">Nghe</div><div class="sd">Dictation điền chỗ trống + nghe hiểu MCQ, transcript theo cue.</div></div></div>
+            <div class="skill"><div class="ic">🎙️</div><div><div class="sh">Nói <span class="aiflag">AI · VAPI</span></div><div class="sd">Read-aloud chấm WER (STT) + hội thoại tự do voice-AI.</div></div></div>
+            <div class="skill"><div class="ic">📖</div><div><div class="sh">Đọc <span class="aiflag">AI</span></div><div class="sd">Bài đọc theo level + câu hỏi + phản hồi AI.</div></div></div>
+            <div class="skill"><div class="ic">✍️</div><div><div class="sh">Viết <span class="aiflag">AI</span></div><div class="sd">AI chấm grammar/structure/vocabulary + hiển thị diff gợi ý sửa.</div></div></div>
+            <div class="skill"><div class="ic">📚</div><div><div class="sh">Từ vựng</div><div class="sd">Từ điển offline (SQLite) + word bank + ôn tập SRS.</div></div></div>
+            <div class="skill"><div class="ic">🏆</div><div><div class="sh">Gamification</div><div class="sd">Điểm · streak · level · leaderboard · biểu đồ tuần.</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút — slide sản phẩm, để screenshot nói thay lời.</b><br>
+        <b>Chuẩn bị ảnh:</b> 1 ảnh Home + (nếu kịp) 1 ảnh màn Viết có AI diff. Chụp trên thiết bị thật/emulator, khung dọc 9:19.<br>
+        <b>Nói:</b> Lướt 4 kỹ năng, dừng ở <b>Nói</b> (voice-AI VAPI) và <b>Viết</b> (AI chấm + diff) — đây là điểm AI ăn tiền. "Từ điển tra được cả khi offline nhờ SQLite."<br>
+        <b>Q&amp;A:</b> "AI chấm có chính xác không?" → là gợi ý/định hướng cho người học; với bài thi trong lớp thì AI chỉ chấm nháp, giáo viên chốt điểm (xem slide sau).
+      </div>
+    </section>
+
+    <!-- 9 · TEACHER / EXAM -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 4 — Chức năng · Giáo viên</div>
+      <h2 class="stitle">Giáo viên — Lớp — <span class="u">Thi realtime</span></h2>
+      <div class="content" style="gap:2.4cqw">
+        <div class="flow" style="gap:.9cqw">
+          <div class="node"><div class="nt">Tạo lớp</div><div class="ns">mã mời</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Soạn đề</div><div class="ns">skills + grammar</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Giao bài</div><div class="ns">lớp / link công khai</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node gold"><div class="nt">Thi realtime</div><div class="ns">lobby→live→closed</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Chấm</div><div class="ns">auto + AI + GV chốt</div></div>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+          <div class="node"><div class="nt">Gradebook</div><div class="ns">export</div></div>
+        </div>
+        <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:2.6cqw; flex:1; min-height:0">
+          <div class="shot"><div class="frame-lbl">Ảnh web/tablet</div><div class="si">🖥️</div><div class="sc"><b>Chèn ảnh thật:</b> màn <b>Live monitor</b> phiên thi (danh sách học sinh + trạng thái) hoặc màn <b>Gradebook</b> chấm điểm.</div></div>
+          <ul class="clean" style="justify-content:center">
+            <li>Thi <b>realtime</b> qua Socket.IO: lobby → live → kết thúc, giáo viên <b>giám sát</b> màn hình học sinh.</li>
+            <li>Chấm: auto (MCQ) · <b>AI nháp</b> (viết/nói) · <b>giáo viên chốt điểm</b>.</li>
+            <li>Chống gian lận: theo dõi <b>rời tab</b> &amp; copy-paste.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút — phần lõi tạo khác biệt, dành nhiều thời gian.</b><br>
+        <b>Chuẩn bị ảnh:</b> màn Live monitor phiên thi (đẹp nhất) hoặc Gradebook.<br>
+        <b>Nói:</b> Đi theo pipeline trái→phải một hơi. Nhấn 3 ý phải: realtime, AI-nháp-GV-chốt, chống gian lận.<br>
+        <b>Q&amp;A:</b> "Đồng bộ thời gian thi thế nào?" → thời gian do <b>server</b> quyết (server-authoritative), client chỉ hiển thị; "Mất mạng giữa chừng?" → bài lưu theo lượt, vào lại tiếp tục.
+      </div>
+    </section>
+
+    <!-- 10 · ADMIN + AUTO UPDATE -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 4 — Chức năng · Admin</div>
+      <h2 class="stitle">Admin &amp; <span class="u">phát hành app</span></h2>
+      <div class="content">
+        <div class="two-col" style="gap:3.4cqw">
+          <div>
+            <div class="col-h alt"><span class="dot"></span>Quản trị nền tảng</div>
+            <ul class="clean">
+              <li><b>CMS</b> nội dung cho cả 5 kỹ năng (bài giáo viên chọn khi soạn đề).</li>
+              <li>Quản lý user (ban/unban) · <b>duyệt đơn giáo viên</b>.</li>
+              <li>Moderation báo cáo vi phạm · <b>audit log</b> hành động admin.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="col-h"><span class="dot"></span>Hệ thống cập nhật app</div>
+            <div class="states" style="justify-content:flex-start; margin:.6cqw 0 1.8cqw">
+              <div class="state">pending</div>
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+              <div class="state on">approved</div>
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+              <div class="state">published</div>
+              <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4l8 8-8 8"/></svg>
+              <div class="state end">archived</div>
+            </div>
+            <ul class="clean">
+              <li>CI tạo <b>candidate</b> → admin duyệt/publish/rollback.</li>
+              <li>Client kiểm phiên bản → <b>cập nhật in-app</b> (soft / force).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~45s.</b> Nói gọn, đây là phần vận hành.<br>
+        <b>Nói:</b> "Admin quản nội dung CMS, người dùng, duyệt giáo viên và có audit log. Điểm kỹ thuật đáng chú ý bên phải: hệ thống phát hành app theo <i>state machine</i> — CI tạo bản ứng viên, admin duyệt rồi phát hành, app tự nhắc cập nhật."<br>
+        <b>Q&amp;A:</b> "Force update để làm gì?" → khi có bản vá bảo mật/lỗi nghiêm trọng, chặn dùng bản cũ.
+      </div>
+    </section>
+
+    <!-- 11 · TECH HIGHLIGHTS -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 4 — Điểm nhấn</div>
+      <h2 class="stitle">Điểm nổi bật <span class="u">kỹ thuật</span></h2>
+      <div class="content" style="justify-content:center">
+        <div class="hl">
+          <div class="card"><div class="hi">🤖</div><div class="hh">AI thực chiến</div><div class="hd">Chấm viết, đánh giá phát âm (WER), trợ lý chat — đa provider + voice AI.</div></div>
+          <div class="card"><div class="hi">⚡</div><div class="hh">Realtime Socket.IO</div><div class="hd">Phiên thi, giám sát, thông báo, bình luận — theo room, server-authoritative.</div></div>
+          <div class="card"><div class="hi">🔐</div><div class="hh">JWT dual-token</div><div class="hd">Access ngắn + refresh, interceptor tự gia hạn trong suốt; RBAC theo permission.</div></div>
+          <div class="card"><div class="hi">📴</div><div class="hh">Hoạt động offline</div><div class="hd">Từ điển SQLite ~5MB + secure storage token, chịu mất mạng.</div></div>
+          <div class="card"><div class="hi">🌐</div><div class="hh">Đa ngôn ngữ</div><div class="hd">EN/VI hoàn chỉnh, ~1.000+ localization keys (ARB).</div></div>
+          <div class="card"><div class="hi">✅</div><div class="hh">Chất lượng code</div><div class="hd"><code>flutter analyze</code>: 0 error · 0 warning; Clean Architecture + DI.</div></div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~1 phút.</b> Slide "khoe" năng lực kỹ thuật — nói dõng dạc.<br>
+        <b>Nói:</b> Không đọc hết 6 ô; chọn nhấn <b>AI</b>, <b>Realtime</b>, <b>JWT dual-token</b> — ba thứ khó nhất. Kết: "và toàn bộ đạt 0 error, 0 warning qua phân tích tĩnh."<br>
+        <b>Q&amp;A:</b> "Dual-token là gì?" → access token hết hạn nhanh cho an toàn; refresh token gia hạn tự động qua Dio interceptor, người dùng không bị đăng xuất giữa chừng.
+      </div>
+    </section>
+
+    <!-- 12 · DEMO -->
+    <section class="slide dark">
+      <span class="rail"></span>
+      <div class="content" style="justify-content:center; align-items:flex-start">
+        <div class="eyebrow">Phần 5</div>
+        <div class="demo-big">DEMO<span class="dot">.</span></div>
+        <div class="steps">
+          <div class="step"><div class="sn">1</div><div class="stt">Đăng nhập học sinh</div><div class="std">Vào Home — điểm, streak, 4 kỹ năng.</div></div>
+          <div class="step"><div class="sn">2</div><div class="stt">Làm bài có AI chấm</div><div class="std">Viết/Nói → nhận feedback AI tức thì.</div></div>
+          <div class="step"><div class="sn">3</div><div class="stt">Giáo viên mở phiên thi</div><div class="std">Lobby → live, giám sát realtime.</div></div>
+          <div class="step"><div class="sn">4</div><div class="stt">Chấm &amp; phát điểm</div><div class="std">AI nháp → GV chốt → gradebook.</div></div>
+        </div>
+        <div class="warn">⚠️ Luôn có <b>video quay sẵn 3–4 phút</b> dự phòng — không phụ thuộc mạng/thiết bị tại hội đồng.</div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~3–4 phút — phần quan trọng nhất.</b><br>
+        <b>Kịch bản bấm:</b> (1) Đăng nhập tài khoản học sinh đã seed sẵn dữ liệu → (2) mở màn Viết, nộp 1 đoạn ngắn để lộ AI feedback → (3) chuyển tài khoản giáo viên (chuẩn bị 2 thiết bị hoặc 2 tab), mở phiên thi để thấy học sinh vào lobby → (4) chấm 1 bài, phát điểm.<br>
+        <b>Bắt buộc:</b> Mở sẵn app + đăng nhập trước khi lên, để tài khoản/đề thi seed sẵn. <b>Phát video nếu mạng chậm.</b><br>
+        <b>Mẹo:</b> vừa thao tác vừa thuyết minh; đừng im lặng chờ loading.
+      </div>
+    </section>
+
+    <!-- 13 · RESULTS & SCALE -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 6 — Đánh giá</div>
+      <h2 class="stitle">Kết quả &amp; <span class="u">quy mô</span></h2>
+      <div class="content" style="justify-content:center">
+        <div class="kpis">
+          <div class="kpi"><div class="kn">110<small>.200</small></div><div class="kl">dòng code (~8 tháng)</div></div>
+          <div class="kpi"><div class="kn">412</div><div class="kl">file Dart · 161 file JS</div></div>
+          <div class="kpi"><div class="kn">32</div><div class="kl">Mongoose models</div></div>
+          <div class="kpi"><div class="kn">14</div><div class="kl">feature module · 30 BLoC</div></div>
+          <div class="kpi"><div class="kn">21</div><div class="kl">route API · 46 service</div></div>
+          <div class="kpi"><div class="kn">5</div><div class="kl">kỹ năng · 3 vai trò</div></div>
+          <div class="kpi"><div class="kn">4</div><div class="kl">nhà cung cấp AI (+ voice)</div></div>
+          <div class="kpi"><div class="kn">0<small> / 0</small></div><div class="kl">error / warning (analyze)</div></div>
+        </div>
+        <div class="card barcard">
+          <div class="bt">Phân bố dòng code theo thành phần</div>
+          <div class="bar-row"><span class="bl">Flutter (Dart)</span><div class="bar-track"><div class="bar-fill" style="width:100%; background:var(--navy)">89.800</div></div></div>
+          <div class="bar-row"><span class="bl">Backend (Node.js)</span><div class="bar-track"><div class="bar-fill" style="width:22.7%; background:var(--gold)">20.400</div></div></div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~45s.</b> Cho hội đồng cảm nhận khối lượng — nhưng đừng đọc từng số.<br>
+        <b>Nói:</b> "Khoảng 110.000 dòng code trong ~8 tháng, tổ chức thành 14 module, 32 model, 21 route API; phần lớn là Flutter như biểu đồ. Toàn bộ đạt 0 error, 0 warning."<br>
+        <b>Trung thực:</b> đây là <i>quy mô &amp; chất lượng tĩnh</i>, chưa phải độ phủ test — nói thẳng ở slide sau.
+      </div>
+    </section>
+
+    <!-- 14 · LIMITS & FUTURE -->
+    <section class="slide">
+      <span class="rail"></span><span class="mono">E4C</span>
+      <div class="eyebrow">Phần 6 — Đánh giá</div>
+      <h2 class="stitle">Hạn chế &amp; <span class="u">hướng phát triển</span></h2>
+      <div class="content">
+        <div class="two-col">
+          <div>
+            <div class="col-h alt"><span class="dot"></span>Hạn chế hiện tại</div>
+            <ul class="clean">
+              <li>Chưa có <b>test tự động E2E</b> (mới kiểm thử thủ công/QA).</li>
+              <li><b>CI/CD</b> mới một phần (có Firebase Hosting workflow).</li>
+              <li>Chưa triển khai <b>iOS</b> (cần Apple Developer + TestFlight).</li>
+              <li>Analytics cho giáo viên/admin còn cơ bản.</li>
+            </ul>
+          </div>
+          <div>
+            <div class="col-h"><span class="dot"></span>Hướng phát triển</div>
+            <ul class="clean">
+              <li>Bổ sung <b>unit/integration/E2E test</b> + CI/CD đầy đủ.</li>
+              <li><b>Dashboard phân tích</b> học tập cho giáo viên/admin.</li>
+              <li>Tối ưu hiệu năng: lazy-load, phân trang.</li>
+              <li>Mở rộng kho nội dung &amp; phát hành iOS.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="brandfoot">E4C · English for Community</div><div class="num"></div>
+      <div class="notes">
+        <b>~45s. Sự trung thực ở đây ghi điểm.</b><br>
+        <b>Nói:</b> "Em xin nêu thẳng hạn chế: chưa có test tự động E2E, CI/CD mới một phần, chưa lên iOS. Đây cũng chính là hướng phát triển tiếp theo, cùng với dashboard phân tích cho giáo viên."<br>
+        <b>Bẫy:</b> Nếu hội đồng hỏi "đã test chưa" → đừng chối; nói rõ đang test thủ công + QA, và E2E là việc kế tiếp.
+      </div>
+    </section>
+
+    <!-- 15 · CONCLUSION / THANKS -->
+    <section class="slide dark">
+      <span class="rail"></span>
+      <div class="eyebrow">Kết luận</div>
+      <h2 class="stitle" style="color:#fff">Kết luận</h2>
+      <div class="content">
+        <div class="conc">
+          <ul class="clean">
+            <li style="color:#EAF0F8">Hoàn thành nền tảng <b style="color:#fff">production-ready</b>, đã chạy thật trên domain riêng.</li>
+            <li style="color:#EAF0F8">Đủ <b style="color:#fff">3 vai trò</b> · <b style="color:#fff">5 kỹ năng</b> · hệ thống <b style="color:#fff">lớp–thi–chấm realtime</b>.</li>
+            <li style="color:#EAF0F8">Tích hợp <b style="color:#fff">AI</b> vào chấm viết, phát âm, trợ lý &amp; hội thoại voice.</li>
+            <li style="color:#EAF0F8">Thể hiện năng lực <b style="color:#fff">full-stack end-to-end</b>: DB → API → realtime → mobile UX.</li>
+          </ul>
+          <div class="thanks">Xin cảm ơn Hội đồng!<small>Em xin sẵn sàng trả lời câu hỏi — Q&amp;A</small></div>
+        </div>
+      </div>
+      <div class="brandfoot">Phan Duy · english4community.online</div><div class="num"></div>
+      <div class="notes">
+        <b>~30s + Q&amp;A.</b><br>
+        <b>Nói:</b> Tóm 4 ý kết luận trong 2 câu, rồi: "Em xin hết phần trình bày, kính mong quý thầy cô góp ý ạ."<br>
+        <b>Bộ câu hỏi luyện trước:</b>
+        <ul>
+          <li>Vì sao chọn MongoDB thay vì SQL? · Bảo mật token &amp; mật khẩu thế nào (JWT + bcrypt + OTP TTL)?</li>
+          <li>Chống gian lận khi thi ra sao? · AI chấm sai thì xử lý thế nào (GV chốt điểm)?</li>
+          <li>Vì sao nhiều AI provider? · Đã kiểm thử chưa (thủ công/QA, E2E là hướng phát triển)?</li>
+          <li>Khác gì Duolingo/ELSA (tính tích hợp lớp–thi–AI trong 1 app)? · Khả năng mở rộng khi đông user?</li>
+        </ul>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div id="bar" role="toolbar" aria-label="Điều khiển slide">
+  <button id="prev" aria-label="Slide trước">‹</button>
+  <span class="count" id="count">1 / 15</span>
+  <button id="next" aria-label="Slide sau">›</button>
+  <button id="notesBtn" aria-label="Ghi chú thuyết trình">Ghi chú (N)</button>
+  <button id="fsBtn" aria-label="Toàn màn hình">⤢</button>
+</div>
+
+<div id="notesPanel" aria-live="polite">
+  <h4>Kịch bản slide <span id="notesNum"></span></h4>
+  <div class="nrow" id="notesContent"></div>
+</div>
+
+<script>
+(function(){
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var total = slides.length, i = 0;
+  var count = document.getElementById('count');
+  var progress = document.getElementById('progress');
+  var notesContent = document.getElementById('notesContent');
+  var notesNum = document.getElementById('notesNum');
+  var hint = document.getElementById('hint');
+
+  function render(){
+    slides.forEach(function(s,k){ s.classList.toggle('active', k===i); });
+    // slide numbers
+    slides.forEach(function(s,k){ var n=s.querySelector('.num'); if(n) n.textContent=(k+1)+' / '+total; });
+    count.textContent = (i+1)+' / '+total;
+    progress.style.width = ((i+1)/total*100)+'%';
+    var nt = slides[i].querySelector('.notes');
+    notesContent.innerHTML = nt ? nt.innerHTML : '<i>(không có ghi chú)</i>';
+    notesNum.textContent = (i+1);
+  }
+  function go(n){ i = Math.max(0, Math.min(total-1, n)); render(); }
+  function next(){ go(i+1); } function prev(){ go(i-1); }
+
+  document.getElementById('next').onclick = next;
+  document.getElementById('prev').onclick = prev;
+  document.getElementById('notesBtn').onclick = function(){ document.body.classList.toggle('presenter'); };
+  document.getElementById('fsBtn').onclick = function(){
+    if(!document.fullscreenElement){ (document.documentElement.requestFullscreen||function(){})(); }
+    else if(document.exitFullscreen){ document.exitFullscreen(); }
+  };
+
+  document.addEventListener('keydown', function(e){
+    if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); prev(); }
+    else if(e.key==='Home'){ go(0); }
+    else if(e.key==='End'){ go(total-1); }
+    else if(e.key==='n'||e.key==='N'){ document.body.classList.toggle('presenter'); }
+    else if(e.key==='f'||e.key==='F'){ document.getElementById('fsBtn').click(); }
+  });
+
+  // click right/left third of deck to navigate (ignore controls)
+  document.getElementById('deck').addEventListener('click', function(e){
+    var r = this.getBoundingClientRect();
+    var x = e.clientX - r.left;
+    if(x > r.width*0.62) next();
+    else if(x < r.width*0.38) prev();
+  });
+
+  setTimeout(function(){ if(hint){ hint.style.opacity='0'; } }, 5200);
+  render();
+})();
+</script>
+
+</body>
+</html>

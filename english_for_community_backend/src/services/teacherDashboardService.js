@@ -4,20 +4,13 @@ import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import { createTtlCache } from '../utils/ttlCache.js';
+import { gradingAttentionMatch, teacherAnalyticsScope } from './teacherAnalyticsScope.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const gradingCountCache = createTtlCache(10_000);
 
 const toObjectId = (id) =>
   id instanceof mongoose.Types.ObjectId ? id : new mongoose.Types.ObjectId(String(id));
-
-const gradingAttentionMatch = {
-  status: 'submitted',
-  $or: [
-    { gradingState: { $in: ['pending_manual', 'pending_ai'] } },
-    { gradingState: 'finalized', resultsReleased: { $ne: true } },
-  ],
-};
 
 async function getGradingQueue(teacherId, limit = 15) {
   const tid = toObjectId(teacherId);
@@ -221,8 +214,8 @@ export const teacherDashboardService = {
   },
 
   async getAnalyticsSummary(teacherId) {
-    const assignments = await ExamAssignment.find({ teacherId }).select('_id status audience').lean();
-    const assignmentIds = assignments.map((a) => a._id);
+    // Finding #8: scope GỒM cả lớp dạy-cùng — đồng bộ với teacherAnalyticsChartsService.
+    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(teacherId, '_id status');
     const activeAssignments = assignments.filter((a) => a.status === 'active').length;
 
     const attemptAgg = assignmentIds.length
@@ -232,27 +225,26 @@ export const teacherDashboardService = {
         ])
       : [];
 
+    // Finding #6: "chờ chấm" dùng ĐỊNH NGHĨA CHUẨN (khớp inbox), không chỉ pending_manual.
     const pendingGradingCount = assignmentIds.length
       ? await ExamAttempt.countDocuments({
           assignmentId: { $in: assignmentIds },
-          gradingState: 'pending_manual',
+          ...gradingAttentionMatch,
         })
       : 0;
 
-    const classrooms = await Classroom.countDocuments({ teacherId, archived: false });
-    const classroomIds = (await Classroom.find({ teacherId, archived: false }).select('_id')).map(
-      (c) => c._id
-    );
-    const students = classroomIds.length
+    // Chỉ đếm HỌC SINH (trước đây thiếu roleInClass → gộp nhầm cả co_teacher vào activeStudentCount).
+    const students = classIds.length
       ? await ClassroomMember.countDocuments({
-          classroomId: { $in: classroomIds },
+          classroomId: { $in: classIds },
           status: 'active',
+          roleInClass: 'student',
         })
       : 0;
 
     const byStatus = Object.fromEntries(attemptAgg.map((r) => [r._id, r.count]));
     return {
-      classroomCount: classrooms,
+      classroomCount: classIds.length,
       activeStudentCount: students,
       totalAssignments: assignments.length,
       activeAssignments,

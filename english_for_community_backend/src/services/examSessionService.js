@@ -28,11 +28,12 @@ function mapJoinedUsersToParticipants(joinedUserIds, readyUserIds = []) {
         fullName: u.fullName || '',
         email: u.email || '',
         username: u.username || '',
+        avatarUrl: u.avatarUrl || '',
         ready: readySet.has(userId),
       };
     }
     const userId = String(u);
-    return { userId, fullName: '', email: '', username: '', ready: readySet.has(userId) };
+    return { userId, fullName: '', email: '', username: '', avatarUrl: '', ready: readySet.has(userId) };
   });
 }
 
@@ -141,7 +142,7 @@ export const examSessionService = {
   async buildRealtimePayload(sessionId, { includeContext = false } = {}) {
     const sid = sessionId?.toString?.() ?? String(sessionId);
     let session = await ExamSession.findById(sid)
-      .populate({ path: 'joinedUserIds', select: 'fullName email username' })
+      .populate({ path: 'joinedUserIds', select: 'fullName email username avatarUrl' })
       .populate({
         path: 'assignmentId',
         populate: [{ path: 'examId', select: 'title description settings' }, { path: 'classroomId', select: 'name' }],
@@ -150,7 +151,7 @@ export const examSessionService = {
       await maybeAutoEndLiveSessionIfDue(session);
     }
     session = await ExamSession.findById(sid)
-      .populate({ path: 'joinedUserIds', select: 'fullName email username' })
+      .populate({ path: 'joinedUserIds', select: 'fullName email username avatarUrl' })
       .populate({
         path: 'assignmentId',
         populate: [{ path: 'examId', select: 'title description settings' }, { path: 'classroomId', select: 'name' }],
@@ -229,6 +230,22 @@ export const examSessionService = {
     if (voidedAny) {
       await broadcastAllSessionAttempts(sid);
     }
+  },
+
+  /**
+   * Presence-only lobby cleanup on socket drop (reload / kill app). Unlike
+   * `removeParticipantFromSession`, it NEVER voids an in-progress attempt and only
+   * touches a session still in `lobby` (atomic guard) — a mid-exam disconnect is left
+   * entirely to the live-attempt logic. Returns true if a participant was removed.
+   */
+  async removeLobbyParticipant(sessionId, userId) {
+    const sid = sessionId?.toString?.() ?? String(sessionId);
+    const uid = userId?.toString?.() ?? String(userId);
+    const res = await ExamSession.updateOne(
+      { _id: sid, status: 'lobby' },
+      { $pull: { joinedUserIds: uid, readyUserIds: uid } }
+    );
+    return (res?.modifiedCount ?? res?.nModified ?? 0) > 0;
   },
 
   async kickParticipant(teacherId, sessionId, studentUserId) {

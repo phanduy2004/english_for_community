@@ -56,6 +56,37 @@ extension SocketExamHandler on SocketService {
     _socket.emit('exam_session_set_ready', {'sessionId': sessionId, 'ready': ready});
   }
 
+  /// Teacher (session leader) → live reminder that pops up on one student's screen.
+  void emitTeacherExamWarnStudent({
+    required String sessionId,
+    required String studentUserId,
+    required String message,
+  }) {
+    if (!_isInitialized) init();
+    _socket.emit('teacher_exam_warn_student', {
+      'sessionId': sessionId,
+      'studentUserId': studentUserId,
+      'message': message,
+    });
+  }
+
+  /// Student side: teacher reminder/warning during a live exam.
+  void listenExamSessionWarning(void Function(Map<String, dynamic> payload) onData) {
+    if (!_isInitialized) init();
+    _socket.off('exam_session_warning');
+    _socket.on('exam_session_warning', (raw) {
+      if (raw is Map) {
+        onData(Map<String, dynamic>.from(raw));
+      }
+    });
+  }
+
+  void offExamSessionWarning() {
+    if (_isInitialized) {
+      _socket.off('exam_session_warning');
+    }
+  }
+
   void listenExamSessionKicked(void Function(Map<String, dynamic> payload) onData) {
     if (!_isInitialized) init();
     _socket.off('exam_session_kicked');

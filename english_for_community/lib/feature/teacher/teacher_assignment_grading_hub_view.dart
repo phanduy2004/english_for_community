@@ -383,6 +383,7 @@ class _TeacherAssignmentGradingHubBody extends StatelessWidget {
                       : null,
                 ),
                 const SizedBox(height: AppSpacing.s5),
+                _integritySummaryCard(context, state.integritySummary),
                 Text(l10n.teacherGradingStudentAttemptsTitle, style: TeacherWebUi.sectionTitle(context)),
                 const SizedBox(height: AppSpacing.s3),
                 Wrap(
@@ -487,4 +488,45 @@ Widget _gradingMenuAction(IconData icon, String label, {bool danger = false}) {
     ],
   );
 }
+
+/// C3: card tổng hợp integrity per-bài-giao (high/medium/total). Ẩn khi null hoặc total 0.
+Widget _integritySummaryCard(BuildContext context, Map<String, dynamic>? s) {
+  if (s == null) return const SizedBox.shrink();
+  final high = (s['high'] as num?)?.toInt() ?? 0;
+  final medium = (s['medium'] as num?)?.toInt() ?? 0;
+  final total = (s['total'] as num?)?.toInt() ?? 0;
+  if (total == 0) return const SizedBox.shrink();
+  final l10n = context.l10n;
+  return Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.s4),
+    child: AppCard(
+      variant: AppCardVariant.outline,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s4),
+        child: Row(
+          children: [
+            Icon(Icons.flag_outlined, size: 18, color: AppColors.danger),
+            const SizedBox(width: AppSpacing.s3),
+            Expanded(
+              child: Text(
+                l10n.teacherGradingIntegritySummaryTitle,
+                style: TeacherWebUi.webBody(context).copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+            _integrityChip(context, l10n.teacherAnalyticsIntegrityHigh, high, AppColors.danger),
+            const SizedBox(width: AppSpacing.s3),
+            _integrityChip(context, l10n.teacherAnalyticsIntegrityMedium, medium, AppColors.warning),
+            const SizedBox(width: AppSpacing.s3),
+            _integrityChip(context, l10n.teacherGradingIntegrityTotal, total, AppColors.textMuted),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _integrityChip(BuildContext context, String label, int value, Color color) => Text(
+      '$label: $value',
+      style: TeacherWebUi.metaMuted.copyWith(color: color, fontWeight: FontWeight.w600),
+    );
 

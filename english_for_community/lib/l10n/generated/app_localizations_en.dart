@@ -3336,6 +3336,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get examCardStatusLobby => 'Lobby open — waiting to go live';
 
   @override
+  String get teacherClassStatusLobby => 'Lobby open';
+
+  @override
   String get examCardStatusLive => 'Live now';
 
   @override
@@ -4036,6 +4039,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get examSessionStudentNotReady => 'Not ready';
+
+  @override
+  String get examSessionYouTag => 'You';
+
+  @override
+  String get teacherExamWarnStudentAction => 'Send reminder';
+
+  @override
+  String get teacherExamWarnStudentTitle => 'Send a reminder';
+
+  @override
+  String get teacherExamWarnStudentSubtitle =>
+      'Pops up on the student\'s exam screen right now.';
+
+  @override
+  String get teacherExamWarnStudentMessageLabel => 'Message';
+
+  @override
+  String get teacherExamWarnStudentSend => 'Send reminder';
+
+  @override
+  String get teacherExamWarnStudentSent => 'Reminder sent';
+
+  @override
+  String get teacherExamWarnChipTabSwitch => 'Tab switching';
+
+  @override
+  String get teacherExamWarnChipCopyPaste => 'Copy / paste';
+
+  @override
+  String get teacherExamWarnChipFocus => 'Stay focused';
+
+  @override
+  String get teacherExamWarnPresetTabSwitch =>
+      'You\'re switching tabs too often. Please stay on the exam and focus.';
+
+  @override
+  String get teacherExamWarnPresetCopyPaste =>
+      'Copy/paste isn\'t allowed during the exam. Please stop.';
+
+  @override
+  String get teacherExamWarnPresetFocus =>
+      'Please keep the exam on your screen and focus on your work.';
+
+  @override
+  String get studentExamWarningTitle => 'Reminder from your teacher';
+
+  @override
+  String get studentExamWarningDismiss => 'Got it';
 
   @override
   String get examSessionMarkReady => 'I\'m ready';
@@ -4852,6 +4904,22 @@ class AppLocalizationsEn extends AppLocalizations {
       'Not enough data to summarise yet.';
 
   @override
+  String get teacherAnalyticsSectionOverview => 'Overview';
+
+  @override
+  String get teacherAnalyticsSectionActivity => 'Activity & scores';
+
+  @override
+  String get teacherAnalyticsSectionStudents => 'Students & questions';
+
+  @override
+  String get teacherAnalyticsSectionIntegrity => 'Integrity & submissions';
+
+  @override
+  String get teacherAnalyticsSectionStudentsEmpty =>
+      'No students need attention yet — insights appear as more work is submitted and graded.';
+
+  @override
   String get teacherAnalyticsScoreTrend => 'Score trend';
 
   @override
@@ -5049,6 +5117,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get teacherGradingStudentAttemptsTitle => 'Student submissions';
+
+  @override
+  String get teacherGradingIntegritySummaryTitle => 'Integrity flags';
+
+  @override
+  String get teacherGradingIntegrityTotal => 'Total';
 
   @override
   String get teacherGradingStatusInProgress => 'In progress';
@@ -5670,6 +5744,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get integratedExamTimeUpShort => 'Time up';
+
+  @override
+  String get studentExamTimeUpAutoSubmitted =>
+      'Your time is up. The exam has been submitted automatically.';
+
+  @override
+  String get studentExamTimeUpExit => 'Exit';
 
   @override
   String get integratedExamGrammarPrevious => 'Previous grammar question';

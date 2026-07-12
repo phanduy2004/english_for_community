@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:english_for_community/core/get_it/get_it.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_motion.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
@@ -51,6 +50,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
   late final ExamLiveSessionGuard _liveGuard;
   bool _abandonBusy = false;
   bool _autoSubmitting = false;
+  bool _deadlineReached = false;
 
   @override
   void initState() {
@@ -110,6 +110,10 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     final r = await getIt<TeacherExamRepository>().submitExamAttempt(widget.attemptId, force: true);
     if (!mounted) return;
     _autoSubmitting = false;
+    // Time's up: mark reached so exit is never blocked (even if the submit call
+    // failed — the server enforces the deadline anyway), reflect the submitted
+    // state, then inform the student and leave the exam screen.
+    _deadlineReached = true;
     r.fold(
       (_) => _load(),
       (d) {
@@ -119,10 +123,32 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
           _error = null;
         });
         _syncLiveGuardBinding();
-        _restartClock();
-        AppFeedback.success(context, context.l10n.studentExamSubmitted);
       },
     );
+    if (!mounted) return;
+    await _showTimeUpAndExit();
+  }
+
+  /// On deadline: current work is auto-submitted, then the student is taken out
+  /// of the exam (no read-only review lingering on a timed exam).
+  Future<void> _showTimeUpAndExit() async {
+    final l10n = context.l10n;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dctx) => AlertDialog(
+        title: Text(l10n.integratedExamTimeUpShort),
+        content: Text(l10n.studentExamTimeUpAutoSubmitted),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dctx).pop(),
+            child: Text(l10n.studentExamTimeUpExit),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    Navigator.of(context).maybePop();
   }
 
   void _clampGrammarIndex() {
@@ -829,7 +855,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
     return FilledButton.tonal(
       onPressed: enabled ? _submit : null,
       style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 36),
+        minimumSize: const Size(0, 44),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         visualDensity: VisualDensity.compact,
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -876,7 +902,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
                       value: doneCount / total,
                       minHeight: 4,
                       backgroundColor: AppColors.outlineMuted,
-                      color: AppSkillColors.listening.color,
+                      color: AppColors.success,
                     ),
                   ),
                 ),
@@ -1504,6 +1530,7 @@ class _IntegratedExamRunnerPageState extends State<IntegratedExamRunnerPage> {
 
   bool _blocksExitConfirm() {
     if (_loading || _error != null) return false;
+    if (_deadlineReached) return false;
     return (_attempt?['status'] as String? ?? '') == 'in_progress';
   }
 
@@ -2211,10 +2238,9 @@ class _CountdownTextState extends State<_CountdownText> {
         Expanded(
           child: Text(
             '${widget.deadlineLabel}: ${_format(left)}',
-            style: ExamSystemUi.captionSecondary.copyWith(
+            style: ExamSystemUi.embeddedBodyStyle.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
-              fontSize: widget.compact ? 11 : 12,
             ),
           ),
         ),

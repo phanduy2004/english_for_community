@@ -37,6 +37,12 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
     Emitter<TeacherGradingHubState> emit,
   ) async {
     emit(state.copyWith(status: TeacherGradingHubStatus.loading, clearError: true));
+    // C3: tổng hợp integrity per-bài-giao (best-effort; lỗi không chặn trang grading).
+    final integrityRes = await repository.getAssignmentIntegritySummary(assignmentId);
+    final Map<String, dynamic>? integrity = integrityRes.fold<Map<String, dynamic>?>(
+      (_) => null,
+      (v) => Map<String, dynamic>.from(v as Map),
+    );
     final r = await repository.getAssignmentGradingHub(assignmentId);
     r.fold(
       (f) => emit(state.copyWith(
@@ -58,6 +64,7 @@ class TeacherGradingHubBloc extends Bloc<TeacherGradingHubEvent, TeacherGradingH
               : {},
           attempts: attempts,
           visibleAttempts: teacherGradingHubVisibleAttempts(attempts, state.filter),
+          integritySummary: integrity,
         ));
       },
     );

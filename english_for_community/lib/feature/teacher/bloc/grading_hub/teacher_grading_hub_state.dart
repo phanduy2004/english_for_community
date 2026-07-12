@@ -15,6 +15,7 @@ class TeacherGradingHubState extends Equatable {
     this.attemptMutationId,
     this.filter = TeacherGradingHubFilter.all,
     this.visibleAttempts = const [],
+    this.integritySummary,
   });
 
   final TeacherGradingHubStatus status;
@@ -27,6 +28,7 @@ class TeacherGradingHubState extends Equatable {
   final String? attemptMutationId;
   final TeacherGradingHubFilter filter;
   final List<Map<String, dynamic>> visibleAttempts;
+  final Map<String, dynamic>? integritySummary;
 
   factory TeacherGradingHubState.initial() =>
       const TeacherGradingHubState(status: TeacherGradingHubStatus.initial);
@@ -42,6 +44,7 @@ class TeacherGradingHubState extends Equatable {
     String? attemptMutationId,
     TeacherGradingHubFilter? filter,
     List<Map<String, dynamic>>? visibleAttempts,
+    Map<String, dynamic>? integritySummary,
     bool clearAttemptMutation = false,
     bool clearError = false,
   }) {
@@ -57,6 +60,7 @@ class TeacherGradingHubState extends Equatable {
           clearAttemptMutation ? null : (attemptMutationId ?? this.attemptMutationId),
       filter: filter ?? this.filter,
       visibleAttempts: visibleAttempts ?? this.visibleAttempts,
+      integritySummary: integritySummary ?? this.integritySummary,
     );
   }
 
@@ -72,5 +76,6 @@ class TeacherGradingHubState extends Equatable {
         attemptMutationId,
         filter,
         visibleAttempts,
+        integritySummary,
       ];
 }

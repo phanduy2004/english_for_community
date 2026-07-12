@@ -841,6 +841,7 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
     int? tabSwitchDelta,
     int? focusLossDelta,
     int? copyPasteDelta,
+    bool? fullscreenExited,
   }) async {
     try {
       await remote.reportExamAttemptIntegrity(
@@ -848,6 +849,7 @@ class TeacherExamRepositoryImpl implements TeacherExamRepository {
         tabSwitchDelta: tabSwitchDelta,
         focusLossDelta: focusLossDelta,
         copyPasteDelta: copyPasteDelta,
+        fullscreenExited: fullscreenExited,
       );
       return Right(null);
     } on DioException catch (e) {

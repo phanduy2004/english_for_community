@@ -35,9 +35,7 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
   /// When set, teacher browses parts locally; resets when student changes part.
   int? _teacherPartOverride;
   int? _lastStudentPartIndex;
-  bool _questionMapExpanded = false;
-
-  static const double _questionMapMaxHeight = 120;
+  bool _questionMapExpanded = true;
 
   int _resolveGrammarNavIndex(
     List<Map<String, dynamic>> grammar,
@@ -150,22 +148,6 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
     }
   }
 
-  List<Map<String, dynamic>> _stripsForActivePart(
-    List<Map<String, dynamic>> allStrips,
-    _MirrorPart active,
-  ) {
-    if (allStrips.isEmpty) return [];
-    if (active.isGrammar) {
-      return allStrips.where((s) => s['skill'] == 'grammar').toList();
-    }
-    if (active.isMergedListening) {
-      return allStrips.where((s) => s['skill'] == 'listening').toList();
-    }
-    final skill = active.section?['skill']?.toString();
-    if (skill == null || skill.isEmpty) return [];
-    return allStrips.where((s) => s['skill'] == skill).toList();
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
@@ -225,78 +207,96 @@ class _StudentExamLiveMirrorViewState extends State<StudentExamLiveMirrorView> {
                   studentHere: i == studentIdx,
                   onTap: () => setState(() {
                     _teacherPartOverride = i;
-                    _questionMapExpanded = false;
                   }),
                 );
               },
             ),
           ),
         ),
-        if (TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']).isNotEmpty) ...[
-          const SizedBox(height: 10),
-          _buildQuestionMapPanel(context, active),
-        ],
         const SizedBox(height: 12),
+        // Question map + mirrored content share ONE scroll so the full all-skills
+        // map (Grammar…Speaking) displays completely instead of clipping.
         Expanded(
           child: SingleChildScrollView(
-            child: active.isGrammar
-                ? _buildGrammarMirror(context, grammar, grammarIdx, answers)
-                : active.isMergedListening
-                    ? _buildMergedListeningMirror(context, active.mergedSections!, answers)
-                    : _buildSkillMirror(context, active.section!, answers),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']).isNotEmpty) ...[
+                  _buildQuestionMapPanel(context),
+                  const SizedBox(height: 12),
+                ],
+                active.isGrammar
+                    ? _buildGrammarMirror(context, grammar, grammarIdx, answers)
+                    : active.isMergedListening
+                        ? _buildMergedListeningMirror(context, active.mergedSections!, answers)
+                        : _buildSkillMirror(context, active.section!, answers),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildQuestionMapPanel(BuildContext context, _MirrorPart active) {
+  Widget _buildQuestionMapPanel(BuildContext context) {
     final l10n = context.l10n;
     final allStrips = TeacherExamQuestionStripSection.parseStrips(widget.liveScreen['skillStrips']);
-    final activeStrips = _stripsForActivePart(allStrips, active);
-    if (activeStrips.isEmpty) return const SizedBox.shrink();
+    if (allStrips.isEmpty) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => setState(() => _questionMapExpanded = !_questionMapExpanded),
-            borderRadius: BorderRadius.circular(AppSpacing.s2),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.teacherLiveMirrorQuestionMap,
-                      style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w600),
-                    ),
+    return DecoratedBox(
+      decoration: ExamSystemUi.softCard(),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => setState(() => _questionMapExpanded = !_questionMapExpanded),
+                borderRadius: BorderRadius.circular(AppSpacing.s2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.grid_view_rounded, size: 15, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          l10n.teacherLiveMirrorQuestionMap,
+                          style: ExamSystemUi.captionSecondary.copyWith(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      Icon(
+                        _questionMapExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: 20,
+                        color: AppColors.textMuted,
+                      ),
+                    ],
                   ),
-                  Icon(
-                    _questionMapExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                    color: AppColors.textMuted,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
-        if (_questionMapExpanded)
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: _questionMapMaxHeight),
-            child: SingleChildScrollView(
-              child: TeacherExamSkillStripsPanel(
-                skillStrips: activeStrips,
+            // Auto-grading legend stays visible so box colours are always readable.
+            const SizedBox(height: 8),
+            TeacherQuestionStatusLegend(
+              correctLabel: l10n.teacherLiveMonitorGrammarCorrect,
+              wrongLabel: l10n.teacherLiveMonitorGrammarWrong,
+              unansweredLabel: l10n.teacherLiveMonitorGrammarNotAnswered,
+            ),
+            if (_questionMapExpanded) ...[
+              const SizedBox(height: 10),
+              // Full all-skills map — no height clip; the page scroll handles overflow.
+              TeacherExamSkillStripsPanel(
+                skillStrips: allStrips,
                 compact: true,
                 showLegend: false,
-                singleSectionMode: true,
+                singleSectionMode: false,
               ),
-            ),
-          ),
-      ],
+            ],
+          ],
+        ),
+      ),
     );
   }
 

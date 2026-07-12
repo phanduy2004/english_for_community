@@ -11,6 +11,7 @@ import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/motion/confetti_celebration.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
+import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
 import 'package:english_for_community/feature/student/exams/integrated_exam_runner_page.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
@@ -688,7 +689,7 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
     final locked = submitted || expired;
     final lastIndex = flat.isEmpty ? 0 : flat.length - 1;
 
-    return PopScope<Object?>(
+    final Widget runner = PopScope<Object?>(
       canPop: !_blocksExitConfirm(),
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) {
@@ -884,5 +885,10 @@ class _ExamRunnerPageState extends State<ExamRunnerPage> with SingleTickerProvid
                   ),
       ),
     );
+    // A6: giám sát integrity cho MỌI format đề (không chỉ integrated), chỉ khi đang thi.
+    if (status == 'in_progress') {
+      return ExamIntegrityTracker(attemptId: widget.attemptId, child: runner);
+    }
+    return runner;
   }
 }

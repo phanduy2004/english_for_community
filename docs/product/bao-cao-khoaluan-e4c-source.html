@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Khóa Luận: E4C - English for Community</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            /* Tech Theme cho ngành IT */
+            --primary-color: #0f172a; /* Slate 900 - Nền tối hiện đại */
+            --secondary-color: #f8fafc; /* Slate 50 - Nền sáng */
+            --accent-color: #3b82f6; /* Blue 500 - Màu nhấn chính */
+            --highlight-color: #06b6d4; /* Cyan 500 - Màu nhấn AI/Công nghệ */
+            --text-dark: #1e293b;
+            --text-light: #ffffff;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+        }
+
+        body {
+            background-color: #cbd5e1;
+            display: grid;
+            gap: 30px;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+            padding: 30px 0;
+            place-items: center;
+            margin: 0;
+            font-family: "DM Sans", sans-serif;
+        }
+
+        .slide-container {
+            align-items: center;
+            background-color: var(--secondary-color);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            height: 720px;
+            justify-content: flex-start; /* Thay đổi từ center sang start để dễ chia layout */
+            overflow: hidden;
+            padding: 50px 60px;
+            position: relative;
+            width: 1280px;
+        }
+
+        .slide-container.dark-theme {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+        }
+
+        /* Header Slide & Slide Number */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .slide-brand {
+            font-weight: 700;
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+        .dark-theme .slide-brand { color: var(--highlight-color); }
+        .slide-number {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 18px;
+        }
+        .dark-theme .slide-number { color: #94a3b8; }
+
+
+        .slide-container h1, .slide-container h2, .slide-container h3 {
+            font-family: "Merriweather", serif;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .slide-container h1 {
+            color: var(--text-light);
+            font-size: 65px;
+            line-height: 1.3;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .slide-title {
+            color: var(--primary-color);
+            font-size: 45px;
+            width: 100%;
+            text-align: left;
+            border-bottom: 4px solid var(--accent-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .dark-theme .slide-title {
+            color: var(--text-light);
+            border-bottom-color: var(--highlight-color);
+        }
+
+        .slide-container p, .slide-container li, .slide-container td, .slide-container th {
+            font-size: 22px;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+        .dark-theme p, .dark-theme li {
+            color: var(--text-light);
+        }
+
+        .subtitle {
+            color: var(--highlight-color);
+            font-size: 30px;
+            font-weight: 400;
+            text-align: center;
+        }
+
+        .content-area {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            width: 100%;
+            justify-content: center;
+            padding-bottom: 20px;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
+            align-items: start;
+        }
+
+        /* Danh sách có icon tuỳ chỉnh */
+        ul.custom-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        ul.custom-list li {
+            margin-bottom: 20px;
+            position: relative;
+            padding-left: 35px;
+        }
+        ul.custom-list li::before {
+            content: '\f101'; /* FontAwesome angle-double-right */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            top: 4px;
+            color: var(--accent-color);
+            font-size: 20px;
+        }
+        .dark-theme ul.custom-list li::before { color: var(--highlight-color); }
+
+        .tiled-content {
+            display: flex;
+            gap: 25px;
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tile {
+            background-color: #fff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--accent-color);
+            min-width: 250px;
+        }
+        .dark-theme .tile {
+            background-color: #1e293b;
+            border-top-color: var(--highlight-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .tile .icon {
+            color: var(--accent-color);
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+        .dark-theme .tile .icon { color: var(--highlight-color); }
+        .tile h3 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .dark-theme .tile h3 { color: var(--text-light); }
+
+        table.comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        table.comparison-table th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 20px;
+        }
+        table.comparison-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        table.comparison-table td.check { color: var(--success-color); font-weight: bold; text-align: center;}
+        table.comparison-table td.cross { color: #ef4444; text-align: center;}
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        /* Box Image Placeholders */
+        .image-box {
+            background-color: #e2e8f0;
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 300px;
+            color: #64748b;
+            font-size: 20px;
+            text-align: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .image-box img {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            opacity: 0.9;
+        }
+
+        /* Flow Diagram CSS */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .flow-step {
+            text-align: center;
+            flex: 1;
+        }
+        .flow-arrow {
+            color: var(--accent-color);
+            font-size: 24px;
+        }
+        .flow-step .icon-circle {
+            width: 70px; height: 70px;
+            background-color: var(--secondary-color);
+            border: 3px solid var(--accent-color);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 30px;
+            color: var(--primary-color);
+        }
+
+        /* Code stats block */
+        .stat-block {
+            text-align: center;
+            padding: 20px;
+        }
+        .stat-number {
+            font-size: 45px;
+            font-weight: 700;
+            color: var(--accent-color);
+            font-family: 'Merriweather', serif;
+        }
+
+        .school-logo {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            width: 85px;
+            height: auto;
+            z-index: 50;
+            opacity: 0.95;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+    </style>
+</head>
+<body>
+
+    <div class="slide-container" id="slide1">
+        <div class="content-area" style="justify-content: center; text-align: center;">
+            <div style="margin-bottom: 20px;">
+                <span class="badge" style="background-color: var(--highlight-color); color: white;">BÁO CÁO KHÓA LUẬN TỐT NGHIỆP</span>
+            </div>
+            <h1 style="font-size: 75px; color: var(--primary-color);">English for Community</h1>
+            <p class="subtitle" style="color: var(--text-dark); margin-bottom: 40px; font-weight: 500;">Nền tảng học tiếng Anh cộng đồng tích hợp AI<br>Web & Mobile đa vai trò</p>
+
+            <div style="background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; max-width: 800px; margin: 0 auto; text-align: left;">
+                <div class="two-column" style="gap: 20px;">
+                    <div>
+                        <p style="margin: 5px 0;"><strong>SVTH:</strong> Phan Duy</p>
+                        <p style="margin: 5px 0;"><strong>GVHD:</strong> [Tên Thầy/Cô]</p>
+                    </div>
+                    <div>
+                        <p style="margin: 5px 0;"><strong>Đơn vị:</strong> Khoa CNTT - [Tên Trường]</p>
+                        <p style="margin: 5px 0;"><strong>Thời gian:</strong> 07/2026</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 15px;">
+                    <p style="color: var(--accent-color); margin: 0; font-weight: bold;"><i class="fa-solid fa-link"></i> english4community.online</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide2">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • ĐẶT VẤN ĐỀ</div>
+            <div class="slide-number">2 / 15</div>
+        </div>
+        <h2 class="slide-title">Vấn đề & Mục tiêu đề tài</h2>
+
+        <div class="content-area">
+            <div class="two-column">
+                <div style="background-color: #fef2f2; padding: 30px; border-radius: 12px; border-left: 5px solid #ef4444; height: 100%;">
+                    <h3 style="color: #b91c1c; margin-bottom: 20px;"><i class="fa-solid fa-triangle-exclamation"></i> Vấn đề đặt ra</h3>
+                    <ul class="custom-list" style="color: #7f1d1d;">
+                        <li>Người học cần 4 kỹ năng nhưng công cụ rời rạc.</li>
+                        <li>App phổ biến ít gắn kết với lớp học/giáo viên thật.</li>
+                        <li>AI chưa được tích hợp sâu vào quy trình chấm bài (Viết/Nói).</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #f0fdf4; padding: 30px; border-radius: 12px; border-left: 5px solid #10b981; height: 100%;">
+                    <h3 style="color: #047857; margin-bottom: 20px;"><i class="fa-solid fa-bullseye"></i> Mục tiêu giải quyết</h3>
+                    <ul class="custom-list" style="color: #064e3b;">
+                        <li>Xây dựng nền tảng Full-stack: 4 kỹ năng + Từ vựng.</li>
+                        <li>Hỗ trợ 3 vai trò: Học sinh (Mobile), Giáo viên (Web), Admin.</li>
+                        <li>Tích hợp AI chấm tự động và tổ chức thi Realtime.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide3">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • KHẢO SÁT HIỆN TRẠNG</div>
+            <div class="slide-number">3 / 15</div>
+        </div>
+        <h2 class="slide-title">Giải pháp hiện có & Điểm khác biệt</h2>
+
+        <div class="content-area">
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Tiêu chí đánh giá</th>
+                        <th>Duolingo</th>
+                        <th>ELSA Speak</th>
+                        <th>Google Classroom</th>
+                        <th style="background-color: var(--accent-color);">Hệ thống E4C</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Luyện đủ 4 kỹ năng tiếng Anh</td>
+                        <td>Một phần</td>
+                        <td>Chỉ Nói</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>AI chấm bài Viết / Phát âm</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td>Chỉ Phát âm</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Tổ chức Lớp học & Giáo viên</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Soạn đề & Thi trực tuyến Realtime</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td>Cơ bản</td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Đa vai trò trong 1 ứng dụng</td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="cross"><i class="fa-solid fa-xmark"></i></td>
+                        <td class="check"><i class="fa-solid fa-check"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p style="margin-top: 20px; font-style: italic; color: var(--accent-color); font-weight: 500; text-align: center;">
+                <i class="fa-solid fa-lightbulb"></i> E4C kết hợp giữa tự học (có AI) và hệ thống lớp học/thi trực tuyến (Realtime) trong một nền tảng duy nhất.
+            </p>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide4">
+         <div class="slide-header">
+            <div class="slide-brand">E4C • PHÂN TÍCH YÊU CẦU</div>
+            <div class="slide-number">4 / 15</div>
+        </div>
+        <h2 class="slide-title">Kiến trúc Đa vai trò (RBAC)</h2>
+
+        <div class="content-area">
+            <div style="background: #ffffff; padding: 40px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+                <div style="display: flex; justify-content: space-around; align-items: center; margin-bottom: 40px;">
+                    <!-- Login Node -->
+                    <div style="text-align: center;">
+                        <div style="width: 80px; height: 80px; background: #f8fafc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; margin: 0 auto; border: 3px solid var(--accent-color); color: var(--accent-color);">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                        </div>
+                        <p style="margin-top: 10px; font-weight: bold; color: var(--primary-color);">JWT Login</p>
+                    </div>
+
+                    <div style="font-size: 40px; color: var(--highlight-color);"><i class="fa-solid fa-arrow-right-arrow-left"></i></div>
+
+                    <!-- Roles -->
+                    <div style="display: flex; flex-direction: column; gap: 20px; flex: 1; max-width: 600px;">
+
+                        <div style="background: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; gap: 20px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                            <i class="fa-solid fa-user-graduate" style="font-size: 30px; color: #3b82f6;"></i>
+                            <div>
+                                <h4 style="margin: 0; font-size: 22px; color: var(--primary-color);">Học sinh (Mobile)</h4>
+                                <p style="margin: 5px 0 0; font-size: 16px; color: #64748b;">Home: Học 4 kỹ năng + Nhận AI Feedback</p>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border-left: 4px solid #10b981; padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; gap: 20px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                            <i class="fa-solid fa-chalkboard-user" style="font-size: 30px; color: #10b981;"></i>
+                            <div>
+                                <h4 style="margin: 0; font-size: 22px; color: var(--primary-color);">Giáo viên (Web/Tablet)</h4>
+                                <p style="margin: 5px 0 0; font-size: 16px; color: #64748b;">Dashboard: Quản lý lớp, Ra đề, Theo dõi thi</p>
+                            </div>
+                        </div>
+
+                        <div style="background: #f8fafc; border-left: 4px solid #f59e0b; padding: 15px 20px; border-radius: 8px; display: flex; align-items: center; gap: 20px; border-top: 1px solid #e2e8f0; border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+                            <i class="fa-solid fa-user-shield" style="font-size: 30px; color: #f59e0b;"></i>
+                            <div>
+                                <h4 style="margin: 0; font-size: 22px; color: var(--primary-color);">Admin (Web)</h4>
+                                <p style="margin: 5px 0 0; font-size: 16px; color: #64748b;">Console: Quản trị nội dung CMS, Vận hành</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; border-top: 1px dashed #cbd5e1; padding-top: 20px;">
+                    <p style="margin: 0; font-size: 20px;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--accent-color);"></i>
+                        <strong>Bảo mật 2 lớp:</strong> Server (JWT + RBAC Middleware) + Client (GoRouter Redirect)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide5">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • THIẾT KẾ HỆ THỐNG</div>
+            <div class="slide-number">5 / 15</div>
+        </div>
+        <h2 class="slide-title">Kiến trúc Tổng thể</h2>
+
+        <div class="content-area">
+            <div class="tiled-content" style="align-items: stretch;">
+                <!-- Client -->
+                <div class="tile" style="border-top-color: #0284c7;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <i class="fa-brands fa-flutter" style="font-size: 50px; color: #0284c7;"></i>
+                    </div>
+                    <h3 style="text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Flutter Client</h3>
+                    <ul class="custom-list" style="margin-top: 15px; font-size: 18px;">
+                        <li>Hỗ trợ Mobile & Web.</li>
+                        <li><strong>Clean Architecture:</strong> UI → BLoC → Repository → Datasource.</li>
+                        <li>Routing: <code>go_router</code>.</li>
+                        <li>Dependency Injection: <code>get_it</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- Network -->
+                <div style="display: flex; flex-direction: column; justify-content: center; font-size: 30px; color: var(--accent-color);">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <span style="font-size: 14px; text-align: center; font-weight: bold; margin-top: 5px;">REST API<br>Socket.IO</span>
+                </div>
+
+                <!-- Server -->
+                <div class="tile" style="border-top-color: #16a34a;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <i class="fa-brands fa-node-js" style="font-size: 50px; color: #16a34a;"></i>
+                    </div>
+                    <h3 style="text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Node.js Backend</h3>
+                    <ul class="custom-list" style="margin-top: 15px; font-size: 18px;">
+                        <li>Framework: Express.js</li>
+                        <li>Kiến trúc MVC + Service Layer.</li>
+                        <li>Middleware Auth/RBAC.</li>
+                        <li>Background Jobs: <code>node-cron</code>.</li>
+                    </ul>
+                </div>
+
+                 <!-- Network -->
+                <div style="display: flex; flex-direction: column; justify-content: center; font-size: 30px; color: var(--accent-color);">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+
+                <!-- DB -->
+                <div class="tile" style="border-top-color: #10b981;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <i class="fa-solid fa-database" style="font-size: 50px; color: #10b981;"></i>
+                    </div>
+                    <h3 style="text-align: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">Dữ liệu & Dịch vụ</h3>
+                    <ul class="custom-list" style="margin-top: 15px; font-size: 18px;">
+                        <li><strong>MongoDB Atlas:</strong> CSDL chính (Mongoose).</li>
+                        <li><strong>Cloudinary:</strong> Lưu trữ Audio/Ảnh.</li>
+                        <li><strong>Firebase:</strong> Auth, FCM (Push), Analytics.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide6">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • CÔNG NGHỆ</div>
+            <div class="slide-number">6 / 15</div>
+        </div>
+        <h2 class="slide-title">Tích hợp Trí tuệ Nhân tạo (AI)</h2>
+
+        <div class="content-area">
+            <div class="two-column">
+                <div>
+                    <h3 style="margin-bottom: 20px;"><i class="fa-solid fa-microchip" style="color: var(--accent-color);"></i> Đa mô hình AI (Multi-Provider)</h3>
+                    <ul class="custom-list">
+                        <li><strong>Gemini & OpenAI:</strong> Chấm điểm bài Viết, phân tích ngữ pháp, cấu trúc và đưa ra gợi ý sửa lỗi chi tiết (diff text).</li>
+                        <li><strong>OpenAI (Whisper):</strong> Đánh giá phát âm (Speech-to-Text), tính toán tỷ lệ lỗi từ (WER).</li>
+                        <li><strong>Voice AI:</strong> Đóng vai người bản xứ thực hiện hội thoại tự do.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="image-box" style="height: 350px; border-radius: 16px; border: 4px solid var(--accent-color); background-color: #f8fafc;">
+                        <div style="font-size: 50px; color: var(--accent-color);"><i class="fa-solid fa-robot"></i></div>
+                        <p style="font-size: 16px; margin-top:15px; color: var(--text-dark);">Chèn Ảnh/Video minh họa AI chấm bài vào đây</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide7">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • CƠ SỞ DỮ LIỆU</div>
+            <div class="slide-number">7 / 15</div>
+        </div>
+        <h2 class="slide-title">Thiết kế CSDL (32 Mongoose Models)</h2>
+
+        <div class="content-area">
+            <p style="text-align: center; margin-bottom: 30px;">Dữ liệu được tối ưu cho NoSQL, chia thành 5 nhóm chính liên kết qua ObjectID.</p>
+
+            <div class="tiled-content" style="gap: 15px;">
+                <div class="tile" style="padding: 20px;">
+                    <div style="font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; color: var(--accent-color);"><i class="fa-solid fa-users"></i> Tài khoản</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; font-size: 16px; color: var(--text-dark); margin:0;">
+                        <li>User (role, điểm)</li>
+                        <li>TeacherApplication</li>
+                    </ul>
+                </div>
+
+                <div class="tile" style="padding: 20px;">
+                    <div style="font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; color: var(--accent-color);"><i class="fa-solid fa-chalkboard"></i> Lớp & Thi</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; font-size: 16px; color: var(--text-dark); margin:0;">
+                        <li>Classroom (owner)</li>
+                        <li>Exam (skills)</li>
+                        <li>ExamAttempt (điểm)</li>
+                    </ul>
+                </div>
+
+                <div class="tile" style="padding: 20px;">
+                    <div style="font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; color: var(--accent-color);"><i class="fa-solid fa-book-open"></i> Nội dung 4 KN</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; font-size: 16px; color: var(--text-dark); margin:0;">
+                        <li>Listen / Read</li>
+                        <li>Write / Speak</li>
+                        <li>Word (Từ vựng)</li>
+                    </ul>
+                </div>
+
+                <div class="tile" style="padding: 20px;">
+                    <div style="font-weight: bold; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; color: var(--accent-color);"><i class="fa-solid fa-bell"></i> Vận hành</div>
+                    <ul style="list-style-type: disc; padding-left: 20px; font-size: 16px; color: var(--text-dark); margin:0;">
+                        <li>Notification</li>
+                        <li>FCM Tokens</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide8">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • CHỨC NĂNG HỌC SINH</div>
+            <div class="slide-number">8 / 15</div>
+        </div>
+        <h2 class="slide-title">Giao diện Học sinh (Mobile)</h2>
+
+        <div class="content-area">
+            <div class="two-column" style="grid-template-columns: 2fr 1fr; align-items: center;">
+                <div>
+                    <ul class="custom-list">
+                        <li><strong>🎧 Nghe:</strong> Dictation điền chỗ trống, MCQ, transcript đồng bộ audio.</li>
+                        <li><strong>🎙️ Nói:</strong> Read-aloud chấm phát âm (AI) & Hội thoại tự do với Voice AI.</li>
+                        <li><strong>📖 Đọc & ✍️ Viết:</strong> Bài đọc theo level; Viết luận được AI chấm ngữ pháp/cấu trúc tức thì.</li>
+                        <li><strong>📚 Từ vựng:</strong> Từ điển offline (SQLite) + ôn tập ngắt quãng (SRS).</li>
+                        <li><strong>🏆 Gamification:</strong> Tính điểm, streak liên tục, level, leaderboard.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="image-box" style="height: 450px; border-radius: 25px; border: 8px solid #1e293b; width: 250px; margin: 0 auto; background-color: #f1f5f9;">
+                        <!-- Placeholder for Mobile UI Screenshot -->
+                        <div style="font-size: 50px; color: #94a3b8;"><i class="fa-solid fa-mobile-screen-button"></i></div>
+                        <p style="font-size: 16px; margin-top:10px;">Chèn ảnh App UI vào đây</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide9">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • CHỨC NĂNG GIÁO VIÊN</div>
+            <div class="slide-number">9 / 15</div>
+        </div>
+        <h2 class="slide-title">Quản lý & Thi Realtime (Web/Tablet)</h2>
+
+        <div class="content-area">
+            <!-- Flow Diagram -->
+            <div class="flow-diagram" style="margin-bottom: 30px;">
+                <div class="flow-step">
+                    <div class="icon-circle"><i class="fa-solid fa-chalkboard-user"></i></div>
+                    <strong>Tạo lớp</strong><br><span style="font-size: 14px;">Mã mời</span>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="flow-step">
+                    <div class="icon-circle"><i class="fa-solid fa-file-pen"></i></div>
+                    <strong>Soạn đề</strong><br><span style="font-size: 14px;">Kho kỹ năng</span>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="flow-step">
+                    <div class="icon-circle" style="border-color: #ef4444; color: #ef4444;"><i class="fa-solid fa-stopwatch"></i></div>
+                    <strong>Thi Realtime</strong><br><span style="font-size: 14px;">Lobby → Live</span>
+                </div>
+                <div class="flow-arrow"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="flow-step">
+                    <div class="icon-circle" style="border-color: #10b981; color: #10b981;"><i class="fa-solid fa-check-double"></i></div>
+                    <strong>Chấm điểm</strong><br><span style="font-size: 14px;">AI nháp + GV chốt</span>
+                </div>
+            </div>
+
+            <ul class="custom-list">
+                <li><strong>Giám sát Realtime (Socket.IO):</strong> GV theo dõi danh sách học sinh online, trạng thái làm bài trực tiếp.</li>
+                <li><strong>Hệ thống chấm hỗn hợp:</strong> Trắc nghiệm (Auto) + Tự luận (AI chấm nháp) + Giáo viên xem xét chốt điểm cuối.</li>
+                <li><strong>Chống gian lận:</strong> Phát hiện học sinh rời khỏi màn hình/tab, copy-paste bài thi.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide10">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • CHỨC NĂNG ADMIN</div>
+            <div class="slide-number">10 / 15</div>
+        </div>
+        <h2 class="slide-title">Admin Console & Vận hành</h2>
+
+        <div class="content-area">
+            <div class="two-column">
+                <div>
+                    <h3 style="color: var(--accent-color); margin-bottom: 20px;"><i class="fa-solid fa-gears"></i> Quản trị Nền tảng</h3>
+                    <ul class="custom-list">
+                        <li><strong>CMS Nội dung:</strong> Tạo và quản lý ngân hàng câu hỏi 5 kỹ năng cho giáo viên chọn.</li>
+                        <li><strong>Quản lý User:</strong> Ban/Unban tài khoản, xét duyệt đơn đăng ký làm giáo viên.</li>
+                        <li><strong>Moderation:</strong> Xử lý báo cáo vi phạm, lưu trữ Audit Log các hành động quan trọng.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 style="color: var(--warning-color); margin-bottom: 20px;"><i class="fa-solid fa-cloud-arrow-up"></i> Cập nhật App In-App</h3>
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                         <p style="font-size: 18px; margin-top:0;"><strong>Luồng phát hành:</strong> Pending → Approved → Published → Archived.</p>
+                         <ul class="custom-list" style="font-size: 18px;">
+                            <li>CI build candidate → Admin duyệt và publish bản mới.</li>
+                            <li>Client gọi API kiểm tra version → Bắt buộc (Force) hoặc Gợi ý (Soft) cập nhật ngay trong App.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide11">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • ĐIỂM NHẤN</div>
+            <div class="slide-number">11 / 15</div>
+        </div>
+        <h2 class="slide-title">Điểm nổi bật về Kỹ thuật</h2>
+
+        <div class="content-area">
+            <div class="tiled-content">
+                <div class="tile" style="padding: 20px; flex: 1 1 30%;">
+                    <h3 style="font-size: 20px;"><i class="fa-solid fa-bolt" style="color: var(--warning-color);"></i> Realtime Socket.IO</h3>
+                    <p style="font-size: 16px; margin: 0; color: #475569;">Xử lý phòng chờ (Lobby), thi live, giám sát, thông báo theo room (server-authoritative).</p>
+                </div>
+
+                <div class="tile" style="padding: 20px; flex: 1 1 30%;">
+                    <h3 style="font-size: 20px;"><i class="fa-solid fa-lock" style="color: #10b981;"></i> Dual-Token JWT</h3>
+                    <p style="font-size: 16px; margin: 0; color: #475569;">Access (ngắn) + Refresh, Dio interceptor tự động gia hạn token. Quản lý phân quyền RBAC.</p>
+                </div>
+
+                <div class="tile" style="padding: 20px; flex: 1 1 30%;">
+                    <h3 style="font-size: 20px;"><i class="fa-solid fa-wifi" style="color: #64748b;"></i> Offline Support</h3>
+                    <p style="font-size: 16px; margin: 0; color: #475569;">Từ điển SQLite cục bộ (~5MB) và secure storage token cho phép duy trì một phần chức năng khi mất mạng.</p>
+                </div>
+
+                <div class="tile" style="padding: 20px; flex: 1 1 30%;">
+                    <h3 style="font-size: 20px;"><i class="fa-solid fa-language" style="color: var(--highlight-color);"></i> Đa ngôn ngữ (i18n)</h3>
+                    <p style="font-size: 16px; margin: 0; color: #475569;">Hỗ trợ hoàn chỉnh EN/VI với hơn 1.000+ localization keys thông qua file ARB.</p>
+                </div>
+
+                <div class="tile" style="padding: 20px; flex: 1 1 30%;">
+                    <h3 style="font-size: 20px;"><i class="fa-solid fa-code" style="color: #0284c7;"></i> Code Quality</h3>
+                    <p style="font-size: 16px; margin: 0; color: #475569;"><code>flutter analyze</code> đạt 0 error, 0 warning. Tuân thủ nghiêm ngặt Clean Architecture.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide12">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • DEMO SẢN PHẨM</div>
+            <div class="slide-number">12 / 15</div>
+        </div>
+        <h2 class="slide-title">Kịch bản Trình diễn (Demo)</h2>
+
+        <div class="content-area">
+            <div class="two-column" style="gap: 20px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px;">
+                    <h3 style="color: var(--highlight-color); margin-bottom: 15px;"><i class="fa-solid fa-list-ol"></i> Các bước Demo</h3>
+                    <ul class="custom-list" style="font-size: 18px;">
+                        <li><strong>1. Đăng nhập:</strong> View giao diện Home học sinh, Streak.</li>
+                        <li><strong>2. AI Thực chiến:</strong> Demo học sinh làm bài và nhận phản hồi lỗi sai ngay lập tức từ AI.</li>
+                        <li><strong>3. Tổ chức thi:</strong> Giáo viên mở phiên thi, học sinh vào Lobby, giáo viên giám sát tiến độ Realtime.</li>
+                        <li><strong>4. Chấm điểm:</strong> Hệ thống chấm tự động, AI chấm nháp phần tự luận và GV duyệt cuối.</li>
+                    </ul>
+                </div>
+                <div>
+                    <div class="image-box" style="height: 350px; background-color: #0f172a; border-color: #334155;">
+                        <div style="font-size: 60px; color: #ef4444;"><i class="fa-brands fa-youtube"></i></div>
+                        <p style="color: #94a3b8; font-size: 18px; margin-top: 20px;">Chèn Video Demo Dự Phòng (3-4 phút)</p>
+                        <p style="color: #ef4444; font-size: 14px; margin-top: 10px;"><i>* Luôn chuẩn bị video offline tránh rủi ro mạng</i></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide13">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • TỔNG KẾT DỰ ÁN</div>
+            <div class="slide-number">13 / 15</div>
+        </div>
+        <h2 class="slide-title">Quy mô & Khối lượng công việc</h2>
+
+        <div class="content-area">
+            <div style="display: flex; justify-content: space-around; flex-wrap: wrap; margin-bottom: 40px; background: #fff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 20px;">
+                <div class="stat-block">
+                    <div class="stat-number">110.200</div>
+                    <div style="color: #64748b; font-weight: bold;">Dòng code (8 tháng)</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-number">573</div>
+                    <div style="color: #64748b; font-weight: bold;">File Source Code</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-number">32</div>
+                    <div style="color: #64748b; font-weight: bold;">Mongoose Models</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-number">0/0</div>
+                    <div style="color: #64748b; font-weight: bold;">Error / Warning</div>
+                </div>
+            </div>
+
+            <h3 style="text-align: center; margin-bottom: 20px; color: var(--primary-color);">Phân bổ theo thành phần</h3>
+
+            <!-- Progress bar -->
+            <div style="width: 80%; margin: 0 auto; background: #e2e8f0; height: 40px; border-radius: 20px; display: flex; overflow: hidden;">
+                <div style="width: 81%; background-color: #0284c7; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">Flutter (Dart) - 89.800 dòng</div>
+                <div style="width: 19%; background-color: #16a34a; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">Node.js - 20.400</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide14">
+        <div class="slide-header">
+            <div class="slide-brand">E4C • ĐÁNH GIÁ</div>
+            <div class="slide-number">14 / 15</div>
+        </div>
+        <h2 class="slide-title">Hạn chế & Hướng phát triển</h2>
+
+        <div class="content-area">
+            <div class="two-column">
+                <div style="background-color: #fff; padding: 30px; border-radius: 12px; border-top: 5px solid #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h3 style="color: #b91c1c; margin-bottom: 20px;"><i class="fa-solid fa-bug"></i> Hạn chế hiện tại</h3>
+                    <ul class="custom-list" style="color: var(--text-dark);">
+                        <li>Chưa có kiểm thử tự động (Unit/E2E), hiện chủ yếu test thủ công.</li>
+                        <li>Quy trình CI/CD mới triển khai một phần (Firebase Hosting).</li>
+                        <li>Chưa publish lên iOS (Cần Apple Developer Account).</li>
+                        <li>Hệ thống Analytics cho Giáo viên/Admin còn ở mức cơ bản.</li>
+                    </ul>
+                </div>
+
+                <div style="background-color: #fff; padding: 30px; border-radius: 12px; border-top: 5px solid #10b981; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+                    <h3 style="color: #047857; margin-bottom: 20px;"><i class="fa-solid fa-arrow-trend-up"></i> Hướng phát triển</h3>
+                    <ul class="custom-list" style="color: var(--text-dark);">
+                        <li>Viết thêm Unit/Integration Tests và hoàn thiện luồng CI/CD.</li>
+                        <li>Xây dựng Dashboard phân tích học tập chuyên sâu.</li>
+                        <li>Tối ưu hiệu năng: Lazy-load, phân trang API.</li>
+                        <li>Mở rộng kho nội dung và đưa ứng dụng lên App Store (iOS).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide15">
+        <div class="content-area" style="justify-content: center; text-align: center;">
+            <i class="fa-solid fa-circle-check" style="font-size: 80px; color: var(--success-color); margin-bottom: 20px;"></i>
+            <h1 style="font-size: 55px; margin-bottom: 30px; color: var(--primary-color);">KẾT LUẬN ĐỀ TÀI</h1>
+
+            <div style="background: #ffffff; padding: 30px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto; text-align: left; margin-bottom: 40px;">
+                <ul class="custom-list" style="color: var(--text-dark); font-size: 20px;">
+                    <li>Hoàn thành hệ thống Production-ready, triển khai thực tế trên domain riêng.</li>
+                    <li>Đáp ứng đủ 3 vai trò, 5 module nội dung, quy trình Lớp - Thi realtime khép kín.</li>
+                    <li>Áp dụng thành công AI vào đánh giá năng lực ngôn ngữ (Viết/Phát âm) thực tiễn.</li>
+                    <li>Minh chứng năng lực phát triển Full-stack End-to-End: Từ Database, API đến Mobile UX.</li>
+                </ul>
+            </div>
+
+            <h2 style="color: var(--accent-color); font-size: 40px; margin-bottom: 10px;">TRÂN TRỌNG CẢM ƠN HỘI ĐỒNG!</h2>
+            <p style="color: #64748b; font-size: 24px;">Em xin phép được lắng nghe và trả lời câu hỏi — Q&A</p>
+        </div>
+    </div>
+
+    <script>
+        /* 1) Chèn logo trường vào góc dưới-phải mỗi slide */
+        document.querySelectorAll('.slide-container').forEach(function (s) {
+            var img = document.createElement('img');
+            img.src = 'logo-hcmute-inkythuatso.png';
+            img.alt = 'HCMUTE';
+            img.className = 'school-logo';
+            s.appendChild(img);
+        });
+
+        /* 2) Auto-fit: slide nào tràn quá 720px sẽ thu nhỏ đồng đều cho vừa khung,
+           giữ nguyên bố cục — không cắt chữ. Logo được giữ NGOÀI vùng co (không bị thu nhỏ). */
+        function fitSlides() {
+            document.querySelectorAll('.slide-container').forEach(function (s) {
+                if (s.dataset.fitted) return;
+                if (s.scrollHeight - s.clientHeight <= 1) return; // không tràn thì bỏ qua
+                var cs = getComputedStyle(s);
+                var avail = s.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+                var gap = (cs.rowGap && cs.rowGap !== 'normal') ? cs.rowGap : '30px';
+                var wrap = document.createElement('div');
+                wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:100%;transform-origin:top center;gap:' + gap;
+                Array.prototype.slice.call(s.children).forEach(function (c) {
+                    if (c.classList && c.classList.contains('school-logo')) return; // giữ logo ngoài wrap
+                    wrap.appendChild(c);
+                });
+                s.insertBefore(wrap, s.firstChild);
+                var natural = wrap.scrollHeight;
+                if (natural > avail) wrap.style.transform = 'scale(' + (avail / natural).toFixed(4) + ')';
+                s.dataset.fitted = '1';
+            });
+        }
+        (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve())
+            .then(function () { setTimeout(fitSlides, 60); });
+        window.addEventListener('load', function () { setTimeout(fitSlides, 350); });
+    </script>
+</body>
+</html>

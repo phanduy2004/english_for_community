@@ -37,10 +37,9 @@ const _calculateDateRange = (range, timezone) => {
 
   let startDate = userTodayStart;
 
-  // "day" tab chart = 7 ngày — detail log phải khớp (trước đây chỉ hôm nay → list trống dù stats có %).
-  if (range === 'day') {
-    startDate = new Date(userTodayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
-  } else if (range === 'week') {
+  // 'day' = CHỈ hôm nay (khớp card + nhãn "Hôm nay"). Trước đây detail lấy 7 ngày →
+  // bấm vào card ra nhiều bài hơn con số hiển thị. week/month = từ đầu kỳ tới hết hôm nay.
+  if (range === 'week') {
     const { weekday } = _userWeekdayAndDate(userTodayStart, timezone);
     const offset = (weekday === 0) ? 6 : weekday - 1;
     startDate = new Date(userTodayStart.getTime() - offset * 24 * 60 * 60 * 1000);
@@ -98,6 +97,38 @@ const _getDateRangeConfig = (range, timezone) => {
   }
 
   return { startDate: userTodayStart, chartLabels, queryDateKeys };
+};
+
+// Danh sách "bài học đã hoàn thành" trong [startDate, endDate] — NGUỒN CHUNG cho:
+//   • card "Bài học hoàn thành" (getSummaryData: .length)
+//   • dialog chi tiết Lessons (getStatDetailData isLessonMode: liệt kê)
+// ⇒ con số trên thẻ LUÔN bằng số dòng danh sách. Gộp Dictation + Comprehension vào
+// nhóm Listening (giữ đúng hành vi cũ của detail). Chạy song song cho nhanh.
+const _fetchCompletedLessons = async (userId, startDate, endDate) => {
+  const dateRange = { $gte: startDate, $lte: endDate };
+
+  const [readings, writings, speakings, dictations, comprehensions] = await Promise.all([
+    ReadingProgress.find({ userId, status: 'completed', lastAttemptedAt: dateRange })
+      .populate('readingId', 'title').select('lastAttemptedAt readingId highScore').lean(),
+    WritingSubmission.find({ userId, status: 'reviewed', submittedAt: dateRange })
+      .select('generatedPrompt.title submittedAt score').lean(),
+    SpeakingEnrollment.find({ userId, isCompleted: true, lastAccessedAt: dateRange })
+      .populate('speakingSetId', 'title').select('lastAccessedAt speakingSetId averageWer').lean(),
+    Enrollment.find({ userId, isCompleted: true, lastAccessedAt: dateRange })
+      .populate('listeningId', 'title').select('lastAccessedAt listeningId progress').lean(),
+    ListeningCompAttempt.find({ userId, createdAt: dateRange })
+      .populate('listeningId', 'title').select('createdAt listeningId score').lean(),
+  ]);
+
+  const items = [];
+  readings.forEach(r => items.push({ original: r, type: 'Reading', date: r.lastAttemptedAt, title: r.readingId?.title, score: r.highScore || 0 }));
+  writings.forEach(w => items.push({ original: w, type: 'Writing', date: w.submittedAt, title: w.generatedPrompt?.title, score: w.score || 0 }));
+  speakings.forEach(s => items.push({ original: s, type: 'Speaking', date: s.lastAccessedAt, title: s.speakingSetId?.title, score: Math.round((1 - (s.averageWer || 0)) * 100) }));
+  dictations.forEach(l => items.push({ original: l, type: 'Dictation', date: l.lastAccessedAt, title: l.listeningId?.title, score: Math.round((l.progress || 0) * 100) }));
+  comprehensions.forEach(c => items.push({ original: c, type: 'Comprehension', date: c.createdAt, title: c.listeningId?.title, score: Math.round(c.score || 0) }));
+
+  items.sort((a, b) => b.date - a.date);
+  return items;
 };
 
 // --- Pure aggregation (không đụng DB → test bằng node:test) ---
@@ -208,20 +239,23 @@ const getSummaryData = async (userId, range) => {
   const { totalSecondsInRange, todayMinutes, statsGrid } =
     aggregateProgressRecords(records, { startDateString, todayString });
 
-  // F2: "Từ vựng" = SỐ TỪ DISTINCT đã ôn trong range (không phải số lượt good/easy →
-  // tránh đếm trùng khi ôn lại cùng 1 từ). LƯU Ý: field là `user` (KHÔNG phải userId).
-  // 'day' override start = userTodayStart vì _calculateDateRange('day') = 7 ngày, còn
-  // các card khác ở 'day' chỉ tính hôm nay → giữ đồng bộ.
-  const { startDate: vocabRangeStart, endDate: vocabRangeEnd } =
+  // Vocab + Lessons dùng CHUNG [rangeStart, rangeEnd] với danh sách chi tiết
+  // (getStatDetailData → _calculateDateRange) ⇒ con số trên thẻ LUÔN khớp list.
+  const { startDate: rangeStart, endDate: rangeEnd } =
     _calculateDateRange(range, userTimezone);
+
+  // F2: "Từ vựng" = số từ DISTINCT đã ôn trong range (field `user`, KHÔNG phải userId).
   statsGrid.vocabLearned = await Word.countDocuments({
     user: userId,
     status: 'learning',
-    lastReviewedDate: {
-      $gte: range === 'day' ? userTodayStart : vocabRangeStart,
-      $lte: vocabRangeEnd,
-    },
+    lastReviewedDate: { $gte: rangeStart, $lte: rangeEnd },
   });
+
+  // F6: "Bài học hoàn thành" = ĐÚNG số dòng danh sách chi tiết (đếm doc bài học thật đã
+  // hoàn thành trong range), KHÔNG dùng counter lessonsCompleted.* (counter cộng cả luyện
+  // nói tự do + mỗi lần làm lại → lệch list, gây "8 vs 7"). Dùng chung _fetchCompletedLessons
+  // với detail nên card == list.
+  statsGrid.lessonsCompleted = (await _fetchCompletedLessons(userId, rangeStart, rangeEnd)).length;
 
   const chartMinutes = queryDateKeys.map(dateKey => {
     const rec = recordsMap.get(dateKey);
@@ -263,33 +297,8 @@ const getStatDetailData = async (userId, statKey, range) => {
   let isLessonMode = (statKey === 'lessons');
 
   if (isLessonMode) {
-    const readings = await ReadingProgress.find({
-      userId, status: 'completed', lastAttemptedAt: { $gte: startDate, $lte: endDate }
-    }).populate('readingId', 'title').select('lastAttemptedAt readingId highScore').lean();
-    readings.forEach(r => queryResult.push({ original: r, type: 'Reading', date: r.lastAttemptedAt, title: r.readingId?.title, score: r.highScore || 0 }));
-
-    const writings = await WritingSubmission.find({
-      userId, status: 'reviewed', submittedAt: { $gte: startDate, $lte: endDate }
-    }).select('generatedPrompt.title submittedAt score').lean();
-    writings.forEach(w => queryResult.push({ original: w, type: 'Writing', date: w.submittedAt, title: w.generatedPrompt?.title, score: w.score || 0 }));
-
-    const speakings = await SpeakingEnrollment.find({
-      userId, isCompleted: true, lastAccessedAt: { $gte: startDate, $lte: endDate }
-    }).populate('speakingSetId', 'title').select('lastAccessedAt speakingSetId averageWer').lean();
-    speakings.forEach(s => queryResult.push({ original: s, type: 'Speaking', date: s.lastAccessedAt, title: s.speakingSetId?.title, score: Math.round((1 - (s.averageWer || 0)) * 100) }));
-
-    // 🔥 1. GỘP CẢ DICTATION VÀ COMPREHENSION VÀO "LISTENING" TRONG CHẾ ĐỘ LESSONS
-    const dictations = await Enrollment.find({
-      userId, isCompleted: true, lastAccessedAt: { $gte: startDate, $lte: endDate }
-    }).populate('listeningId', 'title').select('lastAccessedAt listeningId progress').lean();
-    dictations.forEach(l => queryResult.push({ original: l, type: 'Dictation', date: l.lastAccessedAt, title: l.listeningId?.title, score: Math.round((l.progress || 0) * 100) }));
-
-    const comprehensions = await ListeningCompAttempt.find({
-      userId, createdAt: { $gte: startDate, $lte: endDate }
-    }).populate('listeningId', 'title').select('createdAt listeningId score').lean();
-    comprehensions.forEach(c => queryResult.push({ original: c, type: 'Comprehension', date: c.createdAt, title: c.listeningId?.title, score: Math.round(c.score || 0) }));
-
-    queryResult.sort((a, b) => b.date - a.date);
+    // Dùng CHUNG với card "Bài học hoàn thành" (getSummaryData) → số trên thẻ == số dòng.
+    queryResult = await _fetchCompletedLessons(userId, startDate, endDate);
 
   } else if (statKey === 'dictation' || statKey === 'listening') {
     // 🔥 2. NẾU LỌC RIÊNG MÔN LISTENING -> KẾT HỢP CẢ 2 BẢNG VÀO CHUNG 1 LIST

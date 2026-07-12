@@ -1,11 +1,16 @@
 import mongoose from 'mongoose';
-import Classroom from '../models/Classroom.js';
 import ClassroomMember from '../models/ClassroomMember.js';
 import ExamAssignment from '../models/ExamAssignment.js';
 import ExamAttempt from '../models/ExamAttempt.js';
 import { percentFromScore, scoreOfAttempt } from '../lib/examAttemptScoreUtils.js';
+import {
+  gradingAttentionMatch,
+  resolveWindow,
+  teacherAnalyticsScope,
+} from './teacherAnalyticsScope.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 // ── Pure business logic (unit-tested in teacherAnalyticsChartsService.test.js) ──
 
@@ -15,14 +20,31 @@ export function trendPct(current, prev) {
   return Math.round(((current - prev) / prev) * 100 * 10) / 10;
 }
 
-export function fillSubmissionDays(nDays, since, dayMap) {
+export function fillSubmissionDays(nDays, since, dayMap, offsetMs = VN_OFFSET_MS) {
   const filledDays = [];
   for (let d = 0; d < nDays; d++) {
     const dt = new Date(since.getTime() + d * DAY_MS);
-    const key = dt.toISOString().slice(0, 10);
+    // Key = ngày theo LỊCH VN (khớp $dateToString timezone:'+07:00'), không phải UTC.
+    const key = new Date(dt.getTime() + offsetMs).toISOString().slice(0, 10);
     filledDays.push({ date: key, count: dayMap[key] ?? 0 });
   }
   return filledDays;
+}
+
+/**
+ * Chỉ giữ attempt MỚI NHẤT cho mỗi cặp (userId, assignmentId) — tránh đếm trùng khi
+ * học sinh nộp lại (finding #3): on-time/late + submittedCount phải tính 1 lần/bài.
+ */
+export function dedupeLatestAttempts(attempts) {
+  const latest = new Map(); // `${uid}:${aid}` -> attempt
+  for (const att of attempts || []) {
+    const key = `${att.userId}:${att.assignmentId}`;
+    const prev = latest.get(key);
+    if (!prev || new Date(att.submittedAt) > new Date(prev.submittedAt)) {
+      latest.set(key, att);
+    }
+  }
+  return [...latest.values()];
 }
 
 export function shortStem(text, max = 64) {
@@ -154,22 +176,6 @@ export function aggregateSkillAvg(integratedWithSkills) {
 
 // ── DB access ──────────────────────────────────────────────────────────────────
 
-async function classroomIdsForTeacher(teacherId) {
-  const [owned, co] = await Promise.all([
-    Classroom.find({ teacherId, archived: false }).select('_id').lean(),
-    ClassroomMember.find({
-      userId: teacherId,
-      roleInClass: 'co_teacher',
-      status: 'active',
-    })
-      .select('classroomId')
-      .lean(),
-  ]);
-  const ids = new Set(owned.map((c) => c._id.toString()));
-  for (const m of co) ids.add(m.classroomId.toString());
-  return [...ids].map((id) => new mongoose.Types.ObjectId(id));
-}
-
 const EMPTY_INSIGHTS = {
   scoreByDay: [],
   atRiskStudents: [],
@@ -182,7 +188,7 @@ const EMPTY_INSIGHTS = {
  * Per-student risk + on-time submission — computed over the teacher's ACTIVE
  * classroom assignments (a proxy for "current" work), scoped to the window.
  */
-async function computeStudentRiskAndOnTime(assignments, classIds, since) {
+async function computeStudentRiskAndOnTime(assignments, classIds) {
   const activeClassAssignments = assignments.filter(
     (a) => a.classroomId && a.status === 'active'
   );
@@ -231,17 +237,20 @@ async function computeStudentRiskAndOnTime(assignments, classIds, since) {
 
   const assignmentIds = activeClassAssignments.map((a) => a._id);
   const userIds = [...students.keys()].map((id) => new mongoose.Types.ObjectId(id));
-  const attempts =
+  // Finding #4: KHÔNG lọc theo window — xét MỌI lần nộp của assignment active (một bài
+  // nộp trước cửa sổ N ngày vẫn tính là "đã nộp"), tránh cờ not_submitting sai + missing phồng.
+  const rawAttempts =
     assignmentIds.length && userIds.length
       ? await ExamAttempt.find({
           assignmentId: { $in: assignmentIds },
           userId: { $in: userIds },
           status: 'submitted',
-          submittedAt: { $gte: since },
         })
           .select('userId assignmentId scores submittedAt')
           .lean()
       : [];
+  // Finding #3: dedupe theo (student, assignment) trước khi tally on-time/late.
+  const attempts = dedupeLatestAttempts(rawAttempts);
 
   const perStudent = new Map(); // uid -> { sumPct, scored, submittedIds:Set, late }
   let onTime = 0;
@@ -346,19 +355,12 @@ export const teacherAnalyticsChartsService = {
   async getCharts(teacherId, { days = 14 } = {}) {
     const nDays = Math.min(30, Math.max(7, Number(days) || 14));
     const now = Date.now();
-    const since = new Date(now - nDays * DAY_MS);
-    const prevSince = new Date(now - nDays * 2 * DAY_MS);
+    // Finding #1/#2: cửa sổ N ngày theo LỊCH VN, GỒM hôm nay.
+    const { since, prevSince } = resolveWindow(now, nDays);
 
-    const [assignments, classIds] = await Promise.all([
-      ExamAssignment.find({
-        $or: [{ teacherId }, { teacherId: new mongoose.Types.ObjectId(teacherId) }],
-      })
-        .select('_id examId mode status classroomId config')
-        .lean(),
-      classroomIdsForTeacher(teacherId),
-    ]);
+    // Finding #8: scope GỒM cả lớp dạy-cùng (owner ∪ co-taught).
+    const { classIds, assignments, assignmentIds } = await teacherAnalyticsScope(teacherId);
 
-    const assignmentIds = assignments.map((a) => a._id);
     const modeBreakdown = assignments.reduce((acc, a) => {
       acc[a.mode] = (acc[a.mode] || 0) + 1;
       return acc;
@@ -412,7 +414,7 @@ export const teacherAnalyticsChartsService = {
         },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' } },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt', timezone: '+07:00' } },
             count: { $sum: 1 },
           },
         },
@@ -446,7 +448,7 @@ export const teacherAnalyticsChartsService = {
         .select('scores.skillScores')
         .lean(),
       ExamAttempt.aggregate([
-        { $match: { assignmentId: { $in: assignmentIds } } },
+        { $match: { assignmentId: { $in: assignmentIds }, status: 'submitted', submittedAt: { $gte: since } } },
         {
           $group: {
             _id: '$integrity.riskLevel',
@@ -463,7 +465,7 @@ export const teacherAnalyticsChartsService = {
         : Promise.resolve(0),
       ExamAttempt.countDocuments({
         assignmentId: { $in: assignmentIds },
-        gradingState: 'pending_manual',
+        ...gradingAttentionMatch,
       }),
       ExamAttempt.aggregate([
         {
@@ -517,7 +519,7 @@ export const teacherAnalyticsChartsService = {
         },
         {
           $group: {
-            _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt' } },
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$submittedAt', timezone: '+07:00' } },
             avg: { $avg: '$scores.finalScore' },
             count: { $sum: 1 },
           },
@@ -536,7 +538,7 @@ export const teacherAnalyticsChartsService = {
         { $group: { _id: null, avg: { $avg: '$scores.finalScore' } } },
       ]),
       ExamAttempt.aggregate([
-        { $match: { assignmentId: { $in: assignmentIds } } },
+        { $match: { assignmentId: { $in: assignmentIds }, status: 'submitted', submittedAt: { $gte: since } } },
         {
           $group: {
             _id: null,
@@ -550,7 +552,7 @@ export const teacherAnalyticsChartsService = {
     ]);
 
     const [{ atRiskStudents, onTime }, hardestItems] = await Promise.all([
-      computeStudentRiskAndOnTime(assignments, classIds, since),
+      computeStudentRiskAndOnTime(assignments, classIds),
       computeHardestItems(assignmentIds, since),
     ]);
 

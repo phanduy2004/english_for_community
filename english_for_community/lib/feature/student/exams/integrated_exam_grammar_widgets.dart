@@ -9,6 +9,7 @@ import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
 import 'package:english_for_community/feature/student/exams/exam_answer_review_widgets.dart';
+import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -51,7 +52,12 @@ class _GrammarMcqOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = GrammarAccentPalette.of(index);
+    // Neutral, one-accent scheme: A/B/C/D badges must NOT reuse status colors
+    // (green/red collided with answered/correct-incorrect). Selection = editorial
+    // black tint + check; the letter badge is a calm neutral.
+    const accent = AppColors.primary;
+    final badgeBg = selected ? accent.withValues(alpha: 0.12) : AppColors.surfaceSubtle;
+    final badgeFg = selected ? accent : AppColors.textSecondary;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Material(
@@ -81,14 +87,14 @@ class _GrammarMcqOption extends StatelessWidget {
                   alignment: Alignment.center,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: selected ? 0.18 : 0.1),
+                    color: badgeBg,
                     borderRadius: const BorderRadius.horizontal(left: Radius.circular(AppRadius.input)),
                   ),
                   child: Text(
                     StudentMobileUi.mcqLetter(index),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: accent,
+                      color: badgeFg,
                       fontSize: AppTypography.mobileH3,
                       height: 1,
                     ),
@@ -101,7 +107,7 @@ class _GrammarMcqOption extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(text, style: ExamSystemUi.captionSecondary.copyWith(height: 1.35)),
+                          child: Text(text, style: ExamSystemUi.embeddedBodyStyle.copyWith(color: AppColors.textPrimary, height: 1.35)),
                         ),
                         if (selected) ...[
                           const SizedBox(width: 6),
@@ -187,6 +193,7 @@ class _GrammarBlankField extends StatelessWidget {
                 key: fieldKey,
                 enabled: enabled,
                 controller: controller,
+                contextMenuBuilder: examContextMenuBuilder,
                 onChanged: onChanged,
                 maxLines: 1,
                 style: ExamSystemUi.captionSecondary,

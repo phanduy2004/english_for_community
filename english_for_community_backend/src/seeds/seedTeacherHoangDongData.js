@@ -678,6 +678,42 @@ function round1(n) {
   return Math.round(n * 10) / 10;
 }
 
+/**
+ * Realistic proctoring/integrity signals correlated with [riskLevel] so every
+ * teacher-analytics integrity panel (tab switches / copy-paste / focus loss /
+ * fullscreen exits) has data — not just tabSwitchCount.
+ */
+function buildIntegrity(riskLevel = 'low') {
+  const rb = (min, max) => Math.floor(randomBetween(min, max));
+  if (riskLevel === 'high') {
+    return {
+      riskLevel,
+      tabSwitchCount: rb(8, 20),
+      copyPasteAttempts: rb(4, 12),
+      focusLossSeconds: rb(180, 600),
+      fullscreenExited: Math.random() < 0.7,
+      lastEventAt: new Date().toISOString(),
+    };
+  }
+  if (riskLevel === 'medium') {
+    return {
+      riskLevel,
+      tabSwitchCount: rb(3, 8),
+      copyPasteAttempts: rb(1, 4),
+      focusLossSeconds: rb(40, 180),
+      fullscreenExited: Math.random() < 0.3,
+      lastEventAt: new Date().toISOString(),
+    };
+  }
+  return {
+    riskLevel: 'low',
+    tabSwitchCount: rb(0, 3),
+    copyPasteAttempts: rb(0, 1),
+    focusLossSeconds: rb(0, 40),
+    fullscreenExited: false,
+  };
+}
+
 async function createAttemptsForAssignment(assignment, exam, students, cms) {
   const snapshot = examSnapshotFromDoc(exam);
   const submitRate = 0.72;
@@ -705,7 +741,7 @@ async function createAttemptsForAssignment(assignment, exam, students, cms) {
         startedAt,
         answers: buildAttemptAnswers(exam, cms, i, { grammarAcc: 0.5 }),
         gradingState: 'pending_auto',
-        integrity: { riskLevel: pick(['low', 'low', 'medium']) },
+        integrity: buildIntegrity(pick(['low', 'low', 'medium'])),
       });
       inProgress += 1;
       continue;
@@ -778,10 +814,7 @@ async function createAttemptsForAssignment(assignment, exam, students, cms) {
       scores,
       gradingState,
       resultsReleased: Math.random() > 0.25,
-      integrity: {
-        riskLevel,
-        tabSwitchCount: riskLevel === 'high' ? Math.floor(randomBetween(8, 20)) : Math.floor(randomBetween(0, 3)),
-      },
+      integrity: buildIntegrity(riskLevel),
     });
     created += 1;
   }

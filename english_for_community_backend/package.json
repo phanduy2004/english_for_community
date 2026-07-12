@@ -11,6 +11,7 @@
     "seed:teacher": "node src/seeds/seedTeacher.js",
     "seed:teacher-hoangdong": "node src/seeds/seedTeacherHoangDongData.js",
     "seed:purge-classroom": "node src/seeds/purgeClassroomDomain.js",
+    "seed:cleanup-demo": "node src/seeds/cleanupDemoSeed.js",
     "seed:reset-classroom": "node src/seeds/seedResetClassrooms.js",
     "seed:migrate-labels": "node src/seeds/seedMigrateDemoLabels.js",
     "seed:extra-teachers": "node src/seeds/seedExtraTeachers.js",

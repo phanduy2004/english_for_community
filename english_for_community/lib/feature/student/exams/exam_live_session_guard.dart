@@ -1,6 +1,8 @@
 import 'package:english_for_community/core/api/token_storage.dart';
+import 'package:english_for_community/core/theme/app_color.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
 import 'package:english_for_community/core/get_it/get_it.dart';
+import 'package:english_for_community/core/util/app_haptics.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
@@ -63,6 +65,29 @@ class ExamLiveSessionGuard {
     socket.listenExamSessionState(_onSessionState);
     socket.listenExamSessionEnded(_onSessionEnded);
     socket.listenExamSessionKicked(_onKicked);
+    socket.listenExamSessionWarning(_onWarning);
+  }
+
+  void _onWarning(Map<String, dynamic> payload) {
+    final sid = payload['sessionId']?.toString();
+    if (_sessionId != null && sid != null && sid != _sessionId) return;
+    final message = (payload['message'] as String?)?.trim();
+    if (message == null || message.isEmpty || !context.mounted) return;
+    AppHaptics.confirm(context);
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.notifications_active_outlined, color: AppColors.warning, size: 28),
+        title: Text(ctx.l10n.studentExamWarningTitle),
+        content: Text(message),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(ctx.l10n.studentExamWarningDismiss),
+          ),
+        ],
+      ),
+    );
   }
 
   void _onKicked(Map<String, dynamic> payload) {
@@ -113,6 +138,7 @@ class ExamLiveSessionGuard {
     socket.offExamSessionState();
     socket.offExamSessionEnded();
     socket.offExamSessionKicked();
+    socket.offExamSessionWarning();
   }
 
   void dispose() {

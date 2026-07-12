@@ -3,6 +3,7 @@ import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/ui/exam_system_ui.dart';
 import 'package:english_for_community/feature/student/exams/exam_embedded_skill_scope.dart';
+import 'package:english_for_community/feature/student/exams/exam_integrity_tracker.dart';
 import 'package:flutter/material.dart';
 import '../listening_skill/bloc/cue_state.dart';
 import '../../../core/locale/l10n_context.dart';
@@ -90,6 +91,7 @@ class PracticeTab extends StatelessWidget {
           const SizedBox(height: 10),
           TextField(
             controller: controller,
+            contextMenuBuilder: examContextMenuBuilder,
             maxLines: 3,
             readOnly: readOnlyReview,
             style: compact ? ExamSystemUi.embeddedBodyStyle : null,

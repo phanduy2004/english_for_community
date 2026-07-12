@@ -3317,6 +3317,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get examCardStatusLobby => 'Phòng chờ — chờ giáo viên bắt đầu';
 
   @override
+  String get teacherClassStatusLobby => 'Phòng chờ';
+
+  @override
   String get examCardStatusLive => 'Đang diễn ra';
 
   @override
@@ -4018,6 +4021,55 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get examSessionStudentNotReady => 'Chưa sẵn sàng';
+
+  @override
+  String get examSessionYouTag => 'Bạn';
+
+  @override
+  String get teacherExamWarnStudentAction => 'Gửi nhắc nhở';
+
+  @override
+  String get teacherExamWarnStudentTitle => 'Gửi nhắc nhở';
+
+  @override
+  String get teacherExamWarnStudentSubtitle =>
+      'Sẽ hiện ngay trên màn hình làm bài của học sinh.';
+
+  @override
+  String get teacherExamWarnStudentMessageLabel => 'Nội dung';
+
+  @override
+  String get teacherExamWarnStudentSend => 'Gửi nhắc nhở';
+
+  @override
+  String get teacherExamWarnStudentSent => 'Đã gửi nhắc nhở';
+
+  @override
+  String get teacherExamWarnChipTabSwitch => 'Chuyển tab';
+
+  @override
+  String get teacherExamWarnChipCopyPaste => 'Copy / paste';
+
+  @override
+  String get teacherExamWarnChipFocus => 'Tập trung';
+
+  @override
+  String get teacherExamWarnPresetTabSwitch =>
+      'Bạn đang chuyển tab quá nhiều. Hãy ở lại màn thi và tập trung nhé.';
+
+  @override
+  String get teacherExamWarnPresetCopyPaste =>
+      'Không được copy/paste trong khi thi. Vui lòng dừng lại.';
+
+  @override
+  String get teacherExamWarnPresetFocus =>
+      'Hãy giữ bài thi trên màn hình và tập trung làm bài.';
+
+  @override
+  String get studentExamWarningTitle => 'Nhắc nhở từ giáo viên';
+
+  @override
+  String get studentExamWarningDismiss => 'Đã hiểu';
 
   @override
   String get examSessionMarkReady => 'Tôi đã sẵn sàng';
@@ -4830,6 +4882,22 @@ class AppLocalizationsVi extends AppLocalizations {
   String get teacherAnalyticsInsightEmpty => 'Chưa đủ dữ liệu để tóm tắt.';
 
   @override
+  String get teacherAnalyticsSectionOverview => 'Tổng quan';
+
+  @override
+  String get teacherAnalyticsSectionActivity => 'Hoạt động & điểm số';
+
+  @override
+  String get teacherAnalyticsSectionStudents => 'Học sinh & câu hỏi';
+
+  @override
+  String get teacherAnalyticsSectionIntegrity => 'Tính toàn vẹn & nộp bài';
+
+  @override
+  String get teacherAnalyticsSectionStudentsEmpty =>
+      'Chưa có học sinh cần chú ý — phân tích sẽ hiện khi có thêm bài nộp và chấm.';
+
+  @override
   String get teacherAnalyticsScoreTrend => 'Xu hướng điểm';
 
   @override
@@ -5025,6 +5093,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get teacherGradingStudentAttemptsTitle => 'Danh sách bài làm';
+
+  @override
+  String get teacherGradingIntegritySummaryTitle => 'Cảnh báo gian lận';
+
+  @override
+  String get teacherGradingIntegrityTotal => 'Tổng';
 
   @override
   String get teacherGradingStatusInProgress => 'Đang làm';
@@ -5644,6 +5718,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get integratedExamTimeUpShort => 'Hết giờ';
+
+  @override
+  String get studentExamTimeUpAutoSubmitted =>
+      'Đã hết giờ. Bài của bạn đã được nộp tự động.';
+
+  @override
+  String get studentExamTimeUpExit => 'Thoát';
 
   @override
   String get integratedExamGrammarPrevious => 'Câu ngữ pháp trước';

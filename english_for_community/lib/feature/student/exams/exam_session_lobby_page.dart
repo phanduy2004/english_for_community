@@ -1,7 +1,7 @@
 import 'package:english_for_community/core/get_it/get_it.dart';
-import 'package:english_for_community/core/ui/motion/app_loading_indicator.dart';
 import 'package:english_for_community/core/locale/l10n_context.dart';
 import 'package:english_for_community/core/ui/feedback/app_feedback.dart';
+import 'package:english_for_community/core/util/app_haptics.dart';
 import 'package:english_for_community/core/repository/teacher_exam_repository.dart';
 import 'package:english_for_community/core/socket/socket_service.dart';
 import 'package:english_for_community/core/theme/app_color.dart';
@@ -9,11 +9,13 @@ import 'package:english_for_community/core/theme/app_typography.dart';
 import 'package:english_for_community/core/theme/app_spacing.dart';
 import 'package:english_for_community/core/ui/student_mobile_ui.dart';
 import 'package:english_for_community/core/ui/widget/app_card.dart';
+import 'package:english_for_community/core/ui/avatar_url.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:english_for_community/feature/auth/bloc/user_bloc.dart';
 import 'package:english_for_community/feature/student/exams/exam_live_session_guard.dart';
-import 'package:english_for_community/feature/student/exams/exam_session_status_banner.dart';
 import 'package:english_for_community/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 /// Realtime exam: REST join lobby + Socket.IO `exam_session_state` for go-live.
@@ -248,27 +250,378 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
     super.dispose();
   }
 
-  ButtonStyle _compactFilledStyle() => FilledButton.styleFrom(
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
+  // ─── Button styles (full-width CTA) ───────────────────────────────────
+  ButtonStyle _primaryButtonStyle() => FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.onPrimary,
+        textStyle: AppTypography.body(large: true).copyWith(fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       );
 
-  ButtonStyle _compactOutlinedStyle() => OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        visualDensity: VisualDensity.compact,
-        side: const BorderSide(color: AppColors.outline),
+  ButtonStyle _outlinedButtonStyle() => OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+        foregroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.outlineStrong),
+        textStyle: AppTypography.body(large: true).copyWith(fontWeight: FontWeight.w600),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
       );
+
+  Future<void> _copyRoomCode() async {
+    final code = _roomCode?.trim();
+    if (code == null || code.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: code));
+    if (!mounted) return;
+    AppFeedback.success(context, context.l10n.copiedToClipboard);
+  }
+
+  // ─── Hero: waiting / live status (softens the "waiting" peak, §5) ──────
+  Widget _buildHero(
+    BuildContext context,
+    String st,
+    AppLocalizations l10n, {
+    String? examTitle,
+    String? className,
+    String? teacherName,
+  }) {
+    final bool waiting =
+        st != 'live' && st != 'closed' && st != 'grading' && st != 'canceled';
+    final (Color accent, IconData icon, String label) = switch (st) {
+      'live' => (AppColors.primary, Icons.play_circle_fill_rounded, l10n.examSessionStatusLive),
+      'grading' => (AppColors.warning, Icons.hourglass_top_rounded, l10n.teacherDashboardLiveStatusGrading),
+      'closed' => (AppColors.textMuted, Icons.check_circle_rounded, l10n.examSessionStatusClosed),
+      'canceled' => (AppColors.danger, Icons.cancel_rounded, l10n.examSessionStatusCanceled),
+      _ => (AppColors.primary, Icons.meeting_room_rounded, l10n.examSessionStatusLobby),
+    };
+    final String? subtitle = waiting ? l10n.examWaitingForTeacher : null;
+
+    final bool hasTitle = examTitle != null && examTitle.isNotEmpty;
+    final bool hasClass = className != null && className.isNotEmpty;
+    final bool hasTeacher = teacherName != null && teacherName.isNotEmpty;
+    final bool hasMeta = hasTitle || hasClass || hasTeacher;
+
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.s8,
+        horizontal: AppSpacing.s5,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(child: _PulsingIcon(icon: icon, color: accent, animate: waiting)),
+          const SizedBox(height: AppSpacing.s5),
+          Text(label, textAlign: TextAlign.center, style: AppTypography.displaySm()),
+          if (subtitle != null) ...[
+            const SizedBox(height: AppSpacing.s2),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: StudentMobileUi.body(context).copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+          if (hasMeta) ...[
+            const SizedBox(height: AppSpacing.s5),
+            const Divider(height: 1, color: AppColors.outlineMuted),
+            const SizedBox(height: AppSpacing.s4),
+            if (hasTitle)
+              Text(
+                examTitle,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: StudentMobileUi.cardTitle(context),
+              ),
+            if (hasClass) ...[
+              const SizedBox(height: AppSpacing.s1),
+              Text(
+                l10n.teacherDashboardClassLabel(className),
+                textAlign: TextAlign.center,
+                style: StudentMobileUi.caption(context),
+              ),
+            ],
+            if (hasTeacher) ...[
+              const SizedBox(height: AppSpacing.s1),
+              Text(
+                l10n.studentClassTeacher(teacherName),
+                textAlign: TextAlign.center,
+                style: StudentMobileUi.caption(context),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Room code (prominent, copyable anchor) ───────────────────────────
+  Widget _buildRoomCodeCard(BuildContext context, AppLocalizations l10n) {
+    final code = _roomCode?.trim();
+    final bool has = code != null && code.isNotEmpty;
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: const EdgeInsets.all(AppSpacing.s5),
+      child: Row(
+        children: [
+          StudentMobileUi.roundIconBox(Icons.tag_rounded, size: 44),
+          const SizedBox(width: AppSpacing.s4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l10n.examSessionRoomCode.toUpperCase(),
+                  style: StudentMobileUi.caption(context).copyWith(
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.8,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.s1),
+                Text(
+                  has ? code : '—',
+                  style: AppTypography.displaySm()
+                      .copyWith(letterSpacing: 3, fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+          ),
+          if (has)
+            StudentMobileUi.tappable(
+              context: context,
+              onTap: _copyRoomCode,
+              minSize: 44,
+              tooltip: MaterialLocalizations.of(context).copyButtonLabel,
+              child: const Icon(Icons.copy_rounded, size: 20, color: AppColors.primary),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Participants ─────────────────────────────────────────────────────
+  Widget _buildParticipantsCard(BuildContext context, String st, AppLocalizations l10n) {
+    return AppCard(
+      variant: AppCardVariant.outline,
+      padding: const EdgeInsets.all(AppSpacing.s5),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  l10n.examSessionLobbyParticipantsTitle,
+                  style: StudentMobileUi.sectionTitle(context),
+                ),
+              ),
+              _countPill(context),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.s3),
+          Text(
+            l10n.teacherExamSessionJoinedCount(_joinedCount),
+            style: StudentMobileUi.body(context).copyWith(fontWeight: FontWeight.w600),
+          ),
+          if (st == 'lobby' && _joinedCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.s1),
+              child: Text(
+                l10n.examSessionReadyCount(_readyCount, _joinedCount),
+                style: StudentMobileUi.caption(context),
+              ),
+            ),
+          if (_participants.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.s3),
+            const Divider(height: 1, color: AppColors.outlineMuted),
+            ..._participants.map((p) => _participantRow(context, p, st, l10n)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _countPill(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSubtle,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.group_rounded, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: 4),
+          Text(
+            '$_joinedCount',
+            style: StudentMobileUi.caption(context)
+                .copyWith(fontWeight: FontWeight.w700, color: AppColors.textSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _participantRow(BuildContext context, Map<String, dynamic> p, String st, AppLocalizations l10n) {
+    final name = _lobbyName(p);
+    final sub = _lobbySubtitle(p);
+    final bool ready = p['ready'] == true;
+    final myId = getIt<UserBloc>().state.userEntity?.id;
+    final bool isMe = myId != null && p['userId']?.toString() == myId;
+    final displayName = name.isEmpty ? l10n.teacherDashboardStudentUnknown : name;
+    final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
+    final avatarUrl = (p['avatarUrl'] as String?)?.trim();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.s3),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: ready ? AppColors.success.withValues(alpha: 0.4) : AppColors.outline,
+              ),
+            ),
+            child: ClipOval(
+              child: isUsableAvatarUrl(avatarUrl)
+                  ? CachedNetworkImage(
+                      imageUrl: avatarUrl!,
+                      width: 40,
+                      height: 40,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) => _lobbyAvatarFallback(context, letter, ready),
+                      errorWidget: (_, __, ___) => _lobbyAvatarFallback(context, letter, ready),
+                    )
+                  : _lobbyAvatarFallback(context, letter, ready),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.s4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        displayName,
+                        style: StudentMobileUi.cardTitle(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (isMe) ...[
+                      const SizedBox(width: AppSpacing.s2),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryTint,
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                        child: Text(
+                          l10n.examSessionYouTag,
+                          style: AppTypography.label(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (sub.isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    sub,
+                    style: StudentMobileUi.caption(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (st == 'lobby') ...[
+            const SizedBox(width: AppSpacing.s3),
+            _readyChip(context, ready, l10n),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _lobbyAvatarFallback(BuildContext context, String letter, bool ready) {
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      color: ready ? AppColors.successBg : AppColors.surfaceSubtle,
+      child: Text(
+        letter,
+        style: StudentMobileUi.cardTitle(context).copyWith(
+          fontWeight: FontWeight.w700,
+          color: ready ? AppColors.successDark : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _readyChip(BuildContext context, bool ready, AppLocalizations l10n) {
+    final Color fg = ready ? AppColors.success : AppColors.textSecondary;
+    final Color bg = ready ? AppColors.successBg : AppColors.surfaceSubtle;
+    final Color border = ready ? AppColors.success.withValues(alpha: 0.4) : AppColors.outline;
+    final IconData icon = ready ? Icons.check_circle_rounded : Icons.schedule_rounded;
+    final String text = ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s3, vertical: 5),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: fg),
+          const SizedBox(width: 4),
+          Text(text, style: AppTypography.label(color: fg)),
+        ],
+      ),
+    );
+  }
 
   Widget _buildBottomActions(BuildContext context, String st, AppLocalizations l10n) {
-    final canOpen = st == 'live' && _error == null;
+    final bool showReady = st == 'lobby';
+    final bool showOpen = st == 'live' && _error == null;
+    if (!showReady && !showOpen) return const SizedBox.shrink();
+
+    final Widget action = showOpen
+        ? FilledButton.icon(
+            style: _primaryButtonStyle(),
+            onPressed: _tryOpenAttemptIfReady,
+            icon: const Icon(Icons.play_arrow_rounded, size: 20),
+            label: Text(l10n.examSessionGo),
+          )
+        : (_myReady
+            ? OutlinedButton.icon(
+                style: _outlinedButtonStyle(),
+                onPressed: () {
+                  AppHaptics.select(context);
+                  _setReady(false);
+                },
+                icon: const Icon(Icons.close_rounded, size: 18),
+                label: Text(l10n.examSessionCancelReady),
+              )
+            : FilledButton.icon(
+                style: _primaryButtonStyle(),
+                onPressed: () {
+                  AppHaptics.confirm(context);
+                  _setReady(true);
+                },
+                icon: const Icon(Icons.check_rounded, size: 20),
+                label: Text(l10n.examSessionMarkReady),
+              ));
 
     return Container(
       width: double.infinity,
@@ -282,29 +635,28 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
         color: AppColors.surfaceCard,
         border: Border(top: BorderSide(color: AppColors.outlineMuted)),
       ),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSpacing.s3,
-        runSpacing: AppSpacing.s3,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          if (st == 'lobby')
-            _myReady
-                ? OutlinedButton(
-                    style: _compactOutlinedStyle(),
-                    onPressed: () => _setReady(false),
-                    child: Text(l10n.examSessionCancelReady),
-                  )
-                : FilledButton(
-                    style: _compactFilledStyle(),
-                    onPressed: () => _setReady(true),
-                    child: Text(l10n.examSessionMarkReady),
+          if (showReady && _myReady) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.check_circle_rounded, size: 15, color: AppColors.success),
+                const SizedBox(width: AppSpacing.s2),
+                Flexible(
+                  child: Text(
+                    l10n.examWaitingForTeacher,
+                    style: StudentMobileUi.caption(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-          FilledButton(
-            style: _compactFilledStyle(),
-            onPressed: canOpen ? _tryOpenAttemptIfReady : null,
-            child: Text(l10n.examSessionGo),
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.s3),
+          ],
+          SizedBox(width: double.infinity, child: action),
         ],
       ),
     );
@@ -339,110 +691,133 @@ class _ExamSessionLobbyPageState extends State<ExamSessionLobbyPage> {
                         ),
                         const SizedBox(height: StudentMobileUi.cardGap),
                       ],
-                      AppCard(
-                        variant: AppCardVariant.outline,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ExamSessionStatusBanner(status: st),
-                            if (examTitle != null && examTitle.isNotEmpty) ...[
-                              const SizedBox(height: 12),
-                              Text(examTitle, style: StudentMobileUi.sectionTitle(context)),
-                            ],
-                            if (className != null && className.isNotEmpty) ...[
-                              const SizedBox(height: 6),
-                              Text(l10n.teacherDashboardClassLabel(className), style: StudentMobileUi.body(context)),
-                            ],
-                            if (teacherName != null && teacherName.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(l10n.studentClassTeacher(teacherName), style: StudentMobileUi.caption(context)),
-                            ],
-                            const SizedBox(height: 10),
-                            Text(
-                              '${l10n.examSessionRoomCode}: ${_roomCode ?? '—'}',
-                              style: StudentMobileUi.cardTitle(context),
-                            ),
-                            const SizedBox(height: AppSpacing.s4),
-                            Text(l10n.examSessionLobbyParticipantsTitle, style: StudentMobileUi.sectionTitle(context)),
-                            const SizedBox(height: 8),
-                            Text(
-                              l10n.teacherExamSessionJoinedCount(_joinedCount),
-                              style: StudentMobileUi.body(context).copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            if (st == 'lobby' && _joinedCount > 0)
-                              Text(
-                                l10n.examSessionReadyCount(_readyCount, _joinedCount),
-                                style: StudentMobileUi.caption(context),
-                              ),
-                            if (_participants.isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              ..._participants.map((p) {
-                                final name = _lobbyName(p);
-                                final sub = _lobbySubtitle(p);
-                                final ready = p['ready'] == true;
-                                final letter = name.isNotEmpty ? name.characters.first.toUpperCase() : '?';
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 8),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 16,
-                                        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                        child: Text(
-                                          letter,
-                                          style: const TextStyle(fontSize: AppTypography.mobileH3, fontWeight: FontWeight.w600, color: AppColors.primaryDark),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              name.isEmpty ? l10n.teacherDashboardStudentUnknown : name,
-                                              style: StudentMobileUi.cardTitle(context),
-                                            ),
-                                            if (sub.isNotEmpty)
-                                              Text(
-                                                sub,
-                                                style: StudentMobileUi.caption(context),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                          ],
-                                        ),
-                                      ),
-                                      if (st == 'lobby')
-                                        Text(
-                                          ready ? l10n.examSessionStudentReady : l10n.examSessionStudentNotReady,
-                                          style: StudentMobileUi.caption(context).copyWith(
-                                            fontWeight: FontWeight.w600,
-                                            color: ready ? AppColors.primary : AppColors.textMuted,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              }),
-                            ],
-                            const SizedBox(height: StudentMobileUi.cardGap),
-                            Text(
-                              st == 'live'
-                                  ? l10n.examSessionGo
-                                  : st == 'closed' || st == 'grading'
-                                      ? l10n.examSessionStatusClosed
-                                      : l10n.examWaitingForTeacher,
-                              style: StudentMobileUi.body(context),
-                            ),
-                          ],
-                        ),
+                      _buildHero(
+                        context,
+                        st,
+                        l10n,
+                        examTitle: examTitle,
+                        className: className,
+                        teacherName: teacherName,
                       ),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+                      _buildRoomCodeCard(context, l10n),
+                      const SizedBox(height: StudentMobileUi.sectionGap),
+                      _buildParticipantsCard(context, st, l10n),
                     ],
                   ),
                 ),
                 _buildBottomActions(context, st, l10n),
               ],
             ),
+    );
+  }
+}
+
+/// Breathing pulse behind the lobby status icon — softens the "waiting"
+/// moment (peak-end rule, SKILL §5). Respects reduce-motion.
+class _PulsingIcon extends StatefulWidget {
+  const _PulsingIcon({
+    required this.icon,
+    required this.color,
+    this.animate = true,
+  });
+
+  final IconData icon;
+  final Color color;
+  final bool animate;
+
+  @override
+  State<_PulsingIcon> createState() => _PulsingIconState();
+}
+
+class _PulsingIconState extends State<_PulsingIcon>
+    with SingleTickerProviderStateMixin {
+  static const double _size = 72;
+
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.animate) _controller.repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant _PulsingIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.animate && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.animate && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _ring(double t) {
+    final scale = 1.0 + 0.75 * t;
+    final opacity = ((1.0 - t) * 0.28).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: opacity,
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: _size,
+          height: _size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: widget.color, width: 2),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final core = Container(
+      width: _size,
+      height: _size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: widget.color.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(widget.icon, size: _size * 0.44, color: widget.color),
+    );
+
+    final bool reduce = MediaQuery.disableAnimationsOf(context);
+    if (!widget.animate || reduce) return core;
+
+    final double box = _size * 1.85;
+    return RepaintBoundary(
+      child: SizedBox(
+        width: box,
+        height: box,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final t1 = _controller.value;
+            final t2 = (_controller.value + 0.5) % 1.0;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                _ring(t2),
+                _ring(t1),
+                if (child != null) child,
+              ],
+            );
+          },
+          child: core,
+        ),
+      ),
     );
   }
 }
